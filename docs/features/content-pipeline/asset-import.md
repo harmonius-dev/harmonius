@@ -20,9 +20,9 @@
 | F-12.1.2 | Texture Source Import |
 
 1. **F-12.1.2** — Import raw texture source files (PNG, JPEG, EXR, HDR, TIFF) as a convenience
-   fallback for textures not exported from DCC plugins. PNG and JPEG are decoded for sRGB color
-   data; EXR, HDR, and TIFF are decoded for linear high-dynamic-range environment maps, lightmaps,
-   and emissive sources. All decoded textures feed into the texture compression pipeline (F-12.2.1).
+   fallback for direct texture import. PNG and JPEG are decoded for sRGB color data; EXR, HDR, and
+   TIFF are decoded for linear high-dynamic-range environment maps, lightmaps, and emissive sources.
+   All decoded textures feed into the texture compression pipeline (F-12.2.1).
    - **Deps:** F-12.2.1 (Texture Compression)
 
 ## Audio Source Import
@@ -46,7 +46,7 @@
 1. **F-12.1.4** — Validate all imported assets against schema definitions, format version
    constraints, and content integrity checks. Errors are reported with source file path and byte
    offset, alongside actionable fix suggestions (e.g., "format version 3 expected, got 2 — re-export
-   from DCC plugin"). Warnings surface non-fatal issues such as missing optional metadata or
+   from DCC tool"). Warnings surface non-fatal issues such as missing optional metadata or
    suboptimal texture dimensions.
    - **Deps:** F-12.1.1 (Native Asset Ingestion)
 

@@ -1586,7 +1586,7 @@ pub fn assign_lod_tiers(
 ///
 /// **Note:** `DensityGrid` is an instance of
 /// `UniformGrid<f32>` (see
-/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
+/// [algorithms.md](../core-runtime/algorithms.md)).
 #[derive(Reflect)]
 pub struct DensityGrid {
     pub cells: Vec<DensityCell>,
@@ -2071,3 +2071,132 @@ demonstrating good cross-domain design.
 7. **Mid-LOD ORCA neighbor reduction** -- Mid-LOD agents currently run ORCA with reduced neighbor
    count. Would it be cheaper and sufficient to skip ORCA entirely for mid-LOD and rely on flocking
    separation instead?
+
+## Review Feedback
+
+### RF-1: Add PathFollowing steering behavior
+
+Add the bridge between navigation PathResult and steering:
+
+```rust
+pub fn path_follow(
+    position: Vec3,
+    velocity: Vec3,
+    waypoints: &[Vec3],
+    current_waypoint: &mut usize,
+    arrival_radius: f32,
+    max_speed: f32,
+) -> Vec3 {
+    // Advance waypoint if within arrival radius
+    // Seek toward current waypoint
+    // Arrive at final waypoint
+}
+```
+
+This is the primary steering behavior for navmesh-guided agents. AI behavior leaf nodes (MoveTo,
+Patrol) produce a PathResult; path following converts it to a steering force each frame.
+
+### RF-2: Route through character controller
+
+Replace direct `position += velocity * dt` with:
+
+```rust
+// Instead of:
+transform.translation += velocity * dt;
+
+// Write desired velocity for character controller:
+character_movement.desired_velocity = steering_output;
+// Character controller handles collision, grounding,
+// slopes, steps in the physics FixedUpdate phase.
+```
+
+The steering system writes `desired_velocity`. The physics character controller (Design #19 RF-7)
+applies it with collision response. The steering system does NOT write to Transform directly.
+
+### RF-3: LP solver pseudocode
+
+Provide the ORCA incremental LP algorithm:
+
+```text
+function linear_program_2d(lines, max_speed, pref_vel):
+    result = pref_vel
+    for i in 0..lines.len():
+        if lines[i].left_of(result) < 0:
+            // Result violates constraint i
+            // Project onto line i
+            result = project_on_line(lines[i], max_speed)
+            // Check all previous constraints
+            for j in 0..i:
+                if lines[j].left_of(result) < 0:
+                    // Infeasible — find closest point
+                    // to intersection of lines i and j
+                    result = intersect(lines[i], lines[j])
+    return result
+```
+
+Reference: [van den Berg et al., "ORCA" (2011)](https://gamma.cs.unc.edu/ORCA/publications/ORCA.pdf)
+
+### RF-4: 2D steering variants
+
+Add Vec2 variants for all steering functions so 2D games use Transform2D naturally:
+
+```rust
+pub fn seek_2d(pos: Vec2, target: Vec2, max: f32) -> Vec2;
+pub fn flee_2d(pos: Vec2, threat: Vec2, max: f32) -> Vec2;
+pub fn arrive_2d(pos: Vec2, target: Vec2, ...) -> Vec2;
+// etc.
+```
+
+Or make functions generic over a `SteeringVec` trait that both Vec2 and Vec3 implement. ORCA already
+operates in 2D so its LP solver works for both.
+
+### RF-5: Formation corridor compression
+
+Add dynamic spacing for narrow passages:
+
+```rust
+pub fn compute_slot_offsets(
+    shape: &FormationShape,
+    count: usize,
+    corridor_width: Option<f32>, // new
+) -> SmallVec<[Vec3; 16]> {
+    // If corridor_width < formation width:
+    //   compress to column (single-file)
+    // If corridor_width < 2x agent radius:
+    //   abort formation, agents navigate individually
+}
+```
+
+### RF-6: Fix query aliasing
+
+Replace the `&SteeringAgent` + `&mut SteeringAgent` query in `tick_mass_entities` with a single
+`&mut SteeringAgent`.
+
+### RF-7: Bilinear flow field interpolation
+
+Interpolate between 4 neighboring cells instead of nearest:
+
+```rust
+pub fn sample_flow(grid: &FlowField, pos: Vec2) -> Vec2 {
+    let fx = (pos.x / cell_size).fract();
+    let fy = (pos.y / cell_size).fract();
+    let tl = grid.get(ix, iy);
+    let tr = grid.get(ix + 1, iy);
+    let bl = grid.get(ix, iy + 1);
+    let br = grid.get(ix + 1, iy + 1);
+    lerp(lerp(tl, tr, fx), lerp(bl, br, fx), fy)
+}
+```
+
+Eliminates direction snapping at cell boundaries.
+
+### RF-8: Algorithm references
+
+| Algorithm | Reference |
+|-----------|-----------|
+| ORCA | [van den Berg et al. (2011)](https://gamma.cs.unc.edu/ORCA/publications/ORCA.pdf) |
+| RVO2 library | [RVO2 GitHub](https://github.com/snape/RVO2) |
+| Reynolds flocking | [Reynolds (1987)](https://www.red3d.com/cwr/boids/) |
+| Reynolds steering | [Reynolds (1999)](https://www.red3d.com/cwr/steer/) |
+| Flow fields | [Emerson, "Flow Field Pathfinding" (2013)](http://www.gameaipro.com/GameAIPro/GameAIPro_Chapter23_Crowd_Pathfinding_and_Steering_Using_Flow_Field_Tiles.pdf) |
+| Formation | [Hao & Thue (2019)](https://aaai.org/ocs/index.php/AIIDE/AIIDE19/paper/view/18512) |

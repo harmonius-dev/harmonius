@@ -951,8 +951,7 @@ pub enum PlatformTier {
 
 **Note:** This `PlatformTier` enum uses `Console` instead of the canonical `HighEnd` variant. During
 implementation, replace with the canonical `PlatformTier` from
-[shared-primitives.md](../core-runtime/shared-primitives.md) which defines
-`Mobile, Switch, Desktop, HighEnd`.
+[algorithms.md](../core-runtime/algorithms.md) which defines `Mobile, Switch, Desktop, HighEnd`.
 
 ### GPU Particle Buffers
 
@@ -1823,7 +1822,7 @@ compiles them:
 
 1. **HLSL source** authored per-module.
 2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V (Vulkan) via C ABI.
-3. **Metal Shader Converter** transpiles DXIL to MSL (Metal) via swift-bridge.
+3. **Metal Shader Converter** transpiles DXIL to MSL (Metal) via CLI subprocess.
 4. Effect graph compiler generates specialized HLSL by concatenating selected module functions into
    a single entry point.
 
@@ -2099,3 +2098,146 @@ post-processing) when making culling decisions.
 7. **Effect graph hot-reload.** When an artist modifies an effect graph in the editor, the fused
    shader must be recompiled. Should this invalidate only the affected emitter's pipeline state, or
    rebuild all emitter shaders?
+
+## Review Feedback
+
+### RF-1: Remove all Reflect derives
+
+Use codegen-generated metadata via middleman .dylib.
+
+### RF-2: Fix DXC to CLI subprocess
+
+Line 1825: "via C ABI" must be "via CLI subprocess."
+
+### RF-3: Add 2D particles
+
+Support 2D particle systems for 2D/2.5D games:
+
+- 2D emitter shapes: point, circle, rect, line
+- Particles use Transform2D (Vec2 position)
+- Z-ordering within sprite batch (depth from spawn order)
+- 2D collision: raycast against 2D tilemap collision
+- Same GPU compute pipeline, just 2D math
+- Billboard mode unnecessary in 2D (already screen-aligned)
+
+### RF-4: Box sub-emitter type
+
+`SubEmitterEntry.emitter` must be `Box<ParticleEmitter>` to resolve the recursive type.
+
+### RF-5: Configurable sort mode per emitter
+
+Make `ParticleSortMode` a field on `ParticleEmitter` or `RenderMode`. Remove the hardcoded
+BackToFront derivation.
+
+### RF-6: Add spline emitter shape
+
+Spawn particles along a spline curve for magic trails, railgun beams, and path-following effects.
+
+### RF-7: Physics-based particles
+
+Add a physics particle mode for particles that interact with the game world beyond visual bouncing:
+
+**World-space collision (not just depth buffer):**
+
+GPU particles can collide with the SDF (already in the design) but also need:
+
+- Bounce with restitution coefficient (not just reflect)
+- Friction on surface contact (particles slide/roll)
+- Settle and stop (particles come to rest)
+- Water surface interaction (splash on entry, float)
+
+**Shared wind field:**
+
+Sample the same shared wind field texture used by cloth and hair (Design #26 F-4.7.5). Particles
+react to wind identically to vegetation and cloth — consistent world.
+
+**Particle-particle interaction (optional, expensive):**
+
+For fluid-like effects (blood pooling, sand piling):
+
+- Spatial hash on GPU (same as cloth self-collision)
+- SPH pressure forces between neighbors
+- Budget: limited to small particle counts (< 1000) because O(N*K) where K = neighbor count
+
+**Gameplay interaction:**
+
+Particles can trigger gameplay events via GPU readback:
+
+```rust
+pub struct ParticleGameplayEvent {
+    pub emitter: Entity,
+    pub event_type: ParticleEventType,
+    pub position: Vec3,
+    pub normal: Vec3,
+    pub velocity: Vec3,
+}
+
+pub enum ParticleEventType {
+    Collision { surface_material: u16 },
+    Settled,         // particle came to rest
+    EnteredVolume,   // entered trigger volume
+    Expired,         // lifetime ended
+}
+```
+
+GPU writes events to an append buffer → readback to CPU (render graph RF-14) → posted as ECS events.
+Budget: max N events per frame (configurable) to prevent flood.
+
+**Use cases:**
+
+| Effect | Physics Feature |
+|--------|----------------|
+| Blood splatter | Collision → spawn decal at position |
+| Fire spread | Collision with flammable → spawn fire |
+| Poison cloud | EnteredVolume → apply damage to entities in volume |
+| Debris settling | Settle → convert to static decal/mesh |
+| Sparks from grinding | Collision with metal → play spark sound |
+| Snow accumulation | Settle → modify terrain heightmap |
+| Water splash | Collision with water surface → spawn ripple |
+
+**Rigid body interaction (lightweight):**
+
+Particles apply impulse to rigid bodies on collision:
+
+- Particle mass × velocity → force on rigid body
+- Accumulated per rigid body per frame via GPU atomics
+- Readback accumulated forces → apply in physics step
+- Use case: shotgun blast pushes objects, wind particles move loose items
+
+**Generated particles from gameplay:**
+
+Gameplay systems spawn particles by writing to the emitter's spawn buffer:
+
+```rust
+pub struct GameplaySpawnRequest {
+    pub emitter: Entity,
+    pub position: Vec3,
+    pub velocity: Vec3,
+    pub count: u16,
+}
+```
+
+Use cases: blood on hit (damage event → spawn at hit point + hit normal), sparks on weapon grind
+(contact point from physics), footstep dust (foot IK ground contact position).
+
+### RF-8: Persistent particles (settle to decals)
+
+When a particle settles (velocity below threshold for N frames), convert it to a persistent visual:
+
+1. GPU detects settled particles
+2. Readback settled positions + normals
+3. Spawn decal projector at position (blood splat, scorch)
+4. Or: modify terrain data (snow accumulation, paint)
+5. Kill the particle (free the slot)
+
+This bridges particles → decals → terrain, creating lasting environmental effects from transient
+simulations.
+
+### RF-9: Reconcile PlatformTier enum
+
+Align with canonical enum as noted in the design.
+
+### RF-10: Cap warm-up within budget
+
+Document that warm-up is budget-exempt and explain why, or cap warm-up particle count to platform
+limit.

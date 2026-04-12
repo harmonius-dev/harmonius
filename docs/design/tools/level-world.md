@@ -64,8 +64,8 @@ Key principles:
   required.
 - **Shared spatial index.** Placement raycasts, foliage queries, navmesh generation, and partition
   budgets all query the same BVH/octree.
-- **Async streaming.** Terrain sculpting, heightmap I/O, and foliage storage use platform-native
-  async I/O via the `Tokio runtime`.
+- **Platform-native I/O.** Terrain sculpting, heightmap I/O, and foliage storage use platform-native
+  non-blocking I/O submitted via channels. Completions poll at frame boundaries on the main thread.
 - **Multi-user editing.** Cell-based locking enables concurrent editing of disjoint world regions by
   multiple artists.
 
@@ -235,17 +235,17 @@ sequenceDiagram
     participant U as User
     participant TS as TerrainSculptor
     participant GPU as GPU Compute
-    participant IO as Tokio runtime
+    participant IO as Platform I/O
     participant ECS as ECS World
 
     U->>TS: paint with brush
     TS->>TS: compute affected tile region
-    TS->>IO: async load tile heightmap
-    IO-->>TS: tile data
+    TS->>IO: submit load request via channel
+    IO-->>TS: tile data (next frame poll)
     TS->>GPU: dispatch sculpt kernel
     GPU-->>TS: modified heightmap
     TS->>ECS: update TerrainTile component
-    TS->>IO: async flush dirty tiles to disk
+    TS->>IO: submit flush request via channel
     Note over IO: Incremental streaming
 ```
 
@@ -282,16 +282,16 @@ classDiagram
     class TemplateAsset {
         +AssetId id
         +Vec~EntityTemplate~ entities
-        +Vec~TemplateRef~ nested_templates
-        +save() Future~()~
-        +load(id: AssetId) Future~TemplateAsset~
+        +SmallVec~TemplateRef~ nested_templates
+        +save(handle: IoHandle)
+        +load(id: AssetId) AssetHandle
     }
 
     class EntityTemplate {
         +EntityTemplateId id
-        +HashMap~TypeId, ComponentData~ components
+        +Vec~ComponentTypeId ComponentData~ components
         +Option~EntityTemplateId~ parent
-        +Vec~EntityTemplateId~ children
+        +SmallVec~EntityTemplateId~ children
     }
 
     class TemplateInstance {
@@ -304,7 +304,7 @@ classDiagram
     }
 
     class OverrideMap {
-        +HashMap~PropertyPath, OverrideValue~ entries
+        +BTreeMap~PropertyPath, OverrideValue~ entries
         +has_override(path: PropertyPath) bool
         +set(path: PropertyPath, val: OverrideValue)
         +remove(path: PropertyPath)
@@ -320,7 +320,7 @@ classDiagram
         +IVec2 coord
         +u32 resolution
         +HeightmapHandle heightmap
-        +Vec~WeightMap~ material_layers
+        +SmallVec~MaterialLayer 4~ material_layers
         +bool dirty
     }
 
@@ -450,21 +450,23 @@ impl EntityPlacer {
 pub struct EntityTemplateId(pub u32);
 
 /// A reusable entity hierarchy stored as an asset.
+/// Serialized with rkyv for zero-copy mmap access.
 pub struct TemplateAsset {
     pub id: AssetId,
     pub entities: Vec<EntityTemplate>,
-    pub nested_templates: Vec<TemplateRef>,
+    pub nested_templates: SmallVec<[TemplateRef; 4]>,
 }
 
 /// A single entity definition within a template.
+/// Components stored as sorted Vec for deterministic
+/// lookup via binary search (no TypeId, no HashMap).
+/// ComponentTypeId is codegen'd by the middleman .dylib.
 pub struct EntityTemplate {
     pub id: EntityTemplateId,
-    pub components: HashMap<
-        ComponentTypeId,
-        ComponentData,
-    >,
+    /// Sorted by ComponentTypeId for binary search.
+    pub components: Vec<(ComponentTypeId, ComponentData)>,
     pub parent: Option<EntityTemplateId>,
-    pub children: Vec<EntityTemplateId>,
+    pub children: SmallVec<[EntityTemplateId; 4]>,
 }
 
 /// Reference to a nested entity template with a local
@@ -481,12 +483,20 @@ pub struct TemplateManager { /* ... */ }
 impl TemplateManager {
     pub fn new() -> Self;
 
-    /// Load an entity template asset from disk.
-    pub async fn load(
+    /// Submit an entity template load request.
+    /// Returns a handle; call `poll_load` to check
+    /// completion. I/O runs on the main thread via
+    /// platform-native async (dispatch_io/IOCP/io_uring).
+    pub fn request_load(
         &self,
         id: AssetId,
-        reactor: &Tokio runtime,
-    ) -> Result<TemplateAsset, AssetError>;
+    ) -> AssetHandle<TemplateAsset>;
+
+    /// Check whether a load is complete.
+    pub fn poll_load(
+        &self,
+        handle: &AssetHandle<TemplateAsset>,
+    ) -> Option<&TemplateAsset>;
 
     /// Instantiate an entity template into the ECS world.
     /// Returns the root entity.
@@ -528,8 +538,10 @@ pub struct PropertyPath {
 
 /// Per-instance override map. Tracks which
 /// properties differ from the source entity template.
+/// BTreeMap ensures deterministic iteration order for
+/// template propagation across 1000+ instances.
 pub struct OverrideMap {
-    entries: HashMap<PropertyPath, OverrideValue>,
+    entries: BTreeMap<PropertyPath, OverrideValue>,
 }
 
 impl OverrideMap {
@@ -757,17 +769,21 @@ pub enum FalloffCurve {
 }
 
 /// Sculpts terrain heightmaps with streaming disk
-/// I/O for large worlds.
+/// I/O for large worlds. Uses platform-native
+/// non-blocking I/O (dispatch_io / IOCP / io_uring).
+/// All methods are synchronous; I/O completions are
+/// polled at frame boundaries by the main thread.
 pub struct TerrainSculptor { /* ... */ }
 
 impl TerrainSculptor {
-    pub fn new(reactor: Tokio runtime) -> Self;
+    pub fn new() -> Self;
 
     /// Apply a sculpt stroke at the given world
-    /// position. Loads affected tiles via async I/O,
-    /// applies the brush, and queues dirty tiles for
-    /// async flush.
-    pub async fn apply_stroke(
+    /// position. Submits tile load requests for
+    /// affected tiles. If tiles are already loaded,
+    /// applies the brush immediately. Marks dirty
+    /// tiles for deferred flush.
+    pub fn apply_stroke(
         &mut self,
         position: Vec3,
         brush_type: SculptBrushType,
@@ -775,8 +791,10 @@ impl TerrainSculptor {
         world: &mut World,
     );
 
-    /// Flush all dirty tiles to disk.
-    pub async fn flush_dirty_tiles(&self);
+    /// Submit flush requests for all dirty tiles.
+    /// Actual I/O runs on the main thread; called at
+    /// end of frame.
+    pub fn flush_dirty_tiles(&mut self);
 
     /// Set the active brush type.
     pub fn set_brush(
@@ -811,24 +829,26 @@ pub struct TerrainErosion { /* ... */ }
 impl TerrainErosion {
     pub fn new() -> Self;
 
-    /// Run erosion simulation on the selected
+    /// Submit erosion simulation on the selected
     /// terrain region. Uses GPU compute for
-    /// real-time preview.
-    pub async fn simulate(
+    /// real-time preview. Returns a job handle;
+    /// the caller polls for completion each frame.
+    pub fn submit_simulate(
         &self,
         region: Rect,
         erosion_type: ErosionType,
         params: &ErosionParams,
         world: &mut World,
-    );
+    ) -> JobHandle;
 
-    /// Preview erosion results without committing.
-    pub async fn preview(
+    /// Submit erosion preview without committing.
+    /// Poll the job handle for completion.
+    pub fn submit_preview(
         &self,
         region: Rect,
         erosion_type: ErosionType,
         params: &ErosionParams,
-    ) -> HeightmapData;
+    ) -> JobHandle<HeightmapData>;
 
     /// Commit the previewed erosion to the terrain.
     pub fn commit(
@@ -1103,12 +1123,14 @@ pub struct NavmeshPreview { /* ... */ }
 impl NavmeshPreview {
     pub fn new() -> Self;
 
-    /// Regenerate navmesh for a selected region.
-    pub async fn regenerate_region(
+    /// Submit navmesh regeneration for a region.
+    /// Executes via the job system (crossbeam-deque).
+    /// Poll the returned handle for completion.
+    pub fn submit_regenerate_region(
         &self,
         bounds: Aabb,
         world: &World,
-    );
+    ) -> JobHandle;
 
     /// Run a pathfinding test between two markers.
     pub fn test_pathfind(
@@ -1199,27 +1221,28 @@ impl WorldPartitionViz {
 /// locking.
 pub struct MultiUserSession { /* ... */ }
 
+/// Multi-user transport uses QUIC:
+/// - Linux: quinn-proto
+/// - Apple: Networking.framework via objc2
+/// - Windows: MsQuic via windows-rs
+/// All methods are synchronous. Sends are
+/// fire-and-forget via channel. Responses arrive as
+/// events polled at frame boundaries.
 impl MultiUserSession {
-    /// Connect to a shared editing server.
-    pub async fn connect(
-        &mut self,
-        server_addr: &str,
-    ) -> Result<(), SessionError>;
+    /// Submit a connection request to the shared
+    /// editing server. Result arrives as an event
+    /// in the next frame poll.
+    pub fn connect(&mut self, server_addr: &str);
 
-    /// Request exclusive edit lock on a world cell.
-    pub async fn request_lock(
-        &self,
-        cell: IVec2,
-    ) -> Result<CellLock, LockError>;
+    /// Submit a cell lock request. Result event:
+    /// `LockGranted(CellLock)` or `LockDenied(LockError)`.
+    pub fn request_lock(&self, cell: IVec2);
 
     /// Release a previously acquired cell lock.
-    pub async fn release_lock(
-        &self,
-        lock: CellLock,
-    );
+    pub fn release_lock(&self, lock: CellLock);
 
-    /// Sync local changes to the shared state.
-    pub async fn sync_changes(
+    /// Push the undo history delta to shared state.
+    pub fn sync_changes(
         &self,
         undo_history: &UndoHistory,
     );
@@ -1243,6 +1266,13 @@ pub trait EditorCommand: Send + Sync {
 }
 
 /// Undo/redo stack for all editor operations.
+///
+/// `Box<dyn EditorCommand>` is justified here:
+/// the undo stack is an editor-only cold path
+/// (per-command allocation, not per-frame) holding
+/// a heterogeneous mix of command types. This is one
+/// of the explicitly permitted `dyn` uses
+/// (editor/tool paths, not game runtime).
 pub struct UndoHistory { /* ... */ }
 
 impl UndoHistory {
@@ -1292,10 +1322,11 @@ impl UndoHistory {
 
 1. User paints with a sculpt brush.
 2. `TerrainSculptor` computes the set of affected tile coordinates.
-3. Unloaded tiles are fetched via `Tokio runtime::read()` (async, non-blocking).
+3. Unloaded tiles are requested via channel to the main thread's platform I/O
+   (dispatch_io/IOCP/io_uring). Completions arrive at frame boundary.
 4. The brush kernel runs on loaded tile data (GPU compute for erosion, CPU for simple brushes).
 5. Modified tiles are marked dirty.
-6. On brush release, dirty tiles are flushed to disk via `Tokio runtime::write()`.
+6. On brush release, dirty tile flush requests are submitted via channel to the main thread.
 7. Peak memory is bounded by loading only the affected tile window.
 
 ### World Grid Multi-User
@@ -1308,15 +1339,721 @@ impl UndoHistory {
 
 ## Platform Considerations
 
-| Feature | Windows | macOS | Linux |
-|---------|---------|-------|-------|
-| Heightmap I/O | Tokio (IOCP) | Tokio (kqueue) | Tokio (epoll) |
-| GPU erosion | D3D12 compute dispatch | Metal compute | Vulkan compute |
-| Stack capture (undo debug) | `CaptureStackBackTrace` | `backtrace` | `backtrace` |
-| Multi-user transport | Tokio TCP | Tokio TCP | Tokio TCP |
-| Spatial index raycast | Shared BVH (all platforms) | Shared BVH | Shared BVH |
+| Feature | Windows | macOS | Linux | iOS | Android |
+|---------|---------|-------|-------|-----|---------|
+| Heightmap I/O | IOCP via windows-rs | GCD dispatch_io via dispatch2 | io_uring via rustix | GCD dispatch_io | io_uring via rustix |
+| GPU erosion | D3D12 compute | Metal compute | Vulkan compute | Metal compute | Vulkan compute |
+| Stack capture | `CaptureStackBackTrace` | `backtrace` | `backtrace` | `backtrace` | `backtrace` |
+| Multi-user transport | MsQuic via windows-rs | Networking.framework via objc2 | quinn-proto | Networking.framework | quinn-proto |
+| Spatial index | Shared BVH | Shared BVH | Shared BVH | Shared BVH | Shared BVH |
 
-All platform I/O uses the `Tokio runtime` controlled drain at the frame poll point. No stdlib file I/O.
+All platform I/O is non-blocking. The main thread polls completions at the frame boundary. No Tokio,
+no stdlib blocking file I/O, no `async fn` anywhere in the editor or engine.
+
+## Codegen Integration
+
+Entity templates, custom component types, biome rules, and placement rules are not interpreted at
+runtime. They compile to Rust via the codegen pipeline into the middleman `.dylib`. The engine loads
+the `.dylib` via `libloading`. Hot-reload recompiles the `.dylib` when templates change (sub-3s
+target).
+
+| Authoring artifact | Codegen output | Where it lives |
+|--------------------|----------------|----------------|
+| Entity template definition | `TemplateAsset` impl + accessors | middleman .dylib |
+| Custom component type | `ComponentTypeId` + property panel | middleman .dylib |
+| Biome rule | `BiomeRule` struct + `evaluate()` fn | middleman .dylib |
+| Placement rule | `FoliagePlacementRule` struct | middleman .dylib |
+| ViewportTool | `ViewportTool` impl | middleman .dylib |
+
+`ComponentTypeId` is the codegen'd stable identifier for a component type. It replaces `TypeId`
+everywhere. All `HashMap<TypeId, _>` in this design are replaced with sorted
+`Vec<(ComponentTypeId, _)>` for deterministic lookup via binary search.
+
+## Game Loop Integration
+
+Editor tool systems run in a dedicated **editor phase** inserted between `InputProcessing` and
+`GameUpdate` in the game loop. They must not conflict with game systems. The ECS scheduler tracks
+editor system access sets separately from game system access sets.
+
+```text
+Frame N:
+  InputProcessing
+  EditorPhase          ← tool systems run here
+    EntityPlacer
+    TerrainSculptor
+    FoliagePainter
+    TemplateManager::propagate_changes
+  GameUpdate           ← game systems (play-in-editor)
+  RenderSubmit
+  MainThread I/O poll  ← terrain tile completions arrive
+                         dirty tile flushes submitted
+```
+
+Frame-boundary handoff:
+
+- Terrain tile load completions become available when the main thread polls I/O at end of frame.
+  Loaded tiles are inserted into the `TerrainSculptor` ready-map. The sculpt brush reads them next
+  frame.
+- Dirty tile flush requests are submitted at end of frame via channel to the main thread.
+- Template propagation commits component mutations atomically via command buffer at the editor phase
+  sync point.
+
+## Cross-Subsystem Integration
+
+| Subsystem | Direction | Data | Mechanism |
+|-----------|-----------|------|-----------|
+| Spatial index | bidirectional | BVH queries, entity registration | Shared BVH API |
+| Asset pipeline | bidirectional | load/save terrain, templates | AssetDatabase API |
+| Render graph | produces | GPU compute passes (erosion, foliage) | Render graph nodes |
+| Input system | consumes | brush input, placement tools | Input actions |
+| ECS world | bidirectional | entity spawn/despawn, components | World API |
+| Physics | consumes | CSG collision, terrain collider | Physics API |
+| Navmesh | produces | navigation data from terrain | AI navigation API |
+| VFX | produces | wind for foliage, weather | Wind field texture |
+| Grids/volumes | bidirectional | heightmap, voxel terrain | Grid API |
+| Networking | bidirectional | multi-user cell locks | QUIC transport |
+| UI framework | consumes | tool panels, brush UI | Widget API |
+| Save system | produces | world state persistence | Save API |
+| Streaming | produces | cell load/unload requests | Asset pipeline |
+
+## Algorithm References
+
+| Algorithm | Used in | Reference |
+|-----------|---------|-----------|
+| BSP boolean CSG | `CsgProcessor` | <https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/> |
+| Hydraulic erosion (GPU particle) | `TerrainErosion` | <https://nickmcd.me/2020/04/10/hydraulic-erosion/> |
+| Thermal erosion | `TerrainErosion` | <https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf> |
+| Catmull-Rom spline evaluation | `SplineEditor` | <https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline> |
+| Bezier spline (de Casteljau) | `SplineEditor` | <https://pomax.github.io/bezierinfo/> |
+| Recast navmesh generation | `NavmeshPreview` | <https://recastnav.com/> |
+| Tetrahedral probe placement | `LightingSetup` | <https://gdcvault.com/play/1015312> |
+| Poisson-disk foliage distribution | `FoliagePainter`, `VegetationPainter` | <https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf> |
+| Quadtree world partitioning | `WorldPartitionViz` | <https://en.wikipedia.org/wiki/Quadtree> |
+
+## 2D and 2.5D Support
+
+All level and world editor tools work in 2D, 2.5D, and 3D modes. No separate code paths.
+
+1. **2D entity placement** — entities with `Transform2D` (Vec2 position, f32 rotation, Vec2 scale).
+   Z-order replaces depth. Placement tools operate on the XY plane.
+2. **Tilemap editing** — terrain equivalent for 2D. Tile palette, paint tool, auto-tiling rules
+   (Wang tiles). Cross-reference `rendering/2d.md`.
+3. **2D world partitioning** — grid-based streaming for large 2D worlds (RTS maps, open-world 2D).
+   Same streaming system with 2D cells.
+4. **Isometric** — isometric grid placement with snap. Support for isometric and hex grids
+   (`rendering/2d.md` `GridType`).
+5. **Parallax layer placement** — for 2D platformers, place background/foreground layers at
+   different parallax rates.
+6. **2D foliage** — scatter 2D sprites (grass, flowers) on a surface with density brushes. Same
+   `FoliagePainter` adapted for 2D.
+
+## Job System Usage
+
+Parallelized operations use the custom job system (crossbeam-deque work-stealing):
+
+| Operation | Parallelism | API |
+|-----------|-------------|-----|
+| `propagate_changes` (1000+ instances) | Data-parallel over instances | `par_iter` |
+| `auto_populate` over large regions | Region tiles in parallel | `scope()` |
+| Navmesh regeneration | Tile-parallel tile processing | `scope()` |
+| Foliage paint (10k instances) | Parallel scatter per chunk | `par_iter` |
+| CSG boolean evaluation | Single-threaded (BSP is serial) | — |
+| Biome rule evaluation | Data-parallel over terrain cells | `par_iter` |
+
+## Memory: Per-Thread Arenas
+
+Hot-path allocations use per-thread arenas. Reset at frame boundaries.
+
+| Allocation type | Arena scope |
+|-----------------|-------------|
+| Brush stroke temporaries | Per-frame worker arena |
+| Foliage placement buffers | Per-frame worker arena |
+| Raycast result lists | Per-frame worker arena |
+| Template propagation scratch | Per-frame worker arena |
+| CSG intermediate geometry | Per-operation stack arena |
+
+Terrain tile heightmap data is loaded into a bounded tile cache (not an arena). The cache evicts LRU
+tiles when the memory budget is exceeded.
+
+## Terrain Sculpting: Streaming Data Flow
+
+```mermaid
+flowchart TD
+    A[Camera moves / brush paints] --> B[Compute affected cells]
+    B --> C{Cell loaded?}
+    C -- Yes --> D[Apply brush kernel]
+    C -- No --> E[Submit load request via channel]
+    E --> F[Main thread: platform I/O poll]
+    F --> G[Tile data arrives next frame]
+    G --> D
+    D --> H[Mark tile dirty]
+    H --> I{End of frame?}
+    I -- Yes --> J[Submit flush requests via channel]
+    I -- No --> K[Wait]
+    J --> L[Main thread writes tiles to disk]
+```
+
+Cell load order: closest to brush first. Adjacent tiles prefetched when brush is within 1-tile
+margin of a cell boundary to eliminate cross-boundary latency spikes.
+
+## LOD System
+
+| Entity type | LOD 0 | LOD 1 | LOD 2+ |
+|-------------|-------|-------|--------|
+| Terrain | Full heightmap mesh | Decimated (4x reduction) | Flat quad |
+| Foliage | Full mesh | Billboard sprite | Hidden |
+| Placed entity | Full mesh (authored) | Reduced mesh (authored) | Impostor / hidden |
+
+LOD distances are configurable per quality tier (Low / Medium / High / Ultra). Authored per-asset
+LOD chains. The editor previews LOD transitions at configurable distance thresholds.
+
+## Scene Hierarchy Management
+
+The level editor manages ECS `ChildOf` hierarchies:
+
+1. **Reparent entity** — drag entity onto new parent in the outliner. Writes `ChildOf` component.
+   Converts `LocalTransform` so `GlobalTransform` is preserved.
+2. **Group** — select entities → Group. Creates an empty `Transform` parent entity. All selected
+   entities become children.
+3. **Ungroup** — select group entity → Flatten. Children are reparented to the group's parent. Group
+   entity is despawned.
+4. **Outliner sync** — the scene outliner mirrors the `ChildOf` hierarchy. Drag-and-drop in the
+   outliner changes `ChildOf`. Hierarchy depth visualized by indentation.
+
+## Multi-Scene Editing
+
+1. **Sub-scenes** — scenes load as entity references. A world scene may reference sub-scenes
+   (interiors, streaming cells). Sub-scene entities are namespaced by scene ID.
+2. **Sub-scene edits** — edits to a sub-scene asset propagate to all worlds that reference it. The
+   outliner shows nested scenes collapsible under their reference entity.
+3. **Cross-scene entity references** — resolved at load time by matching stable entity IDs in the
+   text scene format.
+4. **Scene outliner** — nested scenes show a scene icon. Expand to see sub-scene entities. Filter to
+   single scene by clicking the scene icon.
+
+## VR Editing
+
+1. **VR preview mode** — enter VR preview in the editor to validate scale and spatial feel. Viewport
+   renders to headset. Normal editing tools remain active.
+2. **Hand-tracked placement** — entity placement driven by tracked hand position. Trigger = confirm
+   placement. Grip = grab / move entity. Thumbstick = snap rotation.
+3. **VR grid and measurement** — grid snapping works in VR. Measurement tool shows distances between
+   entities as floating labels in 3D space.
+4. **VR brush painting** — terrain sculpt and paint brushes driven by hand position and trigger
+   pressure (pen-pressure equivalent).
+
+## Deep ECS Integration
+
+Every level/world editor operation is an ECS mutation routed through command buffers.
+
+### Entity lifecycle
+
+- **Place** → `spawn_entity` via command buffer with component set matching the template archetype.
+- **Delete** → `despawn` via command buffer. Spatial index entry removed at next sync point.
+- **Duplicate** → clone all components from source entity to new entity via command buffer.
+
+All mutations are deferred to the editor phase sync point for undo support.
+
+### Component editing
+
+| Tool | Component written |
+|------|------------------|
+| Transform gizmo | `Transform` / `Transform2D` |
+| Terrain brush | `TerrainChunk` (heightmap buffer) |
+| Foliage painter | `FoliageInstance` (instance buffer) |
+| Material swap | `MaterialOverride` |
+| CSG tool | `CsgBrush` |
+
+### Query-driven tools
+
+```rust
+// Selection picking
+Query<(Entity, &Transform, &Selectable)>
+// Terrain painting
+Query<(Entity, &TerrainChunk, &Transform)>
+// Foliage scatter
+Query<(Entity, &FoliageRegion)>
+```
+
+### Live preview in play-in-editor
+
+Editor command buffers merge with game command buffers at the same sync point. Level edits apply to
+the live game world in real time.
+
+### Archetype awareness
+
+Entity templates define a fixed component set. All instances share the same archetype for cache
+efficiency. Adding or removing components on an instance changes its archetype; the override map
+records the delta.
+
+### Change detection
+
+`Changed<T>` filters detect entities modified by gameplay during play-in-editor. The editor
+highlights them and offers apply-or-revert when exiting play mode.
+
+## Scene and Transform Integration
+
+1. **Transform hierarchy** — `ChildOf` relationships. The outliner displays the hierarchy. Drag-drop
+   changes `ChildOf`. The transform system propagates `LocalTransform` → `GlobalTransform`.
+2. **Local vs global editing** — the transform gizmo operates in local, global, or parent space.
+   Writes to `LocalTransform`; `GlobalTransform` updated by the transform system.
+3. **Transform snapping** — grid snap writes quantized values to `LocalTransform`. Surface snap
+   raycasts, then writes to `LocalTransform` converted from global to local space.
+4. **Transform propagation** — moving a parent moves all children. Undo stores only the parent's
+   change; children update automatically via the transform system.
+5. **2D transforms** — `Transform2D` entities: gizmo switches to XY-plane-only mode. Inspector shows
+   2D fields. Outliner shows z-order instead of depth.
+6. **Mixed 2D/3D** — a 2.5D game may have both `Transform` and `Transform2D` entities in the same
+   scene. Gizmo adapts per selected entity.
+7. **Transform precision** — the editor warns when placing entities beyond a configurable distance
+   threshold (default 10 km). Origin-rebasing workflow available: shift origin to camera, edit,
+   shift back.
+
+## Pen Tablet Support
+
+All brush tools respond to pressure-sensitive pen input.
+
+### Platform input APIs
+
+| Platform | API |
+|----------|-----|
+| macOS | `NSEvent` pressure/tilt via objc2 |
+| Windows | Windows Ink `WM_POINTER*` via windows-rs |
+| Linux | libinput tablet events via evdev |
+| iPad (Sidecar) | Same as macOS |
+
+### Brush dynamics
+
+| Dynamic | Description |
+|---------|-------------|
+| Pressure → strength | 0.0 at light touch, 1.0 at full pressure. Mapping curve configurable. |
+| Tilt → angle/shape | Terrain sculpt: tilt controls ridge direction. Paint: tilt elongates footprint. |
+| Barrel button | Configurable action (default: eyedropper). Second button: undo last stroke. |
+| Eraser end | Flip pen to erase mode automatically. |
+| Size | Pen pressure, keyboard +/-, or scroll wheel. |
+| Falloff | Linear, smooth, sharp, or custom curve. |
+| Spacing | Distance between samples as % of brush size. |
+| Jitter | Random offset per sample for organic feel. |
+| Flow vs opacity | Flow = additive per stroke. Opacity = maximum per stroke. |
+
+### Stroke smoothing
+
+Catmull-Rom or Bezier smoothing applied to input path to reduce hand tremor. Strength configurable
+(0 = raw input, 1 = heavy smoothing).
+
+Each complete brush stroke (pen down → pen up) is one undo step.
+
+## Terrain Painting Depth
+
+1. **Height painting** — raise, lower, smooth, flatten, noise, ramp, stamp. All respond to pen
+   pressure.
+2. **Texture splatmap painting** — up to 8 layers per tile (mobile: 4). Blend by weight per texel.
+   Auto-paint rules: slope > threshold → rock, altitude > threshold → snow.
+3. **Foliage painting** — density brush + per-type mesh, scale range, random rotation, surface
+   alignment, collision avoidance.
+4. **Hole painting** — paint holes for caves, tunnels, foundations. Per-triangle visibility flag.
+5. **Water painting** — water volume regions. Water level per region. Flow direction painting.
+6. **Road/path painting** — spline-based roads: auto-flatten terrain, apply road material.
+   Cross-reference `SplineEditor`.
+
+## Entity Placement Depth
+
+### Placement modes
+
+| Mode | Description |
+|------|-------------|
+| Click | Raycast to surface, place at cursor |
+| Drag | Place and orient simultaneously |
+| Paint | Continuous placement along cursor path |
+| Scatter | Random placement within brush radius |
+| Line | Place along a line between two points |
+| Grid | Place at regular grid intervals |
+| Spline | Place along a spline path |
+
+### Additional placement capabilities
+
+1. **Randomization** — position jitter, rotation (full, align-to-surface, constrained axis), scale
+   (uniform or per-axis within range).
+2. **Replace** — swap asset reference while preserving transform, hierarchy, and overrides.
+3. **Align to surface** — up vector aligns to surface normal. Modes: full, Y-up only, custom blend.
+4. **Physics drop** — simulate N frames to let the entity settle naturally. "Simulate then freeze."
+5. **Selection tools** — click, box, lasso, paint, volume, by type, by component, by data query.
+
+## Debug Visualizations
+
+All overlays toggle per category. Filtered by render layer bitmask (debug cameras only).
+
+### Physics
+
+| Overlay | Description |
+|---------|-------------|
+| Collider wireframes | Color by type: static=blue, dynamic=green, kinematic=yellow, trigger=magenta |
+| Contact points | Red dots with normals as arrows; penetration depth as line length |
+| Joint connections | Lines between constrained bodies; limits as arcs/cones |
+| Raycast debug | Hit point and normal lines |
+| Broadphase BVH | Physics-private BVH bounding boxes; color by depth level |
+| CCD sweep | Extruded shapes between frame positions where tunneling prevention activates |
+
+### Navigation
+
+| Overlay | Description |
+|---------|-------------|
+| Navmesh | Triangles with walkability coloring; polygon IDs; area classification; cost multiplier |
+| Agent paths | Lines from current position to destination |
+| Off-mesh links | Arcs showing jump/ladder connections |
+| Navigation obstacles | Red wireframes; navmesh cut regions |
+| A* debug | Open/closed sets during pathfinding; animated search expansion |
+| Crowd | Agent avoidance volumes; desired velocity vectors; density heat map |
+
+### Spatial index
+
+| Overlay | Description |
+|---------|-------------|
+| Shared BVH | Bounding boxes per depth level |
+| Grid cells | Networking relevancy grid boundaries |
+| Streaming cells | World partition cells colored by state: loaded=green, loading=yellow, unloaded=gray |
+
+### AI
+
+| Overlay | Description |
+|---------|-------------|
+| Sense volumes | Vision cones, hearing spheres |
+| Awareness | State icons above NPCs |
+| Behavior tree | Current node highlighted |
+| Influence map | Heat overlay; per-faction toggle |
+| Flow field | Direction arrows; color = turbulence |
+
+### Audio
+
+| Overlay | Description |
+|---------|-------------|
+| Sound sources | Spheres at max-distance radius |
+| Attenuation | Falloff rings |
+| Listener | Position and orientation |
+| Occlusion | Obstruction ray lines; absorption coefficient at hit points |
+
+### Lighting
+
+| Overlay | Description |
+|---------|-------------|
+| Light wireframes | Point=sphere, spot=cone, directional=arrow |
+| Shadow cascades | Frustum outlines per cascade |
+| Light probes | Position markers |
+| Reflection probes | Capture volume boxes |
+
+### Performance
+
+| Overlay | Description |
+|---------|-------------|
+| Overdraw | Pixel shader complexity heat map |
+| Draw calls | Count per region |
+| Triangle density | Heat map |
+| LOD level | Color: green=LOD0, yellow=LOD1, red=LOD2+ |
+
+### Ray tracing
+
+| Overlay | Description |
+|---------|-------------|
+| BVH traversal | Nodes traversed per pixel as heat map |
+| Ray count | Rays per pixel for reflections/GI/shadows |
+| Denoiser compare | Toggle noisy vs denoised |
+| BLAS/TLAS | Bounding boxes colored by BLAS instance count |
+
+### Custom gizmos via logic graphs
+
+Plugins define custom gizmos as logic graphs outputting draw commands (lines, spheres, boxes, text).
+Example: a "spawn zone" component draws its radius as a dashed circle.
+
+## Voxel Editing Tools
+
+For voxel-based games (destructible terrain, SDF modeling).
+
+1. **Block placement** — place/remove voxels. Cursor snaps to voxel grid. Face selection determines
+   attachment face.
+2. **Block painting** — paint block types onto surface faces.
+3. **Region fill** — select 3D box, fill with block type. Hollow option fills shell only.
+4. **Copy/paste volumes** — copy 3D region, paste with rotation and mirror.
+5. **SDF sculpting** — add material (sphere stamp), remove (sphere carve), smooth, sharpen. Pen
+   pressure controls strength.
+6. **Voxel palette** — block type selector with search and category filter.
+7. **Chunk visualization** — wireframe overlay colored by: dirty state, LOD level, streaming state.
+8. **Cross-reference** — voxel data lives in `grids-volumes.md` `VoxelChunk<T>`. Editor writes to
+   voxel components; render system displays them.
+
+## CSG Modeling Tools
+
+Constructive solid geometry for rapid level blockout. Algorithm: BSP-based boolean on half-edge
+mesh. Reference: <https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/>
+
+1. **Primitives** — box, sphere, cylinder, cone, wedge, arch, stairs. Each is a `CsgBrush` entity
+   with a `CsgShape` component.
+2. **Boolean operations** — additive (add geometry), subtractive (remove geometry), intersection
+   (keep overlap).
+3. **Brush manipulation** — select faces/edges/vertices. Extrude and scale faces.
+4. **Texture mapping** — per-face material. UV auto-projection (planar, box, cylindrical). UV
+   offset/scale/rotation per face.
+5. **CSG evaluation** — boolean ops evaluated on edit. Result is a triangle mesh for rendering and
+   collision. Source brushes remain editable.
+6. **Convert to mesh** — "Finalize CSG" converts to static mesh asset. Source brushes kept or
+   discarded.
+7. **Performance** — evaluation must complete in < 100 ms for < 50 brushes.
+
+## Custom Viewport Tools via Logic Graphs
+
+Users and plugins define custom viewport tools as logic graphs:
+
+1. **Registration** — a logic graph implementing the codegen'd `ViewportTool` trait:
+   `on_activate()`, `on_deactivate()`, `on_input(event)`, `on_draw_gizmos()`, `on_apply()`. Appears
+   in the viewport toolbar.
+2. **Input handling** — receives viewport input events (mouse move, click, drag, scroll, keyboard).
+   Produces transform commands or custom actions.
+3. **Gizmo drawing** — `on_draw_gizmos()` draws custom overlays: lines, shapes, text, handles.
+   Handles are interactive draggable points.
+4. **Examples** — road spline tool, river tool, fence/wall tool, scatter tool, measurement tool.
+5. **Settings panel** — widget tree produced by the tool's logic graph. Persisted in user
+   preferences.
+
+## Viewport Statistics Overlay
+
+Toggleable real-time metrics overlay.
+
+### Categories
+
+1. **Frame timing** — FPS (current/average/1% low), frame time ms, GPU frame time, CPU breakdown.
+2. **Geometry** — triangles, meshlets, vertices, draw calls, compute dispatches.
+3. **Culling** — entities submitted vs culled; meshlet culling ratio; LOD distribution per level.
+4. **Memory** — GPU VRAM used/total; texture atlas budget; buffer memory; CPU arena watermarks.
+5. **Scene** — total entities; entities in view; light counts; shadow cascades; particle emitters;
+   audio sources.
+6. **Streaming** — cells loaded/total; in-flight I/O; bandwidth MB/s; cache hit rate.
+7. **Render passes** — per-pass timing from render graph profiler; pass count; barrier count.
+8. **Display modes** — Compact (one line), Detailed (multi-line), Graph (rolling 300-frame plot),
+   Off.
+9. **Integration** — stats from render graph profiler, GPU timestamp queries, ECS world statistics,
+   streaming system. Overlay is a UI widget with dirty-based rendering.
+
+## Non-Destructive Procedural Level Generation
+
+Every procedural step is non-destructive: tweaking any parameter regenerates downstream without
+losing manual edits.
+
+### Generator stack
+
+Each scene has an ordered stack of generator nodes evaluated top-to-bottom. Changing any node
+re-evaluates downstream nodes.
+
+| Node type | Description |
+|-----------|-------------|
+| Terrain generator | Noise-based heightmap (Perlin, Simplex, Worley, FBM). Configurable octaves, scale, seed. |
+| Erosion pass | Hydraulic/thermal erosion on the heightmap. Non-destructive: adjusting params regenerates from pre-erosion state. |
+| Biome painter | Altitude + slope + noise → biome ID. Rules are logic graph expressions (compiles to Rust per codegen pipeline). |
+| Foliage scatter | Poisson-disk distribution of vegetation per biome. Density and species mix per biome. |
+| Structure placer | Prefab instances at rule-determined locations. Placement rules are logic graphs. |
+| Road network | Connect structures with spline roads. Roads auto-flatten terrain and paint road material. |
+| River generator | Trace water flow high-to-low. Carve terrain, place water volumes, add bridge prefabs. |
+| Wall/fence generator | Auto-place walls along painted region boundaries. |
+
+### Spline-based generation
+
+3. **Spline input** — user draws splines in viewport as input to generators: road, river, fence,
+   scatter.
+4. **Per-control-point data** — width, material blend, foliage density, height offset. Interpolated
+   along spline.
+5. **Non-destructive edit** — moving a control point regenerates only the affected region.
+
+### Painted area generation
+
+6. **Paint masks** — binary or gradient masks drive generators: "scatter trees only in painted
+   area", "flatten in painted area".
+7. **Mask layers** — forestation, urbanization, danger zones. Each drives different generators.
+   Persistent editable assets.
+
+### Override layer
+
+8. **Override layer** — manual edits after procedural generation are stored as an override layer
+   separate from procedural output. Regeneration re-applies overrides on top.
+9. **Override resolution** — generator/override conflicts highlighted. Options: keep override,
+   discard, or adjust to fit.
+10. **Lock regions** — lock a region to prevent regeneration from affecting it.
+
+### Workflow guarantees
+
+11. **Parameter history** — every parameter change is in the undo tree.
+12. **Seed control** — each generator has an undoable, saveable random seed.
+13. **Preview before commit** — wireframe/transparent preview before commit. Adjust while
+    previewing.
+14. **Incremental regeneration** — only affected spatial chunks re-evaluate. Unchanged regions
+    cached.
+15. **Export to static** — "Bake Procedural" converts to static entities and terrain. Generator
+    stack preserved in scene file.
+
+## Scene Diffing
+
+Show what changed in a scene since last save or commit.
+
+1. **Diff model** — compare two scene states at the ECS entity/component level: added, removed,
+   modified (per-field delta).
+2. **Viewport overlay** — green outline = added, yellow = modified, red = deleted (phantom ghost
+   shown for reference).
+3. **Outliner badges** — green +, yellow ~, red - badges per entity. Filter to changed only.
+4. **Component diff** — per-field diff in inspector: old value (dimmed) next to new. Revert button
+   per field.
+5. **Diff source** — configurable: last save, Git HEAD, named branch, specific commit hash.
+6. **Merge** — three-way merge for scene files. Per-entity conflict resolution: accept ours, accept
+   theirs, manual merge. Non-conflicting changes auto-merge.
+
+## Scene Outliner
+
+Tree panel showing the entity hierarchy.
+
+1. **Tree structure** — mirrors `ChildOf` hierarchy. Root entities at top level. Expand/collapse per
+   node.
+2. **Entity row** — expand arrow, visibility toggle, lock toggle, entity icon (by primary
+   component), name, component badge count.
+3. **Selection sync** — clicking in outliner selects in viewport and vice versa. Ctrl+click and
+   Shift+click multi-select. Drag to reparent.
+4. **Search and filter** — filter by name, by type, by component.
+5. **Drag and drop** — reparent, add as child, reorder siblings, drag from asset browser.
+6. **Context menu** — Rename, Duplicate, Delete, Group, Ungroup, Create Prefab, Focus in Viewport,
+   Add Component, Copy/Paste.
+7. **Diff badges** — diff status per entity when scene diffing is active.
+8. **Prefab indicators** — prefab icon on instances. Bold indicator for overridden properties.
+
+## Focus and Frame Selected
+
+1. **Focus selected** — F key. Frames selected entity(ies) in viewport. Camera orbits at distance
+   showing full bounding box.
+2. **Focus hierarchy** — Shift+F. Frames selection plus all children.
+3. **Double-click focus** — double-click entity in outliner to focus in viewport.
+4. **Zoom extents** — Home key frames the entire scene.
+5. **Orbit after focus** — camera enters orbit mode around focused entity. First-person right-click
+   exits orbit.
+6. **2D focus** — centers and zooms to 2D entity bounds in 2D viewport mode.
+
+## Viewport Navigation
+
+### Orbit/pivot mode (default)
+
+1. **Orbit** — middle mouse drag (or Alt+left drag) around pivot point.
+2. **Pan** — middle mouse + Shift (or Alt+middle drag).
+3. **Zoom** — scroll wheel toward/away from pivot.
+4. **Maya-style controls** — Alt+Left=orbit, Alt+Middle=pan, Alt+Right=dolly. Optional preference.
+
+### First-person mode
+
+5. **Activate** — hold right mouse button. WASD moves, mouse look rotates.
+6. **Speed** — scroll wheel adjusts movement speed. Shift=fast, Ctrl=slow.
+7. **Fly mode** — Q=down, E=up (world-relative). Space=up, C=down (alternative).
+
+### Cursor locking
+
+8. **Right-click lock** — cursor locked to viewport center during first-person navigation. Returns
+   to original position on release.
+9. **Orbit lock** — optional cursor lock during orbit (configurable).
+10. **Platform implementation:**
+
+| Platform | Cursor lock API |
+|----------|----------------|
+| macOS | `CGAssociateMouseAndMouseCursorPosition(false)` + `CGDisplayHideCursor` via objc2 |
+| Windows | `SetCursorPos` + `ShowCursor(false)` + `ClipCursor` via windows-rs |
+| Linux | `XGrabPointer` / `wl_pointer.set_cursor(null)` + relative motion events |
+
+### Touch device navigation (Android/iPad)
+
+11. **One-finger drag** — pan.
+12. **Two-finger pinch** — zoom.
+13. **Two-finger rotate** — orbit.
+14. **Three-finger drag** — first-person fly mode.
+15. **Double-tap entity** — select entity.
+16. **Long press** — context menu.
+17. **Touch toolbar** — floating large-button toolbar (select, move, rotate, scale, play, undo).
+18. **No cursor locking** — gesture-only, no edge-of-screen issues.
+
+## Non-Destructive Editing (Engine-Wide)
+
+Non-destructive editing is the default workflow. Users can change any parameter without losing
+downstream work.
+
+### Coverage table
+
+| System | Non-destructive? | Mechanism |
+|--------|-----------------|-----------|
+| Terrain sculpt | Yes | Override layers on procedural base |
+| Terrain painting | Yes | Splatmap layers with masks |
+| Foliage scatter | Yes | Density map + override layer |
+| Procedural placement | Yes | Generator stack + overrides |
+| Prefab instances | Yes | Sparse overrides on prefab base |
+| Material parameters | Yes | Instance overrides on material asset |
+| Animation | Yes | Non-linear layers |
+| CSG brushes | Yes | Source brushes preserved until bake |
+| Voxel edits | Partial | Delta from procedural base |
+| Logic graphs | No | Direct editing (undo tree for safety) |
+| Data tables | No | Direct editing (undo tree for safety) |
+
+### Non-destructive animation workflow
+
+1. **Animation layers** — stack clips with blend weight, blend mode (additive/override), and bone
+   mask. Layers compose independently.
+2. **Non-linear editing** — `CompositeAnimation` entity stacks: base pose → mocap clip → correction
+   layer → procedural IK → runtime blend.
+3. **Timeline scrubber** — viewport shows entities at the scrubber time. Scrub a cutscene, day/night
+   cycle, NPC schedule, or property animation and see results immediately.
+4. **Scrubber-aware editing** — moving an entity while scrubbed at time T creates a keyframe at T.
+5. **Override on animated** — manual position overrides timeline at current time. "Bake to keyframe"
+   makes it permanent.
+
+### Non-destructive stack per entity
+
+6. **Layer stack** — Base (prefab/template) → Procedural (generator) → Manual override (user edits)
+   → Animation (timeline at current time) → Runtime (play mode only). Each layer independently
+   inspectable and revertable.
+7. **Override indicators** — bold = manual override, italic = procedural, normal = base, pulsing =
+   animated.
+8. **Revert per layer** — right-click → "Revert to Base", "Revert to Procedural", "Remove Animation
+   Override."
+
+## Scene Merging and Git Conflict Resolution
+
+When Git merges two branches that edited the same scene, the editor resolves at the entity/component
+level.
+
+1. **Scene file format** — entity-per-block text format. Non-overlapping entity edits merge
+   automatically. Binary assets use Git LFS pointer merge.
+2. **Automatic merge** — different entities → automatic success. Editor validates merged scene on
+   open.
+3. **Entity-level conflict** — same entity edited on both branches → per-entity resolution dialog:
+   accept ours, accept theirs, or manual merge. Per-component and per-field resolution available.
+4. **Structural conflicts** — entity deleted on branch A but modified on branch B → dialog shows
+   options to keep or delete.
+5. **Prefab merge** — prefab definition merges operate on the source. Instance overrides merge
+   automatically; conflicting overrides use per-field resolution.
+6. **Merge preview** — viewport diff coloring (green = added from theirs, yellow = conflicting, red
+   = deleted from ours) before committing.
+7. **Tool integration** — editor registers as external merge tool for scene file types. Git invokes
+   the editor for conflict resolution.
+
+## Git LFS Locking and Read-Only Assets
+
+Binary assets managed by Git LFS support file locking.
+
+1. **Lock on edit** — opening a binary asset for editing auto-acquires a Git LFS lock.
+2. **Lock indicator** — lock badge in content browser: green = your lock, red = other's lock.
+3. **Read-only mode** — assets locked by another user open read-only. All fields disabled. Gizmos
+   disabled. Banner: "Locked by [user] — read only."
+4. **Lock request** — "Request Lock" sends notification to the lock holder.
+5. **Auto-unlock on save** — configurable: release lock on save+commit or keep until manually
+   released.
+6. **Force unlock** — admin-only force-release.
+7. **Lock scope:**
+
+| Asset type | Lock granularity |
+|------------|-----------------|
+| Scene files | Per-scene or per-cell (multi-user cell locking) |
+| Binary assets | Per-file (Git LFS) |
+| Data tables | Per-table or per-row (configurable) |
+
+8. **Offline support** — warns "Cannot acquire lock — working offline." Conflict flagged on
+   reconnect if lock was taken.
 
 ## Test Plan
 
@@ -1349,8 +2086,24 @@ All platform I/O uses the `Tokio runtime` controlled drain at the frame poll poi
 | `test_biome_rule_validation`    | R-15.6.5 |
 | `test_probe_grid_placement`     | R-15.6.6 |
 | `test_navmesh_slope_limit`      | R-15.6.7 |
-| `test_partition_budget`         | R-15.6.8 |
-| `test_multiuser_lock`           | R-15.6.8 |
+| `test_partition_budget`                    | R-15.6.8 |
+| `test_multiuser_lock`                      | R-15.6.8 |
+| `test_template_component_sorted_vec`       | R-15.2.2 |
+| `test_override_map_btreemap_determinism`   | R-15.2.3 |
+| `test_propagate_par_iter_1000`             | R-15.2.2 |
+| `test_sculpt_no_worker_io`                 | R-15.6.1 |
+| `test_csg_under_100ms`                     | R-15.2.4 |
+| `test_foliage_smallvec_no_heap`            | R-15.2.7 |
+| `test_arena_reset_per_frame`               | R-15.6.1 |
+| `test_2d_placement_xy_plane`               | R-15.2.1 |
+| `test_scene_diff_added_entity`             | R-15.2.2 |
+| `test_scene_diff_modified_component`       | R-15.2.3 |
+| `test_undo_dyn_command_editor_path`        | R-15.2.1 |
+| `test_voxel_block_place_remove`            | R-15.2.4 |
+| `test_procedural_generator_stack_order`    | R-15.6.5 |
+| `test_procedural_override_layer_preserved` | R-15.6.5 |
+| `test_pen_pressure_brush_strength`         | R-15.6.1 |
+| `test_lod_foliage_billboard_distance`      | R-15.6.5 |
 
 1. **`test_grid_snap_alignment`** — Place at (1.3, 0, 2.7) with grid 1.0, verify snaps to (1, 0, 3).
 2. **`test_surface_snap_terrain`** — Raycast onto sloped terrain, verify entity aligns to surface
@@ -1388,27 +2141,84 @@ All platform I/O uses the `Tokio runtime` controlled drain at the frame poll poi
 25. **`test_navmesh_slope_limit`** — Generate navmesh, verify steep slopes marked non-walkable.
 26. **`test_partition_budget`** — Add entities exceeding budget, verify over_budget flag set.
 27. **`test_multiuser_lock`** — Two users request same cell, verify second denied.
+28. **`test_template_component_sorted_vec`** — Insert components in arbitrary order, verify binary
+    search finds each by `ComponentTypeId` in O(log n).
+29. **`test_override_map_btreemap_determinism`** — Insert 100 overrides, iterate twice, verify
+    identical order both times.
+30. **`test_propagate_par_iter_1000`** — Propagate changes to 1000 template instances via
+    `par_iter`, verify all updated and total time < 16 ms.
+31. **`test_sculpt_no_worker_io`** — Apply sculpt stroke; verify no file I/O system calls originate
+    from worker threads (all I/O on main thread).
+32. **`test_csg_under_100ms`** — Boolean op on 50 primitives completes in < 100 ms.
+33. **`test_foliage_smallvec_no_heap`** — Create `EntityTemplate` with 3 children; verify `SmallVec`
+    inline storage used (no heap allocation).
+34. **`test_arena_reset_per_frame`** — Run 3 sculpt strokes; verify arena watermark resets between
+    frames.
+35. **`test_2d_placement_xy_plane`** — Place entity with `Transform2D`; verify Z is ignored and
+    placement is confined to XY plane.
+36. **`test_scene_diff_added_entity`** — Spawn entity in scene B; diff against scene A; verify green
+    added badge appears.
+37. **`test_scene_diff_modified_component`** — Modify `Transform` on entity; diff; verify yellow
+    modified badge and per-field delta.
+38. **`test_undo_dyn_command_editor_path`** — Verify `Box<dyn EditorCommand>` executes and undoes
+    correctly; confirm no allocation on game-runtime paths.
+39. **`test_voxel_block_place_remove`** — Place voxel block; verify component data updated. Remove;
+    verify cleared.
+40. **`test_procedural_generator_stack_order`** — Stack terrain → erosion → foliage generators;
+    verify evaluation order top-to-bottom.
+41. **`test_procedural_override_layer_preserved`** — Manually move a procedurally placed tree;
+    regenerate; verify tree remains at manual position.
+42. **`test_pen_pressure_brush_strength`** — Inject pressure=0.5; verify brush strength equals 0.5 ×
+    max strength.
+43. **`test_lod_foliage_billboard_distance`** — Place foliage at LOD1 distance; verify billboard
+    sprite rendered instead of mesh.
+44. **`test_lfs_lock_acquired_on_edit`** — Open binary asset for editing; verify LFS lock request
+    sent.
+45. **`test_lfs_read_only_when_locked`** — Asset locked by another user; verify all inspector fields
+    disabled.
 
 ### Integration Tests
 
-| Test                               | Req      |
-|------------------------------------|----------|
-| `test_place_undo_redo`             | R-15.2.1 |
-| `test_template_save_load_round_trip` | R-15.2.2 |
-| `test_csg_render_collision`        | R-15.2.4 |
-| `test_terrain_sculpt_async_io`     | R-15.6.1 |
-| `test_erosion_gpu_15fps`           | R-15.6.2 |
-| `test_multiuser_concurrent`        | R-15.6.8 |
-| `test_partition_streaming`         | R-15.6.8 |
+| Test                                          | Req      |
+|-----------------------------------------------|----------|
+| `test_place_undo_redo`                        | R-15.2.1 |
+| `test_template_save_load_round_trip`          | R-15.2.2 |
+| `test_csg_render_collision`                   | R-15.2.4 |
+| `test_terrain_sculpt_platform_io`             | R-15.6.1 |
+| `test_erosion_gpu_15fps`                      | R-15.6.2 |
+| `test_multiuser_concurrent`                   | R-15.6.8 |
+| `test_partition_streaming`                    | R-15.6.8 |
+| `test_template_codegen_hot_reload`            | R-15.2.2 |
+| `test_multiuser_quic_transport`               | R-15.6.8 |
+| `test_procedural_bake_to_static`              | R-15.6.5 |
+| `test_scene_merge_auto_noconflict`            | R-15.6.8 |
+| `test_scene_merge_conflict_per_field`         | R-15.6.8 |
+| `test_2d_tilemap_streaming`                   | R-15.6.8 |
+| `test_navmesh_job_system_parallel`            | R-15.6.7 |
 
 1. **`test_place_undo_redo`** — Place entity, undo, verify removed. Redo, verify restored.
-2. **`test_template_save_load_round_trip`** — Create nested entity template, save, load, verify
-   identical structure.
+2. **`test_template_save_load_round_trip`** — Create nested entity template, save as rkyv, load,
+   verify identical structure.
 3. **`test_csg_render_collision`** — CSG output renders correctly and collision mesh matches.
-4. **`test_terrain_sculpt_async_io`** — Sculpt with async I/O, verify no worker threads block.
+4. **`test_terrain_sculpt_platform_io`** — Sculpt with platform-native I/O, verify no worker threads
+   block and all I/O routes through the main thread.
 5. **`test_erosion_gpu_15fps`** — Run erosion on 2048x2048, verify preview stays above 15 FPS.
 6. **`test_multiuser_concurrent`** — Two users edit disjoint cells, verify both changes persist.
 7. **`test_partition_streaming`** — Load/unload cells, verify streaming states correct in overlay.
+8. **`test_template_codegen_hot_reload`** — Modify a component type; verify middleman .dylib
+   recompiles and all template instances reflect the new type descriptor.
+9. **`test_multiuser_quic_transport`** — Two-user session over QUIC; verify cell lock grant/deny
+   round-trips without Tokio.
+10. **`test_procedural_bake_to_static`** — Run generator stack; bake; verify static entities match
+    generator preview and generator stack is preserved.
+11. **`test_scene_merge_auto_noconflict`** — Two branches edit different entities; merge; verify
+    zero conflicts and both changes present.
+12. **`test_scene_merge_conflict_per_field`** — Two branches modify same entity's `Transform`;
+    verify per-field resolution dialog surfaces both values.
+13. **`test_2d_tilemap_streaming`** — Large 2D world; move camera; verify cells load/unload via
+    platform I/O on main thread.
+14. **`test_navmesh_job_system_parallel`** — Regenerate navmesh for 64m region; verify worker
+    threads used via `scope()`; result correct and time < 500 ms.
 
 ### Benchmarks
 
@@ -1437,7 +2247,7 @@ participate in generic ECS queries.
 **Q2. How can this design be improved?**
 
 The `MultiUserSession` (F-15.6.8) uses cell-level locking, which is too coarse for large cells and
-too fine for small ones. The `TerrainSculptor` streams tiles via `Tokio runtime` but does not
+too fine for small ones. The `TerrainSculptor` streams tiles via platform-native I/O but does not
 prefetch adjacent tiles, causing latency spikes when the brush crosses tile boundaries. The
 `CsgProcessor` (F-15.2.4) lacks UV mapping on boolean results, making CSG geometry unusable without
 manual UV assignment. Adaptive lock granularity, tile prefetching, and automatic UV projection would
@@ -1462,10 +2272,10 @@ would directly benefit RTS, RPG, and open-world genres.
 **Q5. Is this design cohesive with the overall engine?**
 
 The level editor is deeply cohesive with the engine -- placement uses the shared spatial index,
-terrain I/O uses `Tokio runtime`, entity templates use the reflection system, and all tools operate
-on the live ECS world. The `OverrideMap` for entity template instances (F-15.2.3) mirrors the
-material instance override pattern (F-15.3.5), creating a consistent authoring mental model. The
-multi-user gaps exist.
+terrain I/O uses platform-native non-blocking I/O, entity templates use codegen'd type descriptors,
+and all tools operate on the live ECS world. The `OverrideMap` for entity template instances
+(F-15.2.3) mirrors the material instance override pattern (F-15.3.5), creating a consistent
+authoring mental model. The multi-user gaps exist.
 
 ## Open Questions
 
@@ -1479,5 +2289,88 @@ multi-user gaps exist.
    data to determine optimal cell dimensions for typical foliage densities.
 5. **Erosion GPU backend** -- GPU compute erosion requires a render graph compute pass. Determine
    whether to run erosion as a standalone compute dispatch or integrate into the frame render graph.
-6. **Entity template serialization format** -- RON with binary companion files (per constraints) or
-   a dedicated entity template binary format for faster loading. Evaluate load-time impact.
+6. **Entity template serialization format** -- Resolved: rkyv for zero-copy binary. No RON.
+
+## Review feedback
+
+### RF-1: Remove all async/await [APPLIED]
+
+### RF-2: Replace Tokio with platform-native I/O [APPLIED]
+
+### RF-3: Replace TypeId with codegen'd ComponentTypeId [APPLIED]
+
+### RF-4: Codegen pipeline for templates and user types [APPLIED]
+
+### RF-5: Replace HashMap on hot paths [APPLIED]
+
+### RF-6: rkyv serialization [APPLIED]
+
+### RF-7: Game loop phase [APPLIED]
+
+### RF-8: Cross-subsystem integration table [APPLIED]
+
+### RF-9: Algorithm reference URLs [APPLIED]
+
+### RF-10: Complete platform considerations [APPLIED]
+
+### RF-11: 2D/2.5D support [APPLIED]
+
+### RF-12: Custom job system [APPLIED]
+
+### RF-13: Justify dyn EditorCommand [APPLIED]
+
+### RF-14: SmallVec [APPLIED]
+
+### RF-15: Per-thread arenas [APPLIED]
+
+### RF-16: Frame-boundary handoff [APPLIED]
+
+### RF-17: World streaming data flow [APPLIED]
+
+### RF-18: LOD system [APPLIED]
+
+### RF-19: Scene hierarchy management [APPLIED]
+
+### RF-20: Multi-scene editing [APPLIED]
+
+### RF-21: VR editing considerations [APPLIED]
+
+### RF-22: "Everything compiles to Rust" [APPLIED]
+
+### RF-23: Deep ECS integration [APPLIED]
+
+### RF-24: Scene and transform system integration [APPLIED]
+
+### RF-25: Pen tablet support [APPLIED]
+
+### RF-26: Terrain painting depth [APPLIED]
+
+### RF-27: Entity placement and manipulation depth [APPLIED]
+
+### RF-28: Debug visualizations and gizmos [APPLIED]
+
+### RF-29: Voxel editing tools [APPLIED]
+
+### RF-30: CSG modeling tools [APPLIED]
+
+### RF-31: Custom viewport tools via logic graphs [APPLIED]
+
+### RF-32: Viewport statistics overlay [APPLIED]
+
+### RF-33: Non-destructive procedural level generation [APPLIED]
+
+### RF-34: Scene diffing [APPLIED]
+
+### RF-35: Scene outliner tree [APPLIED]
+
+### RF-36: Focus and frame selected [APPLIED]
+
+### RF-37: Viewport navigation modes [APPLIED]
+
+### RF-38: Engine-wide non-destructive editing [APPLIED]
+
+### RF-39: Scene merging and Git conflict resolution [APPLIED]
+
+### RF-40: Git LFS locking and read-only assets [APPLIED]
+
+### RF-41: Expanded debug visualizations [APPLIED]

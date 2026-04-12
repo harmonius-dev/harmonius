@@ -2227,3 +2227,220 @@ procedural generation graph (F-3.6.12) to avoid duplication.
 10. **Atmosphere LUT dirty threshold** -- Sun angle sensitivity for LUT recompute triggers.
 11. **Volumetric fog integration** -- Unified froxel volume vs per-system separate volumes.
 12. **Star catalog** -- Hipparcos ~118K vs Tycho-2 ~2.5M. Memory budget vs visual quality.
+
+## Review Feedback
+
+### RF-1: Replace all Tokio/async with platform-native I/O
+
+6 Tokio references + 3 async fn signatures. Replace with:
+
+- Linux: io_uring via rustix
+- Windows: IOCP via windows-rs
+- macOS: GCD dispatch_io via dispatch2
+
+Update streaming APIs to synchronous with channel-based I/O. Update the Async I/O Backends table
+accordingly.
+
+### RF-2: Remove all Reflect derives
+
+30+ types derive Reflect. Remove and note that codegen generates type metadata statically. Zero
+reflection constraint.
+
+### RF-3: Replace ThreadPool with job system scope()
+
+Line 1154. Use the custom job system's crossbeam-deque work-stealing pool.
+
+### RF-4: Terrain collision uses physics-private BVH
+
+Terrain colliders go in the **physics-private BVH only** — not the shared BVH. The shared BVH is for
+AI/gameplay/audio spatial queries and does NOT contain collision geometry.
+
+Update `TerrainCollision.bvh_handle` to reference the physics BVH explicitly. The physics foundation
+design (RF-1) owns the physics BVH specification.
+
+If terrain needs to be spatially queryable by AI/gameplay (e.g., "find nearest terrain point"),
+register a lightweight AABB in the shared BVH per terrain chunk — but the detailed collision mesh
+lives exclusively in the physics BVH.
+
+### RF-5: Consolidate rendering features to render designs
+
+Move these features to the rendering designs where they belong:
+
+| Feature | Move To | Why |
+|---------|---------|-----|
+| Caustics (F-3.4.4) | render-styles (water shading model RF-12) | Post-process/shader effect |
+| Underwater volume fog | render-effects (volumetric section) | Post-process effect |
+| Sky/atmosphere LUT | render-effects or render-styles | Environment rendering |
+| Volumetric fog integration | render-effects (froxel fog) | Already owned there |
+
+This design should own terrain/water/foliage **geometry** — mesh generation, LOD, streaming.
+Rendering-specific effects (caustics, underwater fog, atmospheric scattering) are
+shading/post-process concerns owned by render-styles or render-effects.
+
+### RF-6: Dense foliage via meshlet cluster LOD
+
+Support Nanite-style dense foliage using the meshlet pipeline:
+
+**Architecture:**
+
+1. Foliage meshes (trees, bushes) use the same meshlet DAG as regular geometry — no separate foliage
+   rendering path
+2. Alpha cutoff via opacity micromasks + TAA (from render-styles RF-13) for leaf transparency
+3. Cluster LOD transitions from triangle meshes (close) to voxelized representations (distant) for
+   foliage volume preservation
+
+**Key techniques:**
+
+- **Masked blend mode only** — no true transparency on meshlet foliage. Opacity micromask + TAA
+  converges to smooth alpha over frames
+- **Voxel clusters for distant foliage** — at distance, leaf clusters become voxel representations
+  that preserve volume and silhouette. Voxels binned separately, rasterized front-to-back
+- **Bone-driven wind** — skeletal wind animation via bone hierarchy, not World Position Offset.
+  Compatible with meshlet cluster bounds (WPO breaks cluster AABBs)
+- **Material simplification at distance** — LOD system reduces material complexity on distant
+  foliage (fewer texture samples, simplified shading)
+
+**Scalability:**
+
+| Tier | Approach | Instances |
+|------|----------|-----------|
+| Ultra | Full meshlet foliage, voxel LOD | 100K+ |
+| High | Meshlet foliage, aggressive LOD | 50K+ |
+| Medium | Traditional instancing, billboard LOD | 20K |
+| Low | Billboard-only, reduced density | 5K |
+
+**Limitations:**
+
+- No two-sided materials on meshlet foliage (use thick geometry or double-sided mesh instead of
+  material flag)
+- Grass blades: too fine for meshlets — keep GPU mesh shader generation (F-3.3.6) for individual
+  grass
+- Trees with low poly count may be cheaper with traditional instancing — meshlet overhead only
+  worthwhile for high triangle counts
+
+**References:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Nanite foliage | [UE 5.7 foliage docs](https://dev.epicgames.com/documentation/en-us/unreal-engine/nanite-foliage) |
+| Voxel LOD | [Karis, Nanite (SIGGRAPH 2021)](https://advances.realtimerendering.com/s2021/Karis_Nanite_SIGGRAPH_Advances_2021_final.pdf) |
+| Opacity micromask | [Nanite alpha (SIGGRAPH 2021)](https://advances.realtimerendering.com/s2021/Karis_Nanite_SIGGRAPH_Advances_2021_final.pdf) |
+| Bone wind | UE 5.7 Dynamic Wind system |
+
+### RF-7: LOD must be comprehensive
+
+Ensure LOD covers all geometry types with clear strategies:
+
+| Geometry | LOD Strategy | Source |
+|----------|-------------|--------|
+| Static meshes | Meshlet cluster DAG, screen-space error | This design |
+| Terrain | CDLOD clipmap with vertex morphing | This design |
+| Foliage (trees) | Meshlet → voxel → billboard | RF-6 |
+| Grass | Mesh shader density by distance | F-3.3.6 |
+| Water | Tessellation density by distance | Needs spec |
+| Physics debris | Rigid body → particle at distance | Physics advanced RF-12 |
+
+Unify LOD metric where possible: screen-space error for meshlets, geometric distance for
+terrain/water/grass. Document where the two systems interact (terrain-meshlet boundary).
+
+### RF-8: Add water mesh geometry
+
+Define how the ocean/river surface mesh is generated:
+
+- Clipmap-style concentric rings centered on camera
+- Higher vertex density near camera, lower far away
+- Per-ring tessellation factor configurable
+- FFT displacement applied in vertex shader
+- Mesh regenerated when camera moves beyond threshold
+
+### RF-9: Add foliage tests
+
+F-3.3.1 (GPU instancing) and F-3.3.5 (interaction displacement) have minimal test coverage. Add unit
+tests for meshlet foliage cluster generation, voxel LOD transition, and bone-driven wind
+compatibility with cluster bounds.
+
+### RF-10: Multi-planet coordinate system
+
+Support multiple planets, each with its own local Cartesian space, embedded in a universe-level
+Euclidean space.
+
+**Three coordinate spaces:**
+
+| Space | Scope | Used By |
+|-------|-------|---------|
+| Chunk-local | Per-chunk flat grid | Voxel editing, storage |
+| Planet-local | Per-planet, origin at center | Physics, gameplay, AI |
+| Universe | Global, connects planets | Orbital positions, rendering |
+
+**Each planet is an ECS World** (F-1.1.34):
+
+- Own coordinate origin at planet center
+- Own physics BVH with radial gravity
+- Own terrain chunks (flat grid, curved by vertex shader)
+- Own spatial index
+
+The universe is a lightweight top-level World containing planet entities with orbital transforms.
+
+**Vertex shader does two transforms:**
+
+```hlsl
+// 1. Local Cartesian → planet surface (curvature)
+float3 surface = curve_to_sphere(
+    local_pos, chunk_origin, planet_radius);
+
+// 2. Planet surface → universe position
+float3 universe = planet_transform * surface;
+```
+
+**Chunk-to-face mapping:**
+
+Each planet divided into 6 cube faces. Each face is a flat grid of chunks. Vertex shader maps via
+normalized cube projection. Seam handling: shared edge vertices, averaged normals.
+
+**Inter-planetary travel:**
+
+When an entity crosses planets:
+
+1. Entity migrates from Planet A World to Planet B World (F-1.1.35, entity migration)
+2. Transform: Planet A local → universe → Planet B local
+3. One-time coordinate conversion, not per-frame
+
+**Physics stays in planet-local Cartesian:**
+
+All collision detection and physics simulation run in flat planet-local space. No curved-space
+collision math. The vertex shader handles visual curvature only. Physics details (radial gravity,
+coordinate conversion) are in physics foundation RF-15.
+
+### RF-11: 2D tilemap geometry
+
+Add chunked tilemap support for 2D/2.5D games:
+
+**Tilemap architecture:**
+
+- Chunked storage: tiles stored in fixed-size chunks (e.g., 16x16)
+- Each tile: index into tile atlas + flags (flip, rotate, collision type)
+- Multiple tilemap layers (background, midground, foreground)
+- Per-chunk dirty flag for incremental rendering updates
+
+**Auto-tiling:**
+
+- Bitmask-based neighbor lookup (4-bit for cardinal, 8-bit for diagonal)
+- Automatic tile variant selection from neighbor connectivity
+- Works with Wang tiles and blob tilesets
+
+**Collision generation:**
+
+- Solid tiles generate rectangle colliders
+- Slope tiles generate triangle colliders
+- One-way platforms (pass through from below)
+- Per-chunk compound collider registered in 2D physics BVH
+- Rebuilt incrementally when tiles change
+
+**Streaming:**
+
+- Distance-based chunk loading (same as terrain streaming)
+- Chunks loaded/unloaded based on camera position
+- Supports infinite/procedural tilemaps
+
+Cross-references 2D physics (foundation RF-16) for collision shape generation and 2D rendering
+(rendering-core RF-15) for tilemap rendering.

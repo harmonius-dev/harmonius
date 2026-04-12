@@ -24,19 +24,17 @@ This handbook provides guidelines and best practices for agents working on the H
 
 ## Coding standards
 
-Language-specific coding standards are in [docs/standards/](docs/standards/). Read the relevant
-standard before writing or reviewing code in any language.
+Language-specific coding standards are loaded automatically as skills when reading, writing, or
+designing systems in the associated language.
 
-| Standard | Scope |
-|----------|-------|
-| [Rust](docs/standards/rust.md) | Primary engine language |
-| [Swift](docs/standards/swift.md) | macOS platform (C ABI) |
-| [Python](docs/standards/python.md) | Scripts and tools (ruff) |
-| [HLSL](docs/standards/hlsl.md) | Shader IL (DXC pipeline) |
-| [Markdown](docs/standards/markdown.md) | Documentation (rumdl) |
-| [JSON](docs/standards/json.md) | Configuration files |
-| [TOML](docs/standards/toml.md) | Cargo.toml, .rumdl.toml |
-| [YAML](docs/standards/yaml.md) | Configuration files |
+| Skill | Scope |
+|-------|-------|
+| `rust-standard` | Primary engine language (`.rs`) |
+| `hlsl-standard` | Shader IL / DXC pipeline (`.hlsl`, `.hlsli`) |
+| `markdown-standard` | Documentation / rumdl (`.md`) |
+| `json-standard` | Configuration files (`.json`) |
+| `toml-standard` | Cargo.toml, .rumdl.toml (`.toml`) |
+| `yaml-standard` | GitHub Actions workflows (`.yml`, `.yaml`) |
 
 ## Testing policy
 
@@ -106,26 +104,18 @@ not manually rewrap prose — let rumdl handle it.
 
 | Task | Command |
 |------|---------|
-| Build all | `scripts/build.sh` |
-| Test all | `scripts/test.sh` |
-| Lint all | `python3 scripts/hooks.py --all` |
-| Lint staged | `python3 scripts/hooks.py --staged` |
 | Markdown check | `rumdl check .` |
 | Markdown fix | `rumdl fmt .` |
 | Build Rust | `cargo build` |
 | Test Rust | `cargo test` |
-| Lint Python | `ruff check scripts/ && mypy --strict scripts/` |
 
 ## Prerequisites
 
 | Tool | Version |
 |------|---------|
 | Rust | stable (1.80+) |
-| Python | 3.13+ |
 | jq | latest |
-| mypy | latest |
 | rumdl | latest |
-| ruff | latest |
 | taplo | latest |
 | yq | latest |
 
@@ -136,6 +126,4 @@ not manually rewrap prose — let rumdl handle it.
 | `docs/architecture.md` | Engine architecture overview |
 | `docs/design/constraints.md` | Design constraints |
 | `Cargo.toml` | Rust workspace definition |
-| `pyproject.toml` | Python/ruff/mypy config |
 | `.rumdl.toml` | Markdown lint config |
-| `scripts/hooks.py` | Pre-commit lint orchestrator |

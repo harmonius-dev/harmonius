@@ -1242,3 +1242,828 @@ Test cases are in the companion file
 10. **Ban appeal automation.** Auto-provide violation history and replay evidence, or human-only?
 11. **Cross-session scoring.** Database-backed persistence vs per-session reset?
 12. **Rate limit profiles.** Per-game-mode or global?
+
+## Review Feedback
+
+### RF-1: Replace all Tokio/async with platform-native I/O
+
+Replace all Future return types, .await calls, and Tokio references. Database I/O table should show
+platform-native (io_uring/IOCP/GCD). All APIs synchronous with request/handle pattern via
+crossbeam-channel.
+
+### RF-2: Remove all Reflect derives
+
+Codegen-generated metadata via middleman .dylib.
+
+### RF-3: Inter-server bus → QUIC
+
+Replace `TcpStream` with QUIC. Use quinn-proto on Linux, platform-native QUIC on Windows/Apple.
+Aligns with transport design RF-12.
+
+### RF-4: TiKV as sole database
+
+Replace PostgreSQL, DynamoDB, Redis, and Valkey with **TiKV** (Rust, Apache-2.0, CP via Raft, K8s
+operator):
+
+```rust
+pub struct GameDb {
+    client: tikv_client::TransactionClient,
+}
+
+impl GameDb {
+    pub fn get_player(
+        &self, id: PlayerId,
+    ) -> IoRequestId;
+    pub fn update_rating(
+        &self, id: PlayerId, rating: PlayerRating,
+    ) -> IoRequestId;
+    pub fn submit_score(
+        &self, board: LeaderboardId,
+        entry: LeaderboardEntry,
+    ) -> IoRequestId;
+    pub fn trade_items(
+        &self, from: PlayerId, to: PlayerId,
+        items: &[ItemId],
+    ) -> IoRequestId;
+    pub fn session_set(
+        &self, token: &str, data: &[u8],
+        ttl_secs: u32,
+    ) -> IoRequestId;
+    pub fn rate_limit_check(
+        &self, key: &str, window_secs: u32,
+        max: u32,
+    ) -> IoRequestId;
+}
+```
+
+TiKV handles ALL storage:
+
+| Use Case | TiKV Pattern |
+|----------|-------------|
+| Player data | KV: player_id → rkyv bytes |
+| Matchmaking ratings | KV: player_id:rating → Glicko-2 |
+| Leaderboards | Ordered range scan on score key |
+| Achievements | KV: player_id:achievement_id → progress |
+| Sessions | KV with TTL (short-lived keys) |
+| Rate limiting | Atomic increment with TTL |
+| Item trades | Multi-key transaction |
+| Cloud saves | KV: player_id:slot → rkyv bytes |
+
+No PostgreSQL, no Valkey, no DynamoDB. One database. TiDB (Go, Apache-2.0) available as optional SQL
+layer for analytics if the customer wants complex queries.
+
+Resolves open question #1.
+
+### RF-5: Kubernetes-native deployment
+
+Replace AWS-specific infrastructure with K8s-native:
+
+**Custom K8s operator (Rust, kube-rs):**
+
+```rust
+// GameServer CRD
+pub struct GameServerSpec {
+    pub image: String,
+    pub replicas: u32,
+    pub max_players_per_pod: u16,
+    pub region: String,
+    pub mode: GameMode,
+    pub tikv_cluster: String,
+}
+```
+
+The operator manages:
+
+- GameServer pod lifecycle (create, scale, drain)
+- Auto-scaling based on custom metrics (player count, tick time, CPU)
+- Zone shard assignment and rebalancing
+- Rolling updates with player migration
+- Health checks (liveness + readiness probes)
+- Graceful drain (migrate players before pod termination)
+
+**Helm charts shipped with engine:**
+
+```text
+harmonius-server/
+  Chart.yaml
+  values.yaml
+  templates/
+    gameserver-crd.yaml
+    operator-deployment.yaml
+    tikv-cluster.yaml
+    garage-statefulset.yaml
+    pingora-deployment.yaml
+    monitoring/
+      prometheus.yaml
+      grafana.yaml
+      vector.yaml
+      loki.yaml
+```
+
+Customer runs: `helm install harmonius harmonius-server/` Deploys on ANY K8s: AWS EKS, GCP GKE,
+Azure AKS, bare metal, Hetzner, self-hosted.
+
+### RF-6: Full OSS infrastructure stack
+
+| Concern | Solution | Lang | License |
+|---------|----------|------|---------|
+| Game servers | Engine (headless) | Rust | Apache-2.0 |
+| K8s operator | kube-rs | Rust | Apache-2.0 |
+| Database | TiKV | Rust | Apache-2.0 |
+| Blob storage | Garage | Rust | AGPL-3.0 |
+| CDN/edge proxy | Pingora | Rust | Apache-2.0 |
+| Log collection | Vector | Rust | MPL-2.0 |
+| Monitoring | Prometheus | Go | Apache-2.0 |
+| Dashboards | Grafana | Go/TS | AGPL-3.0 |
+| Log storage | Loki | Go | AGPL-3.0 |
+| CI/CD deploy | ArgoCD | Go | Apache-2.0 |
+| TLS certs | cert-manager | Go | Apache-2.0 |
+| Secrets | Sealed Secrets | Go | Apache-2.0 |
+
+No vendor lock-in. No proprietary services. Customer owns their entire stack.
+
+### RF-7: CDN via Pingora edge cache
+
+No Cloudflare. Self-hosted edge caching with Pingora:
+
+- Deploy Pingora pods in each region's K8s cluster
+- HTTP/3 + QUIC for asset delivery
+- Disk-backed cache on PVCs per edge node
+- Origin serves from Garage (Rust, S3-compatible)
+- Configurable cache TTL per asset type
+- Cache invalidation via purge API
+- TLS via cert-manager + Let's Encrypt
+
+### RF-8: Monitoring and observability
+
+| Layer | Tool | Purpose |
+|-------|------|---------|
+| Metrics | Prometheus | Server tick time, player count, CPU |
+| Dashboards | Grafana | Visualize metrics + alerts |
+| Logs | Vector → Loki | Structured log collection + storage |
+| Alerting | Grafana Alerting | Tick > budget, player spike, anti-cheat |
+
+All deployed via Helm charts in the same K8s cluster.
+
+### RF-9: Game-aware GitOps deployment operator
+
+No ArgoCD. Our Rust K8s operator (kube-rs) handles GitOps + game-aware deployment + automatic
+rollback in one component.
+
+**GameDeployment CRD:**
+
+```rust
+pub struct GameDeploymentSpec {
+    pub image: String,
+    pub git_ref: String,
+    pub strategy: DeployStrategy,
+    pub drain_policy: DrainPolicy,
+}
+
+pub enum DeployStrategy {
+    RollingUpdate {
+        max_surge: u32,
+        max_unavailable: u32,
+    },
+    Canary {
+        canary_percent: u8,
+        validation_duration_secs: u32,
+        metrics_threshold: MetricsThreshold,
+    },
+    BlueGreen {
+        switch_after_validation: bool,
+    },
+}
+
+pub enum DrainPolicy {
+    Immediate,
+    GracefulMigrate {
+        timeout_secs: u32,
+        migrate_players: bool,
+    },
+    WaitForEmpty {
+        max_wait_secs: u32,
+    },
+}
+```
+
+**Deployment flow:**
+
+```text
+1. New git tag pushed (v1.2.3)
+2. CI builds container image, pushes to registry
+3. CI updates GameDeployment CRD in git (image tag)
+4. Operator detects CRD change
+5. Canary: 1 pod with new version
+6. Validation: tick time, crash loops, player count,
+   disconnect rate, anti-cheat flags
+7. Pass → rolling update remaining pods
+8. Each pod: drain players → migrate → terminate
+   → start new version
+9. Fail → automatic rollback to previous image
+10. Operator updates CRD status
+```
+
+**Automatic rollback triggers:**
+
+| Metric | Threshold | Action |
+|--------|-----------|--------|
+| Pod crash loops | > 2 in 5 min | Rollback |
+| Tick time | > 2x budget | Rollback |
+| Player disconnects | > 10% in 1 min | Rollback |
+| Anti-cheat spike | > 5x baseline | Rollback |
+| Health endpoint errors | > 5% | Rollback |
+
+**Game-aware advantages over ArgoCD:**
+
+- Drains players before pod termination (no mid-match kill)
+- WaitForEmpty: don't restart during a raid boss fight
+- Canary validates game metrics, not just pod health
+- Rollback considers player experience, not just uptime
+- Single operator for fleet management + deployment
+
+**CI pipeline:**
+
+```text
+Push to main
+  → GitHub Actions: cargo test + cargo build --release
+  → Docker build + push to Harbor/GHCR
+  → Update GameDeployment manifest in git repo
+  → Operator reconciles automatically
+```
+
+### RF-10: Updated OSS stack (no ArgoCD)
+
+Remove ArgoCD from the stack. The Rust K8s operator handles deployment. Updated table:
+
+| Concern | Solution | Lang | License |
+|---------|----------|------|---------|
+| Game servers | Engine (headless) | Rust | Apache-2.0 |
+| K8s operator + GitOps | kube-rs custom | Rust | Apache-2.0 |
+| Database | TiKV | Rust | Apache-2.0 |
+| Blob storage | Garage | Rust | AGPL-3.0 |
+| CDN/edge proxy | Pingora | Rust | Apache-2.0 |
+| Log collection | Vector | Rust | MPL-2.0 |
+| Monitoring | Prometheus | Go | Apache-2.0 |
+| Dashboards | Grafana | Go/TS | AGPL-3.0 |
+| Log storage | Loki | Go | AGPL-3.0 |
+| TLS certs | cert-manager | Go | Apache-2.0 |
+| Secrets | Sealed Secrets | Go | Apache-2.0 |
+| Container registry | Harbor | Go | Apache-2.0 |
+| CI | GitHub Actions | — | — |
+
+### RF-11: Production metrics for rollback decisions
+
+Rollback triggers must include production metrics, not just pod health. The operator continuously
+monitors after deploy:
+
+**Metric categories:**
+
+| Category | Metrics | Source |
+|----------|---------|--------|
+| Server health | Tick time, CPU, memory, crash rate | Prometheus |
+| Player experience | Disconnect rate, avg RTT, jitter | QUIC transport |
+| Game quality | Rubberbanding reports, desync rate | Game server |
+| Network | QUIC handshake failures, packet loss | QUIC metrics |
+| Storage | PVC usage %, inode exhaustion | K8s metrics |
+| Anti-cheat | False positive rate, flag spike | Anti-cheat system |
+| Business | Concurrent players, revenue/hr | Analytics |
+
+**QUIC-specific metrics:**
+
+```rust
+pub struct QuicMetrics {
+    pub handshake_success_rate: f32,
+    pub avg_rtt_ms: f32,
+    pub p99_rtt_ms: f32,
+    pub packet_loss_pct: f32,
+    pub connection_migration_count: u32,
+    pub zero_rtt_success_rate: f32,
+    pub stream_reset_count: u32,
+    pub congestion_events: u32,
+}
+```
+
+Exposed via Prometheus endpoint on each game server pod. The operator reads these during canary
+validation AND continuously post-deploy.
+
+**Post-deploy monitoring window:**
+
+After full rollout, the operator monitors for 30 min (configurable). If any metric degrades beyond
+threshold during this window, automatic rollback fires:
+
+```text
+Deploy v1.2.3 → canary (5 min) → rollout (10 min)
+  → monitoring window (30 min)
+  → if metrics degrade: rollback to v1.2.2
+  → if stable: deployment confirmed
+```
+
+### RF-12: On-call and incident management
+
+**Alerting tiers:**
+
+| Severity | Condition | Action |
+|----------|-----------|--------|
+| P0 Critical | All servers down, data loss risk | Auto-rollback + page on-call + escalate |
+| P1 High | Player-facing degradation (lag, disconnects) | Page on-call + auto-scale |
+| P2 Medium | Non-player-facing (high CPU, storage warning) | Notify channel + auto-scale |
+| P3 Low | Cosmetic (log errors, minor anomaly) | Dashboard alert only |
+
+**On-call integration:**
+
+The operator sends alerts via webhook to external on-call systems. No built-in pager — integrate
+with what the customer uses:
+
+```rust
+pub struct AlertConfig {
+    pub webhook_url: String,
+    pub severity_filter: Severity,
+    pub channels: SmallVec<[AlertChannel; 4]>,
+}
+
+pub enum AlertChannel {
+    Webhook { url: String },
+    Email { address: String },
+    Slack { webhook_url: String },
+    Custom { handler_id: StringId },
+}
+```
+
+P0/P1 alerts include: what changed (deploy, config, scale event), current metrics vs baseline,
+affected player count, and a link to the Grafana dashboard.
+
+**Escalation policy:**
+
+- P0: page immediately → if no ack in 5 min → escalate to secondary → if no ack in 10 min → escalate
+  to lead
+- P1: page after 2 min of sustained degradation
+- P2: notify channel, auto-remediate if possible
+- P3: log only
+
+### RF-13: Change management
+
+All infrastructure changes go through the GitOps operator. No manual kubectl or ssh:
+
+**Change types:**
+
+| Change | Process |
+|--------|---------|
+| Code deploy | Git tag → CI → image → CRD update → operator |
+| Config change | Update ConfigMap in git → operator reconciles |
+| Scale event | Operator auto-scales OR manual CRD update |
+| Database migration | Migration CRD → operator runs migration job |
+| TLS cert rotation | cert-manager handles automatically |
+| Secret rotation | Sealed Secret update in git → operator |
+
+**Change audit log:**
+
+Every change recorded with:
+
+```rust
+pub struct ChangeRecord {
+    pub timestamp: u64,
+    pub change_type: ChangeType,
+    pub actor: String,       // git commit author or "operator"
+    pub description: String,
+    pub git_ref: String,
+    pub rollback_ref: Option<String>,
+    pub affected_pods: Vec<String>,
+}
+```
+
+Stored in TiKV. Queryable for post-incident review.
+
+**Change freeze:**
+
+The operator supports a `freeze: bool` flag on the GameDeployment CRD. When frozen, no deploys are
+permitted (except P0 hotfixes with override). Used during launches, tournaments, and holidays.
+
+### RF-14: Auto-provisioning and resource scaling
+
+**Disk storage:**
+
+- PVC auto-expansion: operator monitors PVC usage via K8s metrics. When usage > 80%, requests PVC
+  resize
+- TiKV: auto-splits regions when data grows. Operator adds TiKV pods when existing pods approach
+  storage limits
+- Garage: distributed, adds capacity by adding pods
+
+```rust
+pub struct StoragePolicy {
+    pub expand_threshold_pct: u8,  // 80
+    pub max_size_gb: u32,
+    pub alert_threshold_pct: u8,   // 90
+}
+```
+
+**Memory:**
+
+- K8s VPA (Vertical Pod Autoscaler) adjusts pod memory requests based on observed usage
+- Operator overrides VPA for game servers (game servers have predictable memory from player count)
+- Alert if memory > 85% on any pod
+
+**Compute (horizontal):**
+
+- HPA scales game server pods on custom metrics:
+  - Player count per pod > threshold → scale out
+  - Tick time > budget → scale out (overloaded)
+  - Player count < threshold for 10 min → scale in
+- Scale-in drains players first (DrainPolicy)
+
+**Network (QUIC-aware):**
+
+- Monitor QUIC connection count per pod
+- If connections approach OS fd limit → alert + scale
+- If bandwidth > NIC capacity threshold → scale out
+- QUIC 0-RTT success rate dropping → investigate TLS cert/session ticket issue
+
+**Provider-agnostic:**
+
+All provisioning uses K8s APIs (PVC resize, HPA, VPA, pod scaling). Works on any K8s provider. The
+operator doesn't call AWS/GCP/Azure APIs — it speaks K8s only.
+
+### RF-15: Multi-region management
+
+**Cluster topology:**
+
+| Cluster | Purpose | Count |
+|---------|---------|-------|
+| Staging | Test releases before production | 1 global |
+| Production per region | Serve players | N (1 per region) |
+
+```text
+Staging Cluster (1)
+  └── Full stack: game servers, TiKV, Garage, Pingora
+  └── Synthetic load testing
+  └── Canary validation before any prod deploy
+
+Production Clusters (N)
+  ├── us-east
+  ├── eu-west
+  ├── ap-southeast
+  └── ... (customer adds regions)
+```
+
+**Each region is a K8s cluster with:**
+
+- Game server pods (auto-scaled)
+- TiKV cluster (regional data, cross-region Raft for strong-consistency data)
+- Garage pods (blob storage, regional cache)
+- Pingora pods (CDN edge, asset cache)
+- Vector + Prometheus (monitoring)
+- The operator runs in every cluster
+
+**Global operator federation:**
+
+One operator instance per cluster, but they coordinate via a shared `GlobalDeployment` CRD stored in
+a designated "control" cluster (can be staging or a lightweight management cluster):
+
+```rust
+pub struct GlobalDeploymentSpec {
+    pub version: String,
+    pub image: String,
+    pub rollout_strategy: RegionRolloutStrategy,
+    pub regions: Vec<RegionDeployment>,
+}
+
+pub struct RegionDeployment {
+    pub region_id: RegionId,
+    pub cluster_endpoint: String,
+    pub status: RegionDeployStatus,
+    pub phase: RolloutPhase,
+}
+
+pub enum RegionRolloutStrategy {
+    /// One region at a time, validate, proceed
+    Sequential {
+        order: Vec<RegionId>,
+        validation_duration_secs: u32,
+    },
+    /// Canary region first, then all others in parallel
+    CanaryThenParallel {
+        canary_region: RegionId,
+        validation_duration_secs: u32,
+    },
+    /// All regions simultaneously (risky, for hotfixes)
+    AllAtOnce,
+}
+```
+
+**Safe multi-region release flow:**
+
+```text
+1. CI builds image, pushes to registry
+2. Deploy to STAGING cluster
+3. Staging validation:
+   - Automated test suite runs
+   - Synthetic load test (simulated players)
+   - Canary metrics checked (tick time, errors)
+   - Duration: 30 min minimum
+4. If staging passes → deploy to canary PRODUCTION region
+   (smallest region or designated canary, e.g., ap-south)
+5. Canary region validation:
+   - Real players, real traffic
+   - Monitor for 1 hour (configurable)
+   - Compare metrics to pre-deploy baseline
+6. If canary passes → rolling deploy to remaining regions
+   - Sequential by default (us-east → eu-west → ...)
+   - Each region validates before proceeding to next
+7. If ANY region fails → halt rollout, rollback failed
+   region, page on-call
+8. All regions deployed → monitoring window (4 hours)
+9. Confirmed stable → mark release as "verified"
+```
+
+**Staging cluster details:**
+
+- Runs the FULL stack (identical to production)
+- Smaller scale (fewer pods, less TiKV capacity)
+- Synthetic player bots simulate load patterns
+- Integration test suite runs automatically on deploy
+- Database seeded with anonymized production snapshot
+- Accessible to QA team for manual testing
+- Cost: ~10-20% of one production region
+
+**Inter-region consistency:**
+
+| Data Type | Model | Mechanism |
+|-----------|-------|-----------|
+| Match state | Single-region | Match runs on one cluster |
+| Player profile | Eventual (< 1s) | TiKV async replication |
+| Ratings | Eventual (< 5s) | TiKV async replication |
+| Leaderboards | Eventual (< 30s) | Periodic aggregation |
+| Inventory/currency | Strong | TiKV cross-region Raft |
+| Purchases | Strong | TiKV cross-region Raft |
+
+Strong-consistency data uses TiKV Raft groups spanning regions (2 replicas primary, 1 secondary).
+Writes go to leader; follower reads for low latency.
+
+**Player region selection:**
+
+```rust
+pub struct RegionSelection {
+    pub preferred: RegionId,
+    pub acceptable: Vec<RegionId>,
+    pub max_ping_ms: u32,
+}
+```
+
+Matchmaker prefers same-region. Cross-region when queue exceeds threshold. Player sees estimated
+ping per region.
+
+**Region failover:**
+
+If a region's cluster goes down:
+
+1. Operator detects health check failure
+2. Affected players disconnected (client-side reconnect)
+3. Matchmaker removes region from available list
+4. Players reconnect to nearest healthy region
+5. TiKV Raft elects new leader in surviving region
+6. P0 alert fires, on-call paged
+
+### RF-16: Consistency and isolation
+
+**K8s namespace isolation per concern:**
+
+```text
+namespace: harmonius-system   (operator, CRDs)
+namespace: harmonius-game     (game server pods)
+namespace: harmonius-data     (TiKV, Garage)
+namespace: harmonius-edge     (Pingora, ingress)
+namespace: harmonius-monitor  (Prometheus, Grafana, Vector, Loki)
+```
+
+Each namespace has:
+
+- ResourceQuotas (CPU, memory, PVC limits)
+- NetworkPolicies (only game ↔ data, edge ↔ game allowed)
+- RBAC (operator has cluster-admin, game pods have minimal)
+- PodSecurityStandards (restricted profile for game pods)
+
+**Pod disruption budgets:**
+
+```yaml
+# Never evict more than 1 game server at a time
+maxUnavailable: 1
+# TiKV: never lose quorum
+maxUnavailable: 1 (for 3-replica Raft group)
+```
+
+**Data consistency guarantees:**
+
+| Operation | Guarantee | Mechanism |
+|-----------|-----------|-----------|
+| Item trade | Serializable | TiKV multi-key txn |
+| Currency transfer | Serializable | TiKV multi-key txn |
+| Rating update | Read-committed | TiKV single-key write |
+| Session create | Linearizable | TiKV single-key CAS |
+| Leaderboard submit | Last-write-wins | TiKV single-key write |
+| Save game | Last-write-wins | TiKV single-key write |
+| Config update | Linearizable | K8s ConfigMap + operator |
+
+**Anti-corruption boundaries:**
+
+- Game servers never write to TiKV directly — all writes go through a GameDb service pod that
+  validates invariants
+- GameDb enforces: non-negative currency, item ownership checks, trade atomicity, rate limits
+- Game server → GameDb → TiKV (three-tier, not two-tier)
+
+### RF-17: Blast radius isolation
+
+**Per-match isolation:**
+
+- Each match runs in its own pod (or pod slice)
+- Match crash affects only that match, not adjacent matches
+- Pod restart policy: match pod restarts with fresh state (players reconnect, server catches up from
+  snapshot)
+
+**Per-region isolation:**
+
+- Region failure does not affect other regions
+- TiKV cross-region Raft: surviving regions promote leader
+- No shared control plane between regions (each cluster independent, operator federation via CRD
+  sync only)
+
+**Per-service isolation:**
+
+- Game servers, GameDb, TiKV, Garage, Pingora all separate pods in separate namespaces
+- Service mesh not required — NetworkPolicy sufficient
+- Circuit breaker in GameDb client: if TiKV is slow, game server degrades gracefully (cached data,
+  read-only)
+
+**Failure modes and blast radius:**
+
+| Failure | Blast Radius | Mitigation |
+|---------|-------------|------------|
+| Game pod crash | 1 match | Auto-restart, player reconnect |
+| GameDb pod crash | Write path down | Retry with backoff, read from cache |
+| TiKV follower down | None (Raft quorum intact) | Auto-recovery |
+| TiKV leader down | Write latency spike | Raft re-election (< 10s) |
+| Pingora pod crash | CDN gap in one zone | K8s restarts, other pods serve |
+| Region down | All players in that region | Reconnect to another region |
+| Global operator down | No scaling/deploys | Game servers continue running |
+
+### RF-18: Customer multi-tenancy
+
+Customers deploy their own clusters. The engine ships Helm charts; customers install on their
+infrastructure.
+
+**Two deployment models:**
+
+Model A — customer-managed clusters:
+
+Customer provisions their own K8s clusters (any cloud or bare metal). They run
+`helm install harmonius-server` and manage everything themselves. Full control, full responsibility.
+
+Model B — Harmonius-hosted (future):
+
+We run shared infrastructure. Customer gets isolated namespaces within our clusters. Multi-tenant
+isolation via K8s namespaces + NetworkPolicy + ResourceQuota.
+
+**Customer tenant isolation (Model B):**
+
+```rust
+pub struct TenantSpec {
+    pub tenant_id: TenantId,
+    pub namespace: String,
+    pub resource_quota: ResourceQuota,
+    pub tikv_prefix: String,    // key prefix isolation
+    pub garage_bucket: String,  // blob isolation
+    pub domains: Vec<String>,   // custom domains
+}
+```
+
+- Each tenant gets a K8s namespace
+- TiKV: key prefix isolation (tenant data never mixed)
+- Garage: separate bucket per tenant
+- Pingora: virtual host routing per tenant domain
+- Prometheus: per-tenant metric labels + Grafana orgs
+- Network: tenant namespaces cannot reach each other
+
+**Customer brings their own cluster:**
+
+Some customers want to use our Helm charts on THEIR K8s cluster alongside their existing workloads:
+
+```text
+Customer's K8s cluster
+  ├── their-app-namespace (their workloads)
+  ├── harmonius-system (our operator)
+  ├── harmonius-game (our game servers)
+  ├── harmonius-data (TiKV, Garage)
+  └── harmonius-edge (Pingora)
+```
+
+The Helm chart creates namespaces, CRDs, and RBAC. The operator only touches harmonius-* namespaces.
+Customer workloads are untouched.
+
+### RF-19: Customer control panel
+
+A web-based control panel for customers to manage their game servers without kubectl:
+
+**Architecture:**
+
+```text
+Customer browser
+  → Pingora (HTTPS/QUIC)
+  → Control Panel API (Rust, Actix or Axum-less custom)
+  → K8s API (via kube-rs)
+  → Operator CRDs
+```
+
+The control panel is a Rust web service that translates UI actions into CRD updates. The operator
+reconciles.
+
+**Control panel features:**
+
+| Section | Actions |
+|---------|---------|
+| Dashboard | Live player count, region health, cost |
+| Servers | Scale up/down, view pods, restart |
+| Deploys | Trigger deploy, view rollout status, rollback |
+| Regions | Enable/disable regions, view latency map |
+| Database | View TiKV cluster health, storage usage |
+| Matchmaking | Queue stats, rating distribution, backfill rate |
+| Anti-cheat | Flag review, ban management, appeal queue |
+| Analytics | Player counts, retention, revenue graphs |
+| Alerts | Configure thresholds, on-call webhooks |
+| Config | Game settings, feature flags, change freeze |
+| Logs | Search logs (Loki query), filter by pod/region |
+| Billing | Resource usage, cost breakdown per region |
+
+**Authentication:**
+
+Control panel uses the same OAuth 2.0 system as the game. Operator/admin roles gated by JWT bitmask
+permissions. Audit log records all control panel actions in TiKV.
+
+**No vendor SDK required:**
+
+The control panel is our own Rust web service. No third- party admin panel framework. Shipped as a
+container image in the Helm chart. Customer accesses via their configured domain.
+
+### RF-20: TiKV Rust client and transaction model
+
+Backend services use `tikv-client` (pure Rust, Apache-2.0) with Tokio — permitted for backend
+services per constraints.md.
+
+**Transaction modes:**
+
+```rust
+// Snapshot isolation (default, optimistic)
+let mut txn = client.begin_optimistic().await?;
+let gold = txn.get(b"player:123:gold").await?;
+txn.put(b"player:123:gold", new_gold);
+txn.commit().await?;
+
+// Serializable (pessimistic, for trades)
+let mut txn = client.begin_pessimistic().await?;
+// Keys locked on first access — prevents write skew
+let from_gold = txn.get(b"player:123:gold").await?;
+let to_gold = txn.get(b"player:456:gold").await?;
+txn.put(b"player:123:gold", from_gold - amount);
+txn.put(b"player:456:gold", to_gold + amount);
+txn.commit().await?; // atomic 2PC
+```
+
+**Join strategy (KV, no SQL):**
+
+- Single-entity: direct KV get (O(1))
+- Leaderboard + names: range scan scores → batch get names
+- Player + inventory: prefix scan `player:123:inv:*`
+- Cross-entity queries: application-level join in Rust
+- Analytics (complex joins): optional TiDB layer (Go, Apache-2.0, MySQL-compatible SQL on TiKV)
+
+**Game server ↔ backend communication:**
+
+```text
+Game server (synchronous, no Tokio)
+  → QUIC request to GameDb service
+  → GameDb (async, Tokio + tikv-client)
+  → TiKV cluster
+  → Response via QUIC
+  → Game server receives as job completion
+```
+
+### RF-21: Algorithm and infrastructure references
+
+| Topic | Reference |
+|-------|-----------|
+| TiKV Percolator 2PC | [Peng & Dabek (2010)](https://research.google/pubs/pub36726/) |
+| TiKV Raft consensus | [Ongaro & Ousterhout (2014)](https://raft.github.io/raft.pdf) |
+| tikv-client Rust | [tikv-client GitHub](https://github.com/tikv/client-rust) |
+| kube-rs K8s operator | [kube-rs GitHub](https://github.com/kube-rs/kube) |
+| Garage blob storage | [Garage GitLab](https://git.deuxfleurs.fr/Deuxfleurs/garage) |
+| Pingora proxy | [Pingora GitHub](https://github.com/cloudflare/pingora) |
+| Vector log collector | [Vector GitHub](https://github.com/vectordotdev/vector) |
+| Prometheus monitoring | [Prometheus.io](https://prometheus.io/) |
+| Grafana dashboards | [Grafana.com](https://grafana.com/oss/grafana/) |
+| Loki log storage | [Grafana Loki](https://grafana.com/oss/loki/) |
+| cert-manager TLS | [cert-manager.io](https://cert-manager.io/) |
+| Harbor registry | [Harbor GitHub](https://github.com/goharbor/harbor) |
+| Sealed Secrets | [Sealed Secrets GitHub](https://github.com/bitnami-labs/sealed-secrets) |
+| Helm charts | [Helm.sh](https://helm.sh/) |
+
+### RF-22: Create companion test cases file
+
+Create `network-infrastructure-test-cases.md` with the 88 claimed tests.

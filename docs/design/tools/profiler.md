@@ -23,13 +23,14 @@
 4. **F-15.5.4** — Leak detection by snapshot comparison
 5. **F-15.5.5** — Network profiler with bandwidth monitoring and packet inspector
 6. **F-15.5.6** — Stat overlays on game viewport
-7. **F-15.5.7** — Remote profiling over TCP
+7. **F-15.5.7** — Remote profiling over QUIC
 
 ## Overview
 
 The profiling subsystem provides instrumentation, collection, visualization, and remote streaming of
-performance data across CPU, GPU, memory, network, and ECS systems. All instrumentation uses
-lock-free data structures to keep measurement overhead below 1% of frame time at 300+ FPS.
+performance data across CPU, GPU, memory, network, ECS, physics, audio, asset streaming, per-thread
+arenas, and GPU VRAM. All instrumentation uses lock-free data structures to keep measurement
+overhead below 1% of frame time at 300+ FPS.
 
 Key principles:
 
@@ -37,8 +38,8 @@ Key principles:
   operations. No mutexes in the hot path.
 - **ECS-primary (~90%)-based.** Profiler state (frame captures, snapshots, overlays) is stored as
   ECS components on profiler entities. Visualization systems query these components.
-- **Controlled I/O.** Remote streaming and CSV export use the `Tokio runtime` async I/O path. No
-  stdlib file I/O.
+- **Controlled I/O.** Remote streaming uses crossbeam-channel. CSV export uses fire-and-forget
+  writes via platform-native I/O (io_uring/IOCP/GCD). No stdlib file I/O, no async/await.
 - **Static dispatch.** Platform-specific backends are selected at compile time via `cfg` attributes.
   No trait objects for instrumentation.
 - **< 1% overhead.** All instrumentation paths are designed for sub-microsecond per-event cost. The
@@ -54,8 +55,14 @@ graph TD
         CS[CpuScope]
         GS[GpuScope]
         MA[MemAllocTracker]
+        AW[ArenaWatermarkTracker]
         NA[NetBandwidthTracker]
+        NL[NetworkLatencyTracker]
         EA[EcsSystemTracker]
+        PT[PhysicsTracker]
+        AU[AudioTracker]
+        AS[AssetStreamingTracker]
+        VR[VramBreakdownTracker]
     end
 
     subgraph "harmonius_profiler::collect"
@@ -86,15 +93,24 @@ graph TD
         ECS[ECS World]
         TP[ThreadPool]
         RG[Render Graph]
-        IO[Tokio runtime]
-        NET[Networking]
+        CH[crossbeam-channel]
+        NET[Networking QUIC]
+        PHY[Physics]
+        AUD[Audio]
+        ASSET[Asset Pipeline]
     end
 
     CS --> RB
     GS --> RB
     MA --> RB
+    AW --> RB
     NA --> RB
+    NL --> RB
     EA --> RB
+    PT --> RB
+    AU --> RB
+    AS --> RB
+    VR --> RB
 
     RB --> FC
     FC --> TL
@@ -112,64 +128,15 @@ graph TD
 
     RS --> BP
     RC --> BP
-    BP --> IO
+    BP --> CH
 
     CS -.-> TP
     GS -.-> RG
     MA -.-> ECS
     NA -.-> NET
-```
-
-```text
-harmonius_profiler/
-├── instrument/
-│   ├── cpu_scope.rs       # CpuScope, begin/end
-│   │                      # zone markers
-│   ├── gpu_scope.rs       # GpuScope, timestamp
-│   │                      # query insertion
-│   ├── mem_tracker.rs     # MemAllocTracker, per-
-│   │                      # allocation recording
-│   ├── net_tracker.rs     # NetBandwidthTracker,
-│   │                      # per-channel counters
-│   └── ecs_tracker.rs     # EcsSystemTracker, per-
-│                          # system timing
-├── collect/
-│   ├── ring_buffer.rs     # Lock-free per-thread
-│   │                      # ring buffer
-│   ├── frame_collector.rs # FrameCollector, per-
-│   │                      # frame aggregation
-│   ├── snapshot.rs        # MemorySnapshot, point-
-│   │                      # in-time capture
-│   └── leak.rs            # LeakDetector, snapshot
-│                          # diff comparison
-├── view/
-│   ├── cpu_timeline.rs    # Swimlane chart, filter
-│   │                      # by thread/subsystem
-│   ├── flame_graph.rs     # Flame graph and flat
-│   │                      # profile views
-│   ├── gpu_timeline.rs    # GPU pass timeline,
-│   │                      # vendor counters
-│   ├── memory_treemap.rs  # Live treemap of memory
-│   │                      # by subsystem
-│   ├── alloc_timeline.rs  # Historical allocation
-│   │                      # rate timeline
-│   ├── net_profiler.rs    # Bandwidth graphs, per-
-│   │                      # channel breakdown
-│   ├── packet_inspector.rs# Packet decode, field
-│   │                      # view
-│   └── stat_overlays.rs   # HUD overlays, CSV
-│                          # export
-├── remote/
-│   ├── server.rs          # RemoteServer, listens
-│   │                      # for editor connections
-│   ├── client.rs          # RemoteClient, connects
-│   │                      # from editor to target
-│   └── protocol.rs        # BinaryProtocol, frame
-│                          # data encoding
-└── platform/
-    ├── windows.rs         # ETW, CaptureStackBackTrace
-    ├── macos.rs           # os_signpost, backtrace
-    └── linux.rs           # perf counters, backtrace
+    PT -.-> PHY
+    AU -.-> AUD
+    AS -.-> ASSET
 ```
 
 ### Lock-Free Instrumentation Pipeline
@@ -251,18 +218,18 @@ sequenceDiagram
 sequenceDiagram
     participant E as Editor
     participant RC as RemoteClient
-    participant NET as TCP via Tokio runtime
+    participant NET as QUIC transport
     participant RS as RemoteServer
     participant FC as FrameCollector
 
     E->>RC: connect to target
-    RC->>NET: TCP connect
+    RC->>NET: QUIC connect
     NET->>RS: accept connection
 
     loop Every Frame
         FC->>RS: new FrameCapture
         RS->>RS: encode binary protocol
-        RS->>NET: async write frame data
+        RS->>NET: send frame data (QUIC stream)
         NET->>RC: receive frame data
         RC->>RC: decode binary protocol
         RC->>E: publish to all viewers
@@ -285,7 +252,7 @@ classDiagram
 
     class GpuPassTiming {
         +u32 pass_id
-        +String pass_name
+        +~'static str~ pass_name
         +f64 begin_ms
         +f64 end_ms
         +f64 duration_ms
@@ -322,7 +289,7 @@ classDiagram
         +u32 size_bytes
         +u32 subsystem_id
         +u32 asset_type_id
-        +Vec~u64~ call_stack
+        +SmallVec~u64 16~ call_stack
     }
 
     class LeakReport {
@@ -332,7 +299,7 @@ classDiagram
     }
 
     class LeakGroup {
-        +Vec~u64~ call_stack
+        +SmallVec~u64 16~ call_stack
         +u32 asset_type_id
         +u32 count
         +u64 total_bytes
@@ -344,6 +311,41 @@ classDiagram
     MemorySnapshot *-- Allocation
     LeakReport *-- LeakGroup
 ```
+
+### Cross-Subsystem Integration
+
+The profiler collects data from every major engine subsystem. All data paths are pull-based at the
+frame boundary — no subsystem pushes data proactively.
+
+| Subsystem         | Data collected                                    | Mechanism                        |
+|-------------------|---------------------------------------------------|----------------------------------|
+| ECS scheduler     | Per-system timing                                 | `EcsSystemTracker`               |
+| Render graph      | Per-pass GPU timing                               | `GpuScope` + timestamp queries   |
+| Job system        | Worker busy/idle, steal count, queue depth        | `JobSystemTracker`               |
+| Memory allocators | Per-alloc tracking                                | `MemAllocTracker`                |
+| Per-thread arenas | Watermark, reset count                            | `ArenaWatermarkTracker`          |
+| GPU VRAM          | Per-resource-type usage                           | GPU memory queries               |
+| Networking        | Bandwidth + latency                               | `NetBandwidthTracker` + `NLT`    |
+| Asset pipeline    | Load queue, cache, bandwidth                      | `AssetStreamingTracker`          |
+| Audio             | Callback timing, voices, underruns                | `AudioTracker`                   |
+| Physics           | Broadphase/narrowphase/solver timing              | `PhysicsTracker`                 |
+| VFX               | Particle count, compute dispatch time             | `VfxTracker`                     |
+| Viewport stats    | FPS, tris, meshlets, draws (see `level-world.md`) | `StatOverlays` → `FrameStats`    |
+| UI                | Layout time, paint time, widget count             | `UITracker`                      |
+
+1. **`NLT`** — `NetworkLatencyTracker` (RTT histogram, jitter, packet loss, retransmit count).
+2. **Viewport stats** — `StatOverlays` feeds `FrameStats` as an ECS resource. The viewport
+   statistics overlay (level-world.md RF-32) reads `Res<FrameStats>` directly.
+
+### Codegen and Middleman Boundary
+
+Profiler component types (`CpuScope`, `GpuScope`, all trackers listed above) are **engine-internal**
+— they live in the `harmonius_profiler` crate, not the middleman `.dylib`.
+
+User-defined profiler zones from logic graphs (see `scripting.md`) register their zone names in the
+middleman at codegen time. The middleman exposes a `register_zone(name: &'static str) -> ZoneId`
+function. Zone IDs are stable across hot-reloads. The engine resolves IDs to names via a static
+table generated at codegen time — no runtime string allocation.
 
 ## API Design
 
@@ -472,10 +474,11 @@ impl ProfileRingBuffer {
     #[inline(always)]
     pub fn push(&self, event: CpuEvent) -> bool;
 
-    /// Drain all events since the last drain.
-    /// Called by the frame collector at the frame
-    /// boundary. Lock-free (single consumer).
-    pub fn drain(&self) -> Vec<CpuEvent>;
+    /// Drain all events since the last drain into
+    /// the provided frame arena slice. Lock-free
+    /// (single consumer). Called by `FrameCollector`
+    /// at the frame boundary; avoids heap allocation.
+    pub fn drain_into(&self, arena: &mut FrameArena);
 
     /// Number of events currently buffered.
     pub fn len(&self) -> u32;
@@ -489,7 +492,11 @@ impl ProfileRingBuffer {
 
 ```rust
 /// Aggregates profiling data from all sources into
-/// per-frame captures.
+/// per-frame captures. Internally uses per-thread
+/// frame arenas: `drain()` writes into a
+/// pre-allocated arena buffer; `FrameCapture`
+/// vectors borrow from that arena. The arena is
+/// reset at the start of each `collect_frame()`.
 pub struct FrameCollector { /* ... */ }
 
 impl FrameCollector {
@@ -499,9 +506,12 @@ impl FrameCollector {
     ) -> Self;
 
     /// Collect a frame capture. Called at the frame
-    /// boundary. Drains all per-thread ring buffers,
-    /// reads GPU query results, and assembles the
-    /// capture.
+    /// boundary (end of frame, after present submit,
+    /// before next frame begin; runs on the worker
+    /// thread that owns the game loop phase). Drains
+    /// all per-thread ring buffers into the frame
+    /// arena, reads GPU query results from frame
+    /// N-2, and assembles the capture.
     pub fn collect_frame(
         &mut self,
     ) -> FrameCapture;
@@ -698,7 +708,9 @@ pub struct Allocation {
     pub size_bytes: u32,
     pub subsystem_id: u32,
     pub asset_type_id: u32,
-    pub call_stack: Vec<u64>,
+    /// Inline storage for up to 16 frames; avoids
+    /// heap allocation in the common case.
+    pub call_stack: SmallVec<[u64; 16]>,
 }
 
 impl MemorySnapshot {
@@ -725,7 +737,8 @@ pub struct LeakReport {
 /// call stack.
 #[derive(Clone, Debug)]
 pub struct LeakGroup {
-    pub call_stack: Vec<u64>,
+    /// Inline storage for up to 16 frames.
+    pub call_stack: SmallVec<[u64; 16]>,
     pub asset_type_id: u32,
     pub count: u32,
     pub total_bytes: u64,
@@ -928,6 +941,235 @@ pub struct SystemTiming {
 }
 ```
 
+### Arena Watermark Tracker
+
+```rust
+/// Tracks per-thread arena high-water mark and
+/// reset count for the current frame.
+pub struct ArenaWatermarkTracker { /* ... */ }
+
+impl ArenaWatermarkTracker {
+    pub fn new() -> Self;
+
+    /// Record peak usage and reset count for a
+    /// named arena on the given thread.
+    #[inline(always)]
+    pub fn record(
+        &self,
+        thread_id: u32,
+        arena_name: &'static str,
+        peak_bytes: u32,
+        reset_count: u32,
+        current_bytes: u32,
+    );
+
+    /// Get per-arena watermarks for the current
+    /// frame. Returns arenas that exceeded 80%
+    /// of their capacity.
+    pub fn watermarks(&self) -> Vec<ArenaWatermark>;
+}
+
+/// Watermark data for a single arena.
+#[derive(Clone, Debug)]
+pub struct ArenaWatermark {
+    pub thread_id: u32,
+    pub arena_name: &'static str,
+    pub peak_bytes: u32,
+    pub capacity_bytes: u32,
+    pub reset_count: u32,
+    /// True if peak_bytes > 80% of capacity.
+    pub near_full: bool,
+}
+```
+
+### Physics Tracker
+
+```rust
+/// Per-frame physics timing breakdown.
+pub struct PhysicsTracker { /* ... */ }
+
+impl PhysicsTracker {
+    pub fn new() -> Self;
+
+    /// Record all physics phase timings for
+    /// the current frame.
+    #[inline(always)]
+    pub fn record_frame(
+        &self,
+        data: PhysicsFrameData,
+    );
+
+    /// Get the most recent physics frame data.
+    pub fn latest(&self) -> Option<PhysicsFrameData>;
+}
+
+/// Per-frame physics profiling data.
+#[derive(Clone, Debug)]
+pub struct PhysicsFrameData {
+    pub broadphase_us: f64,
+    pub narrowphase_us: f64,
+    pub solver_us: f64,
+    pub solver_iterations: u32,
+    pub contact_count: u32,
+    pub island_count: u32,
+    pub ccd_sweep_count: u32,
+}
+```
+
+### Asset Streaming Tracker
+
+```rust
+/// Tracks the asset streaming pipeline state.
+pub struct AssetStreamingTracker { /* ... */ }
+
+impl AssetStreamingTracker {
+    pub fn new() -> Self;
+
+    /// Record the current streaming state.
+    #[inline(always)]
+    pub fn record_frame(
+        &self,
+        data: StreamingFrameData,
+    );
+
+    /// Get the most recent streaming frame data.
+    pub fn latest(
+        &self,
+    ) -> Option<StreamingFrameData>;
+}
+
+/// Per-frame asset streaming profiling data.
+#[derive(Clone, Debug)]
+pub struct StreamingFrameData {
+    pub load_queue_depth: u32,
+    pub active_io_requests: u32,
+    pub streaming_bandwidth_mbs: f32,
+    pub cache_hits: u32,
+    pub cache_misses: u32,
+    pub avg_load_time_ms: f32,
+    pub pending_high_priority: u32,
+}
+```
+
+### Audio Tracker
+
+```rust
+/// Tracks audio thread callback timing and
+/// buffer health.
+pub struct AudioTracker { /* ... */ }
+
+impl AudioTracker {
+    pub fn new() -> Self;
+
+    /// Record audio callback data. Called from
+    /// the audio thread; lock-free.
+    #[inline(always)]
+    pub fn record_callback(
+        &self,
+        data: AudioCallbackData,
+    );
+
+    /// Get the most recent audio frame data.
+    pub fn latest(&self) -> Option<AudioCallbackData>;
+}
+
+/// Per-callback audio profiling data.
+#[derive(Clone, Debug)]
+pub struct AudioCallbackData {
+    /// Callback execution time (must stay < 0.5 ms).
+    pub callback_us: f64,
+    pub buffer_fill_pct: f32,
+    pub underrun_count: u32,
+    pub active_voice_count: u32,
+    pub mixer_load_pct: f32,
+    pub spatial_processing_us: f64,
+}
+```
+
+### Network Latency Tracker
+
+```rust
+/// Tracks per-connection network latency metrics.
+pub struct NetworkLatencyTracker { /* ... */ }
+
+impl NetworkLatencyTracker {
+    pub fn new() -> Self;
+
+    /// Record a round-trip time sample for a
+    /// connection.
+    #[inline(always)]
+    pub fn record_rtt(
+        &self,
+        connection_id: u32,
+        rtt_us: u32,
+    );
+
+    /// Record a packet loss event.
+    #[inline(always)]
+    pub fn record_loss(
+        &self,
+        connection_id: u32,
+    );
+
+    /// Record a retransmission event.
+    #[inline(always)]
+    pub fn record_retransmit(
+        &self,
+        connection_id: u32,
+    );
+
+    /// Get latency summary for all connections.
+    pub fn latency_summary(
+        &self,
+    ) -> Vec<LatencySummary>;
+}
+
+/// Latency statistics for a single connection.
+#[derive(Clone, Debug)]
+pub struct LatencySummary {
+    pub connection_id: u32,
+    pub rtt_min_us: u32,
+    pub rtt_avg_us: u32,
+    pub rtt_max_us: u32,
+    pub rtt_p99_us: u32,
+    pub jitter_us: u32,
+    pub packet_loss_pct: f32,
+    pub retransmit_count: u32,
+}
+```
+
+### GPU VRAM Breakdown
+
+```rust
+/// Tracks GPU VRAM usage broken down by
+/// resource type.
+pub struct VramBreakdownTracker { /* ... */ }
+
+impl VramBreakdownTracker {
+    pub fn new() -> Self;
+
+    /// Update VRAM usage snapshot. Called once
+    /// per frame after GPU resource updates.
+    pub fn record_frame(&self, data: VramBreakdown);
+
+    /// Get the most recent VRAM breakdown.
+    pub fn latest(&self) -> Option<VramBreakdown>;
+}
+
+/// Per-frame GPU VRAM breakdown.
+#[derive(Clone, Debug)]
+pub struct VramBreakdown {
+    pub textures_bytes: u64,
+    pub vertex_buffers_bytes: u64,
+    pub index_buffers_bytes: u64,
+    pub structured_buffers_bytes: u64,
+    pub indirect_buffers_bytes: u64,
+    pub render_targets_bytes: u64,
+    pub acceleration_structures_bytes: u64,
+    pub total_bytes: u64,
+}
+```
+
 ### Stat Overlays
 
 ```rust
@@ -947,7 +1189,9 @@ pub enum StatOverlay {
 /// HUD overlay configuration.
 #[derive(Clone, Debug)]
 pub struct OverlayConfig {
-    pub enabled: Vec<StatOverlay>,
+    /// Inline storage for up to 8 overlays; avoids
+    /// heap allocation in the common case.
+    pub enabled: SmallVec<[StatOverlay; 8]>,
     pub compact_mode: bool,
     pub position: OverlayPosition,
 }
@@ -978,14 +1222,16 @@ impl StatOverlays {
     pub fn set_compact(&mut self, compact: bool);
 
     /// Start recording overlay data to CSV.
-    pub async fn start_csv_recording(
+    /// Queues writes to the main thread via
+    /// platform-native fire-and-forget I/O.
+    pub fn start_csv_recording(
         &mut self,
-        path: &str,
-        reactor: &Tokio runtime,
+        path: &'static str,
     );
 
-    /// Stop CSV recording and flush to disk.
-    pub async fn stop_csv_recording(&mut self);
+    /// Stop CSV recording. Remaining data is
+    /// flushed on the next main-thread I/O poll.
+    pub fn stop_csv_recording(&mut self);
 
     /// Update overlay values from the latest
     /// frame capture.
@@ -1007,17 +1253,17 @@ impl RemoteServer {
     pub fn new(port: u16) -> Self;
 
     /// Start listening for editor connections.
-    pub async fn start(
-        &mut self,
-        reactor: &Tokio runtime,
-    );
+    /// Called from the main thread; polls QUIC
+    /// completions in the OS event loop.
+    pub fn start(&mut self);
 
-    /// Stop the server.
-    pub async fn stop(&mut self);
+    /// Stop the server and close all QUIC streams.
+    pub fn stop(&mut self);
 
-    /// Publish a frame capture to all connected
-    /// editors.
-    pub async fn publish_frame(
+    /// Enqueue a frame capture for all connected
+    /// editors. Non-blocking; data is sent on the
+    /// next main-thread I/O poll.
+    pub fn publish_frame(
         &self,
         capture: &FrameCapture,
     );
@@ -1046,22 +1292,23 @@ pub struct RemoteClient { /* ... */ }
 impl RemoteClient {
     pub fn new() -> Self;
 
-    /// Connect to a remote target.
-    pub async fn connect(
+    /// Initiate a QUIC connection to a remote target.
+    /// Returns immediately; connection completes on
+    /// the next main-thread I/O poll.
+    pub fn connect(
         &mut self,
         host: &str,
         port: u16,
-        reactor: &Tokio runtime,
     ) -> Result<(), RemoteError>;
 
-    /// Disconnect from the remote target.
-    pub async fn disconnect(&mut self);
+    /// Close the QUIC connection.
+    pub fn disconnect(&mut self);
 
-    /// Get the next frame capture from the remote
-    /// target.
-    pub async fn next_frame(
+    /// Poll for the next decoded frame capture.
+    /// Returns None if no data is available yet.
+    pub fn poll_frame(
         &mut self,
-    ) -> Result<FrameCapture, RemoteError>;
+    ) -> Option<Result<FrameCapture, RemoteError>>;
 
     /// Check if connected.
     pub fn is_connected(&self) -> bool;
@@ -1072,7 +1319,17 @@ impl RemoteClient {
 }
 
 /// Binary protocol for encoding/decoding frame
-/// captures over TCP.
+/// captures over a QUIC stream. Uses varint
+/// compression for streaming (low latency).
+///
+/// **Wire vs. saved format distinction:**
+/// - *Wire* (streaming): this custom varint protocol.
+///   Optimizes for low per-frame encoding latency
+///   (~500 us). Does not support random access.
+/// - *Saved* (file export for offline analysis):
+///   rkyv zero-copy format. Supports mmap access
+///   and fast seek. Written via fire-and-forget
+///   platform I/O on the main thread.
 pub struct BinaryProtocol { /* ... */ }
 
 impl BinaryProtocol {
@@ -1188,6 +1445,24 @@ pub enum DecodeError {
 4. Events are sorted by timestamp and assembled into a `FrameCapture`.
 5. The CPU timeline, flame graph, GPU timeline, and stat overlays read from the capture.
 
+### Frame-Boundary Handoff Protocol
+
+`collect_frame()` runs at **end of frame, after present submit, before the next frame begins**. It
+runs on the **worker thread that owns the game loop** (no dedicated collector thread).
+
+Sequence:
+
+1. Main thread signals frame end (sends `FrameEnd` message via crossbeam-channel to workers).
+2. Workers flush any remaining in-progress `CpuScope` events to their ring buffers before returning
+   from their current job.
+3. `FrameCollector::collect_frame()` resets the frame arena, then drains all per-thread ring buffers
+   via `drain_into()` (single consumer per buffer — no race condition).
+4. Reads resolved GPU timestamp queries from frame N-2 (triple-buffered query pool; GPU has resolved
+   them by now).
+5. Assembles the `FrameCapture` from the arena-backed event slices plus GPU results.
+6. Publishes `FrameCapture` to the ECS `Res<LatestFrameCapture>` resource (viewer systems read it
+   next frame) and sends it to `RemoteServer` via crossbeam-channel.
+
 ### Memory Tracking Pipeline
 
 1. The global allocator is hooked to call `MemAllocTracker::record_alloc()` on every allocation and
@@ -1200,32 +1475,57 @@ pub enum DecodeError {
 
 ### Remote Profiling Pipeline
 
-1. The target runs a `RemoteServer` that listens on a TCP port.
-2. The editor's `RemoteClient` connects to the target.
-3. Each frame, the server encodes the `FrameCapture` with `BinaryProtocol::encode()` (varint
-   compressed) and writes it via `Tokio runtime::write()`.
-4. The client reads and decodes frame data via `Tokio runtime::read()`.
-5. All viewer widgets display remote data identically to local data.
-6. `CaptureGranularity` controls how much data is sent to keep bandwidth under 10 Mbps.
+1. The target runs a `RemoteServer` that listens on a QUIC port. Transport: quinn-proto (Linux),
+   MsQuic (Windows), Networking.framework (Apple).
+2. The editor's `RemoteClient` connects to the target via QUIC.
+3. Each frame, the server enqueues the `FrameCapture` (encoded with `BinaryProtocol::encode()`,
+   varint compressed) onto a dedicated QUIC stream. Sent on the next main-thread I/O poll.
+4. The client polls for decoded frame data via `RemoteClient::poll_frame()` on the main thread.
+5. Decoded frames are forwarded to viewer widgets via crossbeam-channel.
+6. All viewer widgets display remote data identically to local data.
+7. `CaptureGranularity` controls how much data is sent to keep bandwidth under 10 Mbps.
+
+### Viewport Stats Overlay Data Path
+
+The `StatOverlays` system feeds data to the viewport statistics overlay defined in `level-world.md`
+RF-32. The shared path is:
+
+1. `FrameCollector::collect_frame()` assembles `FrameStats` from all trackers.
+2. `FrameCapture` (containing `FrameStats`) is published to `Res<LatestFrameCapture>`.
+3. The `StatOverlays` ECS system reads `Res<LatestFrameCapture>` and writes display values to
+   `Res<ViewportStatValues>` (defined in `level-world.md`).
+4. The viewport overlay renderer (level-world.md RF-32) reads `Res<ViewportStatValues>` and renders
+   the on-screen HUD each frame.
+5. No direct coupling between the profiler and the viewport renderer — only the shared ECS resource
+   crosses the boundary.
 
 ## Platform Considerations
 
-| Feature           | macOS                        | Linux                                 |
-|-------------------|------------------------------|---------------------------------------|
-| CPU timestamps    | `mach_absolute_time`         | `clock_gettime(MONOTONIC)` or `rdtsc` |
-| Thread scheduling | os_signpost                  | perf `sched:sched_switch`             |
-| Stack capture     | `backtrace` (libunwind)      | `backtrace` (libunwind)               |
-| GPU timestamps    | Metal timestamp queries      | Vulkan timestamp queries              |
-| Vendor counters   | Metal GPU counters API       | Vulkan pipeline statistics            |
-| Remote transport  | Tokio TCP                    | Tokio TCP                             |
-| Signpost compat   | `os_signpost_emit_with_type` | N/A                                   |
+| Platform | Timer              | GPU queries             | Remote transport        |
+|----------|--------------------|-------------------------|-------------------------|
+| Windows  | QPC                | D3D12 timestamp         | MsQuic                  |
+| macOS    | `mach_absolute_time` | Metal timestamp       | Networking.framework    |
+| Linux    | `clock_gettime`    | Vulkan timestamp        | quinn-proto             |
+| iOS      | `mach_absolute_time` | Metal timestamp       | Networking.framework    |
+| Android  | `clock_gettime`    | Vulkan timestamp        | quinn-proto             |
+| Consoles | Platform SDK       | Platform SDK            | Platform SDK            |
 
-1. **CPU timestamps** — `rdtsc` via inline asm or `QueryPerformanceCounter`
-2. **Thread scheduling** — ETW `CSwitch` events
-3. **Stack capture** — `CaptureStackBackTrace`
-4. **GPU timestamps** — D3D12 timestamp queries
-5. **Vendor counters** — AMD AGS, NVIDIA NVAPI
-6. **Remote transport** — Tokio TCP
+1. **Windows** — CPU: `QueryPerformanceCounter`. Thread scheduling: ETW `CSwitch` events. Stack:
+   `CaptureStackBackTrace`. GPU: D3D12 timestamp queries. Vendor: AMD AGS, NVIDIA NVAPI.
+2. **macOS** — CPU: `mach_absolute_time`, calibrated via `mach_timebase_info`. Thread scheduling:
+   `os_signpost_emit_with_type` (Instruments compatible). Stack: `backtrace` (libunwind). GPU: Metal
+   timestamp queries via `objc2-metal`. Vendor: Metal GPU counters API.
+3. **Linux** — CPU: `clock_gettime(CLOCK_MONOTONIC)` or `rdtsc`. Thread scheduling: perf
+   `sched:sched_switch`. Stack: `backtrace` (libunwind). GPU: Vulkan timestamp queries. Vendor:
+   Vulkan pipeline statistics.
+4. **iOS** — CPU: `mach_absolute_time`. GPU: Metal timestamp queries. Thermal state: monitor via
+   `NSProcessInfo.thermalState` (`objc2-foundation`); expose as a profiler counter. Additional:
+   `os_signpost` for Instruments integration on device.
+5. **Android** — CPU: `clock_gettime`. GPU: Vulkan timestamp queries. Additional: Android Simpleperf
+   integration for CPU perf counters on rooted/dev devices. Thermal throttling state via
+   `AThermal_getThermalStatus`.
+6. **Consoles** — All profiling uses platform SDK APIs. Remote transport uses platform-specific
+   networking. Details documented under NDA separately.
 
 All timestamps are normalized to nanoseconds using per-platform frequency calibration. TSC frequency
 is read once at startup via `cpuid` (x86) or `mach_timebase_info` (Apple Silicon).
@@ -1243,6 +1543,17 @@ is read once at startup via `cpuid` (x86) or `mach_timebase_info` (Apple Silicon
 
 At 300 FPS with 1000 CPU events per frame, total overhead is ~20 us per frame out of 3.3 ms budget
 (0.6%).
+
+### Algorithm References
+
+| Algorithm | Reference |
+|-----------|-----------|
+| SPSC ring buffer | Lamport, "Specifying Concurrent Program Modules" (1983) — <https://lamport.azurewebsites.net/pubs/pubs.html#specifying> |
+| Flame graphs | Brendan Gregg, "The Flame Graph" (CACM 2016) — <https://www.brendangregg.com/flamegraphs.html> |
+| Squarified treemaps | Bruls, Huizing, van Wijk, "Squarified Treemaps" (2000) — <https://www.win.tue.nl/~vanwijk/stm.pdf> |
+| GPU timestamp calibration | Vulkan spec §43.3 "Timestamp Queries" — <https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#queries-timestamps> |
+| GPU timestamp calibration | D3D12 — <https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-getclockcalibration> |
+| GPU timestamp calibration | Metal — <https://developer.apple.com/documentation/metal/mtlcountersamplebuffer> |
 
 ## Test Plan
 
@@ -1388,10 +1699,10 @@ shipping on mobile platforms where performance budgets are tight.
 
 The profiler integrates directly with the ECS scheduler for system timing, the render graph for GPU
 pass timing, the networking layer for bandwidth tracking, and the VFX system for particle budgets.
-All remote I/O uses `Tokio runtime`. Platform backends are selected via `cfg` attributes, matching
-the engine's platform abstraction pattern. The `profile_scope!` macro is designed to be zero-cost
-when profiling is compiled out, aligning with the static dispatch preference. No significant
-cohesion gaps exist.
+All remote I/O uses platform-native QUIC (quinn-proto/MsQuic/Networking.framework) via synchronous
+main-thread polling. Platform backends are selected via `cfg` attributes, matching the engine's
+platform abstraction pattern. The `profile_scope!` macro is designed to be zero-cost when profiling
+is compiled out, aligning with the static dispatch preference. No significant cohesion gaps exist.
 
 ## Open Questions
 
@@ -1413,3 +1724,274 @@ cohesion gaps exist.
    Determine the common subset to display by default vs. vendor- specific tabs.
 7. **CI leak detection threshold** -- Zero-tolerance leak detection may produce false positives from
    intentional caches. Define a configurable allowlist or byte threshold for CI automation.
+
+## Review feedback
+
+### RF-1: Remove all async/await and Tokio
+
+Remove `async fn` from all 8+ methods. Remove Tokio as I/O backend. Replace with: platform-native
+I/O (io_uring/IOCP/GCD) for CSV export via fire-and-forget writes, crossbeam-channel for remote
+profiling data streaming. Remote server/client use synchronous poll on the main thread.
+
+### RF-2: Replace TCP with QUIC
+
+Remote profiling transport must use QUIC: quinn-proto (Linux), MsQuic (Windows),
+Networking.framework (Apple). Profiler data streams over a dedicated QUIC stream.
+
+### RF-3: Missing profiling domains
+
+Add dedicated trackers:
+
+1. **ArenaWatermarkTracker** — per-thread arena high-water mark, reset count, current usage. Reports
+   if any arena exceeded 80% capacity.
+2. **PhysicsTracker** — broadphase time, narrowphase time, solver iterations, solver time, contact
+   count, island count, CCD sweep count. Integrates with physics system instrumentation points.
+3. **AssetStreamingTracker** — load queue depth, active I/O requests, streaming bandwidth (MB/s),
+   cache hit/miss ratio, average load time per asset type, pending loads by priority.
+4. **AudioTracker** — audio thread callback timing, buffer fill level, underrun count, active voice
+   count, mixer load, spatial processing time. Resolves the gap acknowledged in Q4.
+5. **NetworkLatencyTracker** — RTT histogram (min/avg/max/p99), jitter, packet loss rate,
+   retransmission count. Complements the existing NetBandwidthTracker.
+6. **GPU VRAM breakdown** — per-resource-type memory: textures, buffers
+   (vertex/index/structured/indirect), render targets, acceleration structures. Not just total
+   `gpu_memory_bytes`.
+
+### RF-4: Cross-subsystem integration table
+
+| Subsystem | Data collected | Mechanism |
+|-----------|---------------|-----------|
+| ECS scheduler | Per-system timing | EcsSystemTracker |
+| Render graph | Per-pass GPU timing | GpuScope + timestamp queries |
+| Job system | Worker busy/idle, steal count, queue depth | JobSystemTracker |
+| Memory allocators | Per-alloc tracking | MemAllocTracker |
+| Per-thread arenas | Watermark, reset count | ArenaWatermarkTracker |
+| GPU VRAM | Per-resource-type usage | GPU memory queries |
+| Networking | Bandwidth + latency | NetBandwidthTracker + latency |
+| Asset pipeline | Load queue, cache, bandwidth | AssetStreamingTracker |
+| Audio | Callback timing, voices, underruns | AudioTracker |
+| Physics | Broadphase/narrowphase/solver timing | PhysicsTracker |
+| VFX | Particle count, compute dispatch time | VfxTracker |
+| Viewport stats | FPS, tris, meshlets, draws | level-world.md RF-32 |
+| UI | Layout time, paint time, widget count | UITracker |
+
+### RF-5: Complete platform considerations
+
+| Platform | Timer | GPU queries | Remote transport |
+|----------|-------|------------|-----------------|
+| Windows | QPC | D3D12 timestamp | MsQuic |
+| macOS | mach_absolute_time | Metal timestamp | Networking.framework |
+| Linux | clock_gettime | Vulkan timestamp | quinn-proto |
+| iOS | mach_absolute_time | Metal timestamp | Networking.framework |
+| Android | clock_gettime | Vulkan timestamp | quinn-proto |
+| Consoles | Platform SDK | Platform SDK | Platform SDK |
+
+Add iOS thermal state monitoring, Android Simpleperf integration notes.
+
+### RF-6: Codegen/middleman note
+
+Profiler component types (`CpuScope`, `GpuScope`) are engine-internal, not codegen'd. However,
+user-defined profiler zones from logic graphs (scripting.md) register their zone names in the
+middleman at codegen time. Document which types are engine-internal vs middleman.
+
+### RF-7: SmallVec
+
+`OverlayConfig::enabled` → `SmallVec<[StatOverlay; 4]>`. `Allocation::call_stack` →
+`SmallVec<[u64; 16]>`.
+
+### RF-8: Per-thread arenas for frame collection
+
+`drain()` returns into a pre-allocated arena buffer. `FrameCapture` vectors allocate from the frame
+arena. Arena reset after collection.
+
+### RF-9: rkyv for saved captures
+
+Saved profiler captures (file export for offline analysis) use rkyv. The wire protocol remains
+custom binary with varint compression (streaming latency requirements justify this divergence —
+document it).
+
+### RF-10: Game loop phase
+
+`FrameCollector::collect_frame()` runs at end of frame, after present submit, before next frame
+begin. Document exact phase and which thread runs it.
+
+### RF-11: Frame-boundary handoff protocol
+
+Sequence: (1) main thread signals frame end, (2) workers flush remaining events to ring buffers, (3)
+`FrameCollector` drains all ring buffers (single consumer, no race), (4) reads GPU queries from N-2
+frame (resolved by now), (5) assembles `FrameCapture`, (6) publishes to UI + remote stream. Document
+which thread runs steps 3-6.
+
+### RF-12: Algorithm reference URLs
+
+Add URLs for: Lamport SPSC ring buffer, Brendan Gregg flame graphs, squarified treemaps (Bruls et
+al.), GPU timestamp query calibration (vendor best practices).
+
+### RF-13: Viewport stats overlay integration
+
+Cross-reference level-world.md RF-32. The profiler's `StatOverlays` system feeds data to the
+viewport statistics overlay. Document the shared data path: profiler collects → `FrameStats`
+resource → viewport overlay reads and renders.
+
+### RF-14: Fix GpuPassTiming.pass_name
+
+Replace `String pass_name` with `&'static str` (render graph pass names are known at compile time)
+or a `u32 zone_name_hash` like `CpuEvent`.
+
+### RF-15: Convert ASCII directory tree to Mermaid or remove
+
+The file tree duplicates information from the module boundaries diagram.
+
+### RF-16: Render performance profiling depth
+
+1. **Per-pass GPU timing** — every render graph node reports its GPU time via timestamp queries.
+   Displayed as a flame graph per frame: GBuffer → shadow cascades → lighting → post-process → UI.
+   Click any pass to see: draw call count, triangle count, meshlet count, pixel fill rate, texture
+   bandwidth.
+2. **GPU utilization** — query GPU vendor counters (AMD GPUPerfAPI, NVIDIA Nsight, Intel Metrics
+   Discovery, Metal GPU counters via objc2) for: shader unit occupancy, compute unit utilization,
+   ALU utilization, texture unit utilization, memory bandwidth utilization. Display as per-frame
+   percentages alongside the GPU timeline.
+3. **Shader profiling** — per-shader execution time. Identify the most expensive shaders by total
+   GPU time across all draw calls. Display shader complexity heat map in the viewport: each pixel
+   colored by the shader execution cost at that pixel (from GPU timestamp per-draw or hardware
+   shader profiling counters).
+4. **Custom shader debugging** — for user-authored material graph shaders (codegen'd HLSL): inject
+   debug outputs into the shader at authoring time. A "Debug" pin on any material graph node writes
+   its value to a debug render target. The profiler displays the debug target as a viewport overlay.
+   No shader recompilation needed — debug outputs are compiled in at codegen time, activated by a
+   runtime flag.
+5. **Overdraw visualization** — render each pixel with a counter shader. Display as heat map: blue=1
+   pass, green=2, yellow=3, red=4+. Identifies Z-sorting issues and transparency cost.
+6. **Bandwidth analysis** — track GPU memory bandwidth per pass: texture reads, buffer reads, render
+   target writes. Identify bandwidth-bound passes. Cross-reference with GPU utilization counters.
+
+### RF-17: Custom game logic profiling
+
+1. **Logic graph profiling** — every codegen'd logic graph function (from scripting.md) is
+   instrumented with CPU scope markers. The profiler shows per-graph-instance execution time. Flame
+   graph drill-down: graph → node → sub-expression. Identifies which logic graph nodes are
+   bottlenecks.
+2. **Poorly designed logic graph detection** — automated warnings:
+   - Graph executes > 1 ms per instance (threshold configurable)
+   - Graph has > 100 nodes (complexity warning)
+   - Graph has redundant computations (same subgraph evaluated multiple times — codegen should CSE
+     these, but warn if not)
+   - Graph performs ECS queries inside a loop (N+1 query pattern)
+   - Graph allocates heap memory (should use arena)
+The profiler's "Logic Graph Health" panel lists all graphs sorted by execution cost with warnings.
+3. **Custom material profiling** — per-material GPU cost. Sort all materials by total GPU time.
+   Identify materials that are disproportionately expensive relative to their screen coverage.
+4. **Game system profiling** — per-ECS-system timing is already in `EcsSystemTracker`. Expand with:
+   entity count per system query, component access pattern (read vs write), cache miss estimation
+   (archetype fragmentation), system dependency graph visualization (which systems block which).
+
+### RF-18: CPU and GPU counter integration
+
+1. **Unified timeline** — CPU and GPU events on the same timeline, correlated by frame number. CPU
+   flame graph on top, GPU flame graph on bottom, with vertical alignment at frame boundaries. Shows
+   CPU-GPU overlap (pipelining efficiency) and CPU-GPU sync points (bubbles).
+2. **CPU-GPU correlation** — match CPU draw call submission to GPU draw execution. Click a CPU
+   `submit_draw` event to highlight the corresponding GPU execution region. Shows
+   submission-to-execution latency.
+3. **Counter aggregation** — collect CPU counters (instructions retired, cache misses, branch
+   mispredictions via `perf` / ETW / Instruments) alongside GPU counters. Display in synchronized
+   columns per frame.
+4. **Platform counter APIs:**
+   - Windows: ETW (Event Tracing for Windows) + D3D12 PIX markers
+   - macOS: Instruments + Metal GPU counters via objc2
+   - Linux: `perf_event_open` + Vulkan timestamp queries
+   - Consoles: platform SDK profiling APIs
+5. **Bottleneck identification** — automated analysis: if GPU is 100% utilized and CPU is idle, the
+   frame is GPU-bound. If CPU is busy and GPU is idle, CPU-bound. If both are idle, the frame is
+   sync-bound (waiting for vsync or a fence). Display as a per-frame badge: "GPU-bound",
+   "CPU-bound", "balanced", "sync-bound".
+
+### RF-19: Custom benchmark framework
+
+1. **Benchmark definition** — a benchmark is a logic graph that sets up a scene, runs N frames, and
+   collects profiler data. Authored in the editor like any other logic graph. The graph produces:
+   - Scene setup (spawn entities, configure systems)
+   - Warm-up phase (N frames, data discarded)
+   - Measurement phase (M frames, data collected)
+   - Teardown (despawn entities)
+2. **Benchmark runner** — an editor panel or CLI command that executes a benchmark suite. Runs each
+   benchmark in sequence. Captures: frame time (min/avg/max/p99), GPU time, memory usage, specific
+   counter values. Outputs results as a report (rkyv for data, Markdown for human-readable).
+3. **Regression detection** — compare benchmark results against a baseline. Flag regressions: if p99
+   frame time increased > 10% (configurable threshold), report as regression. Integrates with CI:
+   benchmark suite runs on every commit, results stored, trends tracked.
+4. **Built-in benchmarks:**
+   - Stress tests: 10K entities, 100K triangles, 1000 lights
+   - ECS throughput: iterate 1M entities with N components
+   - Render graph: full deferred pipeline at 1080p / 4K
+   - Physics: 1000 rigid bodies with contacts
+   - Streaming: load/unload 100 cells
+   - Logic graph: 1000 graph instances executing
+   - UI: 500 widget layout + paint
+5. **A/B comparison** — run the same benchmark before and after a change. Display side-by-side
+   results with delta percentage and statistical significance (require N runs for confidence).
+6. **Deterministic benchmarks** — benchmarks run with fixed random seeds, fixed timestep, and
+   deterministic ECS iteration to produce reproducible results across runs.
+
+### RF-20: Editor performance profiling
+
+1. **Editor-specific metrics:**
+   - UI layout time per frame
+   - UI paint time per frame
+   - Widget count and dirty count
+   - Viewport render time (separate from game render)
+   - Inspector property enumeration time
+   - Content browser thumbnail generation time
+   - Logic graph editor canvas render time (node count)
+   - Undo stack memory usage
+2. **Editor profiler panel** — dedicated panel (separate from game profiler) showing editor-specific
+   metrics. Identifies editor bottlenecks: slow inspectors (too many properties), slow content
+   browser (too many thumbnails), slow graph editor (too many nodes).
+3. **Editor frame budget** — target: editor interaction < 16 ms (60 fps). When any editor system
+   exceeds its budget, the profiler highlights it in red. Budget table:
+
+| Editor system | Budget |
+|--------------|--------|
+| UI layout | < 2 ms |
+| UI paint | < 2 ms |
+| Viewport render | < 8 ms |
+| Inspector update | < 1 ms |
+| Content browser | < 2 ms |
+| Graph canvas | < 4 ms |
+| Undo/redo | < 1 ms |
+
+### RF-21: ECS profiling depth
+
+1. **Per-system breakdown** — execution time, entity count queried, component access count, cache
+   line utilization estimate (based on archetype fragmentation).
+2. **Archetype health** — list all archetypes by entity count and component count. Flag archetypes
+   with < 10 entities (fragmented, poor cache utilization). Suggest archetype merging if components
+   are often co-accessed.
+3. **System dependency graph** — visualize system execution order as a DAG. Color by execution time.
+   Show parallel execution lanes (which systems run simultaneously on different workers). Identify
+   bottleneck systems (longest sequential path).
+4. **Entity budget** — per-scene entity count by archetype. Warning when total entities exceed
+   platform budget (mobile: 50K, desktop: 500K). Show entity creation/destruction rate per frame.
+5. **Component memory** — per-component-type memory usage across all archetypes. Identify bloated
+   components (large structs that waste cache when only one field is accessed).
+
+### RF-22: Engine development profiling
+
+The profiler must also support profiling the engine itself during development:
+
+1. **Engine CI benchmarks** — the same benchmark framework (RF-19) runs against the engine's own
+   test scenes on every commit. Results tracked as a time series. Regressions flagged in CI.
+2. **Compile time profiling** — track middleman .dylib compilation time. Break down by: codegen
+   time, rustc compilation time, linking time. Identify which codegen'd types contribute most to
+   compile time.
+3. **Hot-reload latency** — measure end-to-end hot-reload time: file change detected → codegen →
+   rustc → .dylib swap → first frame with new code. Target: < 2 seconds for typical changes.
+4. **Memory leak detection** — track all allocations in the engine across a test run. Report
+   allocations that were never freed. Integrate with CI: memory leak = test failure.
+5. **Thread contention** — track mutex/channel contention: how often do workers block waiting for a
+   lock or channel? Which locks are most contended? (Should be near-zero with the lock-free
+   architecture, but measure to verify.)
+6. **Platform I/O profiling** — measure io_uring/IOCP/GCD completion latency. Track I/O queue depth,
+   submission rate, completion rate. Identify I/O bottlenecks.
+7. **Test coverage heat map** — not execution profiling, but useful: which engine code paths are
+   exercised by the test suite? Identify untested code. Uses `cargo-llvm-cov` integration.

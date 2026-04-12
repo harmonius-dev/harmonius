@@ -686,3 +686,222 @@ See companion file [render-effects-test-cases.md](render-effects-test-cases.md).
    compute. Define the intermediate representation.
 5. **RT lens flare** -- Physical lens element tracing (F-2.5.13) is expensive. Evaluate hybrid
    approach with image-based fallback.
+
+## Review Feedback
+
+### RF-1: This design is canonical for all secondary effects
+
+Render-effects owns ALL secondary rendering: GI, RT shadows, reflections, AO, denoising, path
+tracing, and post-processing. Rendering-core owns only primary visibility (meshlets, G-buffer,
+materials, lighting evaluation). The RT/GI content already in this design is correctly placed — it
+was previously duplicated in rendering-core but has been moved here as canonical.
+
+### RF-2: SSR as middle-tier reflection fallback
+
+SSR is acceptable as a BLEND with probes, never alone. Off-screen gaps are filled by probe IBL. The
+reflection cascade:
+
+| Tier | Method | Quality | Cost |
+|------|--------|---------|------|
+| Ultra | RT reflections (0.5-1 spp) | Best | High |
+| High | SSR + probe blend | Dynamic + off-screen | Medium |
+| Medium | SSR half-res + probe blend | Decent | Low |
+| Low | Probes only | Static/blurry | Minimal |
+
+Rename `HybridSsrRt` to `RtReflections`. Keep `StochasticSsr` but document it always blends with
+probes — never standalone. The blend weight is based on SSR confidence (ray hit vs miss).
+
+### RF-3: Remove Reflect bound
+
+Remove `Reflect` from `PostProcessPass::Params` (line 217). Use codegen-generated static metadata.
+
+### RF-4: Add TAA/TSR
+
+Add temporal anti-aliasing as a post-process pass. Insert before bloom in the pipeline. Tiers:
+
+| Tier | Method | Notes |
+|------|--------|-------|
+| Ultra | TSR (temporal upscaling) | Render at lower res, upscale |
+| High | TAA | Full-res with jitter + history |
+| Medium | TAA (reduced history) | Less temporal stability |
+| Low | FXAA | Spatial only, no history |
+
+TAA requires: motion vectors, jitter pattern (Halton), history buffer with reprojection,
+disocclusion detection. Shares the reprojection buffer with RT denoisers.
+
+### RF-5: Surfel-based GI (canonical)
+
+Scalable surfel-based GI. Baked lightmaps as the only fallback. Based on shipped implementations: EA
+GIBS (SIGGRAPH 2021, shipped in EA Sports College Football 25), Lumen surface cache (UE5), and
+Lightspeed Studios HSGI (GDC).
+
+**Pipeline (6 stages per frame):**
+
+1. **Surfel generation** — screen-space on-the-fly from G-buffer depth/normal (EA GIBS approach).
+   Divide screen into 16x16 tiles, find lowest coverage via group atomics, spawn surfels to fill
+   holes. Each surfel is a world-space disk: position, normal, radius, irradiance. No
+   pre-computation or UV unwrapping.
+
+2. **Ray tracing (3 paths, adaptive):**
+   - Screen-space: HZB depth buffer trace (cheapest, most on-screen)
+   - Distance field: mesh SDF sphere stepping (off-screen nearby)
+   - Hardware RT: BVH traversal (off-screen far, optional)
+   - Lumen-style cascade: try screen first, fall back to DF, then hardware RT. No hardware RT
+     required.
+
+3. **Surfel irradiance update** — 4 cosine-distributed rays per surfel per frame. Linear
+   accumulation up to 32 samples, then exponential blending. Multi-bounce: rays hitting other
+   surfels read their cached irradiance (radiosity solver).
+
+4. **Temporal accumulation** — per-surfel exponential moving average. Disocclusion detection via
+   depth/normal thresholds. Reset history on disoccluded surfels. ReSTIR spatial resampling
+   (8-neighbor + 5-neighbor passes) reduces noise further.
+
+5. **Screen-space gather** — for each pixel, find nearby surfels via spatial hash (uniform grid in
+   screen space). Interpolate irradiance weighted by distance and normal alignment.
+
+6. **Denoising** — SVGF or A-trous wavelet filter. Shares reprojection buffer with TAA and RT
+   denoisers.
+
+**Surfel GPU storage:**
+
+```text
+Per surfel (32 bytes):
+  position:   Vec3 (12 bytes)
+  normal:     oct-encoded u16x2 (4 bytes)
+  radius:     f16 (2 bytes)
+  irradiance: R11G11B10 (4 bytes)
+  age:        u16 (2 bytes)
+  flags:      u8 (1 byte)
+  padding:    7 bytes
+```
+
+Surfels stored in a GPU structured buffer. Spatial hash (uniform grid) indexes surfels for
+screen-space gather.
+
+**Surfel lifecycle:**
+
+- Spawn: when screen coverage drops below threshold in a tile
+- Update: 4 rays/frame, accumulate irradiance
+- Inherit: new surfels copy irradiance from nearest neighbor
+- Evict: age exceeds threshold, or outside camera frustum
+
+**Software ray tracing (no hardware RT required):**
+
+The surfel GI works on ALL platforms with compute shaders:
+
+- Screen-space HZB tracing: 2-3 depth taps, cheapest
+- Mesh Distance Field (MDF): per-mesh SDF, sphere stepping
+- Global Distance Field (GDF): scene-wide, built from MDFs
+
+Hardware RT is an optional acceleration (5-10x faster rays) but NOT required. This is how Lumen
+ships on PS5/Xbox without requiring RT hardware for GI.
+
+**Scalability tiers:**
+
+| Tier | Ray method | Rays/surfel | Surfels | Cost |
+|------|-----------|-------------|---------|------|
+| Ultra | HW RT + DF | 4/frame | 2M | ~4 ms |
+| High | DF + screen | 4/frame | 1M | ~2 ms |
+| Medium | DF + screen | 2/frame | 256K | ~1 ms |
+| Low | Baked lightmaps | 0 | 0 | 0 ms |
+
+Medium tier targets mobile flagship GPUs (A17, Snapdragon 8 Gen 3) at reduced resolution (720p
+surfel gather).
+
+Low tier uses lightmaps baked by the path tracer (RF-7). Zero runtime cost. Works on every GPU.
+
+**Performance target: < 2 ms** on console/mid PC (High tier). This beats Lumen's 2-5 ms by using
+aggressive temporal amortization and the screen-space-first ray cascade.
+
+**References:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| EA GIBS | [EA SEED (SIGGRAPH 2021)](https://advances.realtimerendering.com/s2021/SIGGRAPH%20Advances%202021%20-%20Surfel%20GI.pdf) |
+| Lumen surface cache | [Hillaire (UE5)](https://www.unrealengine.com/en-US/blog/lumen-in-ue5-let-there-be-light) |
+| HSGI | [Lightspeed Studios (GDC)](https://www.gdcvault.com/play/1029169/LIGHTSPEED-STUDIOS-Developer-Summit-HSGI) |
+| SurfelPlus | [Wang et al. (SIGGRAPH 2025)](https://github.com/WANG-Ruipeng/SurfelPlus) |
+| ReSTIR | [Bitterli et al. (SIGGRAPH 2020)](https://benedikt-bitterli.me/restir/) |
+| Distance fields | [IQ ray marching](https://iquilezles.org/articles/raymarchingdf/) |
+| HZB tracing | [Haar & Aaltonen (SIGGRAPH 2015)](https://advances.realtimerendering.com/s2015/aaltonenhaar_siggraph2015_combined_final_footer_220dpi.pdf) |
+| h3r2tic notes | [Surfel GI gist](https://gist.github.com/h3r2tic/ba39300c2b2ca4d9ca5f6ff22350a037) |
+
+### RF-6: RT feature set with fallbacks
+
+| Feature | RT Path | Fallback |
+|---------|---------|----------|
+| Soft shadows | RT rays (1-4 spp) | PCSS / CSM |
+| Reflections | RT (0.5-1 spp) | SSR + IBL blend |
+| GI | Surfel RT | Baked lightmaps |
+| AO | RTAO (0.5 spp) | GTAO |
+
+Each RT feature independently toggleable. Denoising per feature:
+
+- RT shadows: temporal + bilateral
+- RT reflections: SVGF roughness-aware
+- RTAO: temporal + bilateral
+- All share the reprojection buffer with TAA
+
+### RF-7: Hybrid and path tracing pipelines
+
+1. **Hybrid (default)** — raster primary visibility + RT secondary effects. Production game mode.
+2. **Path tracing (reference/cinematic)** — wavefront path tracing, MIS, Russian roulette,
+   progressive accumulation. For:
+   - Ground-truth art direction comparison
+   - Animated film / cinematic rendering
+   - Baking light maps and probe data
+
+### RF-8: Use open-source denoisers, not NRD
+
+NRD (NVIDIA Real-time Denoisers) is proprietary. Use open-source alternatives:
+
+| Denoiser | Source | License |
+|----------|--------|---------|
+| SVGF | Schied et al. (HPG 2017) | Paper — implement from scratch |
+| A-trous wavelet | Dammertz et al. (2010) | Paper — implement |
+| REBLUR-style | Based on NRD papers | Implement from papers |
+
+NRD's SVGF and REBLUR are documented in published papers with sufficient detail to reimplement. The
+proprietary SDK is a convenience, not a necessity. Our implementation uses the same algorithms with
+our own GPU compute shaders.
+
+Resolve open question #1: no NRD dependency. Implement from papers.
+
+### RF-9: Budget-adaptive post-process shedding
+
+When the 3 ms post-process budget is exceeded:
+
+1. Measure per-effect cost via GPU timestamps
+2. Sort effects by priority (user-configurable)
+3. Disable lowest-priority effects until within budget
+4. Downgrade remaining effects (full-res → half-res)
+
+`PostProcessStack::run` checks budget each frame and adjusts. Priority defaults: TAA (mandatory) >
+tone map (mandatory) > bloom
+> DOF > motion blur > color grading > film grain > vignette.
+
+### RF-10: Add cross-reference for volumetrics/decals
+
+The Overview should state that volumetrics (fog, clouds, god rays, atmospheric scattering) and
+decals are designed in render-styles.md.
+
+### RF-11: Create companion test cases file
+
+Create `render-effects-test-cases.md`. Include tests for SSR+probe blend, TAA/TSR, surfel GI tiers,
+RT fallback paths, denoiser convergence, budget-adaptive shedding, path tracer convergence.
+
+### RF-12: Algorithm references
+
+| Algorithm | Reference |
+|-----------|-----------|
+| DDGI | [Majercik et al. (JCGT 2019)](https://jcgt.org/published/0008/02/01/) |
+| Lumen surfels | [Hillaire (UE5)](https://www.unrealengine.com/en-US/blog/lumen-in-ue5-let-there-be-light) |
+| SVGF | [Schied et al. (HPG 2017)](https://www.highperformancegraphics.org/wp-content/uploads/2017/Papers-Session1/HPG2017_SpatiotemporalVarianceGuidedFiltering.pdf) |
+| A-trous | [Dammertz et al. (2010)](https://www.highperformancegraphics.org/previous/www_2010/media/RayTracing_I/HPG2010_RayTracing_I_Dammertz.pdf) |
+| TAA | [Karis (SIGGRAPH 2014)](https://de45xmedrsdbp.cloudfront.net/Resources/files/TemporalAA_small-59732822.pdf) |
+| TSR | [Salvi (GDC 2016)](https://developer.download.nvidia.com/gameworks/events/GDC2016/msalvi_temporal_supersampling.pdf) |
+| Wavefront PT | [Laine et al. (HPG 2013)](https://research.nvidia.com/publication/2013-07_megakernels-considered-harmful-wavefront-path-tracing-gpus) |
+| MIS | [Veach (PhD thesis 1997)](https://graphics.stanford.edu/papers/veach_thesis/thesis-bw.pdf) |
+| ReSTIR | [Bitterli et al. (SIGGRAPH 2020)](https://benedikt-bitterli.me/restir/) |
+| SSR | [Stachowiak (SIGGRAPH 2015)](https://www.ea.com/frostbite/news/stochastic-screen-space-reflections) |

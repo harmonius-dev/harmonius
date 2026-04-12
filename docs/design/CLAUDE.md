@@ -15,7 +15,6 @@ docs/design/
     {group}.md              — design document
     {group}-test-cases.md   — companion test cases
   constraints.md            — project-wide constraints
-  plan.md                   — design plan and wave schedule
 ```
 
 Domains: `ai`, `animation`, `audio`, `content-pipeline`, `core-runtime`, `game-framework`,

@@ -2168,7 +2168,7 @@ Each modifier transforms the value in sequence:
 | `hidapi`       | DualSense HID comms      |
 | `bitflags`     | VR button bitmasks       |
 | `windows-rs`   | Win32 API bindings       |
-| `swift-bridge` | macOS/iOS Swift FFI      |
+| `objc2`        | macOS/iOS Obj-C FFI      |
 | `smallvec`     | Inline small vectors     |
 
 ## Test Plan
@@ -2324,3 +2324,159 @@ Companion test case files:
     `GamepadAxis` events?
 
 12. **Aim assist spatial query cost** -- Use the shared BVH, or a separate lower-resolution index?
+
+## Review Feedback
+
+### RF-1: Fix input pipeline — drain SPSC, don't poll OS
+
+`DevicePollSystem` must NOT call OS APIs from a worker thread. The main thread receives all OS input
+events (window messages, NSEvent, Wayland protocol events) and forwards them via SPSC queue. The
+input system drains this queue at the start of Phase 1.
+
+Replace `DeviceManager::poll_events()` with channel drain:
+
+```rust
+fn input_drain_system(
+    events: Res<InputChannel>,
+    mut state: ResMut<InputState>,
+) {
+    for event in events.drain() {
+        state.apply(event);
+    }
+}
+```
+
+Gamepad polling (XInput, GCController) is the ONE exception — these require explicit polling. The
+main thread polls gamepads in its event loop and forwards the results through the same channel.
+
+### RF-2: Platform input API matrix
+
+All input arrives through the main thread's OS event loop. The main thread normalizes platform
+events into `RawInputEvent` and forwards via SPSC queue.
+
+**Windows:**
+
+| Device | API | Delivery |
+|--------|-----|----------|
+| Keyboard | Raw Input (WM_INPUT) | Message queue |
+| Mouse | Raw Input (WM_INPUT) | Message queue |
+| Pen/Stylus | WM_POINTER (Windows Ink) | Message queue |
+| Touch | WM_POINTER | Message queue |
+| Gamepad | GameInput API | Polled by main thread |
+| 3D Mouse | Raw Input (WM_INPUT) HID | Message queue |
+| VR | OpenXR | Polled per frame |
+
+**macOS:**
+
+| Device | API | Delivery |
+|--------|-----|----------|
+| Keyboard | NSEvent (keyDown/keyUp) | NSApp event loop |
+| Mouse | NSEvent (mouseMoved) | NSApp event loop |
+| Pen/Stylus | NSEvent (pressure/tilt) | NSApp event loop |
+| Trackpad | NSTouch | NSApp event loop |
+| Gamepad | GCController | Polled by main thread |
+| 3D Mouse | IOKit HID Manager | Callback to main thread |
+
+**Linux:**
+
+| Device | API | Delivery |
+|--------|-----|----------|
+| Keyboard | wl_keyboard (Wayland) / XInput2 (X11) | Protocol events |
+| Mouse | wl_pointer / XInput2 | Protocol events |
+| Pen/Stylus | Wayland tablet protocol / XInput2 | Protocol events |
+| Touch | wl_touch / XInput2 | Protocol events |
+| Gamepad | evdev | Polled by main thread |
+| 3D Mouse | evdev / hidraw | Polled by main thread |
+| VR | OpenXR | Polled per frame |
+
+**iOS:**
+
+| Device | API | Delivery |
+|--------|-----|----------|
+| Touch | UITouch / UIEvent | UIKit callbacks |
+| Apple Pencil | UITouch (type: stylus) | UIKit callbacks |
+| Gamepad | GCController | Polled |
+| Accelerometer | CMMotionManager | Polled |
+| Keyboard | UIPress | UIKit callbacks |
+
+**Android:**
+
+| Device | API | Delivery |
+|--------|-----|----------|
+| Touch | MotionEvent | Activity callbacks |
+| Pen/Stylus | MotionEvent (TOOL_TYPE_STYLUS) | Activity callbacks |
+| Gamepad | KeyEvent + MotionEvent | Activity callbacks |
+| Accelerometer | SensorManager | Polled |
+| Keyboard | KeyEvent | Activity callbacks |
+
+### RF-3: Additional input devices
+
+Add support for these devices not covered in the current design:
+
+1. **Accelerometer/gyroscope (mobile)** — iOS: CMMotionManager. Android: SensorManager
+   (TYPE_ACCELEROMETER, TYPE_GYROSCOPE). Polled by main thread, forwarded as `MotionSensorEvent`
+   with linear acceleration and rotation rate vectors.
+
+2. **Apple Vision Pro hand tracking** — ARKit hand tracking via `HandTrackingProvider`. Joint
+   positions for 27 hand joints per hand. Direct interaction (pinch, grab) and indirect interaction
+   (gaze + pinch). Forward as `HandTrackingEvent` with joint skeleton and gesture classification.
+
+3. **Apple Vision Pro eye tracking** — ARKit `WorldTrackingProvider` with gaze direction. Forward as
+   `GazeEvent` with ray origin and direction.
+
+4. **VR 3D pen (Logitech MX Ink, etc.)** — OpenXR hand interaction profile with 6DOF pose, pressure,
+   buttons. Forward as `VrPenEvent` with pose, pressure, tip/eraser state.
+
+5. **VR hand tracking (general)** — OpenXR `XR_EXT_hand_tracking` extension. 26 joints per hand.
+   Forward as `HandTrackingEvent` (same type as visionOS).
+
+6. **Motion capture** — External mocap systems (OptiTrack, Vicon, Rokoko) stream skeleton data over
+   network (typically via NatNet SDK or OSC protocol). The main thread receives network packets via
+   platform I/O and forwards as `MocapEvent` with a full-body skeleton (bone transforms). This
+   drives animation retargeting in real-time. Also covers iPhone/iPad face tracking (ARKit
+   `ARFaceAnchor`) for facial mocap and body tracking (`ARBodyAnchor`).
+
+7. **Apple Vision Pro direct interaction** — visionOS spatial interaction via `SpatialEventGesture`.
+   Includes ray-based indirect interaction (look + pinch) and direct manipulation (touching virtual
+   objects with hands). Forward as `SpatialInteractionEvent` with interaction type, 3D position, and
+   entity target.
+
+All sensor data is polled by the main thread (or received via platform callbacks / network I/O on
+the main thread) and forwarded through the same SPSC channel as other input events.
+
+### RF-4: Remove all async fn
+
+Replace `RebindManager::save_bindings` and `load_bindings` async fn with synchronous request/handle
+pattern. Submit save/load to main thread via channel. Completion arrives as an ECS event.
+
+### RF-5: Remove all Reflect derives
+
+Remove `#[derive(Reflect)]` from all 60+ types. Use codegen-generated static metadata if editor
+inspection is needed.
+
+### RF-6: Define windowing boundary types
+
+Define `PointerEvent`, `PenState`, `PointerDevice`, `PointerEventKind` here (as referenced by
+windowing design). Or reconcile naming so both designs use `RawInputEvent` / `RawInputKind`. Both
+designs must agree on the shared vocabulary.
+
+### RF-7: Add frame-consistency guarantee
+
+Document explicitly: `input_drain_system` runs once at the start of Phase 1, writes `ActionState`
+components, and no further input mutations occur until the next frame. All downstream systems read
+the same snapshot. No double-buffering needed because the ECS schedule enforces Phase 1 completes
+before Phase 3+ begins.
+
+### RF-8: Create input-test-cases.md
+
+Extract inline test tables to companion file with TC-X.Y.Z.N IDs.
+
+### RF-9: Request dependency approvals
+
+`bitflags`, `openxr`, `hidapi` are not in the approved deps list. Request approval or find
+alternatives.
+
+### RF-10: Replace Instant with frame timestamp
+
+Use frame clock `u64` nanoseconds from the game loop, not `std::time::Instant`, for frame-consistent
+timestamps across all input events within a single frame.

@@ -24,8 +24,7 @@
 | ChildOf relation  | F-1.1.14  | Parent-child hierarchy     |
 | Command buffers   | F-1.1.32  | Deferred structural changes|
 | Change detection  | F-1.1.22  | `Changed<T>` queries       |
-| Reflection        | F-1.3.1   | `Reflect` derive           |
-| Serialization     | F-1.4.1   | Binary/RON codecs          |
+| Serialization     | F-1.4.1   | rkyv zero-copy binary      |
 | Spatial index     | F-1.9.1   | BVH for snap queries       |
 | Data tables       | F-13.7.2  | Definitions from DB rows   |
 | Gameplay effects  | F-13.10.3 | Stat modifier application  |
@@ -51,7 +50,6 @@ Two genre-agnostic ECS primitives:
    mutable.
 5. **No shared ownership.** No `Arc`, `Rc`, `Cell`, `RefCell`. Owned values and generational indices
    only.
-6. **All types derive `Reflect`.**
 
 ### Performance Targets
 
@@ -114,7 +112,6 @@ graph TD
         EV[Event Channels]
         SI[Shared Spatial Index]
         GE[Gameplay Effects]
-        RF[Reflection]
         NET[Networking]
     end
 
@@ -149,8 +146,6 @@ graph TD
     TR --> NET
     CD --> DB
     SD --> DB
-    CM --> RF
-    SK --> RF
 ```
 
 ### Core Data Structures
@@ -374,6 +369,70 @@ classDiagram
     AttachmentTags --> Attachment
 ```
 
+### System Ordering
+
+All systems run on worker threads as part of the game loop. Game loop phases follow a fixed frame
+pipeline. Systems in this module run in the `GameLogic` phase.
+
+| System            | Phase        | Reads                         | Writes                         |
+|-------------------|--------------|-------------------------------|--------------------------------|
+| `SnapSystem`      | `PreLogic`   | `GlobalTransform`, `SocketSet`| `SnapCandidate` (resource)     |
+| `TransferSystem`  | `GameLogic`  | `TransferRequest` events      | `Container`, `ContainerSlot`, `GridOccupancy` |
+| `AttachSystem`    | `GameLogic`  | `AttachRequest` events        | `Attachment`, `SocketSet`      |
+| `StatPropagation` | `PostLogic`  | `Attachment`, `StatModifierList`| Gameplay effects               |
+| `SortSystem`      | `PostLogic`  | `SortRequest` events          | `ContainerSlot` order          |
+
+**Frame-boundary handoff for replication:**
+
+1. `TransferSystem` runs in `GameLogic`; emits `TransferEvent` into the event channel.
+2. At frame boundary (`PostLogic` end), the network replication system reads all pending
+   `TransferEvent`s and `AttachEvent`s from the channel.
+3. Network replication serializes delta state via rkyv and pushes to the replication queue.
+4. Client rollback is applied at the start of the next frame before `PreLogic` runs, using the
+   authoritative server result.
+
+**Per-thread arenas:** Transfer validation scratch buffers, bin-packing temporaries, and sort
+buffers allocate from per-thread arenas. Arenas reset at the `PostLogic`/frame-end boundary.
+
+---
+
+## Codegen and Hot-Reload
+
+`ContainerDefinition`, `SocketDefinition`, `SlotConstraint` rules, custom `SortCriteria` variants,
+and tag sets are codegen'd into the middleman `.dylib`. The engine binary never contains
+user-defined types.
+
+| Codegen input                  | Generated output                           |
+|--------------------------------|--------------------------------------------|
+| Container schema (visual editor) | `ContainerDefinition` struct + load fn    |
+| Socket schema (visual editor)  | `SocketDefinition` struct + load fn        |
+| Slot constraint rules (visual) | `fn check_constraint(...)` in middleman    |
+| Custom sort criteria           | `SortCriteria` enum variant + comparator   |
+| Tag set definitions            | Typed `TagSet` constants in middleman      |
+
+Hot-reload recompiles the middleman `.dylib` when container or socket definitions change. The engine
+binary stays stable. Bundled `rustc`/`cargo` target sub-3-second reload.
+
+### Extensible Enums
+
+Enums are either closed (engine-only, never extended by designers) or open (designer-extensible,
+codegen'd into the middleman `.dylib`).
+
+| Enum            | Closed/Open | Rationale                                         |
+|-----------------|-------------|---------------------------------------------------|
+| `LayoutMode`    | Closed      | Engine-defined layout strategies only             |
+| `CapacityMode`  | Closed      | Engine-defined capacity models only               |
+| `TransferResult`| Closed      | Engine-defined error codes only                   |
+| `AttachResult`  | Closed      | Engine-defined error codes only                   |
+| `ModifierOp`    | Closed      | Engine-defined math ops only                      |
+| `SortCriteria`  | Open        | Designers add custom sort axes; codegen'd in dylib|
+| `SlotPosition`  | Closed      | Grid/linear layout defined by engine              |
+
+Slot constraint rules and tag acceptance/rejection rules defined visually by designers compile to
+actual Rust code via the codegen pipeline. Custom `SortCriteria` variants and their comparators are
+also generated. This is the same "everything is Rust" architecture used by formulas and logic
+graphs.
+
 ---
 
 ## API Design
@@ -383,25 +442,26 @@ classDiagram
 ```rust
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect, Serialize, Deserialize,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct ContainerDefinitionId(pub u64);
 
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect, Serialize, Deserialize,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub enum LayoutMode { List, Grid, FixedSlot }
 
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect, Serialize, Deserialize,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub enum CapacityMode { SlotCount, Weight, Both }
 
 /// Immutable blueprint from gameplay databases.
 #[derive(
-    Clone, Debug, Reflect, Serialize, Deserialize,
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct ContainerDefinition {
     pub id: ContainerDefinitionId,
@@ -419,7 +479,8 @@ pub struct ContainerDefinition {
 }
 
 #[derive(
-    Clone, Debug, Reflect, Serialize, Deserialize,
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct SlotDefinition {
     pub index: u16,
@@ -429,7 +490,7 @@ pub struct SlotDefinition {
 
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect, Serialize, Deserialize,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub enum SlotPosition {
     Linear(u16),
@@ -437,8 +498,8 @@ pub enum SlotPosition {
 }
 
 #[derive(
-    Clone, Debug, Default, Reflect,
-    Serialize, Deserialize,
+    Clone, Debug, Default,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct SlotConstraint {
     pub accepted_tags: TagSet,
@@ -454,7 +515,8 @@ pub struct SlotConstraint {
 /// Mutable per-entity state. Items are child
 /// entities via ChildOf relationship.
 #[derive(
-    Clone, Debug, Reflect, Serialize, Deserialize,
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct Container {
     pub definition_id: ContainerDefinitionId,
@@ -464,8 +526,8 @@ pub struct Container {
 
 /// On item entity (not the container).
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct ContainerSlot {
     pub slot_index: u16,
@@ -474,7 +536,8 @@ pub struct ContainerSlot {
 
 /// Grid cell occupancy bitmap (row-major).
 #[derive(
-    Clone, Debug, Reflect, Serialize, Deserialize,
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct GridOccupancy {
     pub cells: FixedBitSet,
@@ -501,8 +564,8 @@ impl GridOccupancy {
 
 ```rust
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct TransferRequest {
     pub source_container: Entity,
@@ -517,7 +580,7 @@ pub struct TransferRequest {
 
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect, Serialize, Deserialize,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub enum TransferResult {
     Success,
@@ -532,8 +595,8 @@ pub enum TransferResult {
 }
 
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct TransferEvent {
     pub item: Entity,
@@ -547,7 +610,7 @@ pub struct TransferEvent {
 
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect, Serialize, Deserialize,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub enum SortCriteria {
     Name, Weight, Rarity, Type, Custom(u32),
@@ -580,13 +643,14 @@ pub fn validate_transfer(
 ```rust
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect, Serialize, Deserialize,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct SocketDefinitionId(pub u64);
 
 /// Immutable blueprint from gameplay databases.
 #[derive(
-    Clone, Debug, Reflect, Serialize, Deserialize,
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct SocketDefinition {
     pub id: SocketDefinitionId,
@@ -601,45 +665,46 @@ pub struct SocketDefinition {
 }
 
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct Socket {
     pub definition_id: SocketDefinitionId,
 }
 
 #[derive(
-    Clone, Debug, Reflect, Serialize, Deserialize,
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct SocketSet {
     pub sockets: SmallVec<[Socket; 4]>,
 }
 
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct Attachment {
     pub socket_entity: Entity,
 }
 
 #[derive(
-    Clone, Debug, Default, Reflect,
-    Serialize, Deserialize,
+    Clone, Debug, Default,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct AttachmentTags { pub tags: TagSet }
 
 #[derive(
-    Clone, Debug, Default, Reflect,
-    Serialize, Deserialize,
+    Clone, Debug, Default,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct StatModifierList {
     pub modifiers: Vec<StatModifier>,
 }
 
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct StatModifier {
     pub stat: StatId,
@@ -649,13 +714,13 @@ pub struct StatModifier {
 
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect, Serialize, Deserialize,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub enum ModifierOp { Add, Multiply, Override }
 
 #[derive(
-    Clone, Debug, Default, Reflect,
-    Serialize, Deserialize,
+    Clone, Debug, Default,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct VisualOverride {
     pub mesh_override: Option<AssetHandle<Mesh>>,
@@ -669,8 +734,8 @@ pub struct VisualOverride {
 
 ```rust
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct AttachRequest {
     pub attachment: Entity,
@@ -679,8 +744,8 @@ pub struct AttachRequest {
 }
 
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct DetachRequest {
     pub attachment: Entity,
@@ -690,7 +755,7 @@ pub struct DetachRequest {
 
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect, Serialize, Deserialize,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub enum AttachResult {
     Success, Incompatible, Full,
@@ -698,8 +763,8 @@ pub enum AttachResult {
 }
 
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct AttachEvent {
     pub attachment: Entity,
@@ -709,8 +774,8 @@ pub struct AttachEvent {
 }
 
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct DetachEvent {
     pub attachment: Entity,
@@ -719,8 +784,8 @@ pub struct DetachEvent {
 }
 
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct SnapPoint {
     pub socket_def: SocketDefinitionId,
@@ -730,8 +795,8 @@ pub struct SnapPoint {
 }
 
 #[derive(
-    Clone, Copy, Debug, Reflect,
-    Serialize, Deserialize,
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct SnapCandidate {
     pub source_socket: Entity,
@@ -846,7 +911,7 @@ Platform-agnostic. All platform-specific behavior delegated to lower layers.
 | Timing          | `Res<Time>` with f64      | Clock   |
 | Spatial queries | Shared spatial index API  | F-1.9.1 |
 | Networking      | Event-based replication   | F-8.2.1 |
-| Serialization   | `Reflect` derive          | F-1.3.1 |
+| Serialization   | rkyv zero-copy binary     | F-1.4.1 |
 | Asset loading   | `Assets<T>` with handles  | Pipeline|
 
 ---
@@ -940,3 +1005,118 @@ Companion: [containers-slots-test-cases.md](containers-slots-test-cases.md).
    socket)?
 5. **Attachment physics mode** -- rigid-body weld only, or support joints (hinges, springs) for
    articulation?
+
+## Review feedback
+
+### RF-1: Remove all Reflect derives
+
+Remove all `Reflect` derives (30+ occurrences). Remove `RF[Reflection]` from the architecture
+diagram. Remove `Reflection | F-1.3.1` from cross-cutting dependencies. All type metadata is
+generated statically by the codegen pipeline in the middleman .dylib.
+
+### RF-2: Codegen pipeline for container schemas
+
+Add a "Codegen and hot-reload" section: `ContainerDefinition`, `SocketDefinition`, custom
+`SlotConstraint` rules, custom `SortCriteria` variants, and tag sets are codegen'd into the
+middleman .dylib. Visual constraint editors produce Rust code via codegen (e.g., generated
+`fn check_constraint(...)` in the middleman). Hot-reload recompiles when definitions change.
+
+### RF-3: Replace RON with rkyv
+
+Replace `Binary/RON codecs` in cross-cutting dependencies with `rkyv zero-copy binary`. No RON
+anywhere.
+
+### RF-4: Replace serde with rkyv
+
+Remove all `Serialize, Deserialize` (serde) derives. Replace with
+`rkyv::Archive, rkyv::Serialize, rkyv::Deserialize` for all definition/asset types. No serde
+anywhere in the engine.
+
+### RF-5: Create companion test cases file
+
+Create `containers-slots-test-cases.md` with TC-IDs in `TC-X.Y.Z.N` format.
+
+### RF-6: Identify game loop phase
+
+Specify which phase TransferSystem, AttachSystem, SortSystem, SnapSystem, and StatPropagation run
+in. Document system ordering dependencies and frame-boundary points for network replication handoff.
+
+### RF-7: Codegen for extensible enums
+
+Identify which enums are closed (engine-only) vs open (designer-extensible): `SortCriteria`,
+`LayoutMode`, `CapacityMode`. Open enums are codegen'd in the middleman .dylib.
+
+### RF-8: SmallVec for small collections
+
+Replace `Vec<SlotDefinition>` with `SmallVec<[SlotDefinition; 8]>` and `Vec<StatModifier>` with
+`SmallVec<[StatModifier; 4]>`. Most containers have fewer than 8 slots.
+
+### RF-9: Per-thread arenas for hot paths
+
+Transfer validation scratch buffers, bin-packing temporaries, and sort buffers allocate from
+per-thread arenas. Arenas reset at frame boundaries.
+
+### RF-10: Frame-boundary handoff for replication
+
+Document when TransferEvents are flushed, when network replication reads container state, and when
+client rollback applies relative to the game loop.
+
+### RF-11: Complete data flow diagrams
+
+Add sequence or flowchart diagrams for: database-to-container initialization, sort pipeline
+inputs/outputs, snap system spatial query flow.
+
+### RF-12: Algorithm reference URLs
+
+Add URLs for FFDH bin-packing, tag-set intersection strategy, and BVH-based snap queries.
+
+### RF-13: Expand platform considerations
+
+Add per-platform notes: console memory budgets (Switch hard caps on container sizes), mobile touch
+input for drag-drop on iOS/Android, VR spatial interaction model for container manipulation, rkyv
+alignment on ARM vs x86_64.
+
+### RF-14: 2D socket transforms
+
+Sockets use `Vec3`/`Quat` with no 2D consideration. Add a note on 2D socket transforms (either via
+`Transform2D` or `Vec3` with z=0). Snap queries use the 2D spatial index when in 2D mode.
+
+### RF-15: Replace String with NameId
+
+`SocketDefinition.name: String` prevents zero-copy access and requires heap allocation. Replace with
+`NameId(u32)` indexing into a name table, consistent with rkyv zero-copy patterns.
+
+### RF-16: Crafting/recipe integration
+
+Add a cross-reference showing how `Container` entities serve as crafting inputs, how the crafting
+system consumes/produces items, and how recipe validation checks container contents against directed
+graph recipe nodes.
+
+### RF-17: No HashMap for tag matching
+
+Add a note that tag matching and custom sort lookups must use sorted Vec or index-based lookup, not
+HashMap, on deterministic hot paths.
+
+### RF-18: Dedicated validate_transfer benchmark
+
+The 0.1ms target for `validate_transfer()` has no dedicated benchmark. Add
+`bench_validate_transfer_500` targeting < 0.1 ms.
+
+### RF-19: Fix heading case
+
+Change "Attach / Detach Types" to "Attach and detach types" for sentence case consistency.
+
+### RF-20: Designer constraint rules compile to Rust
+
+Slot constraints, tag acceptance/rejection rules, and custom sort criteria defined visually by
+designers compile to actual Rust code via the codegen pipeline — same "everything is Rust"
+architecture used by formulas and logic graphs.
+
+### RF-21: Loot and item indicator VFX
+
+Interactable items in containers or dropped in the world should display 3D visual indicators: loot
+sparkles (color-coded by rarity), interaction prompts ("Press E to pick up"), and highlight outlines
+on hover. These are VFX effect graph instances (see vfx/effects.md RF-26) and world-space UI anchors
+(see ui-framework.md F-10.1.10). The container/ inventory system owns the spawn/despawn logic based
+on item state (dropped, interactable, in range). Item rarity from data tables drives sparkle color
+selection.

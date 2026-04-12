@@ -38,7 +38,6 @@
 | Event channels | F-1.5.1 | `EventWriter<T>`, `EventReader<T>` |
 | Singleton resources | F-1.5.6 | `Res<T>`, `ResMut<T>` |
 | Change detection | F-1.1.22 | `Changed<T>` for dirty tracking |
-| Type registry | F-1.3.1 | `Reflect` derive, `TypeRegistry` |
 | Asset system | F-1.6 | `Assets<MultiTrackTimeline>` |
 | Game clock | F-13.1.2 | `GameTime` resource |
 | Animation SM | F-9.4.1 | Animation layers, blend trees |
@@ -100,8 +99,8 @@ graph TD
     subgraph core["harmonius_core"]
         ECS[ECS World]
         EVT[Event Channels]
-        REF[Reflection / TypeRegistry]
         AST[Asset System]
+        CDG[Codegen / Middleman .dylib]
     end
 
     subgraph deps["harmonius_game::core"]
@@ -112,10 +111,11 @@ graph TD
         VSE[Visual Sequencer Editor]
     end
 
-    MTT --> REF
     MTT --> AST
-    TRK --> REF
+    MTT --> CDG
+    TRK --> CDG
     PBS --> ECS
+    PBS --> CDG
     TAS --> CLK
     TAS --> ECS
     TAS --> EVT
@@ -210,10 +210,20 @@ classDiagram
         +T value
         +Interpolation interpolation
     }
+    class TrackValue {
+        <<enumeration>>
+        F32
+        Vec2
+        Vec3
+        Quat
+        Color
+        Bool
+        Entity
+    }
     class TrackT {
         +TrackId id
         +SmolStr name
-        +Vec keyframes
+        +SmallVec keyframes
         +T default_value
         +sample(f64) T
         +duration() f64
@@ -229,6 +239,7 @@ classDiagram
         +track_by_id(TrackId) Option
         +track_count() usize
         +sample_track(TrackId, f64) Option
+        +evaluate_all(f64, Entity, World, TrackBindings)
     }
     class PlaybackState {
         +AssetId timeline_id
@@ -242,7 +253,7 @@ classDiagram
         +stop()
         +seek(f64)
         +set_speed(f32)
-        +advance(f64, timeline) Vec
+        +advance(f64, timeline) SmallVec
         +is_complete(timeline) bool
         +normalized_time(timeline) f64
     }
@@ -276,24 +287,48 @@ classDiagram
 ### Core Types
 
 ```rust
+/// Implemented for f32, f64, Vec2, Vec3, Vec4,
+/// Quat, Color, and TrackValue. Used by Track<T>
+/// sampling on hot paths — static dispatch only.
+pub trait Lerp {
+    fn lerp(&self, other: &Self, t: f64) -> Self;
+}
+```
+
+```rust
 #[derive(Clone, Copy, Debug, PartialEq, Eq,
-    Hash, Reflect)]
+    Hash, rkyv::Archive, rkyv::Serialize,
+    rkyv::Deserialize)]
 pub struct KeyframeId(pub u32);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq,
-    Hash, Reflect)]
+    Hash, rkyv::Archive, rkyv::Serialize,
+    rkyv::Deserialize)]
 pub struct TrackId(pub u16);
 
-#[derive(Clone, Debug, PartialEq, Reflect)]
+#[derive(Clone, Debug, PartialEq, rkyv::Archive,
+    rkyv::Serialize, rkyv::Deserialize)]
 pub enum Interpolation {
+    /// Jump to value at keyframe time; hold until
+    /// next keyframe.
     Step,
+    /// Linearly interpolate between keyframe values.
     Linear,
+    /// Smooth curve defined by two control points.
+    /// Evaluated via de Casteljau; control points
+    /// match CSS cubic-bezier() convention.
+    /// Ref: https://www.w3.org/TR/css-easing-1/
+    ///      #cubic-bezier-easing-functions
     CubicBezier { c1: Vec2, c2: Vec2 },
+    /// Hold the previous value forever; never
+    /// interpolate. Equivalent to Step but the
+    /// hold extends to the end of the track.
     Constant,
 }
 
-/// T must implement Lerp + Clone + Reflect.
-#[derive(Clone, Debug, Reflect)]
+/// T must implement Lerp + Clone.
+#[derive(Clone, Debug, rkyv::Archive,
+    rkyv::Serialize, rkyv::Deserialize)]
 pub struct Keyframe<T> {
     pub time: f64,
     pub value: T,
@@ -305,18 +340,26 @@ pub struct Keyframe<T> {
 
 ```rust
 /// Named channel of keyframes sorted by time.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, rkyv::Archive,
+    rkyv::Serialize, rkyv::Deserialize)]
 pub struct Track<T> {
     pub id: TrackId,
     pub name: SmolStr,
-    pub keyframes: Vec<Keyframe<T>>,
+    /// Sorted ascending by `Keyframe::time`.
+    pub keyframes: SmallVec<[Keyframe<T>; 8]>,
     pub default_value: T,
 }
 
 impl<T: Lerp + Clone> Track<T> {
-    /// Binary search + interpolation.
+    /// Binary search for the keyframe pair
+    /// bracketing `time`, then interpolate.
+    /// Hot path. O(log n).
+    /// Ref: https://en.cppreference.com/w/
+    ///      cpp/algorithm/lower_bound
     pub fn sample(&self, time: f64) -> T;
     pub fn duration(&self) -> f64;
+    /// Returns the keyframe at or before `time`.
+    /// Cold path; used by editor and scrubber.
     pub fn keyframe_at_or_before(
         &self, time: f64,
     ) -> Option<&Keyframe<T>>;
@@ -327,8 +370,25 @@ impl<T: Lerp + Clone> Track<T> {
 ### MultiTrackTimeline (Asset)
 
 ```rust
+/// Concrete value type for timeline tracks.
+/// Codegen'd variants for user-defined property
+/// types are added in the middleman .dylib.
+/// Exhaustive-match interpolation; no dyn dispatch.
+#[derive(Clone, Debug, rkyv::Archive,
+    rkyv::Serialize, rkyv::Deserialize)]
+pub enum TrackValue {
+    F32(f32),
+    Vec2(Vec2),
+    Vec3(Vec3),
+    Quat(Quat),
+    Color(Color),
+    Bool(bool),
+    Entity(Entity),
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq,
-    Reflect)]
+    rkyv::Archive, rkyv::Serialize,
+    rkyv::Deserialize)]
 pub enum LoopMode {
     Once,
     Loop,
@@ -337,25 +397,43 @@ pub enum LoopMode {
 }
 
 /// Immutable multi-track timeline asset.
-#[derive(Clone, Debug, Reflect)]
+/// Loaded via zero-copy mmap (rkyv).
+#[derive(Clone, Debug, rkyv::Archive,
+    rkyv::Serialize, rkyv::Deserialize)]
 pub struct MultiTrackTimeline {
     pub id: AssetId,
-    pub tracks: Vec<Track<Value>>,
+    pub tracks: Vec<Track<TrackValue>>,
     pub duration: f64,
     pub loop_mode: LoopMode,
 }
 
 impl MultiTrackTimeline {
+    /// Linear scan — cold path (editor / setup).
+    /// O(n) on track count; acceptable for <= 64
+    /// tracks.
     pub fn track_by_name(
         &self, name: &str,
-    ) -> Option<&Track<Value>>;
+    ) -> Option<&Track<TrackValue>>;
+    /// Direct index lookup — hot path O(1).
+    /// Prefer over track_by_name in runtime code.
     pub fn track_by_id(
         &self, id: TrackId,
-    ) -> Option<&Track<Value>>;
+    ) -> Option<&Track<TrackValue>>;
     pub fn track_count(&self) -> usize;
     pub fn sample_track(
         &self, track: TrackId, time: f64,
-    ) -> Option<Value>;
+    ) -> Option<TrackValue>;
+    /// Evaluate all tracks at `time` and write
+    /// values to ECS components via codegen'd
+    /// binding fns. Called by scrubber and
+    /// advance system.
+    pub fn evaluate_all(
+        &self,
+        time: f64,
+        entity: Entity,
+        world: &mut World,
+        bindings: &TrackBindings,
+    );
 }
 ```
 
@@ -363,14 +441,18 @@ impl MultiTrackTimeline {
 
 ```rust
 #[derive(Clone, Copy, Debug, PartialEq, Eq,
-    Reflect)]
+    rkyv::Archive, rkyv::Serialize,
+    rkyv::Deserialize)]
 pub enum PlaybackDirection {
     Forward,
     Reverse,
 }
 
 /// Per-entity mutable playback state.
-#[derive(Clone, Debug, Component, Reflect)]
+/// Codegen'd as an ECS component into the
+/// middleman .dylib. Serialized to save files
+/// via rkyv for mid-cutscene resume.
+#[derive(Clone, Debug)]
 pub struct PlaybackState {
     pub timeline_id: AssetId,
     pub current_time: f64,
@@ -388,10 +470,12 @@ impl PlaybackState {
     pub fn set_speed(&mut self, speed: f32);
     /// Advance by dt. Handles looping, reversal,
     /// and completion. Returns crossed events.
+    /// SmallVec avoids heap allocation for the
+    /// common case of <= 4 events per frame.
     pub fn advance(
         &mut self, dt: f64,
         timeline: &MultiTrackTimeline,
-    ) -> Vec<TimelineEvent>;
+    ) -> SmallVec<[TimelineEvent; 4]>;
     pub fn is_complete(
         &self, timeline: &MultiTrackTimeline,
     ) -> bool;
@@ -405,7 +489,7 @@ impl PlaybackState {
 ### Events
 
 ```rust
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub enum TimelineEventKind {
     KeyframeCrossed {
         track: TrackId,
@@ -418,19 +502,42 @@ pub enum TimelineEventKind {
 
 /// Emitted by TimelineAdvanceSystem. Consumed by
 /// camera, animation, audio, gameplay systems.
-#[derive(Clone, Debug, Reflect)]
+/// Codegen'd event type in the middleman .dylib.
+#[derive(Clone, Debug)]
 pub struct TimelineEvent {
     pub kind: TimelineEventKind,
     pub time: f64,
     pub entity: Entity,
 }
-
-/// Implemented for numeric types, Vec2, Vec3,
-/// Vec4, Quat, Color, and Value (via reflection).
-pub trait Lerp {
-    fn lerp(&self, other: &Self, t: f64) -> Self;
-}
 ```
+
+## Codegen Integration
+
+Timeline types participate in the middleman `.dylib` codegen pipeline. No runtime reflection, no
+`TypeRegistry`, no `dyn Reflect`.
+
+1. **`PlaybackState` as a codegen'd component.** The ECS codegen pipeline emits `PlaybackState` as a
+   component into the middleman `.dylib`. Property panels, serialization, and change-detection hooks
+   are all generated statically.
+2. **`TimelineEvent` and `TimelineEventKind` are codegen'd event types.** The event bus codegen
+   emits typed channels for each event kind. No type-erased dispatch.
+3. **Custom `Interpolation` modes.** Users define custom easing curves via the editor. The codegen
+   pipeline emits new `Interpolation` enum variants into the middleman `.dylib`. Hot-reload
+   recompiles the middleman.
+4. **Custom `TrackValue` variants.** User-defined component property types are codegen'd as
+   `TrackValue` enum variants. Exhaustive match ensures interpolation is always total — no fallback
+   `dyn` path.
+5. **Codegen'd property binding functions.** For each `(component, field)` pair targeted by a
+   property animation track, the codegen pipeline emits:
+
+   ```rust
+   fn apply_<component>_<field>(
+       entity: Entity, value: T, world: &mut World,
+   )
+   ```
+
+   Called by `MultiTrackTimeline::evaluate_all`. Compiled into the middleman `.dylib`. Same
+   "everything is Rust" architecture.
 
 ## Data Flow
 
@@ -469,13 +576,14 @@ flowchart LR
 
 1. **Authoring.** Timeline authored in the visual sequencer editor. Tracks and keyframes are placed
    on a time axis.
-2. **Serialization.** The editor serializes the `MultiTrackTimeline` as an immutable asset (binary +
-   reflection metadata).
+2. **Serialization.** The editor serializes the `MultiTrackTimeline` as an immutable rkyv archive.
+   Baked assets are loaded at runtime via zero-copy mmap — no deserialization step.
 3. **Entity binding.** A `PlaybackState` component is attached to an entity that references the
    timeline asset by `AssetId`.
-4. **Advance (Simulation Tick).** The `TimelineAdvanceSystem` runs in Phase 3 (Simulation Tick). For
-   each entity with `PlaybackState`, it reads the `GameTime` delta, calls `advance(dt)`, and
-   collects `TimelineEvent`s.
+4. **Advance (Simulation Tick).** The `TimelineAdvanceSystem` runs in the **Simulation** phase of
+   the game loop (see `docs/architecture.md` §Game Loop Phases, Phase 4 — Simulation Tick). For each
+   entity with `PlaybackState`, it reads the `GameTime` delta, calls `advance(dt)`, and collects
+   `TimelineEvent`s into a per-thread arena.
 5. **Event emission.** All `TimelineEvent`s produced during the advance step are written to the
    event channel.
 6. **Dispatch.** The `TimelineEventDispatchSystem` reads events and routes them to consuming systems
@@ -485,42 +593,97 @@ flowchart LR
 
 ### Advance Algorithm
 
-```text
-fn advance(dt, timeline):
-    if not playing: return []
-    effective_dt = dt * speed * direction_sign
-    new_time = current_time + effective_dt
-    events = []
+```rust
+pub fn advance(
+    &mut self,
+    dt: f64,
+    timeline: &MultiTrackTimeline,
+) -> SmallVec<[TimelineEvent; 4]> {
+    if !self.playing {
+        return SmallVec::new();
+    }
+    let direction_sign: f64 = match self.direction {
+        PlaybackDirection::Forward =>  1.0,
+        PlaybackDirection::Reverse => -1.0,
+    };
+    let effective_dt = dt * f64::from(self.speed)
+        * direction_sign;
+    let mut new_time = self.current_time + effective_dt;
+    let mut events: SmallVec<[TimelineEvent; 4]> =
+        SmallVec::new();
 
-    // Collect keyframe crossings
-    for track in timeline.tracks:
-        for kf in track.keyframes:
-            if crossed(current_time, new_time, kf.time):
-                events.push(KeyframeCrossed)
+    // Collect keyframe crossings (sorted time order)
+    for track in &timeline.tracks {
+        for kf in &track.keyframes {
+            if crossed(
+                self.current_time, new_time, kf.time,
+            ) {
+                events.push(TimelineEvent {
+                    kind: TimelineEventKind::KeyframeCrossed {
+                        track: track.id,
+                        keyframe: kf.id,
+                    },
+                    time: kf.time,
+                    entity: self.entity,
+                });
+            }
+        }
+    }
 
     // Handle loop boundaries
-    match timeline.loop_mode:
-        Once:
-            if new_time >= duration:
-                new_time = duration
-                playing = false
-                events.push(TimelineComplete)
-        Loop:
-            while new_time >= duration:
-                new_time -= duration
-                loop_count += 1
-                events.push(LoopPoint)
-        PingPong:
-            if new_time >= duration or new_time <= 0:
-                direction = reverse(direction)
-                new_time = clamp(new_time, 0, duration)
-                loop_count += 1
-                events.push(LoopPoint)
-        ClampForever:
-            new_time = min(new_time, duration)
+    let duration = timeline.duration;
+    match timeline.loop_mode {
+        LoopMode::Once => {
+            if new_time >= duration {
+                new_time = duration;
+                self.playing = false;
+                events.push(TimelineEvent {
+                    kind: TimelineEventKind::TimelineComplete,
+                    time: duration,
+                    entity: self.entity,
+                });
+            }
+        }
+        LoopMode::Loop => {
+            while new_time >= duration {
+                new_time -= duration;
+                self.loop_count += 1;
+                events.push(TimelineEvent {
+                    kind: TimelineEventKind::LoopPoint {
+                        count: self.loop_count,
+                    },
+                    time: new_time,
+                    entity: self.entity,
+                });
+            }
+        }
+        LoopMode::PingPong => {
+            if new_time >= duration || new_time <= 0.0 {
+                self.direction = match self.direction {
+                    PlaybackDirection::Forward =>
+                        PlaybackDirection::Reverse,
+                    PlaybackDirection::Reverse =>
+                        PlaybackDirection::Forward,
+                };
+                new_time = new_time.clamp(0.0, duration);
+                self.loop_count += 1;
+                events.push(TimelineEvent {
+                    kind: TimelineEventKind::LoopPoint {
+                        count: self.loop_count,
+                    },
+                    time: new_time,
+                    entity: self.entity,
+                });
+            }
+        }
+        LoopMode::ClampForever => {
+            new_time = new_time.min(duration);
+        }
+    }
 
-    current_time = new_time
-    return events
+    self.current_time = new_time;
+    events
+}
 ```
 
 ## Platform Considerations
@@ -529,15 +692,26 @@ fn advance(dt, timeline):
 |----------|---------------|
 | All | Timeline evaluation is pure CPU computation |
 | All | No platform-specific I/O during playback |
-| All | Asset loading uses platform async I/O |
 | All | Binary search sampling is branchless-friendly |
-| macOS | GCD dispatch for parallel multi-entity advance |
-| Windows | Thread pool for parallel multi-entity advance |
-| Linux | Thread pool for parallel multi-entity advance |
+| All | Per-thread arenas for event collection; reset at |
+|     | frame boundary (constraints.md §Performance) |
+| All | Multi-entity advance parallelized via custom job |
+|     | system (crossbeam-deque work-stealing) |
+| macOS / iOS | Asset loading via GCD dispatch_io |
+| Windows | Asset loading via IOCP (windows-rs) |
+| Linux | Asset loading via io_uring (rustix) |
+| iOS | Game loop on dedicated thread; UIKit owns OS |
+|     | main thread (`UIApplicationMain`) |
+| Android | Custom windowing; game loop on worker thread |
+| Consoles | Platform-native job system mapped to |
+|          | crossbeam-deque abstraction layer |
+| VR | Timeline advance runs at headset display rate; |
+|    | `GameTime` delta accounts for reprojection |
 
-Timeline evaluation has no platform-specific dependencies. All platform variation is confined to
-asset loading (async I/O) and parallelization strategy (GCD on macOS, thread pool elsewhere). The
-advance and sample operations are pure functions operating on owned data.
+Timeline evaluation is platform-independent. All platform variation is confined to asset loading
+(platform-native non-blocking I/O: io_uring / IOCP / GCD `dispatch_io`) and parallelization (custom
+job system with crossbeam-deque work-stealing). Advance and sample are pure functions on owned data
+with no platform dependencies.
 
 ## Test Plan
 
@@ -587,3 +761,213 @@ Comprehensive test cases are defined in the companion file
    the track themselves? Carrying the value avoids a redundant sample but increases event size.
 5. **Reverse playback.** `PingPong` reverses automatically. Should manual `Reverse` direction be
    supported for all `LoopMode` variants, or only for `PingPong`?
+
+## Review feedback
+
+### RF-1: Remove all Reflect derives and TypeRegistry
+
+Remove `Reflect` from all 12+ types. Remove `TypeRegistry` from the cross-cutting dependencies.
+Remove `REF[Reflection / TypeRegistry]` from the architecture diagram. Replace with rkyv derives and
+codegen'd metadata in the middleman .dylib.
+
+### RF-2: Codegen pipeline for timeline types
+
+Add a "Codegen integration" section:
+
+1. `PlaybackState` component codegen'd into middleman .dylib
+2. `TimelineEvent` and `TimelineEventKind` are codegen'd event types
+3. Custom `Interpolation` modes added by users are codegen'd enum variants in the middleman
+4. Custom track value types (user-defined property types) are codegen'd
+5. Timeline evaluation expressions compile to Rust via the codegen pipeline — same "everything is
+   Rust" architecture
+
+### RF-3: Replace Value with codegen'd TrackValue enum
+
+`Value` is undefined and implied reflection-backed. Replace with a concrete `TrackValue` enum:
+
+```text
+enum TrackValue {
+    F32(f32), Vec2(Vec2), Vec3(Vec3), Quat(Quat),
+    Color(Color), Bool(bool), Entity(Entity),
+}
+```
+
+Exhaustive match-based interpolation. User-defined value types are codegen'd variants in the
+middleman .dylib. No dynamic dispatch.
+
+### RF-4: Create companion test cases file
+
+Create `timelines-test-cases.md` with TC-IDs in `TC-X.Y.Z.N` format.
+
+### RF-5: SmallVec for advance() return and small collections
+
+Change `advance()` return to `SmallVec<[TimelineEvent; 4]>`. Audit all `Vec` usages — replace with
+SmallVec where typical count < 8.
+
+### RF-6: Per-thread arenas for event collection
+
+`TimelineAdvanceSystem` processes 1000+ entities per frame. Per-thread arenas for intermediate event
+collection. Arena reset at end of timeline phase.
+
+### RF-7: rkyv serialization
+
+Replace "binary + reflection metadata" with explicit rkyv. Derive
+`rkyv::Archive`/`Serialize`/`Deserialize` on `MultiTrackTimeline`, `Track<T>`, `Keyframe<T>`, and
+all enums. Baked timelines loaded via zero-copy mmap.
+
+### RF-8: Expand platform considerations
+
+Add iOS, Android, consoles, VR to the platform table. Replace "GCD dispatch" and "Thread pool" with
+"Custom job system (crossbeam-deque work-stealing)". Replace "async I/O" with "platform-native
+non-blocking I/O (io_uring / IOCP / GCD dispatch_io)".
+
+### RF-9: Note 2D/2.5D agnosticism
+
+`Track<T>` works with both 2D types (`Vec2`, `f32` rotation) and 3D types (`Vec3`, `Quat`). Document
+2D use cases: cutscene sequences, timed puzzle events, sprite animation timelines.
+
+### RF-10: Clarify TimelinePlugin
+
+Either remove `plugin.rs` (if registration is via middleman codegen) or document that
+`TimelinePlugin` is cold-path-only initialization.
+
+### RF-11: Algorithm reference URLs
+
+Add URLs for: cubic Bezier evaluation (de Casteljau / CSS Easing spec), binary search keyframe
+sampling.
+
+### RF-12: Fix advance pseudocode to Rust
+
+Rewrite the Python-like advance algorithm as Rust pseudocode.
+
+### RF-13: Document track_by_name lookup implementation
+
+Confirm linear scan for small track counts or sorted Vec with binary search. State that
+`track_by_name` is cold-path/editor; `track_by_id` is hot-path.
+
+### RF-14: Clarify Step vs Constant interpolation
+
+Document the semantic difference or merge them.
+
+### RF-15: Move Lerp trait to Core Types section
+
+`Lerp` is used by `Track<T>::sample()` and belongs in Core Types, not Events.
+
+### RF-16: Cross-reference phase to canonical game loop
+
+Map the timeline phase to the exact phase name/number from the architecture document.
+
+### RF-17: Cross-subsystem integration table
+
+Timelines are consumed and produced by many subsystems. Each integration must have a defined
+mechanism:
+
+| Subsystem | Direction | Data | Mechanism |
+|-----------|-----------|------|-----------|
+| **Animation — skeletal** | consumes | bone transform tracks | PlaybackState drives AnimationClip sampling; timeline controls blend weights and playback rate via track values |
+| **Animation — property** | consumes | component property tracks | Timeline writes ECS component fields directly (e.g., light intensity, material parameter) via codegen'd binding fns |
+| **Animation — state machine** | bidirectional | state transitions | Timeline events trigger animation state transitions; state machine can start/stop timelines |
+| **Camera** | consumes | position, rotation, FOV tracks | Cinematic camera rail; PlaybackState controls camera entity transforms, look-at targets, DOF settings |
+| **Audio — music** | consumes | music cue tracks | Timeline events trigger music transitions (crossfade, stinger, stem volume) via audio bus commands |
+| **Audio — voice-over** | consumes | VO cue tracks | Timeline events start/stop voice clip playback on audio source entities, synchronized with subtitle timing |
+| **Audio — SFX** | consumes | sound event tracks | Timeline events fire one-shot spatial audio at timed cue points (footsteps, door slam, explosion) |
+| **Dialogue** | bidirectional | dialogue cue tracks | Timeline fires dialogue node entry events; dialogue system can pause/resume timeline for player choices |
+| **Subtitles/captions** | consumes | text cue tracks | Timeline events push `LocalizedStringId` + speaker + duration to subtitle system |
+| **UI/HUD** | consumes | HUD event tracks | Timeline events show/hide HUD elements, trigger screen effects (fade to black, letterbox), display objective text |
+| **VFX** | consumes | VFX event tracks | Timeline events spawn/despawn effect graph instances at timed cue points |
+| **Physics** | consumes | constraint/force tracks | Timeline drives kinematic body transforms, enables/disables constraints, applies forces at cue points |
+| **Gameplay — quests** | bidirectional | quest event tracks | Timeline events fire quest state transitions; quest completion can trigger celebratory timelines |
+| **Gameplay — day/night** | produces | time-of-day parameter | A looping timeline drives sun angle, sky color, ambient light over a configurable day duration |
+| **Gameplay — NPC schedules** | produces | activity transitions | Looping daily timeline triggers NPC activity changes (sleep, patrol, eat, work) at scheduled times |
+| **Gameplay — login rewards** | produces | calendar progression | Timeline maps real-world time to reward milestones; streak tracking via PlaybackState metadata |
+| **Networking** | bidirectional | replicated playback state | Server-authoritative PlaybackState replicated to clients for synchronized cutscenes; client prediction for interpolation |
+| **Save system** | consumes | PlaybackState persistence | PlaybackState serialized into save files via rkyv; restored on load to resume mid-cutscene |
+| **Editor — sequencer** | produces | authored MultiTrackTimeline | Visual multi-track editor with keyframe curves, drag-drop tracks, scrub preview, snap-to-beat |
+| **Editor — preview** | consumes | live playback in viewport | Editor plays timeline in viewport with real-time scrubbing, looping, and step-forward/back |
+| **Localization** | consumes | subtitle/VO timing | All text cues use `LocalizedStringId`; VO tracks reference locale-specific audio assets |
+
+### RF-18: In-game cutscene architecture
+
+The design describes timelines as a primitive but doesn't explain how they compose into full in-game
+cutscenes. A cutscene is a coordinated multi- timeline sequence. Document:
+
+1. **Cutscene entity** — an entity with a `CutsceneState` component that owns multiple
+   `PlaybackState` children (camera timeline, actor timelines, audio timeline, VFX timeline,
+   subtitle timeline).
+2. **Synchronization** — all child timelines share a master clock. Pause propagates to all children.
+   Seek scrubs all children to the same timestamp.
+3. **Actor binding** — cutscene tracks reference actors by role name (e.g., "hero", "villain"). At
+   cutscene start, the gameplay system binds role names to specific entities. This allows the same
+   cutscene asset to work with different character instances.
+4. **Player control handoff** — entering a cutscene disables player input and takes camera control.
+   Exiting returns control. The handoff must be smooth (blend from gameplay camera to cinematic
+   camera over N frames).
+5. **Skippable cutscenes** — skip jumps to the end state of all tracks, fires all remaining events
+   (quest state changes, item grants), and returns control. This requires a "fast-forward" mode that
+   evaluates all events without visual playback.
+6. **Branching cutscenes** — dialogue choice during a cutscene pauses the master clock, presents
+   choices via the dialogue system, and resumes on a branch-specific timeline based on the player's
+   selection.
+7. **2D cutscenes** — same architecture works for 2D: camera tracks drive Camera2D pan/zoom, actor
+   tracks drive sprite position/animation, text tracks drive dialogue boxes.
+
+### RF-19: Timeline-driven animation integration
+
+The connection between timelines and the animation system must be explicit:
+
+1. **Animation playback tracks** — a timeline track of type `Track<AnimationCommand>` where
+   keyframes contain: play clip, stop clip, set blend weight, set playback rate, trigger montage.
+   The animation system consumes these as commands.
+2. **Bone override tracks** — for cinematic bone animation that overrides gameplay animation, the
+   timeline writes directly to bone transform components with a priority layer above the animation
+   state machine.
+3. **Facial animation tracks** — separate tracks for morph target weights (lip sync, expressions)
+   synchronized with voice-over audio cues.
+4. **IK target tracks** — timeline drives IK target positions (e.g., character reaches for a door
+   handle at the exact moment the camera shows their hand).
+5. **Blend in/out** — timeline animation blends with gameplay animation at cutscene start (blend in
+   over N frames) and end (blend out). The blend weight is itself a timeline track.
+
+### RF-20: Property animation as first-class timeline capability
+
+The timeline system is the engine's universal property animation mechanism. Any ECS component field
+on any entity can be driven by a timeline track. This is how all non-skeletal animation works:
+
+1. **What property animation is** — a `Track<T>` that writes its sampled value directly to an ECS
+   component field each tick. The target is identified by (entity, component type, field path). The
+   binding from track to component field is a codegen'd function in the middleman .dylib — no
+   reflection, no string-based field lookup.
+2. **Common property animation targets:**
+   - Transform: position, rotation, scale (3D and 2D)
+   - Material: color, emissive intensity, UV offset, opacity
+   - Light: intensity, color, range, cone angle
+   - Camera: FOV, exposure, focus distance
+   - Audio: volume, pitch, spatial blend
+   - UI widget: position, size, opacity, color
+   - Custom components: any codegen'd field
+3. **Indicator animations** — spinning quest markers, bobbing icons, pulsing loot sparkles are
+   looping single-track timelines driving transform properties (see vfx/effects.md RF-26 item 11):
+   - Spin: `Track<f32>` on rotation Y, `LoopMode::Loop`, linear 0→2pi
+   - Bob: `Track<f32>` on position Y, `LoopMode::PingPong`, sine ease
+   - Pulse: `Track<f32>` on scale uniform, `LoopMode::PingPong`
+   - Glow: `Track<f32>` on material emissive, `LoopMode::PingPong`
+   These are authored as reusable timeline assets in the editor.
+4. **Codegen binding** — for each property animation target, the codegen pipeline generates:
+   `fn apply_<component>_<field>(entity: Entity, value: T, world: &mut World)` This is called by the
+   timeline advance system after sampling. No reflection. The generated function is compiled into
+   the middleman .dylib. Same "everything is Rust" architecture.
+5. **Composition** — multiple property animation timelines can run simultaneously on the same
+   entity. Conflicts (two timelines driving the same field) resolve by priority: higher-priority
+   timeline wins. This is the same conflict model as the animation state machine's layer priorities.
+6. **Editor workflow** — the timeline editor shows property tracks as keyframe curves. The designer
+   selects an entity, picks a component field from a dropdown (populated by codegen'd field list),
+   and adds keyframes. The curve editor supports Bezier tangents for smooth easing. Preview plays in
+   the viewport in real time.
+
+### RF-21: Viewport scrubber integration
+
+The viewport must show entities at their timeline-driven positions when the timeline scrubber moves
+(level-world.md RF-38). Moving the scrubber updates all timeline-driven transforms, materials, and
+lights in real time. Editing an entity's position while the scrubber is at time T creates a keyframe
+at T. The timeline design must define the API for "evaluate all tracks at time T and write results
+to ECS components" that the viewport calls on scrub.

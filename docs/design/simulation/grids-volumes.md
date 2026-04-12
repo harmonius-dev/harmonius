@@ -62,16 +62,15 @@
 
 ### Cross-Cutting Dependencies
 
-| Dependency       | Source   | Consumed API               |
-|------------------|----------|----------------------------|
-| ECS world        | F-1.1.1  | Archetype storage, `Query` |
-| Change detection | F-1.1.22 | `Changed<T>` dirty track   |
-| Reflection       | F-1.3.1  | `Reflect` derive           |
-| Serialization    | F-1.4.1  | Binary/text codecs         |
-| Spatial index    | F-1.9.1  | World-space proximity      |
-| Thread pool      | F-14.3.1 | Scoped parallel iteration  |
-| Data tables      | F-13.7.2 | Cell type definitions      |
-| Game clock       | F-13.1.2 | `GameTime` for tick rate   |
+| Dependency       | Source   | Consumed API                       |
+|------------------|---------|------------------------------------|
+| ECS world        | F-1.1.1  | Archetype storage, `Query`        |
+| Change detection | F-1.1.22 | `Changed<T>` dirty track          |
+| Serialization    | F-1.4.1  | rkyv zero-copy binary              |
+| Spatial index    | F-1.9.1  | World-space proximity              |
+| Job system       | F-14.3.1 | `scope()`, `par_iter` (crossbeam) |
+| Data tables      | F-13.7.2 | Cell type definitions              |
+| Game clock       | F-13.1.2 | `GameTime` for tick rate          |
 
 ---
 
@@ -85,15 +84,17 @@ Three primitives:
 
 1. **UniformGrid\<T\>** -- 2D grid with typed cells. Fixed cell size, axis-aligned. Supports fog of
    war, tactical maps, height fields, scent grids, and influence maps. Provides GPU texture sync for
-   rendering overlays.
+   rendering overlays. Used with `Transform2D` in 2D games and `Transform` in 3D games. Pure 2D
+   games use `UniformGrid` and `HierarchicalGrid` — not `VoxelVolume`.
 2. **VoxelVolume\<T\>** -- 3D voxel grid with typed cells. Chunk-based storage for block worlds,
-   density fields, and wind volumes. Supports LOD and dirty tracking.
+   density fields, and wind volumes. Supports LOD and dirty tracking. 3D-only.
 3. **PropagationKernel\<T\>** -- Defines how values spread across grid cells per tick. Handles fire
    spread, scent trails, influence maps, and fluid simulation.
 
 ### Design Principles
 
-1. **ECS-primary (~90%)-based.** All grids are components. No parallel data stores or manager singletons.
+1. **ECS-primary (~90%)-based.** All grids are components. No parallel data stores or manager
+   singletons.
 2. **Data-driven and no-code.** Cell types defined via data tables. Users author grids in visual
    editors.
 3. **Genre-agnostic.** `T` is user-defined. The grid knows nothing about fog, blocks, or scent.
@@ -142,10 +143,9 @@ graph TD
 
     subgraph core["harmonius_core"]
         ECS[ECS World]
-        REF[Reflection / TypeRegistry]
-        SER[Serialization]
+        SER[Serialization / rkyv]
         SI[Shared Spatial Index]
-        TP[Thread Pool]
+        JS[Job System]
     end
 
     subgraph deps["harmonius_sim"]
@@ -157,14 +157,14 @@ graph TD
         VPE[Voxel Painter]
     end
 
-    UGD --> REF
+    UGD --> SER
     UG --> ECS
     UGQ --> UG
     UGQ --> SI
     PROP --> UG
     PROP --> CLK
 
-    VVD --> REF
+    VVD --> SER
     VV --> ECS
     VC --> VV
     VQ --> VV
@@ -179,7 +179,7 @@ graph TD
     VPE --> VV
 ```
 
-### File Layout
+### File layout
 
 ```text
 harmonius_sim/
@@ -211,7 +211,7 @@ flowchart LR
     subgraph phase1[Phase 1 - Input]
         W2C[WorldToCell Resolve]
     end
-    subgraph phase2[Phase 2 - Simulation]
+    subgraph phase2["Phase 2 - Simulation (FixedUpdate)"]
         PROP[PropagationSystem]
         LOS[LineOfSightSystem]
     end
@@ -223,7 +223,7 @@ flowchart LR
     phase2 --> phase3
 ```
 
-### Class Diagram -- All Types
+### Class diagram -- all types
 
 ```mermaid
 classDiagram
@@ -358,8 +358,9 @@ classDiagram
 
 ## API Design
 
-All types derive `Reflect` for serialization and editor integration. Definitions are immutable
-assets. Runtime state lives in ECS components.
+All types derive `rkyv::Archive`, `rkyv::Serialize`, and `rkyv::Deserialize` for zero-copy binary
+serialization. Editor integration metadata is codegen'd into the middleman .dylib. Definitions are
+immutable assets. Runtime state lives in ECS components.
 
 ### 1. Coordinates
 
@@ -367,7 +368,7 @@ assets. Runtime state lives in ECS components.
 /// 2D cell coordinate in a uniform grid.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct CellCoord {
     pub x: u32,
@@ -377,7 +378,7 @@ pub struct CellCoord {
 /// 3D voxel coordinate in a volume.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct VoxelCoord {
     pub x: u32,
@@ -388,7 +389,7 @@ pub struct VoxelCoord {
 /// Chunk-level coordinate within a VoxelVolume.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct ChunkCoord {
     pub x: u32,
@@ -403,7 +404,10 @@ pub struct ChunkCoord {
 /// Immutable definition for a 2D uniform grid.
 /// Authored in the visual editor, stored as an
 /// asset in gameplay databases (F-13.7.2).
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct UniformGridDef {
     /// Width in cells.
     pub width: u32,
@@ -433,9 +437,12 @@ impl UniformGridDef {
 /// Runtime 2D grid with typed cells. Attached as
 /// an ECS component to world entities.
 ///
-/// T must be Clone + Default + Reflect.
+/// T must be Clone + Default + rkyv::Archive.
 /// Storage is a flat Vec<T> in row-major order.
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct UniformGrid<T> {
     /// Width in cells.
     pub width: u32,
@@ -449,7 +456,7 @@ pub struct UniformGrid<T> {
     cells: Vec<T>,
 }
 
-impl<T: Default + Clone + Reflect> UniformGrid<T> {
+impl<T: Default + Clone + rkyv::Archive> UniformGrid<T> {
     /// Create a grid initialized to T::default().
     pub fn new(
         width: u32,
@@ -512,27 +519,45 @@ impl<T: Default + Clone + Reflect> UniformGrid<T> {
     /// Bresenham line-of-sight from source to
     /// target. Returns detailed result with
     /// traversed cells and blocking point.
+    ///
+    /// Algorithm: Bresenham's line algorithm —
+    /// <https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm>
+    ///
+    /// Allocates result from per-thread arena.
+    /// Arena resets at frame boundary.
     pub fn line_of_sight(
         &self,
         from: CellCoord,
         to: CellCoord,
         blocked: impl Fn(&T) -> bool,
+        arena: &mut Arena,
     ) -> LineOfSightResult;
 
     /// BFS flood fill from start. Returns all
     /// reachable cells where passable returns true.
+    ///
+    /// Algorithm: BFS flood fill —
+    /// <https://en.wikipedia.org/wiki/Flood_fill>
+    ///
+    /// Allocates result from per-thread arena.
+    /// Arena resets at frame boundary.
     pub fn flood_fill(
         &self,
         start: CellCoord,
         passable: impl Fn(&T) -> bool,
+        arena: &mut Arena,
     ) -> FloodFillResult;
 
     /// Return all cell coords within radius of a
     /// world-space center. Uses squared distance.
+    ///
+    /// Allocates result from per-thread arena.
+    /// Arena resets at frame boundary.
     pub fn area_query(
         &self,
         center: Vec2,
         radius: f32,
+        arena: &mut Arena,
     ) -> Vec<CellCoord>;
 
     /// Apply one tick of propagation using the
@@ -558,9 +583,12 @@ impl<T: Default + Clone + Reflect> UniformGrid<T> {
 ```rust
 /// Which neighbors to consider for propagation
 /// and adjacency queries.
+///
+/// Engine-fixed variants. User-extensible patterns
+/// are codegen'd in the middleman .dylib (RF-13).
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub enum NeighborPattern {
     /// 4 neighbors: N, E, S, W.
@@ -572,9 +600,12 @@ pub enum NeighborPattern {
 }
 
 /// Shape of a grid query region.
+///
+/// Engine-fixed variants. User-extensible shapes
+/// are codegen'd in the middleman .dylib (RF-13).
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub enum GridQueryShape {
     /// Circle with radius in cells.
@@ -586,7 +617,10 @@ pub enum GridQueryShape {
 }
 
 /// A spatial query against grid cells.
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct GridQuery {
     /// Shape of the query region.
     pub shape: GridQueryShape,
@@ -599,7 +633,10 @@ pub struct GridQuery {
 }
 
 /// Result of a line-of-sight check.
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct LineOfSightResult {
     /// True if the line is unobstructed.
     pub clear: bool,
@@ -610,7 +647,10 @@ pub struct LineOfSightResult {
 }
 
 /// Result of a flood fill operation.
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct FloodFillResult {
     /// All reachable cells.
     pub cells: Vec<CellCoord>,
@@ -628,7 +668,10 @@ pub struct FloodFillResult {
 /// The spread function takes (source, neighbor)
 /// and returns the new neighbor value. Pure
 /// function with no side effects.
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct PropagationKernel<T> {
     /// Which neighbors receive propagated values.
     pub pattern: NeighborPattern,
@@ -649,7 +692,10 @@ pub struct PropagationKernel<T> {
 ```rust
 /// Immutable definition for a 3D voxel volume.
 /// Authored in the visual editor.
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct VoxelVolumeDef {
     /// Total dimensions in voxels.
     pub dimensions: VoxelCoord,
@@ -681,7 +727,10 @@ impl VoxelVolumeDef {
 ///
 /// Uses HandleMap for chunk storage with
 /// generational indices. No Arc or Rc.
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct VoxelVolume<T> {
     /// Total dimensions in voxels.
     pub dimensions: VoxelCoord,
@@ -691,7 +740,7 @@ pub struct VoxelVolume<T> {
     chunks: HandleMap<VoxelChunk<T>>,
 }
 
-impl<T: Default + Clone + Reflect> VoxelVolume<T> {
+impl<T: Default + Clone + rkyv::Archive> VoxelVolume<T> {
     /// Get an immutable reference to a voxel.
     /// Returns None if out of bounds.
     pub fn get(
@@ -715,6 +764,10 @@ impl<T: Default + Clone + Reflect> VoxelVolume<T> {
 
     /// DDA raycast through the volume. Returns
     /// the first voxel where solid returns true.
+    ///
+    /// Algorithm: Amanatides & Woo DDA voxel
+    /// traversal —
+    /// <https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.3443>
     pub fn raycast(
         &self,
         origin: Vec3,
@@ -738,7 +791,10 @@ impl<T: Default + Clone + Reflect> VoxelVolume<T> {
 
 /// A single chunk within a VoxelVolume. Stores
 /// cells in a flat Vec<T> of size chunk_size^3.
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct VoxelChunk<T> {
     /// Flat cell storage in x-y-z order.
     cells: Vec<T>,
@@ -747,7 +803,7 @@ pub struct VoxelChunk<T> {
     dirty: bool,
 }
 
-impl<T: Default + Clone + Reflect> VoxelChunk<T> {
+impl<T: Default + Clone + rkyv::Archive> VoxelChunk<T> {
     /// Get a cell by local coordinate within
     /// this chunk.
     pub fn get_local(
@@ -775,7 +831,10 @@ impl<T: Default + Clone + Reflect> VoxelChunk<T> {
 
 ```rust
 /// Result of a voxel raycast.
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct VoxelHit {
     /// Voxel coordinate that was hit.
     pub coord: VoxelCoord,
@@ -794,10 +853,19 @@ pub struct VoxelHit {
 /// Tracks dirty regions for GPU texture upload.
 /// Attached as a component alongside grids that
 /// need rendering (fog overlays, terrain maps).
-#[derive(Clone, Debug, Reflect)]
+///
+/// Upload uses a ring-buffered staging buffer
+/// (N copies for N frames in flight) to avoid
+/// GPU/CPU sync stalls.
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct GpuGridSync {
     /// Pending dirty regions to upload.
     pending: Vec<DirtyRegion>,
+    /// Ring-buffer index (0..N frames in flight).
+    staging_index: u32,
 }
 
 impl GpuGridSync {
@@ -818,7 +886,10 @@ impl GpuGridSync {
 }
 
 /// A rectangular dirty region in cell space.
-#[derive(Clone, Copy, Debug, Reflect)]
+#[derive(
+    Clone, Copy, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct DirtyRegion {
     /// Minimum corner (inclusive).
     pub min: CellCoord,
@@ -827,12 +898,71 @@ pub struct DirtyRegion {
 }
 ```
 
-### 10. Systems
+### 10. GpuGrid\<T\> — GPU-Resident Variant
+
+For bulk simulation data (influence maps, flow fields, fog-of-war propagation, SDF volumes, voxel
+GI), the canonical data lives in a GPU structured buffer. CPU readback is on-demand only.
+
+**Residency policy:**
+
+| Use case                     | Residency    | Rationale                                  |
+|------------------------------|--------------|--------------------------------------------|
+| Influence maps               | GPU-resident | Consumed by compute/render; GPU authoritative |
+| Flow fields                  | GPU-resident | Particle advection and AI run on GPU       |
+| Fog of war propagation       | GPU-resident | Propagation compute + render read          |
+| SDF volumes                  | GPU-resident | Shadow/AO passes sample direct from buffer |
+| Voxel GI                     | GPU-resident | GI compute reads voxel structured buffer   |
+| Pathfinding (A\*)            | CPU-resident | BFS/Eikonal runs on CPU job threads        |
+| Line of sight                | CPU-resident | Gameplay logic queries CPU grid cells      |
+| Editor tools / save-load     | CPU-resident | Editor and serialization require CPU access|
+
+```rust
+/// GPU-resident grid variant. The GPU structured
+/// buffer is the authoritative copy. CPU readback
+/// is async on-demand via a staging buffer.
+///
+/// Attached as a component on entities that need
+/// GPU-driven propagation or render graph reads.
+pub struct GpuGrid<T> {
+    /// Dimensions (width × height).
+    pub width: u32,
+    pub height: u32,
+    /// GPU structured buffer handle.
+    pub gpu_buffer: GpuBufferHandle,
+    /// Staging ring-buffer for CPU readback.
+    /// N copies for N frames in flight (RF-18).
+    staging: RingBuffer<StagingBuffer>,
+    _marker: PhantomData<T>,
+}
+
+impl<T: bytemuck::Pod> GpuGrid<T> {
+    /// Schedule a CPU readback of the full grid.
+    /// Returns the data when the render thread
+    /// signals completion via crossbeam-channel.
+    pub fn request_readback(
+        &self,
+    ) -> ReadbackHandle<Vec<T>>;
+
+    /// Bind the GPU buffer as a UAV for compute
+    /// dispatch (propagation kernel).
+    pub fn bind_uav(
+        &self,
+    ) -> GpuUavBinding;
+
+    /// Bind the GPU buffer as an SRV for render
+    /// passes that read grid data.
+    pub fn bind_srv(
+        &self,
+    ) -> GpuSrvBinding;
+}
+```
+
+### 11. Systems
 
 ```rust
 /// System that runs propagation kernels on all
 /// grids that have an attached PropagationKernel.
-/// Runs in Phase 2 (Simulation).
+/// Runs in FixedUpdate schedule (Phase 2). (RF-7)
 pub fn propagation_system<T>(
     time: Res<GameTime>,
     mut query: Query<(
@@ -851,6 +981,170 @@ pub fn gpu_grid_sync_system(
     mut gpu: ResMut<GpuTextureManager>,
 );
 ```
+
+### 12. Codegen for User-Defined Cell Types
+
+User-defined cell types (`T` in `UniformGrid<T>` and `VoxelVolume<T>`) — fog states, block types,
+scent values, influence categories — are defined in the visual editor and codegen'd into the
+middleman .dylib. The engine binary never contains user-defined types.
+
+Codegen pipeline:
+
+1. User defines a cell type in the visual editor (name, fields, default values).
+2. Codegen emits a Rust struct with rkyv derives and implements `Default + Clone + rkyv::Archive`.
+3. The monomorphized `UniformGrid<UserFogCell>` (etc.) is compiled into the middleman .dylib.
+4. Hot-reload recompiles the middleman when cell type definitions change.
+
+Engine-fixed cell types (`CellCoord`, `VoxelCoord`, etc.) live in the engine binary.
+
+### 13. GPU Compute Propagation
+
+For grids larger than 256×256, propagation runs as GPU compute dispatches. The CPU propagation path
+remains for small grids and all gameplay queries (LOS, flood fill). Both paths produce identical
+deterministic results.
+
+Algorithm reference: Parallel prefix sum / stencil sweep for grid propagation —
+<https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda>
+
+```rust
+/// GPU compute propagation kernel. Compiled from
+/// an HLSL compute shader via dxc. The grid lives
+/// in a GpuGrid<T> structured buffer (UAV).
+///
+/// Use for grids > 256x256. Below that threshold,
+/// PropagationKernel<T> (CPU) is preferred.
+pub struct GpuPropagationKernel {
+    /// Compiled HLSL shader handle.
+    pub shader: ShaderHandle,
+    /// Neighbor pattern (Cardinal, Diagonal, All).
+    pub pattern: NeighborPattern,
+    /// Per-step decay multiplier (0.0..=1.0).
+    pub decay_rate: f32,
+    /// Maximum propagation radius in cells.
+    pub max_radius: u32,
+}
+
+impl GpuPropagationKernel {
+    /// Dispatch the propagation compute shader.
+    /// Grid must be a GpuGrid<T> (UAV binding).
+    pub fn dispatch(
+        &self,
+        cmd: &mut ComputeCommandList,
+        grid: &GpuGrid<impl bytemuck::Pod>,
+        tick: u64,
+    );
+}
+```
+
+### 14. Flow Fields, Distance Fields, Influence Maps
+
+#### Flow Fields
+
+`UniformGrid<Vec2>` stores a velocity vector per cell. Used for RTS unit movement, crowd flow, water
+current, and VFX particle advection.
+
+Algorithm: Dijkstra's algorithm / Eikonal equation for flow field computation —
+<https://howtorts.github.io/2014/01/04/basic-flow-fields.html>
+
+```rust
+/// Compute a flow field pointing toward target.
+/// `cost_grid` weights movement cost per cell.
+/// Returns a grid of normalized Vec2 directions.
+///
+/// Allocates result from per-thread arena (RF-10).
+pub fn compute_flow_field(
+    target: CellCoord,
+    cost_grid: &UniformGrid<f32>,
+    arena: &mut Arena,
+) -> UniformGrid<Vec2>;
+```
+
+#### Distance Fields (SDF)
+
+Signed distance from the nearest voxel surface. Used for soft shadows, ambient occlusion, and
+collision queries. GPU-resident (see RF-3).
+
+Algorithm: Fast sweeping method for SDF generation —
+<https://www.cs.utah.edu/~sujin/courses/reports/cs6640/project2/zhao.pdf>
+
+```rust
+/// Compute a 2D signed distance field from an
+/// obstacle grid. Negative inside obstacles,
+/// positive outside. GPU compute variant for
+/// volumes > 256x256.
+pub fn compute_sdf(
+    obstacles: &UniformGrid<bool>,
+    arena: &mut Arena,
+) -> UniformGrid<f32>;
+```
+
+#### Influence Maps
+
+A `PropagationKernel<f32>` that spreads influence from source entities with falloff and obstacle
+blocking. Used for AI tactical decisions (cover value, threat level, resource proximity).
+
+```rust
+/// Influence source attached to an entity.
+/// The influence map system reads all sources
+/// and seeds the grid before propagation.
+pub struct InfluenceSource {
+    /// Influence value emitted per tick.
+    pub strength: f32,
+    /// Decay rate for this source (0.0..=1.0).
+    pub decay: f32,
+}
+```
+
+### 15. Editor Write API — Voxel and Terrain Editing
+
+The level editor (level-world.md RF-26, RF-29, RF-33) calls these methods for block placement, SDF
+sculpting, and terrain painting. Non-destructive override layers store deltas on top of procedural
+terrain.
+
+```rust
+/// Set a single voxel cell (block placement or
+/// destruction). Marks the containing chunk dirty.
+/// Called by editor voxel brush and gameplay
+/// destructible systems.
+pub fn set_cell(
+    &mut self,
+    coord: VoxelCoord,
+    value: T,
+);
+
+/// Apply an SDF brush to a voxel volume. The
+/// brush_fn maps (existing_value, sdf_distance,
+/// pen_pressure) -> new_value. Non-destructive:
+/// writes to an override layer, not the base volume.
+pub fn apply_sdf_brush(
+    volume: &mut VoxelVolume<T>,
+    center: Vec3,
+    radius: f32,
+    pen_pressure: f32,
+    brush_fn: impl Fn(&T, f32, f32) -> T,
+    override_layer: &mut VoxelVolume<Option<T>>,
+);
+
+/// Set a rectangular region of a heightmap grid.
+/// Used by terrain painting tools. Pen pressure
+/// maps to blend strength (0.0..=1.0).
+/// Non-destructive: writes to an override layer.
+pub fn set_heightmap_region(
+    grid: &mut UniformGrid<f32>,
+    min: CellCoord,
+    max: CellCoord,
+    heights: &[f32],
+    pen_pressure: f32,
+    override_layer: &mut UniformGrid<Option<f32>>,
+);
+```
+
+**Override layer composition:**
+
+1. Base layer: procedural terrain or imported voxel data.
+2. Override layer: `VoxelVolume<Option<T>>` / `UniformGrid<Option<f32>>` with `None` = transparent.
+3. At query time, override is checked first; fallback to base if `None`.
+4. Baking collapses layers into a single volume for export.
 
 ---
 
@@ -911,27 +1205,64 @@ sequenceDiagram
 ### Data Flow Summary
 
 1. Grid authored in level editor (painted cells)
-2. Serialized as asset via `Reflect` + binary codec
+2. Serialized as asset via rkyv zero-copy binary codec
 3. Loaded as ECS component on world entity
 4. Systems read/write cells each simulation tick
-5. `PropagationKernel` runs during Phase 2 (Simulation)
+5. `PropagationKernel` runs during FixedUpdate (Phase 2 — Simulation)
 6. `GpuGridSync` uploads dirty regions to GPU texture during Phase 3 (Sync)
 7. Rendering samples grid texture for fog, overlays, and debug visualization
 
 ---
 
+## Render Graph Integration
+
+Grids and volumes are consumed across the entire render pipeline. Each consumer pass declares `read`
+dependencies on grid resources. The render graph compiler orders passes and inserts barriers.
+GPU-resident `GpuGrid<T>` resources are tracked as render graph nodes with read/write state.
+
+| Pass | Grid/volume resource | Dependency type |
+|------|---------------------|-----------------|
+| GpuGridSyncPass | All CPU-dirty grids → GPU buffers | write (UAV) |
+| GPU culling pass | Fog grid texture | read (SRV) |
+| GI pass (voxel cone tracing) | Voxel structured buffer | read (SRV) |
+| Shadow / AO pass | SDF volume buffer | read (SRV) |
+| Debug overlay pass | Influence map texture | read (SRV) |
+| VFX compute pass | Flow field texture | read (SRV) |
+| Terrain vertex pass | Heightmap grid | read (SRV) |
+
+**Pass descriptions:**
+
+1. **GpuGridSyncPass** — uploads dirty CPU regions to GPU textures/buffers. Runs before all consumer
+   passes. Ring-buffered staging (N copies for N frames in flight, RF-18).
+2. **Fog of war → visibility culling** — fog grid texture read by GPU culling pass to skip rendering
+   of fogged entities.
+3. **Voxel volumes → GI** — voxel data feeds voxel cone tracing or irradiance probes.
+4. **SDF volumes → soft shadows / AO** — distance field sampled by shadow and AO passes.
+5. **Influence maps → debug visualization** — overlay pass reads influence map texture and renders a
+   heat map. Filtered by render layer `u32` bitmask (RF-17); only visible on debug cameras.
+6. **Flow fields → particle VFX** — VFX compute passes sample flow field texture to advect
+   particles.
+7. **Heightmap grids → terrain** — terrain rendering reads heightmap grid as vertex displacement.
+
+---
+
 ## Platform Considerations
 
-| Concern        | Approach                             |
-|----------------|--------------------------------------|
-| Serialization  | `Reflect` + binary (F-1.3)           |
-| Networking     | Dirty-cell bitset delta sync         |
-| GPU upload     | Structured buffer for texture gen    |
-| Memory layout  | Flat `Vec<T>` for cache locality     |
-| Threading      | Read-only queries safe for parallel  |
-| Save/load      | All grid state serialized via ECS    |
-| Hot reload     | Definitions reloaded; state kept     |
-| Mobile         | Reduce grid capacity via config      |
+| Concern        | Platform         | Approach                                        |
+|----------------|------------------|-------------------------------------------------|
+| Serialization  | All              | rkyv zero-copy binary                           |
+| Networking     | All              | Dirty-cell bitset delta sync over QUIC          |
+| GPU upload     | All              | Ring-buffered staging, N copies per frames-in-flight |
+| Memory layout  | All              | Flat `Vec<T>` for cache locality                |
+| Threading      | All              | Read-only queries safe for `par_iter`           |
+| Save/load      | All              | Grid state serialized via rkyv delta            |
+| Hot reload     | All              | Definitions reloaded; runtime state kept        |
+| Mobile (iOS/Android) | Mobile     | Reduce grid capacity via config; no GPU compute on old GPUs |
+| Switch         | Console          | Max 256×256 grid; 4 MB voxel world budget       |
+| VR (Quest/PSVR2) | VR             | Propagation in FixedUpdate; fog latency < 1 frame |
+| Windows        | PC               | DirectStorage for GPU asset streaming           |
+| macOS / iOS    | Apple            | Metal 4; `MTLSharedEvent` for GPU sync          |
+| Linux          | PC               | Vulkan (`ash`); io_uring for asset I/O          |
 
 ### Memory Budget
 
@@ -952,6 +1283,52 @@ sequenceDiagram
   reduces bandwidth for homogeneous chunks.
 - **Propagation** is deterministic. Given the same kernel and initial state, all clients produce
   identical results. Only initial state and kernel parameters need replication.
+- **Relevancy grid.** `UniformGrid<EntitySet>` serves as the networking area-of-interest grid.
+  Entities are assigned to cells based on world position. The networking system queries nearby cells
+  to determine which entities to replicate to each client. The write API is:
+
+  ```rust
+  /// Add an entity to the relevancy cell at
+  /// its world position. Called when an entity
+  /// moves or spawns.
+  pub fn insert_entity(
+      &mut self,
+      world_pos: Vec2,
+      entity: Entity,
+  );
+
+  /// Query all entities within a world-space
+  /// radius. Used by the replication system.
+  pub fn entities_in_radius(
+      &self,
+      center: Vec2,
+      radius: f32,
+      arena: &mut Arena,
+  ) -> &[Entity];
+  ```
+
+---
+
+## Cross-Subsystem Integration
+
+Every subsystem that consumes or produces grid/volume data, with the specific integration mechanism.
+
+| Subsystem          | Grid/volume use                     | API surface                           |
+|--------------------|-------------------------------------|---------------------------------------|
+| Rendering          | Fog texture, voxel GI, SDF, terrain | Render graph read deps on GPU resources |
+| Networking         | Relevancy / area-of-interest        | `entities_in_radius` on `UniformGrid<EntitySet>` |
+| AI — Navigation    | Flow fields for pathfinding         | `compute_flow_field(target, cost_grid)` |
+| AI — Behavior      | Influence maps for tactics          | `PropagationKernel<f32>` + `InfluenceSource` |
+| AI — Perception    | Scent trails (F-7.6.8)              | `UniformGrid<f32>` + scent kernel     |
+| Physics            | Voxel/heightmap collision geometry  | `VoxelVolume::raycast`, `get` for static geo |
+| VFX                | Flow field advection, fog density   | `GpuGrid<Vec2>` SRV sampled in compute |
+| Audio              | Obstruction/occlusion grids         | `line_of_sight` for wall/door blocking |
+| Game framework     | Fog of war, tactical grids          | `UniformGrid::get/set`, `propagate`   |
+| Content pipeline   | Voxel import, heightmap baking      | `VoxelVolume::set`, rkyv serialization |
+| Editor             | Grid painting, voxel sculpting      | `set_cell`, `apply_sdf_brush`, `set_heightmap_region` |
+| Save system        | Grid state persistence              | rkyv dirty-delta serialization        |
+| Spatial index      | Grid-accelerated broad-phase        | `area_query` + shared BVH fallback    |
+| UI                 | Minimap, fog overlay, heat maps     | `GpuGrid<T>` SRV for 2D overlay pass |
 
 ---
 
@@ -961,44 +1338,46 @@ Full test cases are in [grids-volumes-test-cases.md](grids-volumes-test-cases.md
 
 ### Unit Tests
 
-| Area                       | Coverage            |
-|----------------------------|---------------------|
-| `UniformGrid::get/set`     | Valid, OOB, edges   |
-| `world_to_cell`            | Inside, outside     |
-| `cell_to_world`            | All corners         |
-| `neighbors` Cardinal       | Interior, edge      |
-| `neighbors` All            | Corner, center      |
-| `line_of_sight`            | Clear, blocked      |
-| `flood_fill`               | Open, walled, full  |
-| `area_query`               | Within, partial     |
-| `propagate`                | Decay, max_radius   |
-| `VoxelVolume::get/set`     | Valid, OOB          |
-| `VoxelVolume::raycast`     | Hit, miss, edge     |
-| `VoxelChunk` dirty flag    | Set on write, clear |
-| `GpuGridSync` merge        | Overlap, adjacent   |
-| `CellCoord` equality       | Same, different     |
+| TC-ID         | Area                       | Requirement  | Coverage            |
+|---------------|----------------------------|--------------|---------------------|
+| TC-13.20.1.1  | `UniformGrid::get/set`     | R-13.20.1   | Valid, OOB, edges   |
+| TC-13.20.1.2  | `world_to_cell`            | R-13.20.1   | Inside, outside     |
+| TC-13.20.1.3  | `cell_to_world`            | R-13.20.1   | All corners         |
+| TC-13.20.2.1  | `neighbors` Cardinal       | R-13.20.2   | Interior, edge      |
+| TC-13.20.2.2  | `neighbors` All            | R-13.20.2   | Corner, center      |
+| TC-13.20.2.3  | `line_of_sight`            | R-13.20.2   | Clear, blocked      |
+| TC-13.20.3.1  | `flood_fill`               | R-13.20.3   | Open, walled, full  |
+| TC-13.20.4.1  | `area_query`               | R-13.20.4   | Within, partial     |
+| TC-13.21.1.1  | `propagate`                | R-13.21.1   | Decay, max_radius   |
+| TC-13.27.1.1  | `VoxelVolume::get/set`     | R-13.27.1   | Valid, OOB          |
+| TC-13.27.2.1  | `VoxelVolume::raycast`     | R-13.27.2   | Hit, miss, edge     |
+| TC-13.27.3.1  | `VoxelChunk` dirty flag    | R-13.27.3   | Set on write, clear |
+| TC-13.27.3.2  | `GpuGridSync` merge        | R-13.27.3   | Overlap, adjacent   |
+| TC-7.6.8.1    | `CellCoord` equality       | R-7.6.8     | Same, different     |
 
 ### Integration Tests
 
-| Area                       | Coverage            |
-|----------------------------|---------------------|
-| Grid + ECS component       | Spawn, query, mutate|
-| Grid + spatial index       | World-space lookup  |
-| Grid + propagation + clock | Multi-tick spread   |
-| Volume + chunk lifecycle   | Create, dirty, sync |
-| Grid + serialization       | Round-trip save     |
-| GPU sync end-to-end        | Dirty to texture    |
+| TC-ID         | Area                       | Requirement  | Coverage            |
+|---------------|----------------------------|--------------|---------------------|
+| TC-13.20.1.4  | Grid + ECS component       | R-13.20.1   | Spawn, query, mutate|
+| TC-13.20.1.5  | Grid + spatial index       | R-13.20.1   | World-space lookup  |
+| TC-13.21.1.2  | Grid + propagation + clock | R-13.21.1   | Multi-tick spread   |
+| TC-13.27.3.3  | Volume + chunk lifecycle   | R-13.27.3   | Create, dirty, sync |
+| TC-13.27.1.2  | Grid + serialization       | R-13.27.1   | Round-trip save     |
+| TC-13.20.1.6  | GPU sync end-to-end        | R-13.20.1   | Dirty to texture    |
+| TC-7.6.8.2    | Scent propagation + decay  | R-7.6.8     | Multi-tick decay    |
+| TC-13.21.4.1  | Cover + flanking grid      | R-13.21.4   | Stance update       |
 
 ### Benchmarks
 
-| Benchmark                  | Target              |
-|----------------------------|---------------------|
-| propagate_256x256          | < 1 ms (GV1)       |
-| line_of_sight_128          | < 0.01 ms (GV2)    |
-| flood_fill_256x256_r64     | < 0.5 ms (GV3)     |
-| voxel_raycast_512          | < 2 ms (GV4)       |
-| gpu_sync_dirty_upload      | < 1 ms (GV5)       |
-| area_query_1024x1024_r32   | < 1 ms             |
+| TC-ID         | Benchmark                  | Requirement  | Target              |
+|---------------|----------------------------|--------------|---------------------|
+| TC-GV1.1      | propagate_256x256          | NFR-SIM.GV1 | < 1 ms             |
+| TC-GV2.1      | line_of_sight_128          | NFR-SIM.GV2 | < 0.01 ms          |
+| TC-GV3.1      | flood_fill_256x256_r64     | NFR-SIM.GV3 | < 0.5 ms           |
+| TC-GV4.1      | voxel_raycast_512          | NFR-SIM.GV4 | < 2 ms             |
+| TC-GV5.1      | gpu_sync_dirty_upload      | NFR-SIM.GV5 | < 1 ms             |
+| TC-GV6.1      | area_query_1024x1024_r32   | NFR-SIM.GV1 | < 1 ms             |
 
 ---
 
@@ -1006,11 +1385,194 @@ Full test cases are in [grids-volumes-test-cases.md](grids-volumes-test-cases.md
 
 1. **Palette compression.** Should `VoxelChunk<T>` support palette compression at the primitive
    level, or should that be a higher-level optimization?
-2. **Async large queries.** For grids larger than 1024x1024, should flood fill and A* pathfinding be
-   async to avoid stalling the game loop?
+2. **Large query decomposition.** For grids larger than 1024×1024, should flood fill and A\*
+   pathfinding be split across frames using `scope()` from the custom job system, or offloaded to
+   GPU compute? No async/await — job system decomposition or GPU compute only.
 3. **Hex grid support.** Should `UniformGrid<T>` support hexagonal cell layouts natively, or should
    hex be a separate primitive?
 4. **Propagation scheduling.** Should propagation kernels support sub-tick rates (e.g., every 4th
    frame) to amortize cost across frames?
 5. **LOD for VoxelVolume.** Should chunks store multiple LOD levels, or should LOD be handled by a
    separate system that reads chunk data?
+
+## Review feedback
+
+### RF-1: Remove all Reflect derives
+
+Remove all `Reflect` derives (26 occurrences). Remove `REF[Reflection /
+TypeRegistry]` from the architecture diagram. Remove `Reflection | F-1.3.1`
+from cross-cutting dependencies. Replace with rkyv derives and codegen'd metadata in the middleman
+.dylib.
+
+### RF-2: rkyv serialization throughout
+
+rkyv never appears in the document. Replace all Reflect-based serialization with
+`rkyv::Archive, rkyv::Serialize, rkyv::Deserialize`. Update the Platform Considerations table from
+`Reflect + binary (F-1.3)` to `rkyv zero-copy binary`. Update the Data Flow Summary accordingly. No
+serde, no RON.
+
+### RF-3: GPU-resident buffers for bulk simulation data
+
+All grid data is stored in CPU `Vec<T>` with dirty-region upload. For grids used by GPU compute
+(influence maps, flow fields, fog of war propagation), the canonical data should live in GPU
+structured buffers. Add a `GpuGrid<T>` variant where the GPU buffer is authoritative and CPU
+readback is on-demand. Document which use cases are GPU-resident vs CPU-resident:
+
+- **GPU-resident:** influence maps, flow fields, fog of war propagation, SDF volumes, voxel GI
+- **CPU-resident:** gameplay queries (pathfinding, line of sight), editor tools, save/load
+
+### RF-4: Create companion test cases file
+
+Create `grids-volumes-test-cases.md` with TC-IDs in `TC-X.Y.Z.N` format, tracing every R-X.Y.Z
+requirement to explicit test cases with inputs and expected outputs.
+
+### RF-5: Codegen for user-defined cell types
+
+User-defined cell types (`T` in `UniformGrid<T>`) — fog states, block types, scent values, influence
+categories — are codegen'd into the middleman .dylib. The monomorphized grid types are compiled as
+part of the middleman. Hot-reload recompiles when cell type definitions change.
+
+### RF-6: Render graph integration (broad, not just nodes)
+
+Grids and volumes are consumed across the entire render pipeline, not just uploaded via a single
+sync node. Document the full render graph integration:
+
+1. **GpuGridSyncPass** — uploads dirty CPU regions to GPU textures/buffers. Runs before any consumer
+   pass. This is a render graph node.
+2. **Fog of war → visibility culling** — the fog grid texture is read by the GPU culling pass to
+   skip rendering of fogged entities. The culling pass declares a read dependency on the fog grid
+   resource.
+3. **Voxel volumes → GI** — voxel data feeds voxel cone tracing or irradiance probes. The GI pass
+   reads the voxel structured buffer.
+4. **SDF volumes → soft shadows / AO** — distance field data is sampled by shadow and AO passes for
+   soft contact shadows and SSAO.
+5. **Influence maps → debug visualization** — an overlay pass reads the influence map texture and
+   renders a heat map. Filtered by render layer bitmask (only visible on debug cameras).
+6. **Flow fields → particle VFX** — VFX compute passes sample the flow field texture to advect
+   particles. The VFX pass declares a read dependency on the flow field resource.
+7. **Heightmap grids → terrain** — terrain rendering reads the heightmap grid as a vertex
+   displacement source.
+
+Each consumer pass declares `read` dependencies on grid resources. The render graph compiler orders
+passes and inserts barriers automatically. GPU-resident grids (RF-3) are render graph resources with
+read/write tracking.
+
+### RF-7: FixedUpdate for propagation
+
+Explicitly state that PropagationSystem runs in the `FixedUpdate` schedule at a fixed timestep.
+Label Phase 2 (Simulation) in the System Execution Order diagram as FixedUpdate.
+
+### RF-8: 2D grid and Transform2D
+
+`UniformGrid<T>` uses `Vec2` which is correct for 2D. Add a note clarifying that grids work with
+`Transform2D` for 2D games and `Transform` for 3D. `VoxelVolume` is 3D-only. Pure 2D games use
+`UniformGrid` and `HierarchicalGrid`, not `VoxelVolume`.
+
+### RF-9: GPU compute propagation
+
+For grids larger than 256x256, propagation should run as GPU compute dispatches. Add a
+`GpuPropagationKernel` that runs as an HLSL compute shader, with the grid living in a structured
+buffer. The CPU propagation path remains for small grids and gameplay queries. Both paths produce
+identical results.
+
+### RF-10: Per-thread arenas for query results
+
+`flood_fill`, `area_query`, `line_of_sight`, and pathfinding results allocate from per-thread
+arenas. Arenas reset at frame boundaries.
+
+### RF-11: Algorithm reference URLs
+
+Add direct URLs for: Bresenham's line algorithm, BFS flood fill, Amanatides & Woo DDA voxel
+traversal, Dijkstra/Eikonal for flow field computation, SDF generation algorithms.
+
+### RF-12: Expand platform considerations
+
+Name all target platforms (Windows, macOS, Linux, iOS, Android, Switch, VR). Add console memory
+budgets (Switch grid size limits), VR latency requirements for spatial audio grids, mobile GPU
+compute availability.
+
+### RF-13: Codegen for extensible enums
+
+Clarify whether `NeighborPattern`, `GridQueryShape`, and cell type enums are engine-fixed or
+user-extensible. User-extensible variants are codegen'd in the middleman .dylib.
+
+### RF-14: Flow fields, distance fields, influence maps
+
+These are listed in the task context but have no API in the design:
+
+1. **Flow field** — `UniformGrid<Vec2>` with Dijkstra/Eikonal propagation. Used for RTS unit
+   movement, crowd flow, water current. Add
+   `compute_flow_field(target, cost_grid) -> UniformGrid<Vec2>`.
+2. **Distance field (SDF)** — signed distance from voxel surface. Used for soft shadows, AO,
+   collision queries. Add `compute_sdf(volume) -> UniformGrid<f32>` (or GPU compute variant).
+3. **Influence map** — propagation kernel that spreads influence values from sources with falloff.
+   Add as a first-class `PropagationKernel::Influence` example with source entities, decay rate, and
+   obstacle blocking.
+
+### RF-15: Rephrase async open question
+
+Open question #2 suggests async for large queries. Rephrase to ask about job system decomposition
+(splitting across frames via `scope()`) or GPU compute offload. No async/await in engine.
+
+### RF-16: Custom job system terminology
+
+Rename "Thread pool | F-14.3.1" to "Job system" and reference
+`scope()` / `par_iter` from the custom crossbeam-deque job system.
+
+### RF-17: Render layer filtering for grid overlays
+
+Grid debug overlays (fog of war viz, influence heat maps) should respect the render layer u32
+bitmask so they only appear on the correct cameras (debug camera, minimap, main camera).
+
+### RF-18: Ring-buffered GPU upload staging
+
+The GPU upload staging buffer should be ring-buffered (N copies for N frames in flight) to avoid
+GPU/CPU sync stalls.
+
+### RF-19: Networking relevancy grid
+
+Explain how `UniformGrid<EntitySet>` serves as the networking relevancy grid for area-of-interest
+filtering. Entities are assigned to cells based on world position. The networking system queries
+nearby cells to determine which entities to replicate to each client.
+
+### RF-20: Fix heading case
+
+Convert "Class Diagram -- All Types" and "File Layout" to sentence case.
+
+### RF-21: Test coverage tracing
+
+Map every R-X.Y.Z requirement (R-13.20.1-4, R-13.21.1/4, R-13.27.1-3, R-7.6.8) to explicit TC-IDs in
+the companion test cases file.
+
+### RF-22: Explicit cross-subsystem integration list
+
+The design must list every subsystem that consumes or produces grid/volume data, with the specific
+integration mechanism for each:
+
+| Subsystem | Grid/volume use | Integration |
+|-----------|----------------|-------------|
+| **Rendering** | Fog of war texture, voxel GI, SDF shadows/AO, terrain heightmap, debug overlays | Render graph read deps on grid GPU resources |
+| **Networking** | Relevancy grid for area-of-interest | `UniformGrid<EntitySet>` queried by replication system |
+| **AI — Navigation** | Flow fields for pathfinding | `UniformGrid<Vec2>` computed by Dijkstra/Eikonal |
+| **AI — Behavior** | Influence maps for tactical decisions | Propagation kernel with source entities + decay |
+| **AI — Perception** | Scent trails (F-7.6.8) | `UniformGrid<f32>` with scent propagation kernel |
+| **Physics** | Voxel collision, heightmap collision | Voxel/grid data read by physics for static geometry |
+| **VFX** | Flow field particle advection, fog density injection | VFX compute passes sample grid textures |
+| **Audio** | Obstruction/occlusion grids | Audio queries grid for wall/door blocking |
+| **Game framework** | Fog of war (F-13.20), tactical grids (F-13.21) | Gameplay systems read/write grid cells |
+| **Content pipeline** | Voxel import, heightmap import, grid baking | Asset pipeline bakes grids to rkyv |
+| **Editor** | Grid painting, volume sculpting, propagation preview | Editor tools write grid cells, preview overlays |
+| **Save system** | Grid state serialization | Dirty cells saved via rkyv delta |
+| **Spatial index** | Grid-accelerated broad-phase queries | Shared BVH augmented with grid for uniform queries |
+| **UI** | Minimap, fog overlay, debug heat maps | UI reads grid texture for 2D overlay rendering |
+
+Each row must have a corresponding API surface in this design (query method, event, or resource)
+that the consuming subsystem calls. If any integration point is missing from the API, add it.
+
+### RF-23: Voxel and terrain editing integration
+
+The level editor provides voxel block placement, SDF sculpting, and terrain painting tools
+(level-world.md RF-26, RF-29). The grids/ volumes design must define the write API that these tools
+call: `set_cell()`, `apply_sdf_brush()`, `set_heightmap_region()`. Pen pressure maps to brush
+strength. Non-destructive override layers (level-world.md RF-33) store deltas on top of procedural
+terrain.

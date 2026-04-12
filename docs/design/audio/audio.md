@@ -1809,7 +1809,7 @@ simultaneously control:
 | Platform | Backend | API |
 |----------|---------|-----|
 | Windows | WASAPI | `IAudioClient` |
-| macOS | CoreAudio | `AudioUnit` via swift-bridge |
+| macOS | CoreAudio | `AudioUnit` via objc2 |
 | Linux | ALSA/PipeWire | `snd_pcm_*` / PipeWire |
 
 ### Microphone Capture
@@ -1877,7 +1877,7 @@ simultaneously control:
 | `crossbeam-utils` | CachePadded, Backoff |
 | `smallvec` | Inline bus child lists |
 | `windows-rs` | WASAPI bindings |
-| `swift-bridge` | Swift CoreAudio FFI |
+| `objc2` | CoreAudio Objective-C FFI |
 
 ## Safety Invariants
 
@@ -1993,3 +1993,247 @@ Full test cases are in the companion file [audio-test-cases.md](audio-test-cases
     engine and platform channels needs per-console investigation.
 12. **Platform hardware decoders** -- Apple Audio Toolbox can decode AAC in hardware; how does this
     interact with the streaming pipeline?
+
+## Review Feedback
+
+### RF-1: Replace all Tokio/async with platform-native I/O
+
+7+ Tokio references + 4 async fn signatures. Replace with:
+
+- Linux: io_uring via rustix
+- Windows: IOCP via windows-rs
+- macOS: GCD dispatch_io via dispatch2
+
+StreamManager API becomes synchronous. Submissions via channel to main thread, completions arrive as
+jobs. The ring buffer read path on the audio thread is already correct.
+
+### RF-2: Remove all Reflect derives
+
+"All types derive Reflect" (line 384). Remove. Codegen generates type metadata statically per
+constraints.
+
+### RF-3: Dependencies — cpal + symphonia only
+
+| Crate | Purpose | License |
+|-------|---------|---------|
+| cpal | Platform audio output (WASAPI, CoreAudio, ALSA) | MIT |
+| symphonia | Audio decoding (MP3, OGG, FLAC, WAV, AAC) | MIT |
+
+Everything else is custom:
+
+- Mixer / bus graph
+- DSP effects chain
+- Spatial audio (HRTF, propagation, occlusion)
+- Music system
+- Streaming ring buffer
+- Acoustic material system
+
+### RF-4: Eliminate DspNode trait + DspNodeRegistry
+
+Replace dynamic dispatch `DspNode` trait and string-keyed `DspNodeRegistry` with codegen'd enum
+variants in the middleman .dylib. Custom DSP nodes added by plugins become new enum variants via
+codegen. Static dispatch on the real-time audio thread.
+
+### RF-5: Replace AudioBackend trait with cfg-gated type
+
+3 platforms selected at compile time. Use cfg-gated concrete type, not a trait:
+
+```rust
+#[cfg(target_os = "windows")]
+type AudioBackend = WasapiBackend;
+#[cfg(target_os = "macos")]
+type AudioBackend = CoreAudioBackend;
+#[cfg(target_os = "linux")]
+type AudioBackend = AlsaBackend;
+```
+
+### RF-6: Replace String in InsertEffect command
+
+Heap allocation near real-time path. Use the codegen'd `AudioEffect` enum variant or a `u16` effect
+ID.
+
+### RF-7: Custom HRTF implementation
+
+Build HRTF from scratch using SOFA file datasets:
+
+1. Parse SOFA file (HRIR dataset — MIT KEMAR, CIPIC, etc.)
+2. Store impulse responses indexed by (azimuth, elevation)
+3. At runtime: compute source direction relative to listener
+4. Look up nearest HRIR pair (left/right ear)
+5. Convolve audio signal with HRIR via overlap-add FFT
+6. ~200-400 lines of DSP code + SOFA parser
+
+Supports custom HRTFs — users can load their own SOFA profiles for personalized binaural rendering.
+
+### RF-8: Acoustic material system
+
+Extend physics materials with acoustic properties. The propagation solver uses these when rays hit
+surfaces.
+
+```rust
+pub struct AcousticMaterial {
+    /// Per-band absorption (0=reflective, 1=absorptive)
+    pub absorption: [f32; 3], // low, mid, high
+    /// Transmission loss through surface (dB)
+    pub transmission_loss: [f32; 3],
+    /// Scattering (0=specular, 1=diffuse)
+    pub scattering: f32,
+}
+```
+
+Built-in presets:
+
+| Material | Low | Mid | High | Scatter |
+|----------|-----|-----|------|---------|
+| Stone | 0.02 | 0.03 | 0.05 | 0.1 |
+| Wood | 0.10 | 0.07 | 0.06 | 0.3 |
+| Carpet | 0.08 | 0.30 | 0.60 | 0.7 |
+| Glass | 0.04 | 0.03 | 0.02 | 0.05 |
+| Metal | 0.01 | 0.02 | 0.03 | 0.05 |
+| Fabric | 0.10 | 0.40 | 0.70 | 0.8 |
+| Concrete | 0.02 | 0.04 | 0.06 | 0.2 |
+| Grass | 0.15 | 0.25 | 0.40 | 0.6 |
+| Water | 0.01 | 0.01 | 0.02 | 0.1 |
+
+The material doesn't change between environments — the geometry changes the result. A stone cave
+traps rays (many bounces, long reverb). The same stone in an open crater lets rays escape (few
+bounces, dry sound). Emergent from geometry, not hardcoded.
+
+### RF-9: ECS-parallel spatial audio propagation
+
+Use the job system and ECS change detection for propagation:
+
+```text
+AudioPropagationSystem (worker threads):
+  par_for_each source with Changed<Transform>
+    → raycast via shared BVH (occlusion, reflection)
+    → accumulate absorption per bounce per frequency band
+    → write PropagationResult per source
+    → amortized: trace 1/N sources per frame
+
+Audio Thread (real-time, lock-free):
+  → drain SPSC command queue
+  → read PropagationResult (atomic double-buffer swap)
+  → apply HRTF, attenuation, reverb from cached results
+  → mix to output buffer (< 0.5 ms)
+```
+
+Key optimizations:
+
+1. **Par_for_each** — each source's propagation is independent. 100 sources × 100 rays across 8
+   workers.
+2. **Shared BVH** — audio rays query the same AI/gameplay BVH. No extra spatial structure.
+3. **Change detection** — only re-trace when source or listener moves (`Changed<Transform>`). Static
+   sources cached.
+4. **Amortized tracing** — 1/N sources per frame, rotate. 100 sources at 60fps with N=4 → each
+   updated at 15Hz. Imperceptible for propagation.
+5. **GPU RT (optional)** — on platforms with hardware RT, audio rays can use the same acceleration
+   structure as rendering.
+
+### RF-10: Fix layer count
+
+Overview says "Five layers" but lists 7. Change to "Seven."
+
+### RF-11: Create companion test cases file
+
+Create `audio-test-cases.md` with TC-5.X.Y.Z entries.
+
+### RF-12: Algorithm references
+
+| Algorithm | Reference |
+|-----------|-----------|
+| HRTF/HRIR | [SOFA file format (AES69)](https://www.sofaconventions.org/) |
+| MIT KEMAR dataset | [MIT Media Lab](https://sound.media.mit.edu/resources/KEMAR.html) |
+| Overlap-add convolution | [Smith, "Mathematics of the DFT"](https://ccrma.stanford.edu/~jos/mdft/) |
+| Image source method | [Allen & Berkley (1979)](https://asa.scitation.org/doi/10.1121/1.382599) |
+| Geometric acoustics | [Savioja & Svensson (2015)](https://asa.scitation.org/doi/10.1121/1.4926438) |
+| Ambisonics | [Zotter & Frank, "Ambisonics" (2019)](https://link.springer.com/book/10.1007/978-3-030-17207-7) |
+| Lock-free SPSC | [Lamport (1983)](https://dl.acm.org/doi/10.1145/69624.357207) |
+
+### RF-13: Emergent acoustic behaviors (design notes)
+
+The ray propagation + acoustic material system produces these behaviors with ZERO special-case code
+— all emergent from geometry and material properties:
+
+**Cave under rain (Terraria-style):**
+
+- Rain sources above terrain surface
+- Listener in cave below
+- Rays hit cave ceiling → stone transmission loss (40+ dB)
+- Rain nearly silent underground
+- Walk toward cave entrance → rays find open path → rain fades in gradually
+- At cave mouth → partial occlusion (some rays blocked, some pass through opening)
+
+**Canyon echo:**
+
+- Parallel canyon walls with low-absorption stone
+- Rays bounce 10+ times, each bounce loses only 2-5%
+- Time delay between bounces = distance / speed of sound
+- Result: natural echo tail — delayed, slightly attenuated copies arriving over time
+
+**Underwater:**
+
+- Water surface material: heavy high-frequency absorption
+- Below water → all sound is low-pass filtered (muffled)
+- Emerge from water → full spectrum returns
+
+**Indoor/outdoor transition:**
+
+- Walk through doorway → ray paths shift gradually
+- Inside: many reflections (reverberant)
+- Outside: rays escape (dry)
+- Transition is smooth, not a hard cut
+
+**Explosions behind cover:**
+
+- Partial occlusion from cover geometry
+- Bass passes through (low transmission loss at low freq)
+- Treble blocked (high transmission loss at high freq)
+- Physically accurate frequency-dependent muffling
+
+**Footsteps through floors:**
+
+- Wood floor: ~15 dB transmission loss
+- Footsteps above are muffled but audible
+- Concrete floor: ~40 dB → nearly inaudible
+- Material determines how much sound leaks
+
+**Flutter echo in hallways:**
+
+- Parallel walls with low absorption + low scattering
+- Rays bounce back and forth rapidly
+- Produces characteristic metallic flutter
+
+**Sound leaking through gaps:**
+
+- Solid wall = full occlusion
+- Remove one tile/block = sound leaks through that gap
+- Crack under a door = high-frequency leak
+- All from BVH raycast finding/missing geometry
+
+All of these are test cases for the propagation system. None require environment-specific code or
+designer markup.
+
+**2.5D game support:**
+
+The propagation system works for 2.5D games (side-view, isometric, top-down) without modification:
+
+- **Side-view (Terraria/Hollow Knight):** Tile grid is the BVH geometry. Rays trace through tiles in
+  2D (z=0 plane). Cave ceiling = row of solid tiles blocking rain sources above. Same
+  occlusion/reflection behavior. Camera is orthographic but audio listener is positioned in 2D world
+  space with left/right panning.
+
+- **Isometric (Hades/Diablo):** World has actual 3D geometry even though the camera is fixed-angle.
+  Walls, floors, and ceilings exist in 3D. Full 3D propagation works — sound behind a wall is
+  occluded, sound in a hallway reflects. HRTF applies with full 3D positioning.
+
+- **Top-down:** Similar to isometric. Walls block sound horizontally. Floors block sound vertically.
+  If the game has no vertical geometry, raycasts are 2D and propagation simplifies automatically
+  (fewer bounces, faster).
+
+The propagation solver doesn't know or care about the camera projection. It traces rays in whatever
+geometry exists. A 2D tile grid produces 2D propagation. A 3D scene produces 3D propagation. The
+same code handles both.
+
+For pure 2D games with no depth, the solver can be configured to trace in 2D only (skip Y axis) for
+performance — but the default 3D path works correctly even for 2D geometry.

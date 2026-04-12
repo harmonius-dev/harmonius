@@ -19,7 +19,7 @@
 1. **F-1.9.1** — Shared BVH as ECS resource, updated once per frame, read by all subsystems
 2. **F-1.9.1** — BVH memory <= 64 bytes/entity, SAH quality within 2x of full rebuild
 3. **F-1.9.2** — Incremental BVH updates via change detection, cost proportional to moved entities
-4. **F-1.9.3** — Optional grid/octree alongside BVH for cell-based queries
+4. **F-1.9.3** — Optional grid alongside BVH for cell-based queries
 
 ### Query Interface (F-1.9.4–5 / R-1.9.4–5)
 
@@ -42,41 +42,44 @@
 | F-1.9.8 | R-1.9.8     |
 | F-1.9.9 | R-1.9.9     |
 
-1. **F-1.9.6** — Physics broadphase reads shared BVH, no separate broadphase
-2. **F-1.9.7** — Rendering frustum culling reads shared BVH for all views
-3. **F-1.9.8** — Network relevancy uses grid/octree for area-of-interest
+1. **F-1.9.6** — Physics maintains its own BVH (separate from shared BVH)
+2. **F-1.9.7** — GPU compute shaders handle frustum + occlusion culling
+3. **F-1.9.8** — Network relevancy uses grid for area-of-interest
 4. **F-1.9.9** — AI perception and gameplay queries route through unified API
 
 ### Interoperability Contract
 
-This design **defines** the `SpatialQuery` trait consumed by: Physics, Rendering, Networking, AI,
-Audio, and Gameplay.
+This design **defines** the `SpatialQuery` trait consumed by: AI, Audio, Gameplay, and Networking.
+Physics maintains its own BVH (see physics design). GPU compute shaders handle rendering culling.
 
 ---
 
 ## Overview
 
-The spatial indexing subsystem maintains a single shared spatial index as an ECS resource. All
-subsystems read from this one structure instead of building their own. The primary acceleration
-structure is a BVH (Bounding Volume Hierarchy) built with Surface Area Heuristic (SAH). An optional
-octree and 2D uniform grid provide cell-based spatial partitioning for network relevancy, AI crowd
-density, and world zone queries.
+The spatial indexing subsystem provides two structures: BVH and Grid. The primary acceleration
+structure is a BVH (Bounding Volume Hierarchy) built with Surface Area Heuristic (SAH), stored as a
+shared ECS resource. The CPU-side BVH is for gameplay queries (AI, AoE, raycasts), NOT for rendering
+culling. GPU compute shaders handle frustum + occlusion culling (Nanite-style). Physics maintains
+its own BVH, separate from this shared one; the physics design owns the physics BVH spec.
+
+A 2D uniform grid provides cell-based spatial partitioning for network relevancy, zone-based
+replication, and interest management.
 
 A dedicated ECS system (`SpatialUpdateSystem`) runs once per frame, before any consumer systems. It
 uses change detection on `Transform` components to incrementally refit moved entities, batch-insert
-spawned entities, and remove despawned entities. Full rebuilds happen in the background only when
-SAH quality degrades past a threshold.
+spawned entities, and remove despawned entities. Full rebuilds happen in the background via a
+double-buffered rebuild task that builds into a shadow buffer and swaps at frame boundary.
 
 All queries go through a unified `SpatialQuery` API that accepts query shapes (ray, AABB, sphere,
 frustum, k-NN) and spatial layer masks. Batch queries are parallelized across worker threads via the
 `ThreadPool::scope` API.
 
 In addition to the BVH, the engine provides a generic `UniformGrid<T>` (defined in
-[shared-primitives.md](shared-primitives.md)) for density-based and cell-based spatial queries.
-Domains such as AI perception (scent), crowd simulation (density), fog of war, and tactical grids
-instantiate `UniformGrid<T>` with domain-specific cell data. The BVH remains the primary spatial
-index for point, ray, shape, and frustum queries; the uniform grid serves fixed-resolution cell
-queries that do not benefit from hierarchical acceleration.
+[algorithms.md](algorithms.md)) for density-based and cell-based spatial queries. Domains such as AI
+perception (scent), crowd simulation (density), fog of war, and tactical grids instantiate
+`UniformGrid<T>` with domain-specific cell data. The BVH remains the primary spatial index for
+point, ray, shape, and frustum queries; the uniform grid serves fixed-resolution cell queries that
+do not benefit from hierarchical acceleration.
 
 ---
 
@@ -88,7 +91,6 @@ queries that do not benefit from hierarchical acceleration.
 graph TD
     subgraph "harmonius_core::spatial"
         BVH[BvhIndex]
-        OCT[OctreeIndex]
         GRID[UniformGrid]
         QE[QueryEngine]
         BATCH[BatchDispatcher]
@@ -104,13 +106,10 @@ graph TD
 
     subgraph "ECS Resources"
         BVHR[Res&lt;BvhIndex&gt;]
-        OCTR[Res&lt;OctreeIndex&gt;]
         GRIDR[Res&lt;UniformGrid&gt;]
     end
 
     subgraph "Consumers"
-        PHY[Physics Broadphase]
-        REN[Rendering Culling]
         NET[Network Relevancy]
         AI[AI Perception]
         AUD[Audio Occlusion]
@@ -121,18 +120,13 @@ graph TD
     BV --> UPD
     SL --> UPD
     UPD --> BVH
-    UPD --> OCT
     UPD --> GRID
     BVH --> BVHR
-    OCT --> OCTR
     GRID --> GRIDR
     BVHR --> QE
-    OCTR --> QE
     GRIDR --> QE
     QE --> BATCH
 
-    BATCH --> PHY
-    BATCH --> REN
     BATCH --> NET
     BATCH --> AI
     BATCH --> AUD
@@ -145,10 +139,11 @@ graph TD
 harmonius_core/
 └── spatial/
     ├── mod.rs          # Public re-exports
-    ├── aabb.rs         # Aabb, math helpers
+    ├── aabb.rs         # Aabb, Aabb2D, math helpers
     ├── bvh.rs          # BvhIndex, BvhNode,
     │                   # BvhHandle, SAH build
-    ├── octree.rs       # OctreeIndex, OctreeNode
+    ├── bvh2d.rs        # BvhIndex2D, BvhNode2D,
+    │                   # LeafEntry2D, SAH build 2D
     ├── grid.rs         # UniformGrid, GridCell
     ├── query.rs        # SpatialQuery trait,
     │                   # query shapes, results
@@ -160,7 +155,7 @@ harmonius_core/
     │                   # SpatialLayer,
     │                   # SpatialMembership
     └── systems.rs      # SpatialUpdateSystem,
-                        # BvhRebuildSystem
+                        # BvhRebuildTask
 ```
 
 ### Core Data Structures
@@ -186,11 +181,8 @@ classDiagram
 
     class BvhNode {
         -aabb Aabb
-        -left u32
+        -left_or_entity u32
         -right u32
-        -parent u32
-        -is_leaf bool
-        -entity_index u32
     }
 
     class LeafEntry {
@@ -217,24 +209,45 @@ classDiagram
         +intersects(other Aabb) bool
     }
 
-    class OctreeIndex {
-        -root OctreeNode
-        -cell_size f32
-        -max_depth u8
-        -bounds Aabb
-        +insert(entity, position)
-        +remove(entity)
-        +update(entity, new_position)
-        +query_cell(cell_coord) &[Entity]
-        +query_range(center, radius) Vec~Entity~
-        +entities_in_bounds(aabb) Vec~Entity~
+    class Aabb2D {
+        -min Vec2
+        -max Vec2
+        +center() Vec2
+        +extents() Vec2
+        +half_extents() Vec2
+        +area() f32
+        +merged(other Aabb2D) Aabb2D
+        +contains_point(p Vec2) bool
+        +intersects(other Aabb2D) bool
     }
 
-    class OctreeNode {
-        -children Option~Box~[OctreeNode; 8]~~
-        -entities SmallVec~Entity 16~
-        -bounds Aabb
-        -depth u8
+    class BvhIndex2D {
+        -nodes Vec~BvhNode2D~
+        -leaf_entities Vec~LeafEntry2D~
+        -free_list Vec~u32~
+        -sah_quality f32
+        +insert(entity, aabb) BvhHandle
+        +remove(handle BvhHandle)
+        +update(handle, new_aabb)
+        +refit_moved(moved &[BvhHandle])
+        +batch_insert(entries &[(Entity, Aabb2D)])
+        +rebuild_full()
+        +sah_quality() f32
+        +node_count() u32
+        +entity_count() u32
+    }
+
+    class BvhNode2D {
+        -aabb Aabb2D
+        -left u32
+        -right u32
+    }
+
+    class LeafEntry2D {
+        -entity Entity
+        -aabb Aabb2D
+        -fat_aabb Aabb2D
+        -layers SpatialLayerMask
     }
 
     class UniformGrid {
@@ -250,7 +263,7 @@ classDiagram
     }
 
     class GridCell {
-        -entities SmallVec~Entity 32~
+        -entities SmallVec~[Entity; 32]~
     }
 
     BvhIndex *-- BvhNode
@@ -258,8 +271,11 @@ classDiagram
     LeafEntry --> BvhHandle
     LeafEntry --> Aabb
     BvhNode --> Aabb
-    OctreeIndex *-- OctreeNode
-    OctreeNode --> Aabb
+    BvhIndex2D *-- BvhNode2D
+    BvhIndex2D *-- LeafEntry2D
+    LeafEntry2D --> BvhHandle
+    LeafEntry2D --> Aabb2D
+    BvhNode2D --> Aabb2D
     UniformGrid *-- GridCell
 ```
 
@@ -281,9 +297,8 @@ flowchart TD
     FR --> BVH
     KN --> BVH
 
-    OV -->|Cell-based| GRID[Grid / Octree]
+    OV -->|Cell-based| GRID[Grid]
     KN -->|Cell-based| GRID
-    FR -->|Coarse pass| GRID
 
     BVH --> FILT{Layer Filter}
     GRID --> FILT
@@ -376,16 +391,67 @@ pub struct Sphere {
     pub center: Vec3,
     pub radius: f32,
 }
+
+/// 2D axis-aligned bounding box for 2D/2.5D games.
+/// Operates on Vec2, eliminating the third-axis
+/// overhead for games that don't need depth.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Aabb2D {
+    pub min: Vec2,
+    pub max: Vec2,
+}
+
+impl Aabb2D {
+    pub fn new(min: Vec2, max: Vec2) -> Self;
+    pub fn from_center_extents(
+        center: Vec2,
+        half_extents: Vec2,
+    ) -> Self;
+    pub fn center(&self) -> Vec2;
+    pub fn extents(&self) -> Vec2;
+    pub fn half_extents(&self) -> Vec2;
+    pub fn area(&self) -> f32;
+
+    /// Merge two 2D AABBs into the smallest
+    /// enclosing 2D AABB.
+    pub fn merged(
+        &self,
+        other: &Aabb2D,
+    ) -> Aabb2D;
+
+    pub fn contains_point(
+        &self,
+        p: Vec2,
+    ) -> bool;
+    pub fn intersects(
+        &self,
+        other: &Aabb2D,
+    ) -> bool;
+    pub fn intersects_ray_2d(
+        &self,
+        origin: Vec2,
+        inv_dir: Vec2,
+        t_max: f32,
+    ) -> Option<f32>;
+    pub fn intersects_circle(
+        &self,
+        center: Vec2,
+        radius: f32,
+    ) -> bool;
+
+    /// Expand 2D AABB by a margin for movement
+    /// prediction (fattened AABB).
+    pub fn expanded(&self, margin: f32) -> Aabb2D;
+}
 ```
 
 ### Spatial Layers
 
 ```rust
 /// Bitmask for spatial query layer filtering.
-/// 32 layers allow physics, rendering, AI,
-/// networking, and gameplay to define independent
-/// categories. Queries specify which layers to
-/// test against.
+/// 32 layers allow AI, audio, networking, and
+/// gameplay to define independent categories.
+/// Queries specify which layers to test against.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
 )]
@@ -479,7 +545,6 @@ impl Default for SpatialLayer {
 #[derive(Component, Debug)]
 pub struct SpatialMembership {
     pub bvh_handle: Option<BvhHandle>,
-    pub octree_cell: Option<OctreeCell>,
     pub grid_cell: Option<GridCoord>,
 }
 ```
@@ -493,7 +558,7 @@ pub struct SpatialMembership {
 ///
 /// BvhHandle wraps the engine-wide `Handle<T>`
 /// generational index (see
-/// [shared-primitives.md](shared-primitives.md)).
+/// [algorithms.md](algorithms.md)).
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
 )]
@@ -503,23 +568,32 @@ pub struct BvhHandle {
 }
 
 /// Internal BVH node. 32 bytes on 64-bit
-/// platforms. Two nodes fit in one cache line.
+/// platforms. Two nodes fit in one 64-byte
+/// cache line. Four fit in one 128-byte Apple
+/// Silicon cache line.
+///
+/// `is_leaf` is packed into the MSB of `left`.
+/// Bit 31 = 1 means leaf; bits 0..30 store
+/// the entity index. Bit 31 = 0 means internal
+/// node; bits 0..30 store the left child index.
+///
+/// Parent pointers are stored in a separate
+/// parallel `parents: Vec<u32>` array on
+/// `BvhIndex` to keep the hot traversal node
+/// at exactly 32 bytes.
 #[repr(C)]
 struct BvhNode {
     /// Enclosing AABB for this subtree.
     aabb: Aabb,         // 24 bytes
-    /// Left child index (internal) or entity
-    /// index (leaf). u32::MAX = invalid.
+    /// MSB = is_leaf flag. Bits 0..30:
+    ///   leaf -> entity index
+    ///   internal -> left child index
     left: u32,          // 4 bytes
     /// Right child index (internal).
     /// Unused for leaves.
     right: u32,         // 4 bytes
-    /// Parent node index. Root has u32::MAX.
-    parent: u32,        // 4 bytes
-    /// True if this node is a leaf storing one
-    /// entity.
-    is_leaf: bool,      // 1 byte + 3 padding
 }
+// Total: 24 + 4 + 4 = 32 bytes exactly
 
 /// Leaf entry storing per-entity spatial data.
 struct LeafEntry {
@@ -557,6 +631,10 @@ pub struct BvhConfig {
 /// Stored as an ECS resource: `Res<BvhIndex>`.
 pub struct BvhIndex {
     nodes: Vec<BvhNode>,
+    /// Parallel array: parents[i] is the parent
+    /// of nodes[i]. Kept separate so BvhNode
+    /// stays at 32 bytes for cache efficiency.
+    parents: Vec<u32>,
     leaves: Vec<LeafEntry>,
     handles: Vec<HandleSlot>,
     free_nodes: Vec<u32>,
@@ -666,88 +744,120 @@ impl BvhIndex {
 }
 ```
 
-### Octree Index
+### BVH Index 2D
+
+2D BVH variant for 2D/2.5D games. Uses `Aabb2D` leaf nodes (16 bytes vs 24 bytes for 3D). The same
+SAH build and incremental refit algorithms apply; the third axis is simply absent. Both `BvhIndex`
+and `BvhIndex2D` implement the same `SpatialQuery` trait, so consumers can be written generically.
 
 ```rust
-/// Cell coordinate within the octree.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash,
-)]
-pub struct OctreeCell {
-    pub x: u32,
-    pub y: u32,
-    pub z: u32,
-    pub depth: u8,
+/// Internal 2D BVH node. 24 bytes on 64-bit
+/// platforms. Two nodes fit in one 48-byte span;
+/// on Apple Silicon (128-byte cache lines) five
+/// nodes fit.
+///
+/// `is_leaf` is packed into the MSB of `left`
+/// using the same convention as `BvhNode`.
+#[repr(C)]
+struct BvhNode2D {
+    /// Enclosing 2D AABB for this subtree.
+    aabb: Aabb2D,        // 16 bytes
+    /// MSB = is_leaf flag. Bits 0..30:
+    ///   leaf -> entity index
+    ///   internal -> left child index
+    left: u32,           // 4 bytes
+    /// Right child index (internal).
+    right: u32,          // 4 bytes
+}
+// Total: 16 + 4 + 4 = 24 bytes
+
+/// Leaf entry for 2D BVH.
+struct LeafEntry2D {
+    entity: Entity,
+    aabb: Aabb2D,
+    layers: SpatialLayerMask,
+    /// Fattened 2D AABB for movement margin.
+    fat_aabb: Aabb2D,
 }
 
-pub struct OctreeConfig {
-    /// Minimum cell size. Subdivisions stop when
-    /// cell side length reaches this value.
-    pub min_cell_size: f32,
-    /// Maximum octree depth. Default: 8.
-    pub max_depth: u8,
-    /// Maximum entities per leaf before
-    /// subdivision. Default: 16.
-    pub split_threshold: u32,
-}
-
-/// Sparse octree for coarse cell-based queries.
-/// Stored as ECS resource: `Res<OctreeIndex>`.
-pub struct OctreeIndex {
-    root: OctreeNode,
-    config: OctreeConfig,
-    bounds: Aabb,
+/// 2D BVH index for 2D and 2.5D games.
+/// Stored as ECS resource: `Res<BvhIndex2D>`.
+/// Drop-in alternative to `BvhIndex` for scenes
+/// using 2D transforms (`Transform2D`).
+pub struct BvhIndex2D {
+    nodes: Vec<BvhNode2D>,
+    parents: Vec<u32>,
+    leaves: Vec<LeafEntry2D>,
+    handles: Vec<HandleSlot>,
+    free_nodes: Vec<u32>,
+    free_handles: Vec<u32>,
+    root: u32,
+    config: BvhConfig,
+    sah_quality: f32,
     entity_count: u32,
 }
 
-struct OctreeNode {
-    children: Option<Box<[OctreeNode; 8]>>,
-    entities: SmallVec<[Entity; 16]>,
-    bounds: Aabb,
-    depth: u8,
-}
+impl BvhIndex2D {
+    pub fn new(config: BvhConfig) -> Self;
 
-impl OctreeIndex {
-    pub fn new(
-        bounds: Aabb,
-        config: OctreeConfig,
-    ) -> Self;
+    // --- Mutation (used by SpatialUpdateSystem) ---
 
     pub fn insert(
         &mut self,
         entity: Entity,
-        position: Vec3,
-    ) -> OctreeCell;
+        aabb: Aabb2D,
+        layers: SpatialLayerMask,
+    ) -> BvhHandle;
 
-    pub fn remove(&mut self, entity: Entity);
+    pub fn batch_insert(
+        &mut self,
+        entries: &[(Entity, Aabb2D, SpatialLayerMask)],
+    ) -> Vec<BvhHandle>;
+
+    pub fn remove(
+        &mut self,
+        handle: BvhHandle,
+    ) -> Result<(), SpatialError>;
 
     pub fn update(
         &mut self,
-        entity: Entity,
-        old_cell: OctreeCell,
-        new_position: Vec3,
-    ) -> OctreeCell;
+        handle: BvhHandle,
+        new_aabb: Aabb2D,
+        new_layers: SpatialLayerMask,
+    ) -> Result<(), SpatialError>;
 
-    /// All entities in a specific cell.
-    pub fn query_cell(
-        &self,
-        cell: OctreeCell,
-    ) -> &[Entity];
+    pub fn refit_moved(
+        &mut self,
+        updates: &[(BvhHandle, Aabb2D)],
+    );
 
-    /// All entities within a sphere.
-    pub fn query_range(
-        &self,
-        center: Vec3,
-        radius: f32,
-    ) -> Vec<Entity>;
+    pub fn rebuild_full(&mut self);
 
-    /// All entities within an AABB.
-    pub fn query_bounds(
-        &self,
-        aabb: &Aabb,
-    ) -> Vec<Entity>;
+    // --- Read-only queries ---
 
+    pub fn sah_quality(&self) -> f32;
+    pub fn node_count(&self) -> u32;
     pub fn entity_count(&self) -> u32;
+
+    // --- Traversal (internal) ---
+
+    fn traverse_ray_2d<F>(
+        &self,
+        origin: Vec2,
+        inv_dir: Vec2,
+        t_max: f32,
+        layer_mask: SpatialLayerMask,
+        visitor: F,
+    ) where
+        F: FnMut(&LeafEntry2D, f32) -> bool;
+
+    fn traverse_aabb_2d<F>(
+        &self,
+        query_aabb: &Aabb2D,
+        layer_mask: SpatialLayerMask,
+        visitor: F,
+    ) where
+        F: FnMut(&LeafEntry2D) -> bool;
 }
 ```
 
@@ -840,8 +950,8 @@ impl UniformGrid {
 
 ### Unified Query API — SpatialQuery Trait
 
-This is the interoperability contract consumed by Physics, Rendering, Networking, AI, Audio, and
-Gameplay.
+This is the interoperability contract consumed by AI, Audio, Gameplay, and Networking. Physics
+maintains its own BVH. GPU compute shaders handle rendering culling.
 
 ```rust
 /// A single spatial query result.
@@ -931,9 +1041,8 @@ pub enum QueryShape {
 /// concrete index types.
 ///
 /// Implemented by `QueryEngine` which dispatches
-/// to `BvhIndex`, `OctreeIndex`, or
-/// `UniformGrid` based on query type and
-/// configuration.
+/// to `BvhIndex` or `UniformGrid` based on
+/// query type and configuration.
 pub trait SpatialQuery {
     /// Execute a single spatial query.
     fn query(
@@ -1020,22 +1129,20 @@ pub trait SpatialQuery {
 /// the indices.
 pub struct QueryEngine<'a> {
     bvh: &'a BvhIndex,
-    octree: Option<&'a OctreeIndex>,
     grid: Option<&'a UniformGrid>,
 }
 
 impl<'a> QueryEngine<'a> {
     pub fn new(
         bvh: &'a BvhIndex,
-        octree: Option<&'a OctreeIndex>,
         grid: Option<&'a UniformGrid>,
     ) -> Self;
 }
 
 impl<'a> SpatialQuery for QueryEngine<'a> {
     // All methods dispatch to BvhIndex traversal
-    // functions, with optional grid/octree used
-    // for cell-based overlap and range queries.
+    // functions, with optional grid used for
+    // cell-based overlap and range queries.
     // See individual method docs above.
 
     fn query(
@@ -1152,32 +1259,38 @@ impl<'a> BatchDispatcher<'a> {
             },
         );
 
+        // Pre-split results into disjoint mutable
+        // chunks before entering scope. Each task
+        // owns its chunk exclusively — no shared
+        // &mut aliasing.
+        let query_chunks: Vec<&[BatchQuery]> =
+            queries.chunks(chunk_size).collect();
+        let result_chunks: Vec<&mut [BatchQueryResult]> =
+            results.chunks_mut(chunk_size).collect();
+
         self.pool.scope(|scope| {
-            for (chunk_idx, chunk)
-                in queries
-                    .chunks(chunk_size)
+            for (chunk_idx, (q_chunk, r_chunk))
+                in query_chunks
+                    .iter()
+                    .zip(result_chunks)
                     .enumerate()
             {
                 let offset =
                     chunk_idx * chunk_size;
                 let engine =
                     self.query_engine;
-                // Safety: each chunk writes to
-                // a disjoint slice of results.
-                let results_slice =
-                    &mut results[
-                        offset..offset + chunk.len()
-                    ];
 
                 scope.spawn(move || {
                     for (i, q)
-                        in chunk.iter().enumerate()
+                        in q_chunk
+                            .iter()
+                            .enumerate()
                     {
                         let hits = engine.query(
                             &q.shape,
                             &q.config,
                         );
-                        results_slice[i] =
+                        r_chunk[i] =
                             BatchQueryResult {
                                 query_index:
                                     (offset + i)
@@ -1221,7 +1334,7 @@ impl<'a> BatchDispatcher<'a> {
 /// System ordering:
 ///   TransformPropagation
 ///     -> SpatialUpdateSystem
-///       -> [Physics, Rendering, AI, ...]
+///       -> [AI, Audio, Gameplay, Networking]
 pub fn spatial_update_system(
     // Changed transforms
     moved: Query<
@@ -1248,9 +1361,17 @@ pub fn spatial_update_system(
     removed: RemovedComponents<BoundingVolume>,
     // Mutable access to spatial indices
     mut bvh: ResMut<BvhIndex>,
-    mut octree: Option<ResMut<OctreeIndex>>,
     mut grid: Option<ResMut<UniformGrid>>,
+    mut rebuild_task: ResMut<BvhRebuildTask>,
 ) {
+    // 0. Check if background rebuild completed
+    if let Some(new_bvh) =
+        rebuild_task.try_take_result()
+    {
+        // Swap shadow buffer into active BVH
+        *bvh = new_bvh;
+    }
+
     // 1. Handle despawned entities
     for entity in removed.iter() {
         // Look up SpatialMembership, remove from
@@ -1273,19 +1394,6 @@ pub fn spatial_update_system(
                 world_aabb,
                 layer.mask,
             );
-        }
-
-        if let Some(ref mut octree) = octree {
-            if let Some(old_cell) =
-                membership.octree_cell
-            {
-                membership.octree_cell =
-                    Some(octree.update(
-                        entity,
-                        old_cell,
-                        tf.translation,
-                    ));
-            }
         }
 
         if let Some(ref mut grid) = grid {
@@ -1319,22 +1427,68 @@ pub fn spatial_update_system(
     // Assign membership for new entities
     // (via command buffer)
 
-    // 4. Check BVH quality
+    // 4. Check BVH quality — schedule
+    // double-buffered rebuild if degraded
     if bvh.sah_quality()
         > bvh.config.rebuild_quality_threshold
+        && !rebuild_task.is_running()
     {
-        // Schedule background rebuild
+        rebuild_task.start(bvh.snapshot_leaves());
     }
 }
 
-/// Background system that performs a full BVH
-/// rebuild when SAH quality degrades. Runs on a
-/// low-priority worker thread. Swaps the rebuilt
-/// tree atomically at the next frame boundary.
-pub fn bvh_rebuild_system(
-    mut bvh: ResMut<BvhIndex>,
-) {
-    bvh.rebuild_full();
+/// Double-buffered BVH rebuild task. Builds a
+/// new BVH into a shadow buffer on a background
+/// worker thread. The active BVH continues
+/// serving queries while the rebuild runs.
+/// `spatial_update_system` polls for completion
+/// and swaps the result at frame boundary.
+pub struct BvhRebuildTask {
+    /// Handle to the background task, if running.
+    task: Option<TaskHandle<BvhIndex>>,
+}
+
+impl BvhRebuildTask {
+    /// Start a background rebuild from the
+    /// current leaf snapshot. Does nothing if a
+    /// rebuild is already in progress.
+    pub fn start(
+        &mut self,
+        leaves: Vec<LeafEntry>,
+    ) {
+        if self.task.is_some() {
+            return;
+        }
+        self.task = Some(
+            ThreadPool::spawn_background(
+                move || {
+                    BvhIndex::build_from_leaves(
+                        &leaves,
+                    )
+                },
+            ),
+        );
+    }
+
+    /// Poll for completion. Returns the rebuilt
+    /// BVH if the task finished, None otherwise.
+    pub fn try_take_result(
+        &mut self,
+    ) -> Option<BvhIndex> {
+        if let Some(ref task) = self.task {
+            if task.is_finished() {
+                return self
+                    .task
+                    .take()
+                    .and_then(|t| t.join().ok());
+            }
+        }
+        None
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.task.is_some()
+    }
 }
 ```
 
@@ -1357,11 +1511,6 @@ pub enum SpatialError {
         coord: GridCoord,
         dimensions: UVec2,
     },
-    /// Octree position outside world bounds.
-    OutsideWorldBounds {
-        position: Vec3,
-        bounds: Aabb,
-    },
 }
 ```
 
@@ -1377,16 +1526,23 @@ sequenceDiagram
     participant ECS as ECS Scheduler
     participant SUS as SpatialUpdateSystem
     participant BVH as BvhIndex
-    participant OCT as OctreeIndex
+    participant GRID as UniformGrid
+    participant RBT as BvhRebuildTask
     participant TP as ThreadPool
-    participant PHY as Physics
-    participant REN as Renderer
     participant AI as AI / Gameplay
+    participant NET as Networking
 
     ML->>ECS: build_frame_graph()
     Note over ECS: Change detection marks<br/>dirty Transforms
 
     ECS->>SUS: run(Changed Transform)
+
+    SUS->>RBT: try_take_result()
+    alt Rebuild completed
+        RBT-->>SUS: Some(new_bvh)
+        SUS->>BVH: swap in rebuilt BVH
+    end
+
     SUS->>SUS: collect moved entities
     SUS->>SUS: collect spawned entities
     SUS->>SUS: collect despawned entities
@@ -1396,22 +1552,22 @@ sequenceDiagram
         SUS->>BVH: batch_insert(new_entities)
         SUS->>BVH: remove(despawned_handles)
     and
-        SUS->>OCT: update(moved_entities)
-        SUS->>OCT: insert(new_entities)
-        SUS->>OCT: remove(despawned_entities)
+        SUS->>GRID: update(moved_entities)
+        SUS->>GRID: insert(new_entities)
+        SUS->>GRID: remove(despawned_entities)
     end
 
     Note over BVH: Check SAH quality
     alt SAH degraded beyond threshold
-        BVH->>TP: schedule background rebuild
+        SUS->>RBT: start(leaf_snapshot)
+        RBT->>TP: spawn_background(rebuild)
     end
 
     Note over ECS: Index updated — consumers run
 
     par Consumer queries (parallel systems)
-        PHY->>BVH: overlap_pairs(CollisionLayers)
-        REN->>BVH: frustum_query(camera, shadows)
         AI->>BVH: sphere_overlap(perception_radius)
+        NET->>GRID: query_radius(relevancy)
     end
 ```
 
@@ -1520,65 +1676,10 @@ sequenceDiagram
 ### Consumer System Examples
 
 ```rust
-// --- Physics broadphase ---
-fn physics_broadphase_system(
-    bvh: Res<BvhIndex>,
-    colliders: Query<(Entity, &Collider)>,
-    pool: Res<ThreadPool>,
-) {
-    let engine = QueryEngine::new(
-        &bvh, None, None,
-    );
-    let dispatcher =
-        BatchDispatcher::new(&engine, &pool);
-
-    // Each collider queries for overlapping
-    // entities on its collision layers
-    let queries: Vec<BatchQuery> = colliders
-        .iter()
-        .map(|(_, c)| BatchQuery {
-            shape: QueryShape::AabbOverlap(
-                c.world_aabb(),
-            ),
-            config: QueryConfig {
-                layer_mask: c.collision_layers(),
-                ..Default::default()
-            },
-        })
-        .collect();
-
-    let results =
-        dispatcher.execute_batch(&queries);
-    // Process overlap pairs...
-}
-
-// --- Rendering frustum culling ---
-fn frustum_cull_system(
-    bvh: Res<BvhIndex>,
-    cameras: Query<&Camera>,
-    pool: Res<ThreadPool>,
-) {
-    let engine = QueryEngine::new(
-        &bvh, None, None,
-    );
-    let dispatcher =
-        BatchDispatcher::new(&engine, &pool);
-
-    let frustums: Vec<[Vec4; 6]> = cameras
-        .iter()
-        .flat_map(|cam| {
-            // Main frustum + shadow cascades
-            cam.all_frustum_planes()
-        })
-        .collect();
-
-    let visible_sets =
-        dispatcher.batch_frustum_cull(
-            &frustums,
-            SpatialLayerMask::RENDERING,
-        );
-    // Write visibility bitsets...
-}
+// NOTE: Physics maintains its own BVH (see
+// physics design). GPU compute shaders handle
+// frustum + occlusion culling. The examples
+// below show consumers of the shared BVH.
 
 // --- AI perception ---
 fn ai_perception_system(
@@ -1587,7 +1688,7 @@ fn ai_perception_system(
     pool: Res<ThreadPool>,
 ) {
     let engine = QueryEngine::new(
-        &bvh, None, None,
+        &bvh, None,
     );
     let dispatcher =
         BatchDispatcher::new(&engine, &pool);
@@ -1612,6 +1713,29 @@ fn ai_perception_system(
     let results =
         dispatcher.execute_batch(&queries);
     // Filter by sight cone, hearing, etc.
+}
+
+// --- Gameplay AoE query ---
+fn aoe_damage_system(
+    bvh: Res<BvhIndex>,
+    explosions: Query<(&Explosion, &Transform)>,
+) {
+    let engine = QueryEngine::new(
+        &bvh, None,
+    );
+
+    for (explosion, tf) in explosions.iter() {
+        let hits = engine.overlap_sphere(
+            tf.translation,
+            explosion.radius,
+            &QueryConfig {
+                layer_mask:
+                    SpatialLayerMask::GAMEPLAY,
+                ..Default::default()
+            },
+        );
+        // Apply damage falloff by distance...
+    }
 }
 
 // --- Network relevancy ---
@@ -1653,7 +1777,7 @@ Ray-AABB intersection uses SIMD on all platforms:
 |----------|-----|------------|
 | x86_64 | SSE4.1 / AVX2 | `_mm_max_ps`, `_mm_min_ps` for slab test |
 | ARM | NEON | `vmaxq_f32`, `vminq_f32` |
-| Apple Silicon | NEON | Same as ARM, unified with GCD dispatch |
+| Apple Silicon | NEON | Same as ARM (NEON) |
 
 The ray-AABB slab test computes entry/exit t-values for all 3 axes simultaneously using 4-wide SIMD.
 For batch queries, 4 rays can be tested against one AABB node using SOA (structure-of-arrays) ray
@@ -1661,15 +1785,18 @@ layout.
 
 ### Scaling Tiers
 
-| Tier | Max Entities | BVH Memory | Grid Size | Octree Depth | Batch Limit |
-|------|-------------|------------|-----------|-------------|-------------|
-| Mobile | 50K | ~2 MB | 64 x 64 | 4 | 64 queries |
-| Switch | 200K | ~8 MB | 128 x 128 | 5 | 128 queries |
-| Desktop | 1M | ~40 MB | 256 x 256 | 8 | 1024 queries |
-| High-end | 5M+ | ~200 MB | 512 x 512 | 10 | 4096+ queries |
+| Tier | Max Entities | BVH Memory | Grid Size | Batch Limit |
+|------|-------------|------------|-----------|-------------|
+| Mobile | 50K | ~3 MB | 64 x 64 | 64 queries |
+| Switch | 200K | ~12 MB | 128 x 128 | 128 queries |
+| Desktop | 1M | ~60 MB | 256 x 256 | 1024 queries |
+| High-end | 5M+ | ~300 MB | 512 x 512 | 4096+ queries |
 
-Memory budget per entity: 32 bytes (BvhNode) + 28 bytes (LeafEntry) = 60 bytes, within the 64 byte
-R-1.9.1a requirement.
+Memory budget per entity: 32 bytes (BvhNode) + 4 bytes (parent in parallel array) + 24 bytes
+(LeafEntry: entity + aabb + layers) = 60 bytes. Fat AABBs are stored in a separate parallel
+`fat_aabbs: Vec<Aabb>` array (24 bytes) for a total of 84 bytes when fat AABBs are enabled. The base
+60 bytes are within the 64-byte R-1.9.1a requirement; fat AABBs are an opt-in tradeoff (memory for
+fewer refits).
 
 ### Thread Safety Model
 
@@ -1686,13 +1813,13 @@ the synchronization boundary. This is the same pattern used by all ECS resources
 
 ### Proposed Dependencies
 
-| Crate      | Purpose                        |
-|------------|--------------------------------|
-| `smallvec` | Inline-allocated small vectors |
-| `glam`     | Math types (Vec3, Mat4, Aabb)  |
+| Crate      | Purpose                       |
+|------------|-------------------------------|
+| `glam`     | Math types (Vec3, Mat4, Aabb) |
+| `smallvec` | Inline small collections      |
 
-1. **`smallvec`** — Traversal stacks, query result buffers without heap allocation
-2. **`glam`** — SIMD-accelerated spatial math on all platforms
+1. **`glam`** — SIMD-accelerated spatial math on all platforms
+2. **`smallvec`** — Inline storage for grid cell entity lists
 
 ---
 
@@ -1700,8 +1827,9 @@ the synchronization boundary. This is the same pattern used by all ECS resources
 
 ### BvhNode Sentinel Values (Medium)
 
-`BvhNode::left`, `right`, `parent` use `u32::MAX` as invalid sentinel. Use `Option<NonMaxU32>` or a
-`NodeIndex` newtype to prevent accidental indexing with the sentinel value.
+`BvhNode::left` and `right` use `u32::MAX` (with MSB masked) as invalid sentinel. Use
+`Option<NonMaxU32>` or a `NodeIndex` newtype to prevent accidental indexing with the sentinel value.
+The parallel `parents` array uses `u32::MAX` for the root node.
 
 ### UniformGrid Bounds Checking (Medium)
 
@@ -1710,55 +1838,38 @@ in all mutating methods, not only in `world_to_cell`. Return `Result<(), Spatial
 
 ### SpatialQuery Return Type (Performance -- Critical)
 
-`SpatialQuery` trait methods return `Vec<T>`, allocating on every call. At 1000+ queries/frame
-(physics broadphase + AI perception + rendering frustum), this creates 1-3 ms/frame of allocation
-pressure. Provide arena-allocated variants: `query_into(arena: &FrameArena, ...) -> &[T]` or
-callback-based `query_each(|hit| { ... })`.
-
-### BvhNode Size (Performance -- High)
-
-`BvhNode` is 40 bytes (AABB 24 + left 4 + right 4
-
-+ parent 4 + is_leaf 1 + padding 3). Exceeds half
-a cache line. Remove `parent` to a separate array and pack `is_leaf` into the sign bit of `left`.
-Target 32 bytes (exactly half a 64-byte cache line).
-
-### BVH Rebuild (Performance -- High)
-
-Full BVH rebuild is unbounded and synchronous. For large scenes (100K+ entities), this can spike to
-10-50 ms. Provide double-buffered async rebuild: build new BVH on a background task while the
-current BVH continues serving queries. Swap atomically when the rebuild completes.
-
-### Octree Remove (Performance -- Medium)
-
-`remove(entity)` with no cell hint forces O(n) scan. `SpatialMembership` already tracks the cell.
-Provide `remove_with_hint(entity, cell)` for O(1) removal.
+`SpatialQuery` trait methods return `Vec<T>`, allocating on every call. At 1000+ queries/frame (AI
+perception + gameplay), this creates 1-3 ms/frame of allocation pressure. The allocation-free query
+API section below provides `query_into`, `query_visitor`, and `query_arena` variants to eliminate
+this overhead.
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test                          | Req      |
-|-------------------------------|----------|
-| `test_aabb_intersection`      | R-1.9.4  |
-| `test_bvh_insert_remove`      | R-1.9.1  |
-| `test_bvh_sah_quality`        | R-1.9.1a |
-| `test_bvh_incremental_refit`  | R-1.9.2  |
-| `test_bvh_fat_aabb_skip`      | R-1.9.2  |
-| `test_bvh_batch_insert`       | R-1.9.2  |
-| `test_bvh_rebuild_quality`    | R-1.9.1a |
-| `test_bvh_stale_handle`       | R-1.9.1  |
-| `test_bvh_memory_budget`      | R-1.9.1a |
-| `test_octree_insert_query`    | R-1.9.3  |
-| `test_octree_cross_cell_move` | R-1.9.3  |
-| `test_grid_insert_query`      | R-1.9.3  |
-| `test_grid_boundary`          | R-1.9.3  |
-| `test_ray_cast_accuracy`      | R-1.9.4  |
-| `test_frustum_cull_accuracy`  | R-1.9.4  |
-| `test_knn_accuracy`           | R-1.9.4  |
-| `test_layer_filtering`        | R-1.9.4  |
-| `test_empty_index_queries`    | R-1.9.4a |
-| `test_query_sort_nearest`     | R-1.9.4  |
+| Test                           | Req      |
+|--------------------------------|----------|
+| `test_aabb_intersection`       | R-1.9.4  |
+| `test_bvh_insert_remove`       | R-1.9.1  |
+| `test_bvh_sah_quality`         | R-1.9.1a |
+| `test_bvh_incremental_refit`   | R-1.9.2  |
+| `test_bvh_fat_aabb_skip`       | R-1.9.2  |
+| `test_bvh_batch_insert`        | R-1.9.2  |
+| `test_bvh_rebuild_quality`     | R-1.9.1a |
+| `test_bvh_stale_handle`        | R-1.9.1  |
+| `test_bvh_memory_budget`       | R-1.9.1a |
+| `test_grid_insert_query`       | R-1.9.3  |
+| `test_grid_boundary`           | R-1.9.3  |
+| `test_ray_cast_accuracy`       | R-1.9.4  |
+| `test_frustum_cull_accuracy`   | R-1.9.4  |
+| `test_knn_accuracy`            | R-1.9.4  |
+| `test_layer_filtering`         | R-1.9.4  |
+| `test_empty_index_queries`     | R-1.9.4a |
+| `test_query_sort_nearest`      | R-1.9.4  |
+| `test_query_into_no_alloc`     | R-1.9.4a |
+| `test_query_visitor_no_alloc`  | R-1.9.4a |
+| `test_query_arena_no_alloc`    | R-1.9.4a |
+| `test_double_buffer_rebuild`   | R-1.9.1a |
 
 1. **`test_aabb_intersection`** — AABB-AABB, AABB-ray, AABB-sphere, AABB-frustum intersection
    correctness against known geometric configurations.
@@ -1777,56 +1888,59 @@ Provide `remove_with_hint(entity, cell)` for O(1) removal.
 8. **`test_bvh_stale_handle`** — Remove entity, attempt update with old handle. Verify `StaleHandle`
    error.
 9. **`test_bvh_memory_budget`** — Insert 1M entities. Verify total memory is under 64 bytes per
-   entity.
-10. **`test_octree_insert_query`** — Insert 10K entities, query cells and ranges. Verify against
+   entity (base, excluding fat AABBs).
+10. **`test_grid_insert_query`** — Insert 10K entities into 2D grid, query radius. Verify against
     brute-force.
-11. **`test_octree_cross_cell_move`** — Move entity across cell boundary. Verify old cell loses it,
-    new cell gains it.
-12. **`test_grid_insert_query`** — Insert 10K entities into 2D grid, query radius. Verify against
-    brute-force.
-13. **`test_grid_boundary`** — Insert entity at grid boundary. Verify correct cell assignment.
-14. **`test_ray_cast_accuracy`** — 1000 random rays against 10K entities. Verify all hits match
+11. **`test_grid_boundary`** — Insert entity at grid boundary. Verify correct cell assignment.
+12. **`test_ray_cast_accuracy`** — 1000 random rays against 10K entities. Verify all hits match
     brute-force ray-AABB test.
-15. **`test_frustum_cull_accuracy`** — Frustum query against 10K entities. Compare result set to
+13. **`test_frustum_cull_accuracy`** — Frustum query against 10K entities. Compare result set to
     brute-force frustum-AABB test. Zero false negatives, zero false positives.
-16. **`test_knn_accuracy`** — k-NN query (k=10) against 10K entities. Verify returned entities are
+14. **`test_knn_accuracy`** — k-NN query (k=10) against 10K entities. Verify returned entities are
     the 10 closest by brute-force distance sort.
-17. **`test_layer_filtering`** — Insert entities on different layers. Query with specific layer
+15. **`test_layer_filtering`** — Insert entities on different layers. Query with specific layer
     mask. Verify only matching-layer entities returned.
-18. **`test_empty_index_queries`** — All query types against empty BVH. Verify empty result set (not
+16. **`test_empty_index_queries`** — All query types against empty BVH. Verify empty result set (not
     error or panic).
-19. **`test_query_sort_nearest`** — Ray cast with `QuerySort::Nearest`. Verify results ordered by
+17. **`test_query_sort_nearest`** — Ray cast with `QuerySort::Nearest`. Verify results ordered by
     ascending distance.
+18. **`test_query_into_no_alloc`** — Call `query_into` with a pre-allocated buffer. Verify results
+    match `query()` and no new heap allocations occur (measure via allocator counter).
+19. **`test_query_visitor_no_alloc`** — Call `query_visitor` with an inline callback. Verify all
+    hits are delivered and no heap allocations occur.
+20. **`test_query_arena_no_alloc`** — Call `query_arena` with a pre-allocated arena. Verify results
+    match `query()` and only arena bump allocation is used.
+21. **`test_double_buffer_rebuild`** — Start a `BvhRebuildTask`, run queries against the active BVH
+    while rebuild is in progress, then swap and verify the rebuilt BVH produces identical query
+    results.
 
 ### Integration Tests
 
 | Test                              | Req     |
 |-----------------------------------|---------|
 | `test_shared_bvh_cross_subsystem` | R-1.9.1 |
-| `test_physics_broadphase_shared`  | R-1.9.6 |
-| `test_rendering_frustum_shared`   | R-1.9.7 |
 | `test_network_relevancy_grid`     | R-1.9.8 |
 | `test_ai_perception_sight_cone`   | R-1.9.9 |
 | `test_incremental_vs_full_build`  | R-1.9.2 |
 | `test_parallel_consumer_safety`   | R-1.9.1 |
 | `test_batch_matches_sequential`   | R-1.9.5 |
+| `test_rebuild_while_querying`     | R-1.9.1 |
 
-1. **`test_shared_bvh_cross_subsystem`** — Move entity via Transform. Verify physics broadphase,
-   rendering culling, and AI perception all see the updated position in the same frame.
-2. **`test_physics_broadphase_shared`** — Create 1000 overlapping collider pairs. Verify physics
-   detects all pairs via shared BVH. Verify no separate broadphase allocation.
-3. **`test_rendering_frustum_shared`** — Place 10K entities, camera covering ~half. Verify ~5K
-   marked visible. Verify shadow cascade produces different set.
-4. **`test_network_relevancy_grid`** — 10K entities, 2 players at different positions. Verify each
+1. **`test_shared_bvh_cross_subsystem`** — Move entity via Transform. Verify AI perception, audio
+   occlusion, and gameplay queries all see the updated position in the same frame.
+2. **`test_network_relevancy_grid`** — 10K entities, 2 players at different positions. Verify each
    player's interest set contains only entities within radius.
-5. **`test_ai_perception_sight_cone`** — 100 AI agents with sight cones, 500 targets. Verify sight
+3. **`test_ai_perception_sight_cone`** — 100 AI agents with sight cones, 500 targets. Verify sight
    cone query returns only entities within angular and distance bounds.
-6. **`test_incremental_vs_full_build`** — Insert 1M entities, move 1% per frame for 100 frames.
+4. **`test_incremental_vs_full_build`** — Insert 1M entities, move 1% per frame for 100 frames.
    Verify incremental results match a full-rebuild reference.
-7. **`test_parallel_consumer_safety`** — Run physics, rendering, and AI query systems in parallel.
+5. **`test_parallel_consumer_safety`** — Run AI, audio, and gameplay query systems in parallel.
    Verify no data races (run under ThreadSanitizer).
-8. **`test_batch_matches_sequential`** — Submit 1000 queries both as batch and sequentially. Verify
+6. **`test_batch_matches_sequential`** — Submit 1000 queries both as batch and sequentially. Verify
    identical result sets.
+7. **`test_rebuild_while_querying`** — Start `BvhRebuildTask`, submit queries against the active BVH
+   every frame while rebuild runs in background. Verify queries return correct results throughout.
+   Verify swap at frame boundary produces no stale handles.
 
 ### Benchmarks
 
@@ -1840,7 +1954,7 @@ Provide `remove_with_hint(entity, cell)` for O(1) removal.
 | k-NN k=10 (1M entities) | < 50 us | R-1.9.4 |
 | Sphere overlap r=50 (1M entities) | < 100 us | R-1.9.4 |
 | Batch 1000 ray casts (1M entities, 8 cores) | >= 3x speedup vs single-threaded | R-1.9.5 |
-| Batch 1000 ray casts (1M entities, 4 cores) | >= 3x speedup | R-1.9.5 |
+| Batch 1000 ray casts (1M entities, 4 cores) | >= 2x speedup | R-1.9.5 |
 | BVH memory per entity | <= 64 bytes | R-1.9.1a |
 | SAH quality after 1000 incremental frames | <= 2x fresh build | R-1.9.1a |
 
@@ -1851,9 +1965,8 @@ Provide `remove_with_hint(entity, cell)` for O(1) removal.
 ### Problem
 
 The `SpatialQuery` trait returns `Vec<SpatialHit>` from every query method. Each call allocates,
-grows, and drops a heap buffer. Physics broadphase, rendering culling, AI perception, and gameplay
-all invoke spatial queries per frame. At 1000+ queries/frame this causes 1--3 ms/frame of allocation
-overhead.
+grows, and drops a heap buffer. AI perception and gameplay queries invoke spatial queries per frame.
+At 1000+ queries/frame this causes 1--3 ms/frame of allocation overhead.
 
 This contradicts the ECS design goal of zero per-frame allocations in hot paths (R-1.9.4a). The
 existing API remains useful for infrequent or convenience queries, but high-frequency consumers need
@@ -1909,7 +2022,6 @@ classDiagram
 
     class QueryEngine {
         -bvh &BvhIndex
-        -octree Option~&OctreeIndex~
         -grid Option~&UniformGrid~
     }
 
@@ -1939,80 +2051,96 @@ requirements.
 
 | Consumer             | Variant         |
 |----------------------|-----------------|
-| Physics broadphase   | `query_visitor` |
-| Rendering culling    | `query_into`    |
 | AI perception        | `query_arena`   |
+| Audio occlusion      | `query_visitor` |
+| Gameplay AoE         | `query_into`    |
 | Gameplay / scripting | `query`         |
 
-1. **Physics broadphase** — Processes each AABB overlap pair inline; early exit when pair count
-   exceeds budget
-2. **Rendering culling** — Reuses a visibility buffer (`Vec<SpatialHit>`) across frames; buffer size
-   stabilizes after a few frames
-3. **AI perception** — Multiple agents share one per-frame arena; results outlive individual queries
+1. **AI perception** — Multiple agents share one per-frame arena; results outlive individual queries
    for downstream filtering
+2. **Audio occlusion** — Processes each raycast hit inline for occlusion factor; early exit when
+   occluder found
+3. **Gameplay AoE** — Reuses a hit buffer (`Vec<SpatialHit>`) across frames; buffer size stabilizes
+   after a few frames
 4. **Gameplay / scripting** — Called infrequently from visual scripting nodes; convenience outweighs
    allocation cost
 
 ```rust
-// --- Physics broadphase (query_visitor) ---
-// Process overlap pairs inline, no allocation.
-fn physics_broadphase_system(
+// --- Audio occlusion (query_visitor) ---
+// Process raycast hits inline, no allocation.
+fn audio_occlusion_system(
     bvh: Res<BvhIndex>,
-    colliders: Query<(Entity, &Collider)>,
+    sources: Query<(Entity, &AudioSource, &Transform)>,
+    listener: Query<&Transform, With<AudioListener>>,
 ) {
     let engine = QueryEngine::new(
-        &bvh, None, None,
+        &bvh, None,
     );
+    let listener_pos =
+        listener.single().translation;
 
-    for (entity, collider) in colliders.iter() {
-        let shape = QueryShape::AabbOverlap(
-            collider.world_aabb(),
-        );
+    for (entity, source, tf) in sources.iter() {
+        let dir =
+            listener_pos - tf.translation;
+        let dist = dir.length();
+        let shape = QueryShape::Ray {
+            origin: tf.translation,
+            direction: dir / dist,
+            max_distance: dist,
+        };
         let config = QueryConfig {
-            layer_mask: collider.collision_layers(),
+            layer_mask:
+                SpatialLayerMask::AUDIO,
             ..Default::default()
         };
 
+        let mut occlusion = 0.0_f32;
         engine.query_visitor(
             &shape,
             &config,
             |hit| {
-                // Process overlap pair inline
-                if hit.entity != entity {
-                    add_contact_pair(entity, hit);
+                occlusion += 0.3;
+                if occlusion >= 1.0 {
+                    return ControlFlow::Break(());
                 }
                 ControlFlow::Continue(())
             },
         );
+        source.set_occlusion(occlusion);
     }
 }
 
-// --- Rendering culling (query_into) ---
-// Reuse visibility buffer across frames.
-fn frustum_cull_system(
+// --- Gameplay AoE (query_into) ---
+// Reuse hit buffer across frames.
+fn aoe_damage_alloc_free_system(
     bvh: Res<BvhIndex>,
-    cameras: Query<&Camera>,
-    mut visible_buf: Local<Vec<SpatialHit>>,
+    explosions: Query<(&Explosion, &Transform)>,
+    mut hit_buf: Local<Vec<SpatialHit>>,
 ) {
     let engine = QueryEngine::new(
-        &bvh, None, None,
+        &bvh, None,
     );
 
-    for cam in cameras.iter() {
-        let shape = QueryShape::Frustum(
-            cam.frustum_planes(),
+    for (explosion, tf) in explosions.iter() {
+        hit_buf.clear();
+        let shape = QueryShape::SphereOverlap(
+            Sphere {
+                center: tf.translation,
+                radius: explosion.radius,
+            },
         );
         let config = QueryConfig {
-            layer_mask: SpatialLayerMask::RENDERING,
+            layer_mask:
+                SpatialLayerMask::GAMEPLAY,
             sort: QuerySort::Unsorted,
             ..Default::default()
         };
 
         engine.query_into(
-            &shape, &config, &mut visible_buf,
+            &shape, &config, &mut hit_buf,
         );
-        // visible_buf reused next frame
-        update_visibility(&visible_buf);
+        // hit_buf reused next explosion
+        apply_damage_falloff(explosion, &hit_buf);
     }
 }
 
@@ -2025,7 +2153,7 @@ fn ai_perception_system(
 ) {
     arena.reset();
     let engine = QueryEngine::new(
-        &bvh, None, None,
+        &bvh, None,
     );
 
     for (entity, agent, tf) in agents.iter() {
@@ -2052,7 +2180,7 @@ fn ai_perception_system(
 
 **Migration path.** Add the three new methods to `SpatialQuery` with default implementations that
 delegate to `query()`, then update `QueryEngine` with optimized implementations. Migrate consumers
-one at a time, starting with physics broadphase (highest call frequency). Mark `query()` with a doc
+one at a time, starting with AI perception (highest call frequency). Mark `query()` with a doc
 comment noting allocation cost and recommending alternatives for hot paths.
 
 ---
@@ -2063,15 +2191,14 @@ comment noting allocation cost and recommending alternatives for hot paths.
 constraint? What is the best possible solution imaginable without those constraints? What is the
 impact of removing them?
 
-The shared spatial index constraint (one BVH for all subsystems) is both this module's defining
-feature and its biggest limitation. Physics broadphase (F-1.9.6), rendering culling (F-1.9.7),
-network relevancy (F-1.9.8), and AI perception (F-1.9.9) all have different optimal spatial
-structures. Physics prefers sweep-and-prune for temporal coherence, rendering prefers loose octrees
-for frustum culling, and networking prefers flat grids for area-of-interest. Lifting this constraint
-would allow each subsystem to use its ideal structure. The best possible design would give each
-consumer a view adapter over a shared entity position cache, avoiding data duplication while
-allowing specialized query structures. The cost of removing the shared BVH is memory duplication and
-synchronization complexity between parallel spatial stores.
+The shared spatial index constraint (one BVH for gameplay queries) is both this module's defining
+feature and its biggest limitation. Network relevancy (F-1.9.8) and AI perception (F-1.9.9) have
+different optimal structures: networking prefers flat grids for area-of-interest, while AI benefits
+from hierarchical BVH traversal. Physics maintains its own BVH at fixed timestep (F-1.9.6), and GPU
+compute shaders handle rendering culling (F-1.9.7), so neither depends on this shared BVH. Lifting
+the shared constraint would let each remaining consumer use its ideal structure. The best possible
+design would give each consumer a view adapter over a shared entity position cache, avoiding data
+duplication while allowing specialized query structures.
 
 **Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
 trade-offs are we making?
@@ -2080,48 +2207,46 @@ Incremental BVH updates (F-1.9.2) degrade tree quality over time as entities mov
 quality threshold for triggering a full rebuild (R-1.9.1a) is a tuning challenge: too aggressive and
 rebuilds spike frame times, too lenient and query performance degrades. The 64 bytes/entity memory
 bound (R-1.9.1a) may be tight for a BVH with SIMD-friendly 4-wide nodes that require padding. The
-unified query API (F-1.9.4) returns Entity handles with hit metadata, but for physics narrow-phase
-the caller immediately needs the Collider component, requiring a secondary ECS lookup. Adding a
-query variant that returns component references directly (via the archetype pointer) would eliminate
-this extra lookup. Background rebuild scheduling also needs integration with the frame budget system
-to avoid competing with gameplay systems for CPU time.
+unified query API (F-1.9.4) returns Entity handles with hit metadata, but for AI narrow-phase
+filtering the caller immediately needs additional components, requiring a secondary ECS lookup.
+Adding a query variant that returns component references directly (via the archetype pointer) would
+eliminate this extra lookup. The double-buffered rebuild task (`BvhRebuildTask`) needs integration
+with the frame budget system to avoid competing with gameplay systems for CPU time.
 
 **Q3. Is there a better approach?** If we are not taking it, why not?
 
-A per-subsystem spatial index with a shared entity position cache would let physics use
-sweep-and-prune, rendering use a loose octree, and networking use a flat grid, each optimal for its
-access pattern. We are not taking this approach because the shared BVH eliminates an entire class of
-bugs where subsystems disagree on entity positions within the same frame. R-1.9.1 explicitly
-requires that all subsystems read from the same structure updated once per frame. The alternative
-also multiplies maintenance cost: three spatial structures to implement, optimize, and test across
-three platforms. The shared BVH with an optional grid/octree (F-1.9.3) provides a pragmatic middle
-ground covering the most common query patterns.
+A per-subsystem spatial index with a shared entity position cache would let each consumer use its
+optimal structure. We are not taking this approach for the gameplay BVH because the shared BVH
+eliminates an entire class of bugs where subsystems disagree on entity positions within the same
+frame. R-1.9.1 explicitly requires that gameplay subsystems read from the same structure updated
+once per frame. Physics and rendering are already separated (physics owns its own BVH at fixed
+timestep, GPU handles culling), so the shared BVH serves AI, audio, gameplay, and networking. The
+shared BVH with an optional grid (F-1.9.3) provides a pragmatic middle ground covering the most
+common query patterns.
 
 **Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
 user stories? What are they? How would adding them improve the engine? What kinds of games does it
 enable?
 
-The design covers broadphase, culling, relevancy, and AI perception but lacks explicit support for
-continuous collision detection (CCD) queries. Physics systems need swept-volume queries (motion-AABB
-tests) to detect fast- moving objects that tunnel through thin geometry between frames. US-1.9.10
-covers broadphase AABB overlap but not temporal sweep tests. Additionally, there is no support for
-hierarchical LOD queries where the spatial index returns different detail levels based on distance
-from the camera. Adding swept-volume queries (extending F-1.9.4) and LOD-aware spatial queries would
-enable fast-paced FPS games with thin walls and open-world games with LOD streaming. Raycast support
-exists but temporal queries are a gap.
+The design covers AI perception, gameplay queries, audio occlusion, and network relevancy. CCD
+(continuous collision detection) swept-volume queries are the physics BVH's responsibility, not this
+shared BVH. LOD selection is handled by GPU compute shaders (Nanite-style mesh cluster LOD), not by
+CPU-side spatial queries. The main gap is temporal queries for gameplay: swept-sphere queries for
+fast-moving projectiles that need to detect entities along a trajectory within a single frame.
+Adding swept-volume queries (extending F-1.9.4) would enable fast-paced FPS games with fast-moving
+projectiles. Raycast support exists but temporal sweep queries are a gap.
 
 **Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
 modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
 
 The spatial index is highly cohesive with the engine: it reads from the ECS (Transform components
-via F-1.1.22 change detection), writes to an ECS resource (the BVH), and is consumed by 4+
-subsystems through the unified query API (F-1.9.4). The consumer integration features (F-1.9.6
-through F-1.9.9) explicitly trace dependencies to physics, rendering, networking, and AI. One
-cohesion gap is the relationship between the spatial index and the scene hierarchy (F-1.2): the BVH
-indexes individual entities flat, with no awareness of parent-child grouping. For hierarchy-aware
-culling (cull a parent and skip all children), a BVH node-to-subtree mapping would improve cohesion
-with the scene module and reduce redundant traversal during frustum culling of deeply nested entity
-template instances.
+via F-1.1.22 change detection), writes to an ECS resource (the BVH), and is consumed by AI, audio,
+gameplay, and networking through the unified query API (F-1.9.4). Physics maintains its own BVH at
+fixed timestep (F-1.9.6), and GPU compute shaders handle rendering culling (F-1.9.7), keeping clear
+ownership boundaries. One cohesion gap is the relationship between the spatial index and the scene
+hierarchy (F-1.2): the BVH indexes individual entities flat, with no awareness of parent-child
+grouping. For hierarchy-aware queries (skip all children of a culled parent), a BVH node-to-subtree
+mapping would improve cohesion with the scene module.
 
 ## Open Questions
 
@@ -2130,16 +2255,14 @@ template instances.
    can be faster for ray traversal. The 4-wide layout complicates incremental updates. Decision
    depends on benchmarking both layouts at 1M+ entities.
 
-2. **Octree vs uniform grid redundancy.** The design includes both an octree (3D, hierarchical) and
-   a uniform grid (2D, flat). For games with a flat ground plane (most action games, MMOs), the 2D
-   grid is faster for network relevancy. For games with vertical gameplay (flying, space), the
-   octree is needed. Whether to support both or auto-select based on world configuration needs
-   discussion.
+2. ~~**Octree vs uniform grid redundancy.**~~ **Resolved.** No octree. The design provides two
+   structures: BVH and grid. The BVH handles all hierarchical queries. The 2D grid serves networking
+   relevancy and zone-based replication.
 
-3. **Background rebuild atomicity.** When a full BVH rebuild runs on a background thread, the
-   rebuilt tree must be swapped in atomically at a frame boundary. The current design assumes a
-   double- buffer approach (build into a second `BvhIndex`, swap references). The exact swap
-   mechanism and how it interacts with `SpatialMembership` handles needs detailed design.
+3. ~~**Background rebuild atomicity.**~~ **Resolved.** The `BvhRebuildTask` builds into a shadow
+   buffer on a background worker thread. `spatial_update_system` polls for completion via
+   `try_take_result()` and swaps the rebuilt BVH at frame boundary. `SpatialMembership` handles
+   remain valid because the rebuild preserves the leaf-to-entity mapping.
 
 4. **SIMD ray batch layout.** For maximum throughput, batch ray casts should use SOA layout (4 ray
    origins packed into SIMD registers). This requires transforming the query input into SOA format
@@ -2153,3 +2276,101 @@ template instances.
 6. **Grid cell entity cap.** `SmallVec<[Entity; 32]>` is used for grid cells. If entity density
    varies wildly (dense cities vs empty wilderness), a different storage strategy (e.g., chunked
    linked list) may reduce memory waste in sparse cells and overflow allocation in dense cells.
+
+## Review Feedback
+
+### RF-1: Remove octree — BVH + grid only [APPLIED]
+
+Remove the octree entirely. The spatial index provides two structures:
+
+1. **BVH** — shared resource for rendering, AI, and gameplay queries (frustum culling, raycasts,
+   AoE, nearest neighbor, perception). A second separate BVH is owned by the physics subsystem for
+   broadphase collision at fixed timestep.
+2. **Grid** — owned by networking for relevancy, zone-based replication, and interest management.
+   Simple 2D array of entity lists.
+
+BVH handles everything octree does but with tighter bounds, cheaper dynamic updates (refit vs
+re-insert), less memory (each entity stored once), and better SIMD traversal. Open question #2 is
+resolved: no octree, grid only for networking.
+
+### RF-2: No chunk-level AABBs [APPLIED]
+
+Remove chunk-level AABBs (supersedes scene-transforms RF-10). Archetype chunks group entities by
+component type, not spatial position. A chunk AABB covering spatially scattered entities becomes the
+entire world — zero culling benefit.
+
+The BVH handles all per-entity spatial queries directly. No two-level chunk → entity hierarchy.
+
+### RF-3: GPU handles its own culling and LOD [APPLIED]
+
+The rendering pipeline uses GPU-driven culling (Nanite-style):
+
+- Compute shaders perform frustum + occlusion culling on GPU
+- Mesh cluster LOD selected per-cluster on GPU
+- DrawIndexedInstancedIndirect eliminates CPU draw call submission
+- GPU builds its own visibility buffer without CPU spatial structures
+
+The CPU-side BVH is used for gameplay queries (AI, AoE, raycasts), not rendering culling. The GPU
+owns rendering visibility entirely.
+
+### RF-4: Physics BVH is separate [APPLIED]
+
+Physics maintains its own BVH for broadphase collision detection, separate from the
+rendering/gameplay BVH:
+
+- Updated at fixed timestep (not variable framerate)
+- Objects outside camera frustum still collide
+- Different update cadence than rendering
+- Physics engines (Rapier, PhysX, Bullet) all use separate broadphase
+
+The physics design (Design #19-21) owns the physics BVH specification. This design specifies the
+shared rendering/gameplay BVH only.
+
+### RF-5: Fix BvhNode to 32 bytes [APPLIED]
+
+BvhNode is 40 bytes, not 32 as claimed. Remove `parent` field to a parallel `parents: Vec<u32>`
+array. Pack `is_leaf` into MSB of `left`. This achieves the 32-byte target: 2 nodes per 64-byte
+cache line.
+
+Update the memory budget calculation — LeafEntry is also larger than claimed (fat_aabb not counted).
+Move `fat_aabb` to a parallel array to stay within the per-entity memory budget.
+
+### RF-6: Double-buffered background rebuild [APPLIED]
+
+Add `BvhRebuildTask` that builds into a shadow buffer and swaps at frame boundary. The current
+`bvh_rebuild_system` takes `ResMut<BvhIndex>` which blocks all consumers during rebuild, causing
+frame spikes.
+
+### RF-7: Fix batch dispatcher soundness [APPLIED]
+
+The batch query pseudocode hands out `&mut` slices into a shared Vec across `scope.spawn`
+boundaries. Use `chunks_mut` to pre-split the results Vec before entering the scope, or use per-task
+result buffers merged after scope completion.
+
+### RF-8: Remove GCD reference [APPLIED]
+
+Line 1656 references "GCD dispatch." Remove — GCD is used for I/O dispatch, not SIMD. Change to
+"Same as ARM (NEON)."
+
+### RF-9: Add missing tests [APPLIED]
+
+1. Allocation-free query variants (query_into, query_visitor, query_arena)
+2. Double-buffered background rebuild
+3. Adjust 4-core benchmark target from >= 3x to >= 2x
+
+### RF-10: Fix constraints.md stale references
+
+constraints.md threading table (lines 51-52) still references compio and Rayon. Line 193 says they
+are removed. Update the threading table to say "custom job system" and "platform-native I/O."
+
+### RF-11: 2D spatial index [APPLIED]
+
+Add a 2D BVH variant for 2D/2.5D games. Same algorithms as the 3D BVH but operating on 2D AABBs
+(`Aabb2D` with min/max `Vec2`). This avoids the overhead of a third axis for games that don't need
+it.
+
+The shared spatial index resource detects whether the world uses 2D or 3D transforms and
+instantiates the appropriate BVH variant. Both variants implement the same query interface
+(`ray_cast`, `aabb_query`, etc.) with 2D/3D overloads.
+
+The networking grid is already 2D and works for both 2D and 3D games.

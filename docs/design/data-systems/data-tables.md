@@ -6,35 +6,43 @@
 > [features/](../../features/), [requirements/](../../requirements/), and
 > [user-stories/](../../user-stories/). The table below traces design elements to those definitions.
 
-| Feature    | Requirement | Design Element              |
-|------------|-------------|-----------------------------|
-| F-13.7.1   | R-13.7.1    | Typed table schemas         |
-| F-13.7.2   | R-13.7.2    | Row-based tables + FK refs  |
-| F-13.7.3   | R-13.7.3    | Foreign key resolution      |
-| F-13.7.4   | R-13.7.4    | Hot reload with versioning  |
-| F-13.7.5   | R-13.7.5    | Row inheritance chains      |
-| F-13.7.11  | R-13.7.11   | Secondary indices           |
-| F-13.7.12  | R-13.7.12   | ECS component binding       |
-| F-13.7.14  | R-13.7.14   | Schema validation           |
-| F-13.10.1  | R-13.10.1   | Ability definition tables   |
-| F-13.12.1a | R-13.12.1a  | Race definition tables      |
-| F-13.12.1b | R-13.12.1b  | Class definition tables     |
-| F-13.12.1c | R-13.12.1c  | Multi-class tables          |
-| F-13.12.1d | R-13.12.1d  | Prestige/rebirth tables     |
+| Feature    | Requirement  | Design Element                       |
+|------------|--------------|--------------------------------------|
+| F-13.7.1   | R-13.7.1     | Typed table schemas                  |
+| F-13.7.2   | R-13.7.2     | Row-based tables + FK refs           |
+| F-13.7.3   | R-13.7.3     | Foreign key resolution               |
+| F-13.7.4   | R-13.7.4     | Hot reload with versioning           |
+| F-13.7.5   | R-13.7.5     | Row inheritance chains               |
+| F-13.7.10  | R-13.7.10    | Locale-keyed string columns          |
+| F-13.7.11  | R-13.7.11    | Secondary indices                    |
+| F-13.7.12  | R-13.7.12    | ECS component binding                |
+| F-13.7.14  | R-13.7.14    | Schema validation                    |
+| F-13.10.1  | R-13.10.1    | Ability definition tables            |
+| F-13.12.1a | R-13.12.1a   | Race definition tables               |
+| F-13.12.1b | R-13.12.1b   | Class definition tables              |
+| F-13.12.1c | R-13.12.1c   | Multi-class tables                   |
+| F-13.12.1d | R-13.12.1d   | Prestige/rebirth tables              |
+| —          | R-13.7.NF1   | Hash index lookup < 1 µs (100k rows) |
+| —          | R-13.7.NF2   | Full load < 2 s (1M rows)            |
+| —          | R-13.7.NF3   | Hot reload < 500 ms (10k rows)       |
 
 1. **F-13.7.1** -- Typed column schemas with constraints
 2. **F-13.7.2** -- Row-based data tables as ECS resources
 3. **F-13.7.3** -- Cross-table foreign key references
 4. **F-13.7.4** -- Hot reload with schema versioning
 5. **F-13.7.5** -- Row inheritance (prototype chains)
-6. **F-13.7.11** -- Hash/BTree secondary indices
-7. **F-13.7.12** -- ECS component binding from rows
-8. **F-13.7.14** -- Validation and constraint checking
-9. **F-13.10.1** -- Ability definitions stored as table rows
-10. **F-13.12.1a** -- Race definitions as table rows
-11. **F-13.12.1b** -- Class definitions as table rows
-12. **F-13.12.1c** -- Multi-class combos as table rows
-13. **F-13.12.1d** -- Prestige/rebirth data as table rows
+6. **F-13.7.10** -- Locale-keyed string columns with fallback
+7. **F-13.7.11** -- Hash/BTree secondary indices
+8. **F-13.7.12** -- ECS component binding from rows
+9. **F-13.7.14** -- Validation and constraint checking
+10. **F-13.10.1** -- Ability definitions stored as table rows
+11. **F-13.12.1a** -- Race definitions as table rows
+12. **F-13.12.1b** -- Class definitions as table rows
+13. **F-13.12.1c** -- Multi-class combos as table rows
+14. **F-13.12.1d** -- Prestige/rebirth data as table rows
+15. **R-13.7.NF1** -- Sorted-Vec index lookup < 1 µs on 100k-row table
+16. **R-13.7.NF2** -- All tables (1M rows total) loaded and validated < 2 s
+17. **R-13.7.NF3** -- Hot reload of a 10k-row table < 500 ms end-to-end
 
 ## Overview
 
@@ -48,14 +56,16 @@ Key features:
 - **Row inheritance** -- prototype chains for data hierarchies (e.g.,
   `Item > Weapon > Sword > FireSword`).
 - **Secondary indices** -- hash (O(1) lookup) and BTree (O(log n) range) on indexed columns.
-- **Formula nodes** -- computed columns via visual formula graphs compiled to logic graph bytecode.
+- **Formula nodes** -- computed columns via visual logic graphs that codegen to native Rust in the
+  middleman .dylib. No bytecode.
 - **Foreign keys** -- cross-table row references with validation.
 - **Hot reload** -- swap table data at runtime with version tracking and rollback.
 - **ECS binding** -- spawn entities from table rows with automatic component population.
 - **Validation** -- type checks, FK integrity, range constraints, and custom rules.
 
 All data is immutable at runtime. Mutable queries return copies. No `Arc`, `Rc`, `Cell`, or
-`RefCell`. All types derive `Reflect` for serialization.
+`RefCell`. All types derive rkyv `Archive`/`Serialize`/`Deserialize` for zero-copy binary
+serialization. No runtime reflection or `TypeRegistry`.
 
 ## Architecture
 
@@ -77,8 +87,8 @@ graph TD
 
     subgraph "harmonius_core_runtime"
         ECS[ECS World]
-        REF[Reflection / TypeRegistry]
-        SER[Serialization]
+        CDG[Codegen / Middleman .dylib]
+        SER[Serialization rkyv]
         EV[Typed Event Channels]
     end
 
@@ -95,7 +105,7 @@ graph TD
     DT --> ECS
     EB --> ECS
     EB --> DT
-    EB --> REF
+    EB --> CDG
     DT --> SER
     HR --> EV
     HR --> DT
@@ -190,8 +200,8 @@ classDiagram
     }
     class DataTable {
         -schema TableSchema
-        -rows HashMap~RowId Row~
-        -indices Vec~SecondaryIndex~
+        -rows Vec~Row~
+        -indices SmallVec~SecondaryIndex~
         -version u64
         +get(id) Option~Row~
         +get_resolved(id col) Option~Value~
@@ -230,7 +240,7 @@ classDiagram
         Warning
     }
     class TableRegistry {
-        -tables HashMap~TableId DataTable~
+        -tables Vec~Option~DataTable~~
         +get(id) Option~DataTable~
         +insert(id table)
         +swap(id table) Option~DataTable~
@@ -240,8 +250,8 @@ classDiagram
     class DatabaseRow {
         +table TableId
         +row RowId
-        +bound_columns Vec~ColumnId~
-        +overrides HashMap~ColumnId Value~
+        +bound_columns SmallVec~ColumnId~
+        +overrides SmallVec~(ColumnId, Value)~
     }
     class TableReloaded {
         +table TableId
@@ -336,28 +346,32 @@ sequenceDiagram
 /// Unique table identifier.
 #[derive(
     Clone, Copy, Debug,
-    PartialEq, Eq, Hash, Reflect,
+    PartialEq, Eq, Hash,
+    Archive, Serialize, Deserialize,
 )]
 pub struct TableId(pub u32);
 
 /// Unique row identifier within a table.
 #[derive(
     Clone, Copy, Debug,
-    PartialEq, Eq, Hash, Reflect,
+    PartialEq, Eq, Hash,
+    Archive, Serialize, Deserialize,
 )]
 pub struct RowId(pub u64);
 
 /// Column index within a table schema.
 #[derive(
     Clone, Copy, Debug,
-    PartialEq, Eq, Hash, Reflect,
+    PartialEq, Eq, Hash,
+    Archive, Serialize, Deserialize,
 )]
 pub struct ColumnId(pub u16);
 
 /// Cross-table row reference (table + row).
 #[derive(
     Clone, Copy, Debug,
-    PartialEq, Eq, Hash, Reflect,
+    PartialEq, Eq, Hash,
+    Archive, Serialize, Deserialize,
 )]
 pub struct RowRef {
     pub table: TableId,
@@ -368,8 +382,25 @@ pub struct RowRef {
 ### Column Types and Schema
 
 ```rust
+/// Opaque identifier for a codegen'd enum type
+/// in the middleman .dylib. Replaces `TypeId`.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, Hash,
+    Archive, Serialize, Deserialize,
+)]
+pub struct EnumSchemaId(pub u32);
+
+/// Identifies a formula function codegen'd into
+/// the middleman .dylib. Maps to
+/// `fn formula_<table>_<col>(row, registry) -> T`.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, Hash,
+    Archive, Serialize, Deserialize,
+)]
+pub struct FormulaId(pub u32);
+
 /// Supported column data types.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Archive, Serialize, Deserialize)]
 pub enum ColumnType {
     Bool,
     I32,
@@ -377,9 +408,10 @@ pub enum ColumnType {
     F32,
     F64,
     String,
-    /// Reference to an enum in the type
-    /// registry.
-    Enum(TypeId),
+    /// Reference to a codegen'd enum variant.
+    /// `EnumSchemaId` indexes the middleman .dylib
+    /// enum registry — no runtime TypeId needed.
+    Enum(EnumSchemaId),
     /// Reference to a row in another table.
     ForeignKey(TableId),
     /// Reference to an asset by handle.
@@ -388,21 +420,27 @@ pub enum ColumnType {
     EntityRef,
     /// Array of a single inner type.
     Array(Box<ColumnType>),
+    /// Computed column: value produced by a
+    /// codegen'd formula function at bake or
+    /// runtime.
+    Formula(FormulaId),
 }
 
 /// A column definition within a table schema.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Archive, Serialize, Deserialize)]
 pub struct ColumnDef {
     pub name: SmolStr,
     pub col_type: ColumnType,
     pub default: Option<Value>,
     pub nullable: bool,
     pub indexed: bool,
-    pub constraints: Vec<ColumnConstraint>,
+    /// Inline-allocated: most columns have ≤2
+    /// constraints.
+    pub constraints: SmallVec<[ColumnConstraint; 2]>,
 }
 
 /// Per-column constraints.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Archive, Serialize, Deserialize)]
 pub enum ColumnConstraint {
     /// Numeric range [min, max].
     Range { min: f64, max: f64 },
@@ -414,7 +452,7 @@ pub enum ColumnConstraint {
 
 /// Immutable table schema. All fields are
 /// private; access via methods only.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Archive, Serialize, Deserialize)]
 pub struct TableSchema {
     table_id: TableId,
     name: SmolStr,
@@ -447,7 +485,9 @@ impl TableSchema {
 
 ```rust
 /// A dynamically-typed value stored in a cell.
-#[derive(Clone, Debug, Reflect)]
+/// Used on the editor/import path. Runtime access
+/// uses codegen'd strongly-typed row structs.
+#[derive(Clone, Debug, Archive, Serialize, Deserialize)]
 pub enum Value {
     Null,
     Bool(bool),
@@ -456,7 +496,9 @@ pub enum Value {
     F32(f32),
     F64(f64),
     String(SmolStr),
-    Enum { type_id: TypeId, variant: u32 },
+    /// Enum variant: schema id from middleman .dylib
+    /// enum registry + variant index. No TypeId.
+    Enum { schema_id: EnumSchemaId, variant: u32 },
     ForeignKey(RowRef),
     AssetRef(AssetHandle),
     EntityRef(Entity),
@@ -465,7 +507,7 @@ pub enum Value {
 
 /// A single row: primary key + column values.
 /// Parent field enables prototype inheritance.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Archive, Serialize, Deserialize)]
 pub struct Row {
     pub id: RowId,
     pub parent: Option<RowId>,
@@ -477,15 +519,23 @@ pub struct Row {
 
 ```rust
 /// A typed, immutable data table stored as an
-/// ECS resource. Tables are loaded from
-/// serialized assets and never mutated at
-/// runtime. Hot reload creates a new table
-/// instance and swaps it into the registry.
-#[derive(Debug, Reflect)]
+/// ECS resource. Tables are loaded from rkyv
+/// baked assets and never mutated at runtime.
+/// Hot reload creates a new instance and swaps
+/// it into the registry.
+///
+/// `rows` is sorted by `RowId` for O(log n)
+/// binary-search primary-key lookup. Iteration
+/// order is stable and deterministic.
+#[derive(Debug, Archive, Serialize, Deserialize)]
 pub struct DataTable {
     schema: TableSchema,
-    rows: HashMap<RowId, Row>,
-    indices: Vec<SecondaryIndex>,
+    /// Sorted by RowId. Binary search for O(log n)
+    /// primary-key lookup.
+    rows: Vec<Row>,
+    /// Inline: most tables have ≤4 secondary
+    /// indices.
+    indices: SmallVec<[SecondaryIndex; 4]>,
     version: u64,
 }
 
@@ -506,18 +556,23 @@ impl DataTable {
 
     /// Query with a filter expression. Uses
     /// secondary indices when available.
-    pub fn query(
-        &self,
+    /// Results are allocated into `arena`; the
+    /// caller resets the arena at frame boundary.
+    pub fn query<'a>(
+        &'a self,
         filter: &FilterExpr,
-    ) -> Vec<&Row>;
+        arena: &'a Arena,
+    ) -> &'a [&'a Row];
 
     /// Range query on an indexed column.
-    pub fn range(
-        &self,
+    /// Results are arena-allocated; see `query`.
+    pub fn range<'a>(
+        &'a self,
         col: ColumnId,
         min: &Value,
         max: &Value,
-    ) -> Vec<&Row>;
+        arena: &'a Arena,
+    ) -> &'a [&'a Row];
 
     pub fn row_count(&self) -> usize;
     pub fn version(&self) -> u64;
@@ -537,7 +592,7 @@ impl DataTable {
 
 ```rust
 /// Column predicate for filtering.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub enum ColumnPredicate {
     Equals(Value),
     NotEquals(Value),
@@ -552,7 +607,7 @@ pub enum ColumnPredicate {
 }
 
 /// Composable filter expression tree.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub enum FilterExpr {
     Column {
         col: ColumnId,
@@ -568,16 +623,17 @@ pub enum FilterExpr {
 
 ```rust
 /// Index type for a column.
-#[derive(Clone, Copy, Debug, Reflect)]
+#[derive(Clone, Copy, Debug)]
 pub enum IndexType {
-    /// HashMap-backed. O(1) exact lookup.
+    /// Sorted-Vec-backed. O(log n) exact lookup,
+    /// deterministic iteration order.
     Hash,
     /// BTreeMap-backed. O(log n) range queries.
     BTree,
 }
 
 /// A secondary index on a single column.
-#[derive(Debug, Reflect)]
+#[derive(Debug)]
 pub struct SecondaryIndex {
     column: ColumnId,
     index_type: IndexType,
@@ -613,11 +669,14 @@ pub fn resolve_inherited(
 
 /// Flatten a row by resolving all inherited
 /// values into a complete row with no null cells
-/// (except nullable columns).
-pub fn flatten_row(
-    table: &DataTable,
+/// (except nullable columns). The flattened row
+/// is allocated into `arena`; the caller resets
+/// the arena at frame boundary.
+pub fn flatten_row<'a>(
+    table: &'a DataTable,
     row: RowId,
-) -> Row;
+    arena: &'a Arena,
+) -> &'a Row;
 
 /// Detect circular inheritance. Returns the
 /// cycle path if found.
@@ -632,9 +691,13 @@ pub fn detect_cycle(
 ```rust
 /// Central registry of all loaded data tables.
 /// Stored as an ECS resource.
-#[derive(Debug, Reflect)]
+///
+/// `tables` is a dense Vec indexed by
+/// `TableId(u32)`. O(1) lookup, deterministic
+/// iteration, no hash randomization.
+#[derive(Debug)]
 pub struct TableRegistry {
-    tables: HashMap<TableId, DataTable>,
+    tables: Vec<Option<DataTable>>,
 }
 
 impl TableRegistry {
@@ -674,30 +737,35 @@ impl TableRegistry {
 /// Attached to an entity to bind it to a
 /// database row. The binding system populates
 /// ECS components from the referenced row.
-#[derive(
-    Clone, Debug, Component, Reflect,
-)]
+/// Works identically for 2D and 3D entities —
+/// the codegen'd binding function resolves to
+/// whichever transform component is present.
+#[derive(Clone, Debug, Component)]
 pub struct DatabaseRow {
     pub table: TableId,
     pub row: RowId,
     /// Columns to bind. Empty = all matching.
-    pub bound_columns: Vec<ColumnId>,
-    /// Per-column overrides that take precedence
-    /// over the database value.
-    pub overrides: HashMap<ColumnId, Value>,
+    /// Inline-allocated: most bindings use ≤8.
+    pub bound_columns: SmallVec<[ColumnId; 8]>,
+    /// Per-column overrides sorted by ColumnId.
+    /// Inline-allocated: most overrides are ≤4.
+    pub overrides: SmallVec<[(ColumnId, Value); 4]>,
 }
 
 /// System that populates ECS components from
 /// database rows on spawn and after hot-reload.
+/// Binding functions are codegen'd into the
+/// middleman .dylib — no runtime reflection.
 pub struct DatabaseBindingSystem;
 
 impl DatabaseBindingSystem {
     /// Bind a single entity's components.
+    /// Calls the codegen'd per-table binding
+    /// function from the middleman .dylib.
     pub fn bind_entity(
         entity: Entity,
         db_row: &DatabaseRow,
         tables: &TableRegistry,
-        registry: &TypeRegistry,
         world: &mut World,
     );
 
@@ -706,7 +774,6 @@ impl DatabaseBindingSystem {
     pub fn refresh_table(
         table_id: TableId,
         tables: &TableRegistry,
-        registry: &TypeRegistry,
         world: &mut World,
     );
 }
@@ -716,7 +783,7 @@ impl DatabaseBindingSystem {
 
 ```rust
 /// A single validation error.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct ValidationError {
     pub table: TableId,
     pub row: RowId,
@@ -725,7 +792,7 @@ pub struct ValidationError {
     pub severity: ValidationSeverity,
 }
 
-#[derive(Clone, Copy, Debug, Reflect)]
+#[derive(Clone, Copy, Debug)]
 pub enum ValidationSeverity {
     Error,
     Warning,
@@ -748,7 +815,7 @@ pub fn validate_all(
 
 ```rust
 /// Hot-reload configuration.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct HotReloadConfig {
     /// Directories to watch for changes.
     pub watch_dirs: Vec<PathBuf>,
@@ -757,7 +824,7 @@ pub struct HotReloadConfig {
 }
 
 /// Emitted on successful table reload.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct TableReloaded {
     pub table: TableId,
     pub old_version: u64,
@@ -765,14 +832,14 @@ pub struct TableReloaded {
 }
 
 /// Emitted when hot-reload validation fails.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct ValidationFailed {
     pub table: TableId,
     pub errors: Vec<ValidationError>,
 }
 
 /// Hot-reload error.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub enum HotReloadError {
     NoPreviousVersion,
     TableNotFound(TableId),
@@ -796,16 +863,20 @@ impl HotReloadSystem {
 
 ```rust
 /// Supported import formats.
-#[derive(Clone, Copy, Debug, Reflect)]
+#[derive(Clone, Copy, Debug)]
 pub enum ImportFormat {
+    /// Human-readable authoring format.
     Ron,
+    /// Import from external tools.
     Json,
+    /// Import from spreadsheets.
     Csv,
+    /// rkyv zero-copy baked asset format.
     Binary,
 }
 
 /// Import error.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub enum ImportError {
     IoError(IoError),
     ParseError {
@@ -815,14 +886,38 @@ pub enum ImportError {
     SchemaMismatch(Vec<ValidationError>),
 }
 
-/// Import a data table from a file via the
-/// async I/O reactor. No blocking.
-pub async fn import_table(
+/// Opaque handle returned by `import_table`.
+/// Poll at frame boundaries for completion.
+pub struct ImportHandle(u64);
+
+/// Submit a table import via platform-native I/O.
+/// Sends a read request over crossbeam-channel to
+/// the main thread (io_uring / IOCP / GCD
+/// dispatch_io). Returns immediately. Poll
+/// `ImportHandle` for completion at frame boundary.
+/// Never blocks the calling thread.
+pub fn import_table(
     path: &Path,
     format: ImportFormat,
     schema: &TableSchema,
-    reactor: &Tokio runtime,
-) -> Result<DataTable, ImportError>;
+    io_channel: &Sender<IoRequest>,
+) -> ImportHandle;
+
+/// Check whether an import has completed.
+pub fn poll_import(
+    handle: &ImportHandle,
+    completions: &Receiver<IoCompletion>,
+) -> Option<Result<DataTable, ImportError>>;
+
+/// Zero-copy binary load: mmap the baked asset
+/// and return a reference via `rkyv::archived_root`.
+/// No allocation, no deserialization.
+pub fn load_binary_table(
+    data: &[u8],
+) -> &ArchivedDataTable;
+
+/// Resolved handle to a baked `DataTable` asset.
+pub struct Handle<DataTable>(u32);
 ```
 
 ## Data Flow
@@ -831,54 +926,83 @@ pub async fn import_table(
 
 1. **Discover** -- Asset database provides a manifest of all data table assets with file paths and
    schemas.
-2. **Read** -- `import_table` reads each file via the async I/O reactor. No blocking file I/O.
-3. **Deserialize** -- Serializer decodes RON, JSON, CSV, or binary into raw `Row` data.
-4. **Validate** -- Validator checks every row against the schema, verifies FK integrity across all
-   tables, and evaluates range constraints.
-5. **Index** -- Secondary indices are built for all columns marked as `indexed`.
-6. **Inherit** -- Prototype chains are resolved and cached for fast `get_resolved` lookups.
-7. **Register** -- Validated table is inserted into the `TableRegistry` ECS resource.
-8. **Bind** -- `DatabaseBindingSystem` scans entities with `DatabaseRow` components and populates
-   ECS components.
+2. **Read** -- `import_table` submits an I/O request via crossbeam-channel to the main thread. The
+   main thread dispatches via io_uring (Linux), IOCP (Windows), or GCD dispatch_io (Apple). No
+   blocking. An `ImportHandle` is returned for polling.
+3. **Poll** -- At the asset-load phase (PreUpdate), the game loop polls `ImportHandle` for I/O
+   completions. Baked binary assets use `load_binary_table` (rkyv mmap, zero deserialization).
+4. **Deserialize** -- Serializer decodes RON, JSON, or CSV into raw `Row` data. Binary assets
+   (`rkyv`) are zero-copy: no decoding step.
+5. **Validate** -- Validator checks every row against the schema, verifies FK integrity across all
+   tables, evaluates range constraints, and checks `AssetRef` values against the asset database.
+6. **Index** -- Secondary indices are built for all columns marked as `indexed`.
+7. **Inherit** -- Prototype chains are resolved and cached for fast `get_resolved` lookups.
+8. **Register** -- Validated table is inserted into the `TableRegistry` ECS resource at the
+   designated AssetReload phase.
+9. **Bind** -- `DatabaseBindingSystem` runs in the same phase after the swap. It scans entities with
+   `DatabaseRow` components and calls codegen'd binding functions from the middleman .dylib.
 
 ### Hot-Reload Pipeline
 
-1. **Watch** -- File watcher (async I/O) monitors data table directories.
+1. **Watch** -- Main thread monitors data table directories via platform-native file-watch APIs
+   (inotify on Linux, ReadDirectoryChanges on Windows, FSEvents on Apple). Notifications arrive as
+   main-thread I/O events.
 2. **Debounce** -- Rapid writes coalesced into a single reload after 100 ms.
-3. **Deserialize** -- Changed file is read and deserialized.
-4. **Validate** -- Full schema and cross-table validation.
-5. **Swap or reject** -- If valid, old version is stashed and new version swapped in.
-   `TableReloaded` emitted. If invalid, `ValidationFailed` emitted. Old table stays active.
-6. **Rebind** -- `DatabaseBindingSystem` refreshes all entity bindings for the reloaded table.
-7. **Rollback** -- `rollback()` restores stashed version if the reload causes runtime issues.
+3. **Submit I/O** -- File read submitted via platform-native I/O (same path as initial load).
+4. **Poll** -- Next frame's AssetReload phase polls for completion.
+5. **Validate** -- Full schema and cross-table validation, including broken `AssetRef` checks.
+6. **Swap or reject** -- If valid, old version is stashed and new version swapped in at the
+   AssetReload phase. `TableReloaded` emitted. If invalid, `ValidationFailed` emitted; old table
+   unchanged.
+7. **Rebind** -- `DatabaseBindingSystem` refreshes all entity bindings for the reloaded table in the
+   same phase.
+8. **Rollback** -- `rollback()` restores stashed version if the reload causes runtime issues.
 
 ### ECS Binding Flow
 
 1. Entity spawned with `DatabaseRow` component referencing a table and row.
 2. `DatabaseBindingSystem` reads the row from the registry.
-3. For each bound column, the system maps the column value to the matching ECS component field via
-   `Reflect`.
-4. Override values in `DatabaseRow.overrides` take precedence over database values.
-5. On hot-reload, all entities referencing the reloaded table are re-bound.
+3. For each bound column, the codegen'd binding function from the middleman .dylib writes the column
+   value directly into the appropriate ECS component field. No reflection.
+4. The binding function resolves to whichever transform component is present (`Transform` for 3D,
+   `Transform2D` for 2D/2.5D) — the same binding logic works for all entity types.
+5. Override values in `DatabaseRow.overrides` take precedence over database values. Overrides are a
+   `SmallVec<[(ColumnId, Value); 4]>` sorted by `ColumnId` for binary-search lookup.
+6. On hot-reload, all entities referencing the reloaded table are re-bound in the AssetReload phase.
 
 ## Platform Considerations
 
-| Aspect       |
-|--------------|
-| Serialization |
-| Async I/O    |
-| Reflection   |
-| Memory       |
-| Hot reload   |
+| Aspect         | Detail                                                          |
+|----------------|-----------------------------------------------------------------|
+| Serialization  | RON (authoring), rkyv binary (shipping), JSON/CSV (import)     |
+| I/O backend    | io_uring (Linux), IOCP (Windows), GCD dispatch_io (Apple)      |
+| Codegen        | Binding functions and typed row structs in middleman .dylib     |
+| Memory         | Sorted `Vec<Row>`, `Vec<Option<DataTable>>`, SmallVec indices   |
+| Hot reload     | Platform file-watch → platform I/O → AssetReload phase swap    |
+| Mobile/console | Max table size budget: 50k rows / 16 MB per table for mobile   |
+| VR             | Tables driving entity spawning must complete in PreUpdate phase |
 
-1. **Serialization** -- RON for human-readable authoring, binary for shipping. JSON and CSV for
-   import only.
-2. **Async I/O** -- All table file reads use Tokio async I/O. No blocking file I/O.
-3. **Reflection** -- All types derive `Reflect` for editor property panels and ECS binding.
-4. **Memory** -- Dense `Vec` storage for rows. `HashMap` for primary key index. `BTreeMap` for BTree
+1. **Serialization** -- RON for human-readable authoring. Binary (rkyv) for shipped builds — mmap
+   via `rkyv::archived_root`, zero deserialization cost. JSON and CSV for import from external tools
+   only.
+2. **I/O backend** -- `import_table` submits read requests via crossbeam-channel to the main thread.
+   The main thread dispatches using io_uring (Linux), IOCP (Windows), or GCD dispatch_io (Apple). No
+   Tokio, no blocking.
+3. **Codegen** -- No runtime reflection. ECS binding functions, typed row accessor structs, and
+   validation logic are all codegen'd into the middleman .dylib by the codegen pipeline.
+4. **Memory** -- `DataTable.rows` is a `Vec<Row>` sorted by `RowId` (binary-search primary key).
+   `TableRegistry.tables` is `Vec<Option<DataTable>>` indexed by `TableId(u32)`. Secondary indices
+   and overrides use `SmallVec` to avoid heap allocation for the common case. `BTreeMap` for BTree
    secondary indices.
-5. **Hot reload** -- New version built in parallel, then swapped. Old version stashed for rollback.
-   No `Arc` or shared-ownership types.
+5. **Hot reload** -- File-watch events arrive on the main thread (inotify / ReadDirectoryChanges /
+   FSEvents). I/O submitted via platform-native read. Table swap and entity rebind happen at the
+   designated AssetReload phase boundary. Old version stashed for rollback. No `Arc`.
+6. **Mobile/console** -- Budget per table: ≤50k rows, ≤16 MB binary size. Tables exceeding budget
+   must use streaming (load on demand, evict when not referenced). Asset baking is mandatory for
+   console — no RON loading at runtime.
+7. **VR** -- Tables used to drive entity spawning must complete loading and binding in PreUpdate to
+   avoid mid-frame latency spikes. Formula columns driving per-frame queries should be bake-time
+   evaluated where possible.
 
 ## Test Plan
 
@@ -957,6 +1081,358 @@ See companion file [data-tables-test-cases.md](data-tables-test-cases.md).
 | Hot reload (10k rows) | < 500 ms | R-13.7.NF3 |
 | Validation (100k rows) | < 500 ms | R-13.7.14 |
 
+## Codegen Pipeline
+
+When a user defines or edits a table schema in the Visual Table Editor, the codegen pipeline
+generates Rust source code and hot-reloads the middleman .dylib. No runtime interpretation.
+
+### Pipeline Steps
+
+1. **Schema emit** -- Visual Table Editor serializes the schema (column names, types, constraints,
+   indices) to RON and writes it to the project's schema directory.
+2. **Codegen trigger** -- Schema file change is detected by the file watcher. The codegen pipeline
+   runs and emits Rust source into the middleman .dylib source tree:
+   - A strongly-typed row struct:
+     `struct ItemRow { name: SmolStr, damage: i32, rarity: ItemRarity }`
+   - Typed accessor methods on `DataTable` for the schema
+   - An ECS binding function: `fn bind_item_row(entity, row, world)`
+   - Validation logic for range/pattern constraints
+   - rkyv `Archive`/`Serialize`/`Deserialize` derives on the row struct
+3. **Compile** -- The bundled `rustc` recompiles the middleman .dylib. Incremental compilation
+   targets < 3 s rebuild.
+4. **Hot-reload** -- The engine reloads the middleman .dylib via `libloading`. Updated binding
+   functions take effect immediately.
+5. **Plugin schemas** -- Plugin-defined `ColumnType` variants and enum types are codegen'd into the
+   middleman alongside engine-defined schemas.
+
+### Runtime Access
+
+The `Value` enum is used only on the editor and import path. At runtime, systems use the codegen'd
+strongly-typed row structs for type safety and zero-overhead access:
+
+```rust
+// Editor/import path — dynamic typing via Value enum
+let v: Value = table.get_cell(row_id, col_id);
+
+// Runtime path — codegen'd strongly-typed accessor
+let row: &ArchivedItemRow = item_table.get_typed(row_id);
+let dmg: i32 = row.damage;
+```
+
+## Localization
+
+Locale-keyed string columns allow per-locale text without duplicating rows (R-13.7.10, F-13.7.10).
+
+### Design
+
+- A `ColumnType::String` column may be marked `localized: true` in the schema.
+- At runtime, `get_resolved` for a localized column consults the `LocalizationManager` ECS resource
+  to select the active locale.
+- Per-locale table overlays can override string columns for a specific locale. The overlay table
+  shares the same schema and row IDs as the base table.
+- Locale fallback chain: `active_locale → base_locale → default_locale → raw_value`.
+
+```rust
+/// Column definition extended with localization
+/// flag.
+pub struct ColumnDef {
+    // ... existing fields ...
+    /// If true, value is resolved through
+    /// LocalizationManager at runtime.
+    pub localized: bool,
+}
+
+/// Overlay providing locale-specific string
+/// column values for a base table.
+pub struct LocaleOverlay {
+    pub table: TableId,
+    pub locale: SmolStr,
+    /// Map from RowId to per-column locale values.
+    /// Only localized columns are present.
+    pub values: Vec<(RowId, ColumnId, SmolStr)>,
+}
+```
+
+### Test Cases
+
+| Test ID       | Description                              | Req       |
+|---------------|------------------------------------------|-----------|
+| TC-13.7.10.1  | Active locale resolves to localized value | R-13.7.10 |
+| TC-13.7.10.2  | Fallback when locale missing              | R-13.7.10 |
+| TC-13.7.10.3  | Overlay overrides base string column      | R-13.7.10 |
+
+## Asset Pipeline Integration
+
+`AssetRef` columns connect data tables to the asset pipeline (F-12.3.2).
+
+### Dependency Tracking
+
+When a table asset is processed, the asset pipeline scans all `AssetRef` cells and registers each
+referenced asset as a dependency of the table asset. The streaming system loads dependencies before
+the table is marked ready. This integrates with the standard asset dependency graph:
+
+```text
+DataTable asset → depends on → Mesh asset (from AssetRef cell)
+                             → Texture asset
+                             → Sound asset
+```
+
+### Handle Resolution
+
+`Value::AssetRef(AssetHandle)` stores the same `Handle<T>` that the asset pipeline uses. The handle
+is resolved at import time from the asset path stored in the RON/CSV source. In binary (rkyv)
+builds, handles are baked as stable numeric IDs.
+
+### Streaming Integration
+
+When `DatabaseBindingSystem` binds an entity from a `DatabaseRow`:
+
+1. For each `AssetRef` column, the binding function checks `Handle<T>::is_ready()`.
+2. If the asset is not yet loaded, the entity receives a `PendingAsset` marker component.
+3. A follow-up system re-binds the entity when the asset becomes ready.
+4. Placeholder assets (default mesh, 1×1 texture) are used in the interim.
+
+### Per-Platform Asset Variants
+
+A table column may hold multiple asset references keyed by platform tag. At load time, the import
+system selects the variant matching the current platform (`win`, `macos`, `ios`, `console`). Only
+one variant is loaded; others are discarded. Schema example:
+
+```text
+column: icon_asset  type: AssetRef  platform_variants: [win, macos, ios, console]
+```
+
+### Broken Reference Detection
+
+Validation checks all `AssetRef` values against the asset database. Missing assets produce a
+`ValidationError` with `severity: Warning` during import, and `severity: Error` during shipping
+bake. The validation panel in the Visual Table Editor shows broken references inline.
+
+## Visual Table Editor
+
+The Visual Table Editor is the primary no-code authoring surface for all gameplay data. Every table
+is created, edited, and validated here — no manual file editing required.
+
+### Schema Editor
+
+- Visual interface for defining columns: name, type, constraints, default value, indexed flag.
+- Drag to reorder columns. Column reorder triggers a codegen rebuild of the row struct.
+- Add/remove columns with automatic migration of existing rows (new column filled with default;
+  removed column data archived).
+- Enum columns show a picker populated from the middleman .dylib enum registry.
+
+### Row Editor
+
+- Spreadsheet-like grid. Each cell uses an inline editor appropriate for its type:
+  - Bool: checkbox
+  - Numeric: spinner with constraint range displayed
+  - String: text field (localized flag shows locale picker)
+  - Enum: dropdown of codegen'd variant names
+  - ForeignKey: searchable dropdown of rows from the target table
+  - AssetRef: drag-drop asset picker; broken refs shown in red
+  - EntityRef: entity picker from the scene tree
+  - Array: expandable sub-editor showing element list
+  - Formula: read-only computed result; click opens logic graph editor
+- Column sorting (click header) and per-column filter bar.
+
+### Prototype Editor
+
+- Displays the parent chain as a breadcrumb: `Item > Weapon > Sword > FireSword`.
+- Drag a row onto another row to set the parent. Drop onto blank space to unparent.
+- Cells show inherited values dimmed in grey; overridden values in bold. Hover shows which ancestor
+  provides the inherited value.
+- Cycle detection runs live — invalid parent assignments are rejected with an error tooltip.
+
+### Undo/Redo
+
+All edits produce `EditorCommand` entries through the editor's undo stack (F-15.1.3):
+
+- Schema changes (add/remove/reorder column)
+- Row edits (cell value change)
+- Row operations (add, delete, duplicate, reparent)
+- Bulk operations (multi-row edit, bulk delete)
+
+### Copy/Paste and Import/Export
+
+- Copy rows as JSON or CSV to clipboard. Paste into same or different table.
+- Paste from external spreadsheets (CSV from clipboard, column mapping dialog).
+- Drag CSV/JSON file onto editor to import. Export selected rows to CSV.
+
+### Bulk Operations
+
+Multi-select rows (checkbox or shift-click). Bulk actions:
+
+- Edit a single column value across all selected rows
+- Delete selected rows
+- Reparent selected rows to a new parent
+
+### Diff and Merge
+
+When multiple designers edit the same table (via Git LFS):
+
+- Per-row and per-cell diffs shown inline (green = added, red = removed, yellow = changed).
+- Three-way merge dialog for conflicting rows: shows ours / theirs / base with accept buttons.
+- Integrates with Git LFS locks — locked tables show the lock owner.
+
+### Search and Filter
+
+- Global search across all tables (table name + column value full-text search).
+- Per-column filter bar (text match, range, enum value, null/non-null).
+- Save and name filter presets per table.
+
+### Validation Panel
+
+- Live validation runs after every edit (debounced 200 ms).
+- Error cells shown with red background; warning cells with yellow background.
+- Validation panel lists all errors with table/row/column location and click-to-navigate.
+
+## Formula Columns
+
+Formula columns compute derived values via visual logic graphs that codegen to native Rust.
+
+### Column Definition
+
+A column with `ColumnType::Formula(FormulaId)` stores no static value. The formula function
+identified by `FormulaId` computes the value at bake time or runtime:
+
+```rust
+/// Generated by codegen pipeline for each
+/// formula column.
+///
+/// Referenced by FormulaId in the column
+/// schema.
+fn formula_item_dps(
+    row: &ArchivedItemRow,
+    registry: &TableRegistry,
+) -> f32 {
+    row.damage as f32 * row.attack_speed
+}
+```
+
+### Evaluation Modes
+
+| Mode         | When used                          | Cached |
+|--------------|------------------------------------|--------|
+| Bake-time    | Formula depends only on static row data | Yes (stored as Value) |
+| Runtime      | Formula reads runtime state or cross-table data | Yes, invalidated on dep change |
+
+Bake-time formulas are evaluated during asset baking. The result is stored as a static `Value` in
+the binary asset — no runtime evaluation cost. Runtime formulas are cached per-row and invalidated
+when input columns change (hot-reload or override).
+
+### Dependency Tracking
+
+Formula columns declare their input column dependencies in the schema. The codegen pipeline emits a
+dependency list. Circular dependencies between formula columns are detected at schema-validation
+time via topological sort. Reference:
+[Kahn's algorithm](https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm).
+
+### Node Palette
+
+The formula graph maps directly to Rust expressions. Every node codegens to a Rust expression:
+
+| Node category | Rust output              |
+|---------------|--------------------------|
+| Arithmetic    | `+`, `-`, `*`, `/`, `%`  |
+| Comparison    | `==`, `!=`, `<`, `>`, `<=`, `>=` |
+| Math          | `f32::min`, `f32::max`, `f32::clamp`, `f32::floor`, `f32::ceil` |
+| Case analysis | `match` (exhaustive arms) |
+| Let-binding   | `let name = expr;`       |
+| Option        | `.unwrap_or()`, `.map()`, `.and_then()` |
+| Cast          | `as` (explicit, no coercion) |
+| FK lookup     | Codegen'd accessor for foreign-key row columns |
+| Aggregates    | `iter().filter().map().sum()` / `.min()` / `.max()` |
+
+### Editor UX
+
+- Clicking a formula cell opens the logic graph editor with the formula pre-loaded.
+- The cell displays the computed result (read-only). A formula icon distinguishes formula cells.
+- The editor can display the generated Rust source for debugging.
+
+## Cross-Table Queries
+
+The filter/query system is extended with cross-table operations usable from both the editor and
+logic graph formula nodes.
+
+### Reverse Lookup
+
+Given a row in table A, find all rows in table B that reference it via foreign key. Used for queries
+such as "find all items that use this material."
+
+```rust
+/// Find all rows in `source_table` whose
+/// `fk_column` references `target_row`.
+pub fn reverse_lookup(
+    registry: &TableRegistry,
+    target_row: RowRef,
+    source_table: TableId,
+    fk_column: ColumnId,
+    arena: &Arena,
+) -> &[RowId];
+```
+
+Reverse lookups are accelerated by a reverse-FK index built at table load time for any column
+declared `indexed: true` with type `ForeignKey`.
+
+### Join Query
+
+Combine rows from two tables by matching a foreign key. Returns a flat result with columns from both
+tables.
+
+```rust
+/// Join rows from `left` and `right` tables
+/// where `left.fk_col` matches `right`'s
+/// primary key.
+pub fn join_query<'a>(
+    registry: &'a TableRegistry,
+    left: TableId,
+    fk_col: ColumnId,
+    right: TableId,
+    filter: Option<&FilterExpr>,
+    arena: &'a Arena,
+) -> &'a [JoinRow<'a>];
+
+pub struct JoinRow<'a> {
+    pub left: &'a Row,
+    pub right: &'a Row,
+}
+```
+
+### Aggregate Queries
+
+Count, sum, average, min, and max over a filtered row set.
+
+```rust
+pub enum AggregateOp {
+    Count,
+    Sum,
+    Average,
+    Min,
+    Max,
+}
+
+/// Compute an aggregate over a filtered column.
+pub fn aggregate(
+    table: &DataTable,
+    col: ColumnId,
+    op: AggregateOp,
+    filter: Option<&FilterExpr>,
+) -> Value;
+```
+
+### Algorithm References
+
+- **Prototype-based inheritance** -- Self language paper (Ungar & Smith, 1987):
+  <https://dl.acm.org/doi/10.1145/38807.38828>
+- **BTree secondary index** -- Graefe, "Modern B-Tree Techniques" (2011):
+  <https://dl.acm.org/doi/10.1561/1900000028>
+- **Filter expression evaluation** -- Selinger et al., "Access path selection in a relational
+  database management system" (1979): <https://dl.acm.org/doi/10.1145/582095.582099>
+- **Topological sort for formula dependency** -- Kahn's algorithm:
+  <https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm>
+- **Reverse FK index** -- standard inverted index construction; see Baeza-Yates & Ribeiro-Neto,
+  "Modern Information Retrieval" (2nd ed.), Ch. 8.
+
 ## Open Questions
 
 1. **Column storage layout** -- Row-major (`Vec<Row>`) is simpler but column-major
@@ -971,3 +1447,212 @@ See companion file [data-tables-test-cases.md](data-tables-test-cases.md).
 5. **Binary format versioning** -- When schemas evolve between engine versions, how are
    binary-serialized tables migrated? Options: version tag + migration functions, or always
    re-import from textual source.
+
+## Review feedback
+
+### RF-1: Remove all Reflect derives and TypeRegistry [APPLIED]
+
+Remove every `Reflect` derive (20+ occurrences). Remove `TypeRegistry` parameters from
+`DatabaseBindingSystem::bind_entity` and `refresh_table`. Replace reflection-based ECS binding with
+codegen'd binding functions in the middleman .dylib. Replace the `Reflection / TypeRegistry` box in
+the architecture diagram with `Codegen / Middleman .dylib`.
+
+### RF-2: Remove async/Tokio — use platform-native I/O [APPLIED]
+
+`import_table` is `async fn` referencing a Tokio runtime. Make it synchronous. Submit file reads via
+crossbeam-channel to platform-native I/O (io_uring / IOCP / GCD dispatch_io). Return an
+`ImportHandle` polled at frame boundaries. Remove all Tokio references.
+
+### RF-3: Codegen pipeline for user-defined table schemas [APPLIED]
+
+Zero mention of codegen or middleman .dylib. Add a "Codegen pipeline" section:
+
+1. The visual table editor emits a schema definition (column names, types, constraints)
+2. The codegen pipeline generates Rust structs, typed accessors, ECS binding functions, and
+   validation logic into the middleman .dylib
+3. `ColumnType` enum extensions from plugins are codegen'd into the middleman
+4. The `Value` enum is used for editor/import path; runtime access uses generated strongly-typed row
+   structs (e.g., `struct ItemRow { name: SmolStr, damage: i32, rarity: ItemRarity }`)
+5. Hot-reload recompiles the middleman .dylib when schema changes
+
+### RF-4: Replace HashMap with deterministic structures [APPLIED]
+
+Replace `DataTable.rows: HashMap<RowId, Row>` with a sorted `Vec<Row>` (binary search) or dense slot
+map. Replace `TableRegistry.tables: HashMap<TableId, DataTable>` with `Vec<Option<DataTable>>`
+indexed by `TableId(u32)`. Replace `DatabaseRow.overrides: HashMap<ColumnId, Value>` with
+`SmallVec<(ColumnId, Value)>` sorted by ColumnId.
+
+### RF-5: Create companion test cases file [APPLIED]
+
+Create `docs/design/data-systems/data-tables-test-cases.md` with TC-IDs in `TC-13.7.Z.N` format.
+
+### RF-6: rkyv zero-copy serialization [APPLIED]
+
+Specify rkyv as the binary format. Baked table assets are mmap'd at runtime via
+`rkyv::archived_root` with zero deserialization. Define the `Handle<DataTable>` asset pattern.
+Replace `Reflect` derives with rkyv `Archive`/`Serialize`/`Deserialize`.
+
+### RF-7: Platform considerations per target [APPLIED]
+
+Add per-platform details: I/O backend (io_uring on Linux, IOCP on Windows, GCD on Apple), memory
+budgets for mobile/Switch (max table sizes, streaming strategies), console asset baking, VR latency
+if tables drive spawning.
+
+### RF-8: Game loop phase for binding and hot-reload [APPLIED]
+
+Specify: table loading during asset load phase, hot-reload swap at PreUpdate or dedicated
+AssetReload phase, binding runs after swap in same phase. I/O completions arrive at main thread
+poll; table swap deferred to next frame's designated phase.
+
+### RF-9: Localization support (F-13.7.10) [APPLIED]
+
+F-13.7.10 is completely absent. Add to requirements trace. Design locale-keyed string columns where
+runtime resolves the current locale from the `LocalizationManager` (core-runtime service per UI
+framework RF-31). Per-locale table overlays can override string columns. Add test cases for locale
+fallback.
+
+### RF-10: SmallVec for small collections [APPLIED]
+
+Replace `Vec` with `SmallVec` for: `constraints` (SmallVec<[ColumnConstraint; 2]>), `indices`
+(SmallVec<[SecondaryIndex; 4]>), `bound_columns` (SmallVec<[ColumnId; 8]>), `overrides`
+(SmallVec<[(ColumnId, Value); 4]>).
+
+### RF-11: Per-thread arenas for queries [APPLIED]
+
+Query results and flattened rows should use per-thread arena allocators. `query()` returns an
+arena-allocated slice. `flatten_row()` accepts an arena parameter. Arenas reset at frame boundaries.
+
+### RF-12: Algorithm reference URLs [APPLIED]
+
+Add URLs for: prototype-based inheritance (Self language paper), BTree index structure, filter
+expression evaluation.
+
+### RF-13: Replace TypeId with codegen'd EnumSchemaId [APPLIED]
+
+`ColumnType::Enum(TypeId)` and `Value::Enum { type_id: TypeId, variant: u32 }` use
+`std::any::TypeId` (runtime reflection). Replace with `EnumSchemaId(u32)` indexing into codegen'd
+enum registry in the middleman .dylib.
+
+### RF-14: Formula columns compile to native code via logic graphs [APPLIED]
+
+"Formula nodes compiled to logic graph bytecode" violates the native code constraint. Formulas
+should be visual logic graphs that compile to native code via the codegen pipeline. Change
+"bytecode" to "native code via middleman .dylib."
+
+### RF-15: Codegen'd strongly-typed row structs [APPLIED]
+
+The `Value` enum is dynamic typing. The codegen pipeline should generate strongly-typed row structs
+for each table schema. Runtime access uses generated types for type safety and performance.
+
+### RF-16: Add non-functional requirements to trace [APPLIED]
+
+Benchmark requirement IDs (R-13.7.NF1-3) do not appear in the requirements trace. Add them or
+reference the canonical requirements file.
+
+### RF-17: Note 2D/2.5D agnosticism in ECS binding [APPLIED]
+
+Add a note that the binding system works identically for 2D and 3D entities, resolving to whichever
+transform component is present.
+
+### RF-18: Asset pipeline integration [APPLIED]
+
+`AssetRef` column type exists but the design doesn't explain:
+
+1. **Dependency tracking** — how asset references in table cells participate in the asset pipeline's
+   dependency graph (F-12.3.2). When a table cell references a mesh asset, the table asset must
+   declare that mesh as a dependency so the streaming system loads it.
+2. **Handle resolution** — how `Value::AssetRef(AssetHandle)` maps to the engine's `Handle<T>`
+   pattern. Is `AssetHandle` the same as `Handle<T>`? If not, how does it resolve?
+3. **Streaming integration** — when an entity is spawned from a `DatabaseRow`, the assets referenced
+   by that row's columns must be loaded or already resident. The binding system must either wait for
+   dependencies or spawn with placeholder assets.
+4. **Per-platform asset variants** — F-13.7.10 mentions per-platform overrides (lower-res on
+   console). How does the table store platform-variant asset references?
+5. **Broken reference detection** — what happens when a referenced asset is deleted from the
+   project? The validation system should flag broken `AssetRef` values.
+
+### RF-19: Visual table editor design [APPLIED]
+
+The architecture diagram has `Visual Table Editor` but zero design for it. This is a no-code engine
+— the table editor is how all gameplay data is authored. The design must cover:
+
+1. **Schema editor** — visual interface for defining columns (name, type, constraints, default
+   value, indexed flag). Drag to reorder columns. Add/remove columns with migration of existing
+   rows.
+2. **Row editor** — spreadsheet-like grid for editing cell values. Inline editing per cell type
+   (text field, number spinner, enum dropdown, asset picker via drag-drop, entity picker, foreign
+   key dropdown with search, array sub-editor). Column sorting and filtering.
+3. **Prototype editor** — visual parent chain display. Drag a row onto another to set parent. Show
+   inherited vs overridden values with visual differentiation (dimmed = inherited, bold =
+   overridden).
+4. **Undo/redo** — all edits produce `EditorCommand` through the editor's undo stack (F-15.1.3).
+   Schema changes, row edits, reorder, delete — all undoable.
+5. **Copy/paste** — copy rows, paste into same or different table. Paste from external spreadsheets
+   (CSV from clipboard).
+6. **Bulk operations** — multi-select rows, bulk edit a column value, bulk delete, bulk reparent.
+7. **Diff/merge** — when multiple designers edit the same table, show per-row and per-cell diffs.
+   Three-way merge for conflict resolution. Integrates with Git LFS.
+8. **Search and filter** — global search across all tables. Per-column filter bar. Save filter
+   presets.
+9. **Import/export** — drag CSV/JSON onto the editor to import. Export selected rows to CSV for
+   external tools (Excel, Google Sheets).
+10. **Validation panel** — live validation results displayed inline (red cells for errors, yellow
+    for warnings). Validation panel lists all errors with click-to-navigate.
+
+### RF-20: Formula columns as logic graphs [APPLIED]
+
+Formula columns are mentioned once ("compiled to logic graph bytecode") with zero design. Formulas
+must be visual logic graphs (no-code) that calculate derived column values. The design needs:
+
+1. **Formula column definition** — a column with `ColumnType::Formula` that stores a
+   `Handle<LogicGraphAsset>` instead of a static value. The logic graph computes the cell value at
+   runtime (or at bake time for static formulas).
+2. **Formulas are Rust** — the visual logic graph nodes codegen actual Rust source code
+   (`#![no_std]` with `core` + `libm` for math). The bundled rustc compiles it into the middleman
+   .dylib — the same pipeline that already exists for codegen'd types. This is not "Rust-inspired" —
+   it literally IS Rust. The generated code has full type safety, zero runtime overhead, and
+   benefits from rustc optimizations (inlining, constant folding, dead code elimination). This is
+   part of being Harmonius — one language, one compiler, one type system across the entire engine.
+3. **Logic graph integration** — the formula graph is authored in the visual logic graph editor
+   (F-15.8.4). Input nodes read other columns from the same row (or cross-table via foreign keys).
+   The output node produces the formula column's value. The codegen pipeline emits a Rust function:
+   `fn formula_<table>_<column>(row: &ArchivedRow, registry: &TableRegistry) -> T`
+4. **Dependency tracking** — formula columns declare which input columns they depend on. If an input
+   column changes (hot-reload, override), the formula re-evaluates. Circular dependencies between
+   formula columns are detected at validation time via topological sort (reuse directed graph
+   `cycle_detection`).
+5. **Evaluation modes**:
+   - **Bake-time** — formula evaluated during asset bake, result stored as a static value. Used for
+     derived data that doesn't change at runtime (e.g., `let dps = damage * attack_speed`).
+   - **Runtime** — formula evaluated on access. Cached with invalidation when input columns change.
+     Used for formulas depending on runtime state.
+6. **Rust expression nodes** — the formula node palette maps directly to Rust expressions. Every
+   node codegens to a Rust expression or statement:
+   - Arithmetic: `+`, `-`, `*`, `/`, `%`
+   - Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
+   - Math: `f32::min`, `f32::max`, `f32::clamp`, `f32::floor`, `f32::ceil`
+   - **Case analysis**: `match` on enum variants, value ranges, or boolean conditions with
+     exhaustive arm coverage
+   - Let-binding: `let name = expr;` for named intermediates
+   - Option/Result: `.unwrap_or()`, `.map()`, `.and_then()`, `?` operator
+   - Explicit cast: `as` (no implicit coercion)
+   - Table lookup: codegen'd accessor for foreign key row columns
+   - Aggregates: `iter().filter().map().sum()` / `.min()` / `.max()`
+7. **Editor UX** — clicking a formula column cell opens the logic graph editor with the formula
+   graph pre-loaded. The cell displays the computed result (read-only). A formula icon distinguishes
+   formula cells from static cells. The editor can show the generated Rust source for debugging.
+
+### RF-21: Cross-table query and join operations [APPLIED]
+
+The design has `ForeignKey` for single-row references but no way to query across tables:
+
+1. **Reverse lookup** — given a row in table A, find all rows in table B that reference it via
+   foreign key. Needed for: "find all items that use this material," "find all quests that grant
+   this item."
+2. **Join query** — combine rows from two tables by matching foreign key. Returns a flat result with
+   columns from both tables. Needed for: "list all items with their crafting recipes."
+3. **Aggregate queries** — count, sum, average, min, max over a filtered row set. Needed for: "total
+   gold cost of all items in this loot table," "average damage of all swords."
+
+These operations should be expressible in the filter/query system and usable from both the editor
+(for validation and display) and the logic graph (for formula evaluation and gameplay queries).

@@ -856,7 +856,7 @@ impl FunnelSmoother {
 ///
 /// Path smoothing curves use the shared `Curve<T>`
 /// type (see
-/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
+/// [algorithms.md](../core-runtime/algorithms.md)).
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Reflect,
 )]
@@ -1842,5 +1842,230 @@ well-bounded problem with clear data flow boundaries.
    mobile.
 
 7. **Multi-floor buildings.** Overlapping NavMesh regions at different heights (multi-story
-   buildings) require careful layer management to avoid ambiguity. Current design uses a single
-   heightfield per tile; a stacked-layer approach may be needed.
+   buildings) require careful layer management. Current design uses a single heightfield per tile; a
+   stacked-layer approach may be needed.
+
+## Review Feedback
+
+### RF-1: Replace all Tokio/async with platform-native I/O
+
+12+ Tokio references. Replace tile streaming with platform I/O: main thread submits reads via
+io_uring/IOCP/GCD, completions arrive as jobs. No Arc, no futures, no async. Use
+`job_system::scope()` with owned data for background tile generation.
+
+### RF-2: Remove all Reflect derives
+
+Use codegen-generated metadata via middleman .dylib.
+
+### RF-3: Pure Rust navmesh generation — no Recast
+
+Build navmesh voxelization from scratch in Rust. No Recast FFI. The "No C/C++ source" constraint
+prohibits wrapping Recast.
+
+Voxelization pipeline in pure Rust:
+
+1. Rasterize triangle soup into heightfield (per-tile)
+2. Filter walkable spans (slope, height clearance)
+3. Build compact heightfield
+4. Erode walkable area by agent radius
+5. Build distance field
+6. Build regions (watershed partitioning)
+7. Trace region contours
+8. Triangulate contours into navmesh polygons
+9. Build adjacency graph
+
+Each step is well-documented in the Recast source and in:
+
+Reference: [Mikko Mononen, "Recast & Detour" (2009)](http://digestingduck.blogspot.com/2009/08/recast-documentation-and-changes.html)
+
+The algorithms are not complex — Recast's value is in the implementation, not patented algorithms. A
+Rust implementation benefits from: no FFI overhead, native rkyv serialization, job system
+parallelism per tile, and SIMD via std::arch.
+
+### RF-4: Terrain navigation
+
+NavMesh must work with all three terrain types from world-geometry (Design #22):
+
+**Heightmap terrain:**
+
+- Direct heightfield → navmesh: sample heights on a grid, skip voxelization (already a heightfield)
+- Slope filtering from heightmap gradient
+- Agent-radius erosion on the 2D grid
+- Much faster than full voxelization — O(grid cells) not O(triangles)
+- Rebuild incrementally: only re-process modified chunks
+
+**Voxel terrain:**
+
+- Voxel surface mesh (marching cubes output) → standard voxelization pipeline
+- Per-chunk navmesh tiles aligned to voxel chunks
+- When player modifies voxels:
+  1. Chunk surface mesh regenerated
+  2. Chunk navmesh tile regenerated
+  3. Adjacent tile edges re-stitched
+  4. Affected agents re-pathed
+- Budget: N tile rebuilds per frame (same as collision chunk budget from physics RF-10)
+
+**Planetary terrain:**
+
+- NavMesh generated in planet-local Cartesian space (flat grid per cube face)
+- Pathfinding operates in Cartesian — no curved-space math
+- Vertex shader curves visuals; AI navigates flat
+- Cross-face pathfinding: off-mesh links at cube face edges connect adjacent face navmeshes
+- Per-planet navmesh (each planet is a separate ECS World)
+
+**Terrain area types:**
+
+| Terrain Surface | Area Type | Cost |
+|----------------|-----------|------|
+| Grass | Walkable | 1.0 |
+| Road | Preferred | 0.5 |
+| Sand | Slow | 2.0 |
+| Water (shallow) | Wadeable | 3.0 |
+| Water (deep) | Swim (requires ability) | 5.0 |
+| Cliff | Unwalkable | ∞ |
+| Ice | Slippery | 1.5 |
+
+Area types derived from terrain splatmap layers at navmesh generation time. The terrain shading
+model's painted layers (Design #18 RF-7) directly inform navigation costs.
+
+### RF-5: 2D grid pathfinding
+
+Add 2D pathfinding for tilemap-based games:
+
+```rust
+pub struct NavGrid2D {
+    pub width: u32,
+    pub height: u32,
+    pub cells: Vec<NavGridCell>,
+    pub cell_size: f32,
+}
+
+pub struct NavGridCell {
+    pub walkable: bool,
+    pub cost: f32,
+    pub area_type: AreaType,
+}
+```
+
+- A* on the grid with 4-way or 8-way connectivity
+- Jump Point Search (JPS) optimization for uniform grids
+- Generated from tilemap collision data (solid tiles → unwalkable cells)
+- Rebuilt incrementally when tiles change
+- Same PathRequest/PathResult ECS pattern as 3D navmesh
+- NavMeshAgent works with Transform2D
+
+Reference: [Harabor & Grastien, "JPS" (2011)](https://ojs.aaai.org/index.php/AAAI/article/view/7994)
+
+### RF-6: Character controller integration
+
+Navigation must bridge to the physics character controller:
+
+```text
+PathResult (waypoints)
+  → NavMeshAgent reads next waypoint
+  → Compute desired velocity toward waypoint
+  → Write to AnimationParams (speed, direction)
+  → Character controller applies movement
+  → Physics resolves collision
+  → Transform updated
+  → NavMeshAgent reads new position → next waypoint
+```
+
+The navigation system does NOT move entities directly. It produces a desired velocity. The character
+controller handles actual movement with collision response.
+
+### RF-7: Crowd avoidance data interface
+
+Define what navigation provides to the steering/avoidance system (Design #29):
+
+- Corridor width at each waypoint
+- Neighbor agent positions (from shared BVH query)
+- Off-mesh link occupancy (one agent at a time)
+- Path corridor polygons for constrained avoidance
+
+### RF-8: Replace HashMap with fixed arrays
+
+`AreaCostTable` and `QueryFilter` use HashMap on the hot pathfinding path. Replace with
+`[f32; MAX_AREA_TYPES]` indexed by area type discriminant.
+
+### RF-9: Make HeuristicFn an enum
+
+Replace function pointer with serializable enum:
+
+```rust
+pub enum PathHeuristic {
+    Euclidean,
+    Manhattan,
+    Chebyshev,
+    Octile,  // good for grid
+}
+```
+
+### RF-10: Remove forced sync
+
+Replace 3-frame forced synchronous completion with progressive fallback: use last-known-good path
+until async pathfinding completes.
+
+### RF-11: Dynamic navmesh from game events
+
+NavMesh responds to game events automatically. Each event type maps to a specific navmesh update
+strategy:
+
+| Event | Strategy | Cost |
+|-------|----------|------|
+| Door open/close | Off-mesh link enable/disable | O(1) |
+| Bridge built | Spawn off-mesh link | O(1) |
+| Building placed | Obstacle carve OR tile rebuild | O(tile) |
+| Building destroyed | Obstacle uncarve | O(1) |
+| Terrain dug/placed | Chunk tile rebuild | O(tile) |
+| Explosion crater | Heightmap patch → tile rebuild | O(tile) |
+| Flood/lava | Area type update → repath | O(agents) |
+| Tree felled | Obstacle removed | O(1) |
+| Drawbridge raised | Off-mesh link disabled | O(1) |
+
+**Automatic repath:** When a navmesh tile changes, all agents whose current path passes through that
+tile are flagged for repath. The pathfinder re-queries on the next frame using the updated tile.
+Agents mid-traversal on an invalidated polygon receive a `PathInvalidated` event and the AI behavior
+system decides how to respond (wait, reroute, abort).
+
+**Budget control:** Tile rebuilds are throttled per frame (N rebuilds/frame based on platform tier).
+Events are queued and processed in priority order: safety-critical first (floor collapsed under
+agent), cosmetic last (tree removed far away).
+
+### RF-12: Runtime navmesh for procedural worlds
+
+Procedurally generated worlds (roguelikes, survival, infinite runners) have no pre-baked navmesh.
+All navmesh is generated at runtime:
+
+**Streaming generation pipeline:**
+
+```text
+World generator produces chunk geometry
+  → Chunk enters streaming radius
+  → Job system: voxelize chunk → build navmesh tile
+  → Stitch edges to adjacent tiles
+  → NavMesh tile registered
+  → Agents can path through new area
+```
+
+**Requirements for runtime generation:**
+
+- Tile generation must complete within the streaming budget (target: < 5 ms per tile on a worker
+  thread)
+- Tiles generated in parallel across chunks (one job per tile)
+- Stale tiles evicted when chunks unload (same residency manager as asset pipeline)
+- No pre-computation required — works with any geometry
+
+**Progressive availability:**
+
+Agents near ungenerated tiles use fallback behaviors:
+
+1. Path to the edge of the known navmesh
+2. Wait for tile generation to complete
+3. Continue when the tile becomes available
+
+Or: approximate pathfinding on the raw heightfield/voxel grid (cheaper, less accurate) until the
+full navmesh tile is ready.
+
+**2D procedural:** Grid-based pathfinding (RF-5) works immediately on procedurally generated
+tilemaps — no voxelization needed. The tilemap IS the navigation grid.

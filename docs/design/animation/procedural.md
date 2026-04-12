@@ -74,7 +74,7 @@
 | Animation blending | F-9.1.3 | Blended local-space pose |
 | Root motion | F-9.1.6 | Root bone deltas |
 | State machine | F-9.4 | Clip selection, blend weights |
-| Shared BVH | F-1.9.1 | Spatial index for raycasts |
+| Physics BVH | F-1.9.1 | Spatial index for raycasts |
 | Spatial query API | F-1.9.4 | `ray_cast`, `shape_cast` |
 | Batch spatial queries | F-1.9.5 | Parallel foot raycasts |
 | Rigid body ECS | F-4.1.1 | Force/torque application |
@@ -97,22 +97,24 @@
 The procedural animation system covers all simulation-driven modifications to skeleton poses at
 runtime. It unifies five subsystems under a single framework:
 
-1. **IK and constraints** -- two-bone, CCD, FABRIK solvers; look-at and aim constraints.
+1. **IK and constraints** -- two-bone, CCD, FABRIK, FBIK solvers; look-at and aim constraints.
 2. **Locomotion** -- multi-skeleton gait cycles, foot placement, physics-based balance,
    attachment/dismemberment.
 3. **Spring-damper motion** -- secondary bone springs, first- person camera rig, weapon
    sway/bob/recoil, ADS, viewmodel.
 4. **Cloth simulation** -- GPU PBD panels with distance, bending, and self-collision constraints via
    the XPBD solver.
-5. **Hair simulation** -- GPU strand simulation with guide-to- render interpolation, card-based
+5. **Hair simulation** -- GPU strand simulation with guide-to-render interpolation, card-based
    fallback, 4-tier LOD.
+6. **Morph targets** -- GPU compute blend shapes for facial expressions (52 ARKit standard +
+   custom), body proportions, and corrective shapes. Applied after blend, before IK.
 
 All subsystems follow four shared principles:
 
-1. **ECS-primary (~90%)-based.** Every solver reads/writes ECS components. No hidden state, no parallel data
-   stores.
-2. **Shared spatial index.** Foot placement, cloth broadphase, and hair collision use the shared BVH
-   (F-1.9.1).
+1. **ECS-primary (~90%)-based.** Every solver reads/writes ECS components. No hidden state, no
+   parallel data stores.
+2. **Physics BVH for spatial queries.** Foot placement, cloth broadphase, and hair collision use the
+   physics BVH (F-1.9.1).
 3. **Shared wind field.** Cloth, hair, spring bones sample the same wind field texture (F-4.7.5).
 4. **Static dispatch.** Solver selection is compile-time via enums. No trait objects, no vtables.
 
@@ -177,7 +179,7 @@ graph TD
     end
 
     subgraph core["harmonius_core"]
-        SI[Shared BVH]
+        SI[Physics BVH]
         SQ[Spatial Query API]
         CB[Command Buffer]
     end
@@ -281,6 +283,7 @@ harmonius_animation/
 sequenceDiagram
     participant STM as State Machine
     participant BL as Animation Blend
+    participant MT as Morph Targets
     participant PP as Post-Process
     participant LA as Look-At / Aim
     participant FP as Foot Placement
@@ -295,19 +298,21 @@ sequenceDiagram
     BL->>PP: blended local-space pose
 
     Note over PP: Post-process chain
-    PP->>LA: 1. apply look-at / aim
+    PP->>MT: 1. morph target evaluation (GPU)
+    MT-->>PP: vertex offsets applied
+    PP->>LA: 2. apply look-at / aim
     LA-->>PP: constrained pose
-    PP->>FP: 2. raycast + targets
+    PP->>FP: 3. raycast + targets
     FP-->>PP: pelvis + foot IK targets
-    PP->>IK: 3. solve IK chains
+    PP->>IK: 4. solve IK chains
     IK-->>PP: IK-solved pose
-    PP->>RD: 4. blend with ragdoll
+    PP->>RD: 5. blend with ragdoll
     RD-->>PP: physics-blended pose
-    PP->>SEC: 5. spring / jiggle bones
+    PP->>SEC: 6. spring / jiggle bones
     SEC-->>PP: final local pose
 
     Note over FPS: Parallel: FP springs
-    PP->>FPS: 6. camera + weapon springs
+    PP->>FPS: 7. camera + weapon springs
 
     PP->>SK: upload bone matrices
 
@@ -333,6 +338,7 @@ classDiagram
         TwoBone
         Ccd
         Fabrik
+        Fbik
     }
     class IkConstraints {
         +u32 max_iterations
@@ -714,7 +720,7 @@ stateDiagram-v2
 ### Spring-Damper Primitives
 
 All first-person, weapon, cloth card, and secondary bone motion uses these shared spring types.
-Defined in `shared-primitives.md`.
+Defined in `algorithms.md`.
 
 ```rust
 /// 1D critically-damped spring-damper.
@@ -769,6 +775,10 @@ pub enum IkSolverType {
     TwoBone,
     Ccd,
     Fabrik,
+    /// Full Body IK: unified multi-target solve
+    /// with center-of-mass, momentum, and
+    /// end-effector priority weighting.
+    Fbik,
 }
 
 #[derive(Component, Reflect)]
@@ -799,6 +809,62 @@ pub struct JointLimit {
     pub twist_max: f32,
 }
 ```
+
+### Morph Targets (Blend Shapes)
+
+Morph targets apply additive vertex offsets before skinning. They cover facial expressions, body
+proportion adjustments, and corrective shapes. Evaluation runs on GPU compute.
+
+**Pipeline position:** after animation blend, before IK (step 1 in the post-process chain). Morph
+offsets are pre-skinning additive deltas.
+
+**Facial blend shapes:** 52 ARKit-standard shapes plus custom artist-defined shapes. LOD policy
+disables face morphs beyond a configurable distance threshold.
+
+**Body proportion morphs:** height, weight, and muscle sliders that scale bone lengths and vertex
+positions. Applied once on character spawn and when the player modifies proportions.
+
+**GPU compute evaluation:** a single compute dispatch accumulates weighted morph deltas into the
+vertex buffer. Each morph target is a sparse delta buffer (only non-zero vertices stored).
+
+```rust
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+pub enum MorphTargetCategory {
+    /// 52 ARKit-standard facial blend shapes.
+    Face,
+    /// Body proportion (height, weight, muscle).
+    BodyProportion,
+    /// Corrective shapes triggered by pose.
+    Corrective,
+    /// Artist-defined custom shapes.
+    Custom,
+}
+
+#[derive(Component, Reflect)]
+pub struct MorphTargetSet {
+    /// Sparse delta buffers on GPU, one per target.
+    pub targets: Vec<MorphTargetHandle>,
+    /// Current blend weight per target (0.0-1.0).
+    pub weights: Vec<f32>,
+    /// LOD distance beyond which face morphs are
+    /// disabled.
+    pub face_lod_distance: f32,
+    /// Whether GPU evaluation is active.
+    pub enabled: bool,
+}
+
+#[derive(Clone, Debug, Reflect)]
+pub struct MorphTargetHandle {
+    pub name: String,
+    pub category: MorphTargetCategory,
+    pub delta_buffer: GpuBufferHandle,
+    pub vertex_count: u32,
+}
+```
+
+**2D / 2.5D considerations:** for 2D sprite-based characters, morph targets are not applicable.
+Sprite swap and skeletal 2D (spine-style bone hierarchies with mesh deformation) use a separate
+`SpriteMorph` path that blends between sprite atlas frames rather than vertex deltas.
 
 ### Ragdoll Blend
 
@@ -908,8 +974,44 @@ pub struct SpringBoneState {
 pub struct SpringBoneChain {
     pub bones: Vec<SpringBone>,
     pub collision_radii: Vec<f32>,
+    pub collision_proxies: Vec<SpringCollisionProxy>,
+}
+
+/// Capsule proxy for spring bone collision.
+/// Each proxy is attached to a skeleton bone and
+/// defines a capsule that spring bones must not
+/// penetrate (torso, hips, limbs).
+#[derive(Clone, Debug, Reflect)]
+pub struct SpringCollisionProxy {
+    pub bone: Entity,
+    pub local_offset: Vec3,
+    pub radius: f32,
+    pub half_height: f32,
 }
 ```
+
+#### Spring Bone Collision Solver
+
+Spring bone chains (capes, tails, ponytails, ears) must not penetrate the character body. The solver
+uses capsule proxies attached to skeleton bones.
+
+**Algorithm:**
+
+1. After spring integration, project each spring bone position outside all overlapping capsules.
+2. For each spring bone with `collision_radii[i]`, test against every `SpringCollisionProxy` in the
+   chain.
+3. If the bone sphere overlaps the proxy capsule, push the bone along the contact normal by the
+   penetration depth.
+4. Clamp the corrected position to `max_displacement` from rest pose.
+
+**Capsule-sphere test:** compute the closest point on the capsule segment to the bone center. If the
+distance is less than `collision_radii[i] + proxy.radius`, the bone penetrates.
+
+**Performance:** collision is CPU-side per chain (typically 3-8 bones times 4-6 proxies per
+character). At 100 characters this is under 0.1 ms.
+
+**Proxy authoring:** artists place capsule proxies on the torso, upper legs, and upper arms. The
+engine auto-generates a default proxy set from the skeleton hierarchy if none is authored.
 
 ### Multi-Skeleton Locomotion
 
@@ -1007,7 +1109,8 @@ pub struct AttachedTo {
     pub skeleton: Entity,
 }
 
-pub struct DismemberCommand {
+#[derive(Event)]
+pub struct DismemberEvent {
     pub skeleton: Entity,
     pub sever_bone: Entity,
     pub impulse: Vec3,
@@ -1547,6 +1650,11 @@ pub struct ProceduralAnimationPlugin;
 
 impl Plugin for ProceduralAnimationPlugin {
     fn build(&self, app: &mut App) {
+        // locomotion_system and look_at_system have
+        // no ordering constraint: they operate on
+        // disjoint bone sets (locomotion writes
+        // GaitState + FootGroup.grounded; look-at
+        // writes head/spine rotations).
         app.add_systems(PostAnimation, (
             locomotion_system,
             look_at_system,
@@ -1619,6 +1727,7 @@ impl Plugin for ProceduralAnimationPlugin {
         // Events
         app.add_event::<RagdollActivateEvent>();
         app.add_event::<RagdollRecoverEvent>();
+        app.add_event::<DismemberEvent>();
     }
 }
 ```
@@ -1630,32 +1739,37 @@ impl Plugin for ProceduralAnimationPlugin {
 ```rust
 // PostAnimation phase execution order:
 //
-// 1. locomotion_system
+// 1. morph_target_system (GPU compute)
+//    Reads: MorphTargetSet, blend weights
+//    Writes: vertex buffer (additive deltas)
+//
+// 2. locomotion_system
 //    Reads: LocomotionProfile, GaitState
 //    Writes: GaitState, FootGroup.grounded
 //
-// 2. look_at_system
+// 3. look_at_system
 //    Reads: LookAtConstraint, AimConstraint
 //    Writes: bone Transform (rotation)
+//    Note: disjoint bones with locomotion
 //
-// 3. foot_placement_system
+// 4. foot_placement_system
 //    Reads: FootPlacement, bone GlobalTransform
 //    Writes: FootTarget, IkChain targets
-//    External: batch_ray_cast via shared BVH
+//    External: batch_ray_cast via physics BVH
 //
-// 4. ik_solver_system
+// 5. ik_solver_system
 //    Reads: IkChain, IkConstraints
 //    Writes: bone Transform (rotation)
 //
-// 5. ragdoll_blend_system
+// 6. ragdoll_blend_system
 //    Reads: RagdollBlend, physics GlobalTransform
 //    Writes: bone Transform
 //
-// 6. secondary_motion_system
+// 7. secondary_motion_system
 //    Reads: SpringBoneChain, WindField
 //    Writes: bone Transform, SpringBoneState
 //
-// 7. physics_locomotion_system
+// 8. physics_locomotion_system
 //    Reads: PhysicsLocomotion, BalanceState
 //    Writes: ExternalForce/Torque
 //
@@ -1672,7 +1786,7 @@ impl Plugin for ProceduralAnimationPlugin {
 sequenceDiagram
     participant FPS as FootPlacementSystem
     participant SQ as Spatial Query API
-    participant BVH as Shared BVH
+    participant BVH as Physics BVH
     participant IKS as IK Solver System
 
     FPS->>FPS: gather foot bone world positions
@@ -1865,7 +1979,10 @@ Each step is reversible when headroom returns for two consecutive frames.
 | Switch | 20 chains | 128 threads/group |
 | Desktop | 50 chains | 256 threads/group |
 
-Below the threshold, IK runs CPU-side to avoid GPU dispatch overhead for small chain counts.
+Below the threshold, IK runs CPU-side to avoid GPU dispatch overhead for small chain counts. This
+applies to all solver types including FABRIK. The performance targets in this document assume GPU
+dispatch (at or above the threshold). The companion test-cases file benchmarks matching
+configurations.
 
 ### Platform Tier Resource
 
@@ -1895,9 +2012,29 @@ impl PlatformTier {
 }
 ```
 
+### 2D and 2.5D Considerations
+
+Most procedural animation subsystems target 3D skeletal meshes. For 2D and 2.5D games:
+
+- **IK** -- two-bone IK works in 2D by constraining the solve plane to the sprite plane. CCD and
+  FABRIK also work with 2D bone chains. FBIK is 3D-only.
+- **Foot placement** -- 2D platformers use a simplified 1D raycast (downward only) with no pelvis
+  adjustment. 2.5D side-scrollers use the same raycast but lock the lateral axis.
+- **Ragdoll** -- 2D ragdoll uses hinge joints only (no ball-socket). Physics bodies are constrained
+  to the 2D plane.
+- **Spring bones** -- fully applicable to 2D (hair, capes, tails) with the Z axis locked.
+- **Cloth / hair** -- GPU PBD cloth is 3D-only. 2D characters use spring bone chains or sprite swap
+  for cloth-like motion.
+- **Morph targets** -- not applicable to sprite-based 2D. 2D skeletal meshes (spine-style) use
+  `SpriteMorph` (frame blending) instead.
+- **First-person** -- inherently 3D; not applicable to 2D/2.5D.
+
 ## Test Plan
 
 Test cases are in the companion file [procedural-test-cases.md](procedural-test-cases.md).
+
+> **Note:** The companion file needs TC-9.5.x.x entries for cloth/hair and TC-9.6.x.x entries for
+> first-person tests. Approximately 30 tests listed below do not yet have companion entries.
 
 ### Unit Tests -- IK and Constraints
 
@@ -2028,7 +2165,7 @@ Test cases are in the companion file [procedural-test-cases.md](procedural-test-
 ### Shared Type References
 
 - Spring-damper primitives (`SpringDamper<T>`) are defined in
-  [shared-primitives.md](../core-runtime/shared-primitives.md)
+  [algorithms.md](../core-runtime/algorithms.md)
 - Joint angular limits use the shared `JointLimit` type
 - Distance/bending constraints reference shared physics types
 
@@ -2071,8 +2208,8 @@ direct control but does not compose additively without per-combination clips.
 
 **Q5. Cohesion?**
 
-All data lives as ECS components. Foot placement uses the shared BVH (F-1.9.1). Ragdoll delegates to
-the constraint solver (F-4.3.5). Cloth delegates to XPBD (F-4.7.1). Wind is shared (F-4.7.5). All
+All data lives as ECS components. Foot placement uses the physics BVH (F-1.9.1). Ragdoll delegates
+to the constraint solver (F-4.3.5). Cloth delegates to XPBD (F-4.7.1). Wind is shared (F-4.7.5). All
 components derive `Reflect` (F-1.3.1). Weapon params are data assets. Dismemberment is the least
 cohesive part -- it spawns entities and modifies skeleton topology at runtime, which is unusual for
 post-process.
@@ -2087,8 +2224,7 @@ post-process.
    shared joints.
 4. **Ragdoll recovery pose selection** -- pose-matching step to select closest animation pose for
    natural recovery.
-5. **Spring bone collision** -- `collision_radii` exist but no solver. Reuse shared BVH or local
-   geometry?
+5. **Spring bone collision** -- Resolved; see Spring Bone Collision Solver section below.
 6. **Physics locomotion joint mapping** -- flat `Vec<f32>` by index vs named bone-entity-to-strength
    mapping.
 7. **Dismemberment mesh splitting** -- pre-authored assets vs runtime mesh cutting along the sever
@@ -2103,3 +2239,154 @@ post-process.
 12. **OIT method selection** -- per-pixel linked lists vs weighted blended OIT, may need runtime GPU
     detection.
 13. **Hand IK solver type** -- two-bone vs analytical for viewmodel weapon grip placement.
+
+## Review Feedback
+
+### RF-1: Add Full Body IK solver variant
+
+Add `Fbik` to `IkSolverType`. FABRIK multi-end-effector is not the same as FBIK (unified solve with
+center-of-mass, momentum, and end-effector priority). Either add a dedicated solver or document why
+FABRIK subsumes it.
+
+### RF-2: Add blend shape / morph target section
+
+Morph targets are absent from this design. Add a section or cross-reference covering:
+
+- Facial blend shapes (52 ARKit standard + custom)
+- Body proportion morphs (height, weight, muscle)
+- Pipeline position: morph targets applied AFTER blend, BEFORE IK (additive vertex offsets
+  pre-skinning)
+- GPU compute shader for morph evaluation
+- LOD: disable face morphs at distance
+
+### RF-3: Complete companion test cases
+
+Add TC-9.5.x.x (cloth/hair) and TC-9.6.x.x (first-person) to the companion file. ~30 tests listed in
+the design have no companion entries.
+
+### RF-4: Resolve FABRIK CPU vs GPU
+
+Line 124 says GPU, TC-9.3.3.B1 says CPU. Clarify.
+
+### RF-5: Order locomotion and look-at systems
+
+Add explicit `.after()` or document disjoint bone sets.
+
+### RF-6: Fix DismemberCommand
+
+Add `#[derive(Event)]` or rename to `DismemberEvent`.
+
+### RF-7: Design spring bone collision
+
+Resolve Open Question #5. Capes/tails passing through the character body is a visible quality issue.
+Options:
+
+- Sphere/capsule collision per spring bone vs character body
+- SDF-based (signed distance field of the character mesh)
+- Simple: project spring bone outside a bounding capsule
+
+### RF-8: FABRIK runs on GPU
+
+All IK solvers including FABRIK run on GPU compute. FABRIK's iterative forward-backward passes
+parallelize across chains (one thread group per chain, iterations serial within). Resolve the
+CPU/GPU inconsistency — benchmark table should say GPU for FABRIK, matching Two-bone and CCD.
+
+### RF-9: Composable animation sources
+
+Animation pose sources must compose freely. Any combination of these can drive bones simultaneously
+via the layer stack:
+
+| Source | Drives | Layer Mode |
+|--------|--------|-----------|
+| Keyframe clips | Full body or masked | Override |
+| Blend spaces | Locomotion | Override |
+| Motion matching | Locomotion | Override |
+| Motion capture | Full body or masked | Override/Additive |
+| Procedural IK | Specific chains | Override |
+| Ragdoll physics | Full body or partial | Override |
+| Learned locomotion | Legs/body | Override |
+| Spring/jiggle | Secondary bones | Additive |
+| Procedural gait | Legs | Override |
+
+**Composability rules:**
+
+- Each source writes to a layer in the `AnimationLayerStack`
+- Bone masks prevent conflicts (legs from procedural, upper body from keyframes)
+- Priority ordering resolves overlaps
+- Inertialization handles transitions between ANY two sources
+- All sources produce the same output: bone transforms in local space
+
+**Example: complex creature locomotion:**
+
+```text
+Layer 0 (base): Procedural gait generator
+  → places feet via IK, generates body wave
+Layer 1 (additive): Learned balance correction
+  → neural network adjusts body lean + foot timing
+Layer 2 (override, upper body): Keyframe attack clip
+  → plays attack animation on spine + arms
+Layer 3 (additive): Spring bones
+  → tail, ears, accessories react to movement
+Layer 4 (override, head): Look-at IK
+  → head tracks player
+```
+
+All five layers compose in a single frame. The creature walks procedurally, balances via learned
+policy, attacks with authored animation, has secondary motion on appendages, and tracks the player —
+simultaneously.
+
+### RF-10: Learned locomotion via physics simulation
+
+Support training AI-controlled characters to walk using physics simulation with a skinned ragdoll:
+
+**Training pipeline (offline):**
+
+1. Activate ragdoll on the character skeleton
+2. Apply joint torques via a neural network policy
+3. Physics simulation runs at fixed timestep
+4. Reward function: forward movement, upright balance, foot contact timing, energy efficiency
+5. Train via reinforcement learning (PPO or similar)
+6. Export trained policy as a weight file
+
+**Runtime inference:**
+
+1. Read `MovementState` from character controller
+2. Neural network policy maps state → joint torques
+3. Torques applied as IK targets or ragdoll forces
+4. Result blended with other animation layers
+
+**This is a PoseSource** — it produces bone transforms like any other source. The layer stack
+handles blending with keyframes, IK, and other sources.
+
+**Use cases:**
+
+- Complex creatures with no mocap data (alien, robot)
+- Adaptive locomotion on uneven terrain
+- Physically plausible reactions to perturbation
+- Procedural creature creation (user designs a creature, engine learns to animate it)
+
+**Not required for shipping v1** — this is a research-tier feature. The procedural gait system
+(F-9.3.8) handles most cases. Learned locomotion is an optional advanced path.
+
+Reference: [DeepMimic (Peng et al., 2018)](https://xbpeng.github.io/projects/DeepMimic/)
+
+### RF-11: Motion matching moved from Design #25
+
+The motion matching integration point is defined in Design #25 (state-machine.md, RF-3). This design
+provides the IK post-processing that runs AFTER motion matching selects a pose — foot IK, look-at,
+and secondary motion all layer on top of the motion-matched base pose.
+
+### RF-12: Mocap → procedural composition
+
+Live or recorded motion capture composes with procedural animation via the layer stack:
+
+```text
+Layer 0: Mocap base (retargeted to game skeleton)
+Layer 1: Foot IK (ground adaptation on top of mocap)
+Layer 2: Look-at (override mocap head direction)
+Layer 3: Spring bones (secondary motion on accessories)
+```
+
+Mocap provides the base pose. Procedural systems refine it for the current environment (terrain,
+targets, physics). This is how professional cutscene animation works — mocap captures the
+performance, procedural IK adapts it to the set.

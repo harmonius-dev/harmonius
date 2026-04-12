@@ -2,8 +2,8 @@
 
 ## Requirements
 
-1. **R-15.18.1** — The engine **SHALL** provide modular AWS CDK stacks deploying all server
-   components with free-tier and enterprise profiles.
+1. **R-15.18.1** — The engine **SHALL** provide modular AWS deployment templates provisioning all
+   server components with free-tier and enterprise profiles.
    - **Rationale:** Modular stacks let teams deploy only the services they need.
    - **Verification:** Deploy the free-tier profile and verify all components start and pass health
      checks.

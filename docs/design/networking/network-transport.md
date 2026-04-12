@@ -1244,7 +1244,7 @@ pub enum PredictionError {
 | Platform | Library |
 |----------|---------|
 | Windows | Schannel via windows-rs |
-| macOS | Security.framework via swift-bridge |
+| macOS | Security.framework via objc2 |
 | Linux | rustls (pure Rust) |
 
 ### Platform Defaults
@@ -1272,7 +1272,7 @@ pub enum PredictionError {
 | `rustls` | DTLS on Linux |
 | `ring` | AES-GCM, HMAC-SHA256 |
 | `windows-rs` | Schannel, Winsock2 |
-| `swift-bridge` | Security.framework |
+| `objc2`        | Security.framework |
 | `smallvec` | Inline-allocated small vectors |
 
 ## Safety Invariants
@@ -1316,3 +1316,391 @@ Test cases are in the companion file
 11. **Cross-entity rollback dependencies.** Topological sort vs full ECS schedule replay?
 12. **Schema migration complexity.** Support field renames and type changes via migration functions?
 13. **Dormancy threshold tuning.** Per-entity-type thresholds via component field vs global config?
+
+## Review Feedback
+
+### RF-1: Replace all Tokio/async with platform-native I/O
+
+Replace Future-returning socket APIs with synchronous submission + completion via crossbeam-channel:
+
+- Linux: io_uring via rustix (UDP send/recv)
+- Windows: IOCP via windows-rs (Winsock2 overlapped)
+- Apple: Networking.framework via objc2 (NWConnection UDP)
+
+Main thread polls completions, posts as jobs. All transport APIs become synchronous. Remove open
+question #7 (moot).
+
+### RF-2: Replace Reflect with codegen diff/patch
+
+Delta compression uses codegen-generated field accessors:
+
+```rust
+// Generated per replicated component:
+impl HealthComponent {
+    fn diff(
+        &self, baseline: &Self,
+    ) -> (u64, Vec<u8>) {
+        let mut mask = 0u64;
+        let mut buf = Vec::new();
+        if self.hp != baseline.hp {
+            mask |= 1 << 0;
+            buf.extend(self.hp.to_le_bytes());
+        }
+        if self.max_hp != baseline.max_hp {
+            mask |= 1 << 1;
+            buf.extend(self.max_hp.to_le_bytes());
+        }
+        (mask, buf)
+    }
+
+    fn patch(&mut self, mask: u64, data: &[u8]) {
+        let mut cursor = 0;
+        if mask & (1 << 0) != 0 {
+            self.hp = f32::from_le_bytes(
+                data[cursor..cursor+4].try_into().unwrap()
+            );
+            cursor += 4;
+        }
+        // ...
+    }
+}
+```
+
+Remove DynamicValue and Reflect dependencies entirely.
+
+### RF-3: Create companion test cases file
+
+Create `network-transport-test-cases.md` with the 109 claimed tests (63 unit + 27 integration + 19
+benchmarks).
+
+### RF-4: Use networking grid for interest management
+
+The spatial index design specifies a grid for networking relevancy. Replace BVH-based interest
+management with grid-based:
+
+- Each client subscribes to grid cells near their position
+- Cell transition: subscribe to new cells, unsubscribe old
+- Entities in subscribed cells are replicated
+- Update frequency by cell distance (same cell = 60 Hz, adjacent = 30 Hz, 2 away = 10 Hz)
+
+Grid is simpler, predictable, and designed for networking. BVH is for gameplay/AI spatial queries.
+
+### RF-5: Add 2D multiplayer support
+
+Add Vec2 variants for spatial types:
+
+- `PlayerInput.movement`: Vec2 for 2D games
+- `HitboxData`: 2D shapes (circle, rect) alongside 3D
+- `MulticastFilter::Spatial`: Vec2 center for 2D
+- `ErrorCorrector`: Vec2 error for 2D interpolation
+
+### RF-6: MMO sharding and layering
+
+Support massive player counts via server-side sharding and player layering:
+
+**Sharding (horizontal scaling):**
+
+Each shard owns a spatial region of the world. Players crossing shard boundaries undergo entity
+migration (similar to planet migration from Design #22 RF-10):
+
+```text
+Shard A (cells 0-99)
+  → Player crosses boundary at cell 100
+  → Entity serialized via rkyv
+  → Transferred to Shard B (cells 100-199)
+  → Deserialized, client redirected
+```
+
+Shards communicate via inter-shard messaging (server-to- server UDP or TCP) for cross-boundary
+entity visibility and interest management.
+
+**Layering (vertical scaling):**
+
+Multiple instances ("layers") of the same world region run on different servers. Players in the same
+area but different layers cannot see each other:
+
+```rust
+#[derive(Component)]
+pub struct NetworkLayer {
+    pub layer_id: u16,
+    pub max_players: u16,
+}
+```
+
+- When a layer exceeds capacity, overflow players are assigned to a new layer
+- Players can request layer transfer (join friend)
+- Layer merging: when population drops, merge layers
+- Boss encounters: lock layer to prevent overflow
+
+**Interest management across shards:**
+
+- Entities near shard boundaries are replicated to both shards as "ghost" entities (read-only
+  copies)
+- Ghost entities receive delta updates from the owning shard via inter-shard channel
+- Boundary width = interest radius (from grid cell size)
+
+**Scaling targets:**
+
+| Tier | Players/shard | Shards | Total |
+|------|-------------|--------|-------|
+| Small | 100 | 1 | 100 |
+| Medium | 1,000 | 4 | 4,000 |
+| Large | 5,000 | 16 | 80,000 |
+| MMO | 10,000 | 100+ | 1M+ |
+
+Sharding and layering are server-side concerns — clients connect to one shard and see one layer. The
+transport layer handles redirect on shard transfer.
+
+### RF-7: Document 64-field changed_mask limit
+
+The `changed_mask: u64` caps replicated components at 64 fields. Document this as a hard limit.
+Components with more than 64 fields should be split into sub-components.
+
+### RF-8: Algorithm references
+
+| Algorithm | Reference |
+|-----------|-----------|
+| SACK reliability | [RFC 2018](https://www.rfc-editor.org/rfc/rfc2018) |
+| BBR congestion | [Cardwell et al. (2017)](https://queue.acm.org/detail.cfm?id=3022184) |
+| ORCA interest | [van den Berg (2011)](https://gamma.cs.unc.edu/ORCA/publications/ORCA.pdf) |
+| Delta compression | [Bernier, "Latency Compensating" (2001)](https://developer.valvesoftware.com/wiki/Latency_Compensating_Methods_in_Client/Server_In-game_Protocol_Design_and_Optimization) |
+| Client prediction | [Fiedler, "Networked Physics" (2015)](https://gafferongames.com/post/networked_physics_in_virtual_reality/) |
+| Snapshot interpolation | [Fiedler (2014)](https://gafferongames.com/post/snapshot_interpolation/) |
+| State synchronization | [Fiedler (2015)](https://gafferongames.com/post/state_synchronization/) |
+
+### RF-9: Quality of service and network optimization
+
+**Adaptive send rate:**
+
+Adjust replication frequency per client based on measured conditions:
+
+| Condition | Response |
+|-----------|----------|
+| Low RTT, no loss | Max send rate (60 Hz) |
+| Moderate RTT | Reduce to 30 Hz |
+| High loss (> 5%) | Reduce rate + increase redundancy |
+| Congestion detected | BBR backs off, reduce payload |
+| Mobile/cellular | Cap at 20 Hz, smaller packets |
+
+**Quantization:**
+
+Reduce bandwidth by quantizing replicated fields:
+
+```rust
+#[derive(Component, Replicate)]
+pub struct NetworkTransform {
+    #[quantize(min = -1000.0, max = 1000.0, bits = 16)]
+    pub position: Vec3,  // 6 bytes instead of 12
+    #[quantize(smallest_three, bits = 10)]
+    pub rotation: Quat,  // 4 bytes instead of 16
+    #[quantize(min = 0.0, max = 20.0, bits = 8)]
+    pub speed: f32,      // 1 byte instead of 4
+}
+```
+
+Codegen generates quantize/dequantize from attributes. Total: 11 bytes vs 32 bytes (66% reduction).
+
+**Priority-based bandwidth allocation:**
+
+Each replicated entity has a priority score:
+
+```text
+priority = base_priority
+         * distance_factor    // closer = higher
+         * visibility_factor  // on-screen = higher
+         * relevancy_factor   // interacting = higher
+         * update_debt        // longer since update = higher
+```
+
+The replication scheduler fills each client's bandwidth budget with highest-priority entity updates
+first. Low- priority entities may skip frames entirely.
+
+**Packet batching:**
+
+Multiple entity updates packed into single UDP packets up to MTU. Reduces per-packet overhead
+(IP/UDP headers). Sort updates by priority so if packet is lost, the lowest priority data is at the
+end.
+
+**Jitter buffer tuning:**
+
+Adaptive jitter buffer that adjusts interpolation delay based on measured jitter:
+
+- Low jitter (< 5 ms): tight buffer, low latency
+- High jitter (> 20 ms): wider buffer, smoother playback
+- Spike detection: hold buffer size after spike, decay slowly
+
+**Connection quality metrics:**
+
+Expose to gameplay for UI and matchmaking:
+
+```rust
+pub struct ConnectionQuality {
+    pub rtt_ms: f32,
+    pub jitter_ms: f32,
+    pub packet_loss_pct: f32,
+    pub bandwidth_kbps: f32,
+    pub quality_score: f32,  // 0-1 composite
+}
+```
+
+Games can show connection quality indicator (green/yellow/red bars) and matchmaking can prefer
+low-latency servers.
+
+### RF-10: Server-client vs peer-to-peer networking
+
+Support both models. The transport layer is model-agnostic — the authority and replication layers
+adapt.
+
+**Server-client (default):**
+
+- Dedicated or listen server owns world state
+- Clients send input, receive state updates
+- Server-authoritative: server validates all actions
+- Best for: competitive, MMO, large player counts
+- Latency: client → server → client (1 RTT)
+
+**Peer-to-peer:**
+
+- No dedicated server — one peer is host, or fully distributed
+- Host-authoritative: host peer validates actions
+- Each peer replicates to all others (mesh topology) or host relays (star topology)
+
+```rust
+pub enum NetworkTopology {
+    /// Dedicated or listen server. Clients connect to server.
+    ClientServer {
+        max_clients: u16,
+    },
+    /// One peer is host, others are clients. Host migrates
+    /// on disconnect.
+    HostMigrating {
+        max_peers: u16,
+    },
+    /// All peers connected to all others. Lockstep or
+    /// input-sharing.
+    FullMesh {
+        max_peers: u8, // limited by N² connections
+    },
+}
+```
+
+**Host migration (P2P):**
+
+If the host disconnects:
+
+1. Remaining peers elect new host (lowest latency or highest uptime)
+2. New host receives world state from peers
+3. Clients reconnect to new host
+4. Brief pause (~1-2 seconds) during migration
+
+**When to use which:**
+
+| Game Type | Model | Why |
+|-----------|-------|-----|
+| MMO | Client-server (sharded) | Massive scale |
+| Competitive FPS | Client-server (dedicated) | Anti-cheat |
+| Co-op (2-4 players) | P2P host-migrating | No server cost |
+| Fighting game | P2P full mesh + rollback | Minimal latency |
+| Local multiplayer | N/A (same machine) | No network |
+
+### RF-11: TCP and asset streaming
+
+**No TCP for gameplay.** All real-time game traffic uses UDP with userspace reliability (RF-1).
+TCP's head-of-line blocking and congestion backoff are unacceptable for real-time state.
+
+**TCP for non-real-time:**
+
+TCP is needed for:
+
+- Asset downloading from CDN (HTTP/HTTPS)
+- Matchmaking REST API calls
+- Leaderboard/achievement submissions
+- Chat messages (if not using UDP channel)
+- Patch/update downloads
+
+These use platform-native TCP:
+
+| Platform | TCP API |
+|----------|---------|
+| Linux | io_uring TCP sockets via rustix |
+| Windows | IOCP Winsock2 via windows-rs |
+| Apple | Networking.framework (NWConnection TCP) |
+
+**Asset streaming over network:**
+
+### RF-12: QUIC as unified transport
+
+Replace custom UDP reliability AND TCP with QUIC. One protocol for all network traffic:
+
+| Use Case | QUIC Mode |
+|----------|-----------|
+| Game state replication | Unreliable datagrams |
+| Voice chat | Unreliable datagrams |
+| RPCs (reliable) | Reliable stream |
+| Chat messages | Reliable ordered stream |
+| Asset download | HTTP/3 (over QUIC) |
+| REST API calls | HTTP/3 (over QUIC) |
+| Patch downloads | HTTP/3 multiplexed streams |
+| Reconnection | 0-RTT handshake |
+
+**What QUIC eliminates:**
+
+- Custom SACK-based UDP reliability layer (QUIC has built-in)
+- Custom DTLS encryption (QUIC has TLS 1.3 built-in)
+- Separate TCP transport for non-real-time
+- Separate HTTPS stack for REST/CDN
+- Custom fragmentation (QUIC handles it)
+- Custom congestion control (QUIC has its own, or use BBR)
+
+**Platform implementation:**
+
+| Platform | QUIC Implementation |
+|----------|-------------------|
+| Apple | Networking.framework `NWProtocolQUIC` (native) |
+| Windows | MsQuic via windows-rs (native, Windows 11+) |
+| Linux | quinn-proto + io_uring (our I/O layer) |
+
+`quinn-proto` is a pure state machine — no Tokio dependency. We feed it UDP datagrams from our
+io_uring socket and send what it produces:
+
+```text
+io_uring UDP recv → quinn-proto.handle_datagram()
+quinn-proto.poll_transmit() → io_uring UDP send
+quinn-proto produces streams/datagrams → game reads them
+```
+
+On Apple and Windows, prefer the native QUIC API for best performance and OS integration. Use
+quinn-proto as the portable fallback on Linux and as the reference for testing.
+
+**Channel mapping to QUIC:**
+
+| Old Channel | QUIC Equivalent |
+|------------|----------------|
+| ReliableOrdered | QUIC stream (ordered) |
+| ReliableUnordered | QUIC stream (unidirectional) |
+| UnreliableSequenced | QUIC datagram + sequence number |
+| UnreliableUnordered | QUIC datagram |
+
+**Asset streaming via HTTP/3:**
+
+1. CDN serves assets via HTTP/3 (over QUIC)
+2. Client opens QUIC connection to CDN
+3. Multiple assets download in parallel (multiplexed)
+4. Responses streamed to disk cache via platform I/O
+5. Asset pipeline loads from cache via Handle<T>
+6. Residency manager handles network-fetched assets
+7. 0-RTT on reconnect — no handshake delay
+
+**Dependencies:**
+
+| Crate | Purpose |
+|-------|---------|
+| quinn-proto | QUIC state machine (Linux) |
+| rustls | TLS 1.3 for quinn-proto |
+
+quinn-proto + rustls are pure Rust, no C dependencies. On Apple/Windows, the native QUIC stack
+handles TLS internally.
+
+**Migration path:** The existing packet header, channel abstraction, and replication layer sit above
+transport. Replacing custom UDP with QUIC only changes the transport implementation — the
+replication, delta compression, prediction, and rollback layers remain unchanged.

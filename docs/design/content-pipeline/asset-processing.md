@@ -1200,3 +1200,96 @@ Test cases are defined inline below.
 9. **Audio streaming unification.** Should audio ring-buffer streaming merge with the visual asset
    priority queue?
 10. **CAS garbage collection.** Reference counting from cache vs periodic sweep for stale artifacts?
+
+## Review Feedback
+
+### RF-1: Remove all Tokio and async/await
+
+Replace all 15+ Tokio references and async fn signatures with synchronous code using the
+channel-based I/O model:
+
+- Replace `tokio::runtime::Handle` fields with `IoChannel` or `&JobScope`
+- Replace all `async fn` with synchronous `fn` that submit I/O via crossbeam-channel and return
+  `IoRequestId`
+- Replace `impl Future<Output = Result<...>>` returns with synchronous `Result<...>`
+- Replace "Tokio Runtime" in architecture diagrams with platform I/O
+- Update I/O backend table: io_uring (Linux), IOCP (Windows), GCD (Apple) — not "Tokio (xxx)"
+- Remove `tokio` from proposed dependencies
+
+### RF-2: Remove all Reflect derives
+
+Remove `#[derive(Reflect)]` from all 17 types. Use
+`#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]` for types that need serialization.
+Remove the Reflection cross-cutting dependency.
+
+### RF-3: Keep libloading — for locally generated .dylib
+
+`libloading` IS needed for loading locally-generated plugin `.dylib` files. Plugins are data
+packages — codegen generates `.rs` from plugin metadata, bundled rustc compiles to `.dylib`, engine
+hot-reloads via `libloading`. The `.dylib` never leaves the local machine. It is NOT a distributed
+artifact.
+
+Keep `libloading` in proposed dependencies with this justification.
+
+### RF-4: Create companion test cases file
+
+Create `asset-processing-test-cases.md` with TC-12.2.x.N and TC-12.5.x.N IDs. Move inline test
+tables there. Add test for shader hot-reload (F-12.4.3).
+
+### RF-5: Add rkyv output format
+
+Processors should emit rkyv-archived artifacts (`rkyv::AlignedVec`) so the streaming subsystem can
+mmap them at runtime without deserialization. Add `rkyv` to proposed dependencies.
+
+### RF-6: Fix AssetProcessor::process() signature
+
+Change from `impl Future<Output = Result<...>>` to synchronous:
+
+```rust
+fn process(
+    &self,
+    ctx: &ProcessingContext,
+) -> Result<ProcessResult, ProcessingError>;
+```
+
+I/O within a processor is submitted to the main thread via channel. The processor blocks within the
+job system scope until I/O completes.
+
+### RF-7: Use meshopt (pure Rust) and clarify opus FFI
+
+Use the `meshopt` crate (pure Rust port of meshoptimizer) for LOD generation, meshlet building, and
+vertex cache optimization. No C FFI needed.
+
+For `opus`, use the `-sys` crate (pre-built C library). No `.c` files checked into the project.
+Document this per the "no C/C++ source" constraint. Update the proposed dependencies: replace
+`meshoptimizer` with `meshopt`.
+
+### RF-8: Convex hull decomposition in asset processing
+
+Add a `CollisionProcessor` to the asset processing pipeline that generates collision shapes from
+source meshes at import time:
+
+1. **V-HACD decomposition** — split non-convex meshes into 8-16 convex hulls (32-64 vertices each).
+   Store as `CompoundCollider`. Use the `vhacd` crate. Request dependency approval.
+
+2. **Simplified convex hull** — single quickhull for simple meshes that are nearly convex. Cheaper
+   than V-HACD.
+
+3. **Bounding shape generation** — auto-fit box, sphere, or capsule from mesh extents for fast
+   approximation.
+
+Pipeline:
+
+```text
+Source mesh (glTF)
+  → CollisionProcessor
+  → V-HACD / quickhull / bounding shape
+  → CompoundCollider or single ColliderShape
+  → Baked to rkyv alongside the render mesh
+```
+
+The editor shows a collision shape preview overlay so designers can verify the approximation quality
+and adjust V-HACD parameters (max hulls, resolution, max vertices per hull) per asset.
+
+Collision shapes are stored as a companion to the render mesh in the asset database. Loaded via the
+same Handle<T> system.

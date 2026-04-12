@@ -71,8 +71,8 @@ domain in the engine.
   order. Identical inputs produce identical outputs.
 - **Topological plugin initialization.** Declared dependencies drive load order. No implicit
   ordering from registration call sequence.
-- **ECS-primary (~90%)-based.** Events, resources, and observers are all ECS primitives. No parallel data
-  stores.
+- **ECS-primary (~90%)-based.** Events, resources, and observers are all ECS primitives. No parallel
+  data stores.
 
 ## Architecture
 
@@ -102,12 +102,10 @@ graph TD
     subgraph "harmonius_core::ecs"
         WD[World]
         SC[Scheduler]
-        TR[TypeRegistry]
     end
 
     subgraph "harmonius_platform::threading"
         TP[ThreadPool]
-        ED["EventDispatcher&lt;E&gt;"]
     end
 
     EC --> ER
@@ -123,12 +121,11 @@ graph TD
     PL --> DG
     DG -->|"topological sort"| SC
     CR --> PL
-    HR -->|"dlopen/dlclose"| PL
+    HR -->|"codegen reload"| PL
 
-    EC -.->|"registered via"| TR
     PT -.->|"builds into"| WD
     OB -.->|"queries"| WD
-    ED -.->|"async dispatch"| TP
+    SC -.->|"dispatches jobs"| TP
 ```
 
 ### File Layout
@@ -159,8 +156,8 @@ harmonius_core/
     ├── capability.rs    # CapabilityRegistry,
     │                    # Capability
     ├── hot_reload.rs    # HotReloadManager,
-    │                    # DynLibHandle
-    ├── version.rs       # SemVer, AbiHash
+    │                    # codegen reload
+    ├── version.rs       # SemVer
     └── error.rs         # PluginError variants
 ```
 
@@ -237,27 +234,81 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant FW as FileWatcher
+    participant ED as Editor
+    participant CG as Codegen Pipeline
+    participant RC as Bundled rustc
     participant HR as HotReloadManager
-    participant PL as PluginLoader
     participant W as World
-    participant SR as Serialization
+    participant SR as Serialization (rkyv)
 
-    FW->>HR: library changed event
+    ED->>CG: component schema changed
+    CG->>CG: regenerate .rs from plugin data
+    CG->>RC: incremental compile
+    RC-->>HR: new .dylib ready
     HR->>W: pause systems from plugin
     HR->>SR: serialize affected components
-    SR-->>HR: serialized state
-    HR->>PL: unload old library (dlclose)
-    PL-->>HR: unloaded
-    HR->>PL: load new library (dlopen)
-    PL-->>HR: new plugin descriptor
-    HR->>HR: validate ABI hash
+    SR-->>HR: serialized state (rkyv)
+    HR->>HR: swap internal .dylib
     HR->>W: tear down old systems
     HR->>W: register new systems
     HR->>SR: deserialize + migrate state
     SR-->>W: restored components
     HR->>W: resume systems
 ```
+
+### Middleman .dylib Architecture
+
+All codegen'd types live in a single **middleman .dylib** — the single source of truth for
+everything that crosses the engine/plugin boundary. This avoids numeric ID collisions, open
+registration, and ABI mismatches between engine and plugin code.
+
+```mermaid
+graph TD
+    subgraph "Engine Binary (stable)"
+        EB[Job System]
+        EP[Platform I/O]
+        EG[GPU Abstraction]
+        EE[ECS Core]
+    end
+
+    subgraph "Middleman .dylib (codegen'd)"
+        MC[User Components]
+        ME[Codegen'd Events]
+        MS[Codegen'd Systems]
+        MX[rkyv Serialization]
+        MT[Type Descriptors]
+        MB[Blueprints]
+    end
+
+    subgraph "Plugin .dylibs (codegen'd)"
+        PA[Plugin A Logic]
+        PB[Plugin B Logic]
+    end
+
+    EB -->|"loads via libloading"| MC
+    MC --> PA
+    MC --> PB
+    PA -->|"depends on"| MC
+    PB -->|"depends on"| MC
+```
+
+| Layer | Contents | Recompile trigger |
+|-------|----------|-------------------|
+| Engine binary | ECS core, job system, platform I/O, GPU | Breaking engine API change |
+| Middleman .dylib | All shared types, serialization, blueprints | Any component/event schema change |
+| Plugin .dylibs | Plugin-specific logic | Plugin schema or blueprint change |
+
+**Hot-reload flow (editor only):**
+
+1. User modifies component schema in editor.
+2. Codegen regenerates middleman `.rs` files.
+3. Bundled `rustc` recompiles middleman `.dylib`.
+4. Engine hot-reloads middleman via `libloading`.
+5. Plugin `.dylibs` recompiled against updated middleman.
+6. All code sees updated types with full static dispatch.
+
+**Shipping:** middleman and all plugins are statically linked into one binary with LTO. No `.dylib`
+files are shipped with the game.
 
 ### Persistent Stream with Cursors
 
@@ -361,8 +412,7 @@ The core abstraction. One channel per event type `T`. Writers append to the back
 iterate the front buffer. Buffers swap at the scheduler's frame boundary.
 
 ```rust
-/// Marker trait for event types. Derive macro
-/// registers the type in the TypeRegistry.
+/// Marker trait for event types.
 pub trait Event:
     Send + Sync + Clone + 'static
 {
@@ -573,21 +623,28 @@ Observers fire at sync points during command buffer application. They differ fro
 structural changes.
 
 ```rust
-/// Events that trigger component lifecycle
-/// observers.
+/// Canonical component lifecycle event enum.
+/// Also used by the ECS ObserverTrigger system
+/// (see ecs.md).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ComponentEvent {
     Added,
     Removed,
     Mutated,
+    TableCreated,
+    StateTransition,
 }
 
 /// Descriptor for a registered observer.
 pub struct ObserverDescriptor {
     /// Component type(s) this observer watches.
-    pub watched_components: SmallVec<[TypeId; 4]>,
+    /// Fixed capacity of 4; most observers watch
+    /// 1-2 components.
+    pub watched_components: Vec<TypeId>,
     /// Which lifecycle events trigger this observer.
-    pub triggers: SmallVec<[ComponentEvent; 3]>,
+    /// Fixed capacity of 3 covers all common
+    /// combinations.
+    pub triggers: Vec<ComponentEvent>,
     /// Optional query filter for matching entities.
     pub query_filter: Option<QueryDescriptor>,
     /// Priority for ordering among observers that
@@ -663,6 +720,75 @@ impl ObserverRegistry {
 )]
 pub struct ObserverId(u64);
 ```
+
+### Event Propagation (F-1.5.3)
+
+Entity events propagate through the entity hierarchy in two phases: capture (root to target) and
+bubble (target to root). This enables UI patterns where parent widgets intercept events before
+children (capture) or handle events that children did not consume (bubble).
+
+```rust
+/// Phase of entity event propagation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PropagationPhase {
+    /// Root -> target. Ancestors see the event
+    /// before the target.
+    Capture,
+    /// Target -> root. Ancestors see the event
+    /// after the target.
+    Bubble,
+}
+
+/// Context passed to observers during entity event
+/// propagation. Allows stopping propagation at any
+/// point in the chain.
+pub struct PropagationContext<'a> {
+    phase: PropagationPhase,
+    target: Entity,
+    current: Entity,
+    stopped: bool,
+    world: UnsafeWorldCell<'a>,
+}
+
+impl PropagationContext<'_> {
+    /// Stop propagation. No further observers in
+    /// the current phase or subsequent phases will
+    /// fire for this event.
+    pub fn stop_propagation(&mut self) {
+        self.stopped = true;
+    }
+
+    /// Current propagation phase.
+    pub fn phase(&self) -> PropagationPhase {
+        self.phase
+    }
+
+    /// The entity that originally received the
+    /// event.
+    pub fn target(&self) -> Entity {
+        self.target
+    }
+
+    /// The entity currently being visited in the
+    /// propagation chain.
+    pub fn current(&self) -> Entity {
+        self.current
+    }
+}
+```
+
+Dispatch order for an entity event emitted at a leaf:
+
+1. **Capture phase** -- walk from root to target, firing observers registered for
+   `PropagationPhase::Capture` at each ancestor.
+2. **Target phase** -- fire observers at the target entity itself.
+3. **Bubble phase** -- walk from target to root, firing observers registered for
+   `PropagationPhase::Bubble` at each ancestor.
+4. **Stop** -- if `stop_propagation()` is called at any point, remaining observers and phases are
+   skipped.
+
+The propagation relationship is determined by `EntityEvent::propagation_relationship()`, which
+returns the relationship to traverse (typically `ChildOf`).
 
 ### Reactive Queries (F-1.5.5, R-1.5.5)
 
@@ -794,25 +920,36 @@ impl<T: Event> EventBridge<T> {
 
 ### Plugin Trait (F-1.6.1, R-1.6.1)
 
-The core abstraction for modular engine composition. Each plugin declares what it contributes and
-what it depends on.
+The core abstraction for modular engine composition. Plugins are **data packages** — collections of
+component schemas, visual logic graphs, and assets. The codegen pipeline reads plugin metadata and
+generates Rust code; there is no runtime DLL loading in this trait. Each plugin declares what it
+contributes and what it depends on.
 
 ```rust
-/// A plugin is a self-contained module that
-/// registers systems, components, resources,
-/// and events into an App.
+/// A plugin is a data descriptor for a
+/// self-contained module. The codegen pipeline
+/// generates all Rust types, systems, and
+/// serialization code from the plugin's schema.
+/// Plugins are NOT dynamically loaded DLLs —
+/// they are data packages processed at build
+/// time (or hot-reload time in the editor).
 pub trait Plugin: Send + Sync + 'static {
-    /// Human-readable name for diagnostics.
+    /// Human-readable name for diagnostics
+    /// and codegen output paths.
     fn name(&self) -> &'static str;
 
-    /// Build this plugin into the app. Register
-    /// systems, components, resources, events,
-    /// and observers.
+    /// Build this plugin into the app. Called
+    /// after codegen has registered all types.
+    /// Registers systems, resources, events,
+    /// and observers that were generated from
+    /// this plugin's schema.
     fn build(&self, app: &mut App);
 
     /// Declare plugin dependencies. Returns
-    /// TypeIds of plugins that must be loaded
-    /// before this one.
+    /// TypeIds of plugins that must be
+    /// initialized before this one. Used by
+    /// the codegen pipeline to determine
+    /// generation order.
     fn dependencies(&self) -> Vec<TypeId> {
         Vec::new()
     }
@@ -823,10 +960,6 @@ pub trait Plugin: Send + Sync + 'static {
     fn conflicts(&self) -> Vec<TypeId> {
         Vec::new()
     }
-
-    /// Optional cleanup when the plugin is
-    /// unloaded (hot reload path).
-    fn cleanup(&self, app: &mut App) {}
 
     /// Capabilities this plugin advertises.
     fn capabilities(&self) -> Vec<Capability> {
@@ -1116,88 +1249,39 @@ impl CapabilityRegistry {
 }
 ```
 
-### Semantic Versioning and ABI Hash (F-1.6.6, R-1.6.6)
+### Semantic Versioning (F-1.6.6, R-1.6.6)
 
-Prevents loading dynamically-linked plugins compiled against incompatible engine versions.
+Plugin descriptors carry semantic version metadata for dependency resolution and compatibility
+checks. There is no ABI hash -- plugins are data packages processed by the codegen pipeline, not
+dynamically linked libraries.
 
 ```rust
-/// ABI hash derived from the plugin's public
-/// interface types via the TypeRegistry.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash,
-)]
-pub struct AbiHash(u64);
-
 /// Metadata embedded in every plugin descriptor.
 pub struct PluginDescriptor {
     pub name: &'static str,
     pub version: SemVer,
-    pub abi_hash: AbiHash,
-    /// Factory function to create the Plugin.
-    pub create: fn() -> Box<dyn Plugin>,
-}
-
-impl AbiHash {
-    /// Compute ABI hash from the type registry
-    /// entries that the plugin's public interface
-    /// touches. Uses BLAKE3 for consistency with
-    /// the content pipeline.
-    pub fn compute(
-        registry: &TypeRegistry,
-        public_types: &[TypeId],
-    ) -> Self;
 }
 ```
 
 ### Hot Reload Manager (F-1.6.5, R-1.6.5)
 
-Development-only dynamic library reload with state preservation through serialization and
-reflection.
+Development-only hot reload via the codegen pipeline. When the user modifies a component schema in
+the editor, the codegen pipeline regenerates Rust source, the bundled rustc incrementally compiles,
+and the engine swaps the internal .dylib. The user never sees or manages DLLs directly.
 
 ```rust
-/// Handle to a dynamically loaded shared library.
-pub struct DynLibHandle {
-    #[cfg(unix)]
-    handle: *mut libc::c_void,
-    #[cfg(windows)]
-    handle: windows_sys::Win32::Foundation::HMODULE,
-}
-
-impl DynLibHandle {
-    /// Load a shared library.
-    /// - POSIX: dlopen
-    /// - Windows: LoadLibrary
-    pub fn load(
-        path: &Path,
-    ) -> Result<Self, HotReloadError>;
-
-    /// Look up a symbol by name.
-    pub unsafe fn symbol<T>(
-        &self,
-        name: &str,
-    ) -> Result<*const T, HotReloadError>;
-
-    /// Unload the library.
-    /// - POSIX: dlclose
-    /// - Windows: FreeLibrary
-    pub fn unload(
-        self,
-    ) -> Result<(), HotReloadError>;
-}
-
 /// Manages hot-reload cycles for gameplay plugins.
-/// Development only — disabled in release builds.
+/// Development only -- disabled in release builds.
 #[cfg(feature = "hot-reload")]
 pub struct HotReloadManager {
-    /// Currently loaded dynamic plugins.
+    /// Currently loaded plugin descriptors.
     loaded: HashMap<
         &'static str,
-        LoadedDynPlugin,
+        LoadedPlugin,
     >,
 }
 
-struct LoadedDynPlugin {
-    lib: DynLibHandle,
+struct LoadedPlugin {
     descriptor: PluginDescriptor,
     /// Component types owned by this plugin for
     /// state preservation during reload.
@@ -1208,26 +1292,49 @@ struct LoadedDynPlugin {
 impl HotReloadManager {
     pub fn new() -> Self;
 
-    /// Reload a plugin from an updated library.
+    /// Reload a plugin after codegen produces a
+    /// new .dylib from the updated plugin data.
     ///
     /// Steps:
     /// 1. Pause systems from the old plugin.
-    /// 2. Serialize affected components via
-    ///    Reflect.
-    /// 3. Unload old library.
-    /// 4. Load new library.
-    /// 5. Validate ABI hash.
-    /// 6. Tear down old systems and register new.
-    /// 7. Deserialize and migrate state.
-    /// 8. Resume systems.
+    /// 2. Serialize affected components via rkyv.
+    /// 3. Swap internal .dylib.
+    /// 4. Tear down old systems and register new.
+    /// 5. Deserialize and migrate state.
+    /// 6. Resume systems.
+    ///
+    /// **New component types:** If the reloaded
+    /// plugin introduces component types not
+    /// present in the previous version, the engine
+    /// registers them in the ECS type registry
+    /// before step 5. Existing entities gain the
+    /// new component's default value; no migration
+    /// value is needed.
+    ///
+    /// **Schema migration:** If a component's
+    /// field layout changes (field added, removed,
+    /// or renamed), the rkyv-generated
+    /// `MigrationValue` applies field remapping
+    /// during step 5. Fields with no counterpart
+    /// in the new schema are dropped. New required
+    /// fields use the codegen-specified default.
+    /// Migration failures surface as
+    /// `HotReloadError::StateMigrationFailed`.
+    ///
+    /// **Cross-plugin references:** Components
+    /// referenced by string name across plugin
+    /// boundaries are resolved via
+    /// `lookup_by_name()` after the new .dylib
+    /// registers its types. Scene files that
+    /// reference renamed or removed components
+    /// emit a diagnostic but do not abort reload.
     ///
     /// Total cycle time SHALL be under 2 seconds
     /// for up to 100 systems (R-1.6.5a),
-    /// excluding user compile time.
+    /// excluding codegen and compile time.
     pub fn reload(
         &mut self,
         name: &str,
-        new_path: &Path,
         world: &mut World,
     ) -> Result<(), HotReloadError>;
 
@@ -1240,17 +1347,12 @@ impl HotReloadManager {
 
 #[derive(Debug)]
 pub enum HotReloadError {
-    LibraryNotFound { path: PathBuf },
-    SymbolNotFound { name: String },
-    AbiMismatch {
-        expected: AbiHash,
-        actual: AbiHash,
-    },
+    CodegenFailed { reason: String },
+    CompileFailed { reason: String },
     StateMigrationFailed {
         type_name: String,
         reason: String,
     },
-    UnloadFailed { reason: String },
 }
 ```
 
@@ -1330,7 +1432,7 @@ fn frame_tick(
 
     // 3. Run parallel systems
     let graph = scheduler.build_frame_graph();
-    pool.execute_graph(graph).await;
+    job_system.execute_graph(graph);
 
     // 4. Flush command buffers at sync point
     scheduler.flush_commands(&mut world);
@@ -1376,16 +1478,11 @@ Within a single frame:
 
 ## Platform Considerations
 
-### Dynamic Library APIs
+### Hot Reload Platform Support
 
-| Platform | Load | Unload | Symbol |
-|----------|------|--------|--------|
-| Linux | `dlopen` | `dlclose` | `dlsym` |
-| macOS | `dlopen` | `dlclose` | `dlsym` |
-| Windows | `LoadLibraryW` | `FreeLibrary` | `GetProcAddress` |
-
-All accessed via `cfg`-gated platform modules. No trait objects or dynamic dispatch for platform
-selection.
+Hot reload uses the codegen pipeline to produce an internal .dylib that the engine swaps at runtime.
+The user never manages DLLs directly. Platform .dylib loading is an internal engine detail handled
+by `cfg`-gated platform modules.
 
 ### Persistent Stream Platform Defaults
 
@@ -1395,11 +1492,62 @@ selection.
 | Switch | 8,192 | 128 |
 | Desktop | 32,768 | Configurable |
 
+### Static Linking for Shipping Builds
+
+The `.dylib` architecture is an editor-only feature for hot reload. All shipped games use full
+static linking:
+
+1. Codegen generates `.rs` for all plugins and the middleman.
+2. `cargo build --release` compiles everything together.
+3. LTO (link-time optimization) runs across all crates.
+4. Dead code elimination removes unused plugin code paths.
+5. Single executable — no `.dylib` files shipped.
+
+| Property | Editor (dev) | Shipping (release) |
+|----------|--------------|--------------------|
+| Plugin loading | `.dylib` via `libloading` | Static link + LTO |
+| Hot reload | Yes — middleman + plugins | No |
+| Binary size | Larger (symbols kept) | Smaller (DCE + LTO) |
+| Startup | Dynamic linker resolves | No dynamic linking |
+| Determinism | Load-order dependent | Fixed link order |
+
 ### Event Channel Throughput (R-1.5.1a)
 
 The back buffer uses `Vec<T>` with pre-allocated capacity. Write is `Vec::push` — O(1) amortized.
 The flood warning threshold fires a diagnostic at 50,000 events per channel per frame. The target is
 100,000 events/frame with under 1 ms total write time for 64-byte events.
+
+### Bytecode Obfuscation for Plugin Logic
+
+Plugin visual logic (blueprints, material graphs, event graphs) is converted to an obfuscated
+bytecode format in the shipping build to protect plugin authors' intellectual property.
+
+**Build pipeline:**
+
+1. Codegen compiles visual logic to native Rust for editor and dev builds.
+2. At shipping build time, the same visual logic is compiled to a custom bytecode format.
+3. The bytecode replaces the native Rust in the shipped binary for opted-in plugins.
+4. A lightweight bytecode interpreter executes plugin logic at runtime.
+
+**Bytecode properties:**
+
+| Property | Description |
+|----------|-------------|
+| Instruction set | Custom; not WASM or Lua bytecode |
+| Symbol stripping | All symbol names, variable names, graph structure removed |
+| Control flow | Obfuscated — opaque predicates, flattened CFG |
+| Constants | Encrypted with per-build key |
+| Reversibility | Not decompilable back to the original visual graph |
+
+**Performance trade-off:** Bytecode executes at approximately 2–10x the cost of native Rust,
+depending on workload. Engine built-in systems (ECS, rendering, physics) remain native. Only plugin
+logic that opts in is bytecoded.
+
+**Opt-out:** Plugin authors can mark specific systems `#[no_obfuscate]` in the visual editor. Those
+systems compile to native Rust in the shipping build — faster but reverse-engineerable.
+
+> Note: Bytecode obfuscation does not protect assets (meshes, textures, audio). Asset protection is
+> handled by the asset pipeline's packaging and encryption system.
 
 ### Threading Integration
 
@@ -1408,15 +1556,14 @@ The flood warning threshold fires a diagnostic at 50,000 events per channel per 
 - **EventReader** requires shared (`&`) access. The scheduler treats it as a read dependency.
 - Multiple readers run in parallel. A writer serializes against all other accessors of the same
   channel.
-- Async event handlers (from `threading.md` `AsyncEventHandler<E>`) are spawned onto the thread pool
-  when dispatched. They cannot directly write to event channels — they must use command buffers.
+- Systems that need to communicate with platform I/O use command buffers to enqueue work; results
+  are delivered via event channels at the next sync point.
 
 ### Dependencies (Proposed)
 
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
-| `smallvec` | Inline-allocated small vectors | Observer descriptor lists, dependency lists |
-| `blake3` | ABI hash computation | Consistent with content pipeline hashing |
+| `rkyv` | Zero-copy serialization | Hot reload state preservation |
 
 ## Test Plan
 
@@ -1486,8 +1633,8 @@ The flood warning threshold fires a diagnostic at 50,000 events per channel per 
 | `test_topological_sort`       | R-1.6.4  |
 | `test_cycle_detection`        | R-1.6.4  |
 | `test_all_errors_single_pass` | R-1.6.4a |
-| `test_abi_hash_match`         | R-1.6.6  |
-| `test_abi_hash_mismatch`      | R-1.6.6  |
+| `test_version_compatibility`  | R-1.6.6  |
+| `test_version_mismatch`       | R-1.6.6  |
 | `test_capability_query`       | R-1.6.7  |
 | `test_capability_branch`      | R-1.6.7  |
 
@@ -1504,8 +1651,8 @@ The flood warning threshold fires a diagnostic at 50,000 events per channel per 
 7. **`test_cycle_detection`** — A->B->A cycle. Verify cycle error with path.
 8. **`test_all_errors_single_pass`** — 3 simultaneous issues (missing dep, conflict, cycle). Verify
    all 3 reported.
-9. **`test_abi_hash_match`** — Load plugin with matching ABI hash. Verify success.
-10. **`test_abi_hash_mismatch`** — Load plugin with mismatched ABI hash. Verify rejection with
+9. **`test_version_compatibility`** — Load plugin with compatible SemVer. Verify success.
+10. **`test_version_mismatch`** — Load plugin with incompatible major version. Verify rejection with
     version info.
 11. **`test_capability_query`** — Register capability "physics" v1.2. Query returns v1.2. Query
     "audio" returns None.
@@ -1551,9 +1698,11 @@ The flood warning threshold fires a diagnostic at 50,000 events per channel per 
 | Benchmark | Target | Source |
 |-----------|--------|--------|
 | Event write 100K x 64B | < 1 ms | R-1.5.1a |
-| Event read 100K (8 parallel readers) | < 500 us | US-1.5.2 |
-| Reactive query check (200 queries, no change) | < 200 us | R-1.5.5a |
-| Observer dispatch (1000 callbacks) | < 2 ms | US-1.5.7 |
+| Event read 100K (8 readers) | < 500 us | R-1.5.2 |
+| Cmd buffer flush (1K observers) | < 2 ms | R-1.5.4 |
+| Cmd buffer flush + observer dispatch (1K each) | < 3 ms | R-1.5.4 |
+| Reactive query check (200, no change) | < 200 us | R-1.5.5a |
+| Observer dispatch (1000 callbacks) | < 2 ms | R-1.5.3 |
 | Plugin graph validation (50 plugins) | < 1 ms | R-1.6.4 |
 | Hot reload cycle (50 systems) | < 2 s | R-1.6.5a |
 
@@ -1579,10 +1728,10 @@ The double-buffered event channel (F-1.5.1) limits event lifetime to exactly one
 emitted late in a frame may be consumed too early in the next frame, before dependent systems run.
 Persistent streams (F-1.5.2) solve this but add cursor tracking overhead per reader. The cross-world
 event bridge (F-1.5.7) currently lacks back-pressure: if the target world is slow to drain events,
-the bridge could grow unbounded. The plugin hot reload (F-1.6.5) depends on serialization for state
-migration, meaning any component that cannot round-trip through reflection will lose data. Adding
+the bridge could grow unbounded. The plugin hot reload (F-1.6.5) depends on rkyv serialization for
+state migration, meaning any component that cannot round-trip through rkyv will lose data. Adding
 event priority ordering within a frame, bridge backpressure policies, and a hot-reload safety check
-for non-reflectable types would strengthen the design.
+for non-serializable types would strengthen the design.
 
 **Q3. Is there a better approach?** If we are not taking it, why not?
 
@@ -1612,10 +1761,10 @@ modules, and why? How could we make it more cohesive? How can we improve it to m
 The events system integrates tightly with the ECS scheduler (F-1.1.25) and command buffers
 (F-1.1.32), making it highly cohesive with the core runtime. The plugin system (F-1.6) acts as the
 composition layer binding all subsystems together. One cohesion concern is that hot reload (F-1.6.5)
-depends on reflection (F-1.3) and serialization (F-1.4) but does not reference the events system for
-notifying other plugins of reload. A `PluginReloaded` event type bridged across worlds would let
-systems react to plugin changes. The capability negotiation API (F-1.6.7) also operates outside the
-ECS resource model; exposing capabilities as a world resource would unify the query path.
+depends on rkyv serialization (F-1.4) but does not reference the events system for notifying other
+plugins of reload. A `PluginReloaded` event type bridged across worlds would let systems react to
+plugin changes. The capability negotiation API (F-1.6.7) also operates outside the ECS resource
+model; exposing capabilities as a world resource would unify the query path.
 
 ## Open Questions
 
@@ -1636,10 +1785,28 @@ ECS resource model; exposing capabilities as a world resource would unify the qu
    run. For multi-world setups with dependencies between worlds, should bridge transfers be
    integrated into the task graph as explicit nodes?
 
-5. **Hot reload on macOS with GCD.** Dynamic library unload with active GCD dispatch blocks
-   referencing symbols in the library is undefined behavior. The proposed mitigation is to drain all
-   pending blocks before `dlclose`, but the timing guarantee needs validation.
+5. **Hot reload timing on macOS.** The internal .dylib swap during codegen-based hot reload must
+   ensure no active function pointers reference the old .dylib. The proposed mitigation is to pause
+   all plugin systems and drain all in-flight jobs before the swap, but the timing guarantee needs
+   validation.
 
 6. **Plugin initialization parallelism.** Topological sort produces a total order, but independent
    branches of the dependency DAG could initialize in parallel. Is the complexity justified for
    startup- only cost?
+
+## Review Feedback
+
+| ID | Summary | Status |
+|----|---------|--------|
+| RF-1 | Remove async dispatch from module boundaries diagram; remove async event handler from Threading | [APPLIED] |
+| RF-2 | Replace Reflect-based hot reload with rkyv | [APPLIED] |
+| RF-3 | Add capture/bubble event propagation | [APPLIED] |
+| RF-4 | Reconcile ComponentEvent with ECS ObserverTrigger | [APPLIED] |
+| RF-5 | Replace SmallVec with Vec in ObserverDescriptor | [APPLIED] |
+| RF-6 | Fix FFI crates (libc → core::ffi, windows_sys → windows-rs) | [APPLIED] |
+| RF-7 | Add benchmark for cmd buffer flush + observer dispatch | [APPLIED] |
+| RF-8 | Expand HotReloadManager::reload() for new types and schema migration | [APPLIED] |
+| RF-9 | Update Plugin system — data packages, not DLLs | [APPLIED] |
+| RF-10 | Add Middleman .dylib architecture section | [APPLIED] |
+| RF-11 | Add static linking for shipping builds to Platform Considerations | [APPLIED] |
+| RF-12 | Add bytecode obfuscation to Platform Considerations | [APPLIED] |

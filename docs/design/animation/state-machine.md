@@ -2107,8 +2107,7 @@ State machine replication includes: current state ID, transition progress, and p
 (floats, bools, triggers). Parameters are replicated as a compact struct. State transitions are
 derived client-side from replicated parameters, reducing bandwidth.
 
-Blend curves use the shared `Curve<T>` type (see
-[shared-primitives.md](../core-runtime/shared-primitives.md)).
+Blend curves use the shared `Curve<T>` type (see [algorithms.md](../core-runtime/algorithms.md)).
 
 ## Test Plan
 
@@ -2377,3 +2376,335 @@ Question 5).
 7. **Montage priority when multiple are active** -- If two montages affect overlapping bone groups,
    which takes priority? Options: last-played-wins, explicit priority field, or reject overlapping
    montages.
+
+## Review Feedback
+
+### RF-1: Replace all Tokio/async with platform-native I/O
+
+Replace Tokio runtime in architecture diagram, morph streaming, platform table, and test cases with
+platform-native I/O:
+
+- Linux: io_uring via rustix
+- Windows: IOCP via windows-rs
+- macOS: GCD dispatch_io via dispatch2
+
+Replace `IoFutureHandle` with `IoRequestId`. Replace `async fn` with synchronous submission via
+crossbeam-channel. Update TC-9.2.5.I3 to verify platform-native backends.
+
+### RF-2: Add PoseSource::SpriteSheet for 2D animation
+
+The state machine must drive 2D spritesheet animation. Add a sprite frame source alongside skeletal
+pose sources:
+
+```rust
+pub enum PoseSource {
+    Clip(Handle<AnimationClip>, PlaybackMode),
+    BlendSpace1D(BlendSpace1DDef),
+    BlendSpace2D(BlendSpace2DDef),
+    SubStateMachine(Box<StateGraphDef>),
+    MotionMatching(MotionMatchDef),   // RF-3
+    SpriteSheet(SpriteSheetDef),      // this RF
+}
+
+pub struct SpriteSheetDef {
+    pub atlas: Handle<TextureAtlas>,
+    pub frames: SmallVec<[SpriteFrame; 16]>,
+    pub fps: f32,
+    pub loop_mode: PlaybackMode,
+}
+
+pub struct SpriteFrame {
+    pub atlas_index: u16,
+    pub duration_override: Option<f32>,
+}
+```
+
+The state machine evaluates identically for 2D and 3D — states, transitions, conditions, layers all
+work the same. Only the output differs:
+
+- 3D: bone palette (SmallVec<[ClipWeight; 8]>)
+- 2D: sprite frame index (u16 atlas index + UV rect)
+
+A 2D character has states like Idle/Walk/Run/Jump/Attack, each mapping to a SpriteSheetDef with
+different frame ranges in the atlas. Transitions crossfade by blending sprite opacity or cutting
+immediately.
+
+### RF-3: Add PoseSource::MotionMatching
+
+Add motion matching as a pose source in the state machine:
+
+```rust
+pub struct MotionMatchDef {
+    pub database: Handle<PoseDatabase>,
+    pub schema: Handle<PoseSearchSchema>,
+    pub blend_time: f32,
+    pub inertialization: bool,
+}
+```
+
+The motion matching system:
+
+1. Reads `MovementState` from character controller
+2. Builds a feature vector (position, velocity, trajectory)
+3. Searches `PoseDatabase` via KD-tree for nearest match
+4. Writes selected pose + clip time to `MotionMatchResult`
+5. State machine reads result as a pose source
+6. Inertialization blend handles transitions
+
+A locomotion state in the state machine can use `PoseSource::MotionMatching` instead of a clip or
+blend space. The state machine handles transitions TO/FROM motion matching states using
+inertialization (RF-5).
+
+Reference: [Clavet, "Motion Matching" (GDC 2016)](https://www.gdcvault.com/play/1023280/Motion-Matching-and-The-Road)
+
+### RF-4: Clarify Reflect as codegen
+
+All `Reflect` derives in this design are the codegen derive macro producing static type descriptors
+for the middleman .dylib. NOT bevy_reflect's runtime registry. Add a note in the Overview clarifying
+this distinction.
+
+### RF-5: Add inertialization transition blend
+
+Add inertialization as a transition blend mode (moved from skeletal Design #24 RF-5):
+
+```rust
+pub enum TransitionBlendMode {
+    Crossfade,        // dual-sample linear blend
+    Frozen,           // freeze source, blend to target
+    Inertialization,  // single-sample velocity carryover
+}
+```
+
+Inertialization blends from a stored pose offset toward zero over the transition duration. Only the
+target pose is evaluated — the source is not sampled after the transition starts. Produces smoother
+transitions than crossfade for motion matching and avoids the cost of evaluating two poses.
+
+Reference: [Bonavita, "Inertialization" (GDC 2018)](https://www.gdcvault.com/play/1025165/Inertialization-High-Performance-Animation-Transitions)
+
+### RF-6: Add Multiply to LayerBlendMode
+
+Design #24 specifies Override/Additive/Multiply. This design only has Override and Additive. Add:
+
+```rust
+pub enum LayerBlendMode {
+    Override,
+    Additive,
+    Multiply,  // scale bone transforms (for scaling anims)
+}
+```
+
+### RF-7: Fix Changed query filter
+
+Remove `Changed<AnimationStateMachine>` from the evaluation system query. Time-based conditions
+(clip completion, timer expiry) must trigger transitions every frame even when no parameter was
+externally mutated. The system must evaluate every active state machine every frame.
+
+### RF-8: Add montage priority
+
+Add `priority: u8` to `MontageDef`. When multiple montages affect overlapping bone groups, highest
+priority wins. Same-priority resolved by last-played-wins. Resolves open question #7.
+
+### RF-9: Codegen for state machines
+
+State machines authored in the visual editor compile to static Rust via the middleman .dylib codegen
+pipeline:
+
+1. Designer creates state graph visually (nodes + edges)
+2. Codegen generates a Rust evaluation function
+3. Compiled into middleman .dylib
+4. Hot-reloaded into editor
+
+The compiled state machine is a match statement over state IDs with inlined transition conditions —
+no graph traversal at runtime, pure static dispatch.
+
+For shipping builds, state machine logic is bytecode-obfuscated per the plugin IP protection
+constraint.
+
+### RF-10: Player input → animation integration
+
+Player input drives animation parameters that the state machine reads. The input system writes, the
+animation system reads — no direct coupling.
+
+**Data flow:**
+
+```text
+Input System (Phase 1)
+  → ActionState components (move, jump, attack, crouch)
+
+Gameplay Systems (Phase 3)
+  → CharacterMovement component (speed, direction, grounded)
+  → write AnimationParams on the entity
+
+Animation State Machine (Phase 6 / PostUpdate)
+  → reads AnimationParams
+  → evaluates transitions
+  → produces pose
+```
+
+**AnimationParams** is the bridge between gameplay and animation. Gameplay systems write it; the
+state machine reads it. No direct input→animation connection:
+
+```rust
+#[derive(Component)]
+pub struct AnimationParams {
+    pub speed: f32,            // 0 = idle, normalized
+    pub direction: f32,        // -180 to 180 degrees
+    pub is_grounded: bool,
+    pub is_crouching: bool,
+    pub is_jumping: bool,
+    pub is_falling: bool,
+    pub aim_pitch: f32,        // for aim offset
+    pub aim_yaw: f32,
+    pub triggers: SmallVec<[StringId; 4]>,  // one-shot
+}
+```
+
+The state machine's `Condition` expressions reference these params:
+`Compare(speed, GreaterThan, 0.1)` triggers Idle→Walk. `is_jumping` triggers grounded→airborne.
+Blend spaces parameterize on `speed` and `direction`.
+
+**Player example:**
+
+| Input | Gameplay Sets | Anim Reads | State Transition |
+|-------|-------------|-----------|-----------------|
+| WASD | speed, direction | speed > 0 | Idle → Walk/Run |
+| Space | is_jumping = true | is_jumping | Ground → Jump |
+| Shift | is_crouching = true | is_crouching | Stand → Crouch |
+| LMB | trigger "attack" | trigger consumed | Any → Attack montage |
+| RMB | aim_pitch/yaw | aim offset blend | Aim layer active |
+
+### RF-11: AI → animation integration
+
+AI systems drive animation the same way as player input — through `AnimationParams`. The AI writes
+params; the state machine reads them. Same state machine, same transitions.
+
+**Data flow:**
+
+```text
+AI Systems (Phase 4)
+  → BehaviorTree/GOAP selects action (patrol, chase, attack)
+  → NavMesh pathfinding produces velocity
+  → AI writes AnimationParams on the NPC entity
+
+Animation State Machine (Phase 6 / PostUpdate)
+  → reads the same AnimationParams
+  → identical evaluation as player-controlled entities
+```
+
+**AI example:**
+
+| AI Decision | AI Sets | Anim Result |
+|-------------|---------|-------------|
+| Patrol | speed=walk, direction=path | Walk blend space |
+| Chase player | speed=run, direction=to_player | Run blend space |
+| Attack | trigger "attack" | Attack montage |
+| Take damage | trigger "hit_react" | Hit reaction montage |
+| Die | trigger "death" | Death → ragdoll |
+| Idle alert | speed=0, aim_yaw=scan | Idle + look-around |
+
+**Key principle:** The animation system does NOT know whether an entity is player-controlled or
+AI-controlled. It only reads `AnimationParams`. This means:
+
+- Same character can switch between player and AI control (e.g., cutscene NPC becomes playable)
+- Same animation state machine works for player and NPC variants of the same character
+- AI and player share animation assets — no duplication
+- Multiplayer: remote players drive params from network replication, same state machine evaluates
+  locally
+
+**AnimationQuery for AI feedback:**
+
+AI systems can read animation state to make decisions:
+
+```rust
+pub struct AnimationQuery {
+    pub current_state: StateId,
+    pub state_elapsed: f32,
+    pub state_remaining: f32,
+    pub is_transitioning: bool,
+    pub active_montage: Option<MontageId>,
+    pub root_motion_delta: Vec3,
+}
+```
+
+Example: AI waits for attack animation to finish before choosing next action
+(`state_remaining < 0.1`). AI reads `root_motion_delta` to sync navigation with animated movement.
+
+### RF-12: ECS integration
+
+All animation state is ECS components. No hidden state outside the ECS. This enables querying,
+change detection, serialization, and editor inspection of animation state.
+
+**Components per animated entity:**
+
+| Component | Ownership | Purpose |
+|-----------|-----------|---------|
+| `AnimationStateMachine` | Animation | State graph instance, current state |
+| `AnimationParams` | Gameplay/AI | Input parameters for transitions |
+| `AnimationLayerStack` | Animation | Active layers with weights + masks |
+| `AnimationQuery` | Animation (read-only) | AI/gameplay reads anim state |
+| `BonePalette` | Animation | Final bone transforms (GPU upload) |
+| `RootMotionDelta` | Animation | Frame root motion for controller |
+| `MontageInstance` | Animation | Active montage (added/removed dynamically) |
+| `SkeletonRef` | Asset | Handle to skeleton asset |
+| `AnimationClipRef` | Asset | Handle(s) to animation clips |
+
+**System ordering in PostUpdate:**
+
+```text
+1. AnimationParamWriteBarrier
+   (ensures all gameplay/AI param writes complete)
+2. StateMachineEvaluateSystem
+   (reads AnimationParams, evaluates transitions)
+3. BlendTreeEvaluateSystem
+   (evaluates blend trees, produces clip weights)
+4. MontageEvaluateSystem
+   (evaluates active montages, overrides layers)
+5. LayerBlendSystem
+   (combines all layers into final bone palette)
+6. RootMotionSystem
+   (extracts root delta, writes RootMotionDelta)
+7. IkSolveSystem
+   (applies IK after blend, modifies bone palette)
+8. BonePaletteUploadSystem
+   (uploads to GPU structured buffer)
+```
+
+Systems 2-5 can run in parallel across entities via `job_system::par_for_each` — each entity's state
+machine is independent.
+
+**ECS change detection:**
+
+- `Changed<AnimationParams>` → only re-evaluate transitions when params change (BUT: time-based
+  transitions still need per-frame evaluation — see RF-7)
+- `Added<MontageInstance>` → trigger montage blend-in
+- `Removed<MontageInstance>` → trigger montage blend-out
+- `Changed<AnimationStateMachine>` → editor live-reload
+
+**Archetype efficiency:**
+
+All animated entities share the same archetype
+(`Transform, AnimationStateMachine, AnimationParams, BonePalette, SkeletonRef, ...`). This means
+they iterate contiguously in the ECS — cache-friendly parallel evaluation across thousands of NPCs.
+
+**Entity events for animation:**
+
+Animation fires entity events through the ECS observer system:
+
+```rust
+pub enum AnimationEvent {
+    StateEntered(StateId),
+    StateExited(StateId),
+    TransitionStarted(StateId, StateId),
+    TransitionCompleted(StateId),
+    MontageStarted(MontageId),
+    MontageCompleted(MontageId),
+    MontageCancelled(MontageId),
+    ClipEvent(AnimEventPayload),  // from clip markers
+}
+```
+
+Gameplay systems observe these events to trigger effects: footstep sounds on foot-down marker, VFX
+on attack impact marker, gameplay logic on state transitions.
+
+Events use the capture/bubble propagation system (Design #9) for UI animations — a button press
+animation event can bubble to the parent container.

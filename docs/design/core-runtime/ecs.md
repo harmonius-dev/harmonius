@@ -89,6 +89,13 @@
 
 ## Overview
 
+The ECS is a custom implementation built from scratch for the Harmonius engine. It draws on bevy_ecs
+(0.18+) as a reference implementation for archetype storage, query iteration, system scheduling,
+observer dispatch, relationship pairs, and command buffers -- but we own all code and take no
+dependency on bevy_ecs. This enables direct integration with our custom job system, GameLoopGraph,
+and platform I/O layer that would be impossible with bevy_ecs's private executor and non-replaceable
+job system.
+
 The ECS is the foundational data model and execution framework for every domain in the Harmonius
 engine. All simulation data lives as components, all logic runs as systems, and all state is owned
 by a `World`. There are no parallel data stores, no separate physics world, no renderer scene graph
@@ -105,16 +112,20 @@ Key architectural choices:
    components.
 4. **Generational entity indices** (32-bit index + 32-bit generation) for O(1) allocation,
    deallocation, and stale-reference detection.
-5. **Relationship pairs** encoded as 64-bit component IDs for hierarchies, entity templates, and
-   graph-based data modeling.
+5. **Relationship pairs** registered as regular `u32` ComponentIds for hierarchies, entity
+   templates, and graph-based data modeling. Each unique (relationship, target) pair is registered
+   in the ComponentRegistry, keeping all archetype lookups uniform.
 6. **Tick-based change detection** at chunk granularity for reactive patterns like dirty-flag
    propagation and network delta compression.
-7. **Automatic system scheduling** via dependency analysis on declared access sets, producing a
-   `TaskGraph` (from `threading.md`) for parallel execution on the `ThreadPool`.
+7. **Automatic system scheduling** via dependency analysis on declared access sets, producing a job
+   dependency graph for parallel execution on the custom job system (crossbeam-deque).
 8. **Command buffers** for deferred structural changes, flushed at sync points in deterministic
    order.
 9. **Observers** for reactive callbacks on component add/remove/change, evaluated during command
    buffer flush.
+10. **AoSoA tiled storage** within chunks. Each chunk interleaves tiles of N elements (where N
+    matches the platform SIMD width, e.g., 4 for SSE/NEON, 8 for AVX2) so that SIMD lanes map
+    directly to consecutive entities without gather/scatter overhead.
 
 **Audio runtime exception.** Per constraints.md, the audio mixer runs on a dedicated real-time
 thread with a < 0.5 ms latency budget. ECS components (`AudioSource`, `AudioListener`) bridge game
@@ -152,15 +163,10 @@ graph TD
     end
 
     subgraph "harmonius_platform::threading"
-        TP[ThreadPool]
+        JS[JobSystem]
         TG[TaskGraph]
         GLG[GameLoopGraph]
         CF[CompiledFrame]
-    end
-
-    subgraph "harmonius_core::reflect"
-        RF[Reflect trait]
-        TR[TypeRegistry]
     end
 
     W --> EA
@@ -172,8 +178,6 @@ graph TD
     W --> CD
 
     AS --> AG
-    CR --> RF
-    CR --> TR
     QE --> QC
     QE --> AS
     QE --> SS
@@ -182,7 +186,7 @@ graph TD
     SC --> GLG
     GLG --> CF
     CF --> TG
-    CF --> TP
+    CF --> JS
     SC --> SG
     SC --> QE
     SG --> PH
@@ -404,25 +408,25 @@ classDiagram
         -type_id_map: HashMap~TypeId, ComponentId~
         -name_map: HashMap~String, ComponentId~
         +register~T: Component~() ComponentId
-        +register_dynamic(desc) ComponentId
+        +register_from_plugin(desc) ComponentId
         +get(id) ComponentDescriptor
         +lookup~T~() Option~ComponentId~
     }
 
     class QueryState~Q~ {
-        -matched_archetypes: SmallVec~ArchetypeId 8~
+        -matched_archetypes: Vec~ArchetypeId~
         -component_access: AccessSet
         -last_check_archetype_count: u32
         +new(world) QueryState~Q~
         +iter(world) QueryIter~Q~
-        +par_iter(world, pool) ParQueryIter~Q~
+        +par_iter(world, job_system) ParQueryIter~Q~
         +get(world, entity) Option~Q::Item~
         +single(world) Q::Item
     }
 
     class AccessSet {
-        -reads: FixedBitSet
-        -writes: FixedBitSet
+        -reads: Vec~u64~
+        -writes: Vec~u64~
         +reads_component(id) bool
         +writes_component(id) bool
         +is_compatible(other) bool
@@ -477,13 +481,13 @@ classDiagram
     class GameLoopGraph {
         -phases: Vec~PhaseNode~
         -edges: Vec~PhaseId PhaseId~
-        +compile(world, pool) Result~CompiledFrame~
+        +compile(world, job_system) Result~CompiledFrame~
     }
 
     class CompiledFrame {
         -task_graph: TaskGraph
         -render_submissions: Vec~RenderSubmission~
-        +execute(world, pool, reactor)
+        +execute(world, job_system)
     }
 
     class Phase {
@@ -556,10 +560,9 @@ graph TD
 /// An entity identifier. 32-bit index + 32-bit
 /// generation counter. Total size: 8 bytes.
 /// Implements Copy, Clone, Debug, PartialEq, Eq,
-/// Hash, Reflect.
+/// Hash.
 #[derive(
-    Clone, Copy, Debug, PartialEq, Eq,
-    Hash, Reflect,
+    Clone, Copy, Debug, PartialEq, Eq, Hash,
 )]
 pub struct Entity {
     index: u32,
@@ -709,10 +712,10 @@ impl ComponentRegistry {
         &mut self,
     ) -> ComponentId;
 
-    /// Register a component at runtime (dynamic
-    /// scripting, hot-reload). Caller provides
-    /// size, alignment, drop fn, and storage mode.
-    pub fn register_dynamic(
+    /// Register a component loaded from a plugin
+    /// .dylib at runtime. Caller provides size,
+    /// alignment, drop fn, and storage mode.
+    pub fn register_from_plugin(
         &mut self,
         desc: ComponentDescriptor,
     ) -> ComponentId;
@@ -753,9 +756,9 @@ pub type HookFn = fn(
 
 /// Per-component-type lifecycle hooks.
 pub struct ComponentHooks {
-    pub on_add: SmallVec<[HookFn; 4]>,
-    pub on_remove: SmallVec<[HookFn; 4]>,
-    pub on_set: SmallVec<[HookFn; 4]>,
+    pub on_add: Vec<HookFn>,
+    pub on_remove: Vec<HookFn>,
+    pub on_set: Vec<HookFn>,
 }
 
 impl ComponentHooks {
@@ -846,11 +849,14 @@ pub struct Archetype {
     shared_values:
         HashMap<ComponentId, Vec<SharedValue>>,
     /// Tag component IDs (no column needed).
-    tags: HashSet<ComponentId>,
+    /// Sorted Vec for deterministic iteration.
+    tags: Vec<ComponentId>,
     /// Enableable component bit arrays. One bit
     /// per entity per enableable component.
+    /// Uses `Vec<AtomicU64>` with fetch_or /
+    /// fetch_and for lock-free parallel toggles.
     enable_bits:
-        HashMap<ComponentId, FixedBitSet>,
+        HashMap<ComponentId, Vec<AtomicU64>>,
     /// Chunk capacity computed from component
     /// sizes and platform cache line.
     chunk_capacity: u32,
@@ -1108,8 +1114,11 @@ impl ChangeDetector {
 /// stays in the archetype table; only a bitmask
 /// controls visibility.
 ///
-/// Toggling is an atomic bit flip -- safe from
-/// parallel worker threads without command buffers.
+/// Storage uses `Vec<AtomicU64>` — one bit per
+/// entity. Toggling uses `fetch_or` (enable) and
+/// `fetch_and` (disable) with Release/Acquire
+/// ordering, making it safe from parallel worker
+/// threads without command buffers.
 ///
 /// Derive via:
 ///   #[derive(Component)]
@@ -1328,8 +1337,8 @@ impl<'w, T: Component> DerefMut for Mut<'w, T> {
 /// by a query or system. Used for borrow safety
 /// and dependency analysis.
 pub struct AccessSet {
-    reads: FixedBitSet,
-    writes: FixedBitSet,
+    reads: Vec<u64>,
+    writes: Vec<u64>,
 }
 
 impl AccessSet {
@@ -1361,8 +1370,7 @@ impl AccessSet {
 /// frames. Incrementally updated when new
 /// archetypes are created.
 pub struct QueryState<Q: WorldQuery> {
-    matched_archetypes:
-        SmallVec<[ArchetypeId; 8]>,
+    matched_archetypes: Vec<ArchetypeId>,
     component_access: AccessSet,
     last_check_archetype_count: u32,
     _marker: PhantomData<Q>,
@@ -1380,11 +1388,11 @@ impl<Q: WorldQuery> QueryState<Q> {
     ) -> QueryIter<'w, Q>;
 
     /// Parallel iteration. Partitions work across
-    /// ThreadPool workers at chunk granularity.
+    /// JobSystem workers at chunk granularity.
     pub fn par_iter<'w>(
         &mut self,
         world: &'w World,
-        pool: &ThreadPool,
+        job_system: &JobSystem,
         batch_size: u32,
     ) -> ParQueryIter<'w, Q>;
 
@@ -1406,13 +1414,28 @@ impl<Q: WorldQuery> QueryState<Q> {
 
     /// Update the archetype match cache if new
     /// archetypes have been created since the last
-    /// check.
+    /// check. Uses a bloom filter for fast rejection
+    /// of non-matching archetypes.
     pub fn update_archetypes(
         &mut self,
         world: &World,
     );
 }
 ```
+
+**Compiled query plans.** `QueryState` caches a compiled query plan built at `QueryState::new` time
+and incrementally updated via `update_archetypes`. Each plan includes:
+
+1. **Bloom filter** — O(1) archetype rejection. Rebuilt only when new archetypes are created.
+2. **Pre-resolved column offsets** — per matched archetype, the column byte offset for each fetched
+   component is stored at plan-build time, eliminating `HashMap` lookups in the hot path.
+3. **Prefetch hints** — `core::intrinsics::prefetch_read_data` calls tuned to component sizes and
+   AoSoA tile stride, inserted by the monomorphized iterator.
+4. **Branchless change detection** — SIMD bitmask comparison of per-chunk `ChangeTick` values. A
+   whole register-width batch of chunks is tested in one instruction.
+5. **Monomorphized iterators** — `WorldQuery` trait methods are inlined at compile time via
+   generics. LLVM sees concrete types end-to-end and can auto-vectorize the inner loop. No virtual
+   dispatch, no type erasure in the hot path.
 
 ### Query Filters
 
@@ -1609,9 +1632,18 @@ pub struct ResMut<'w, T: Resource> {
 pub trait System: Send + Sync + 'static {
     /// Run the system with world access derived
     /// from SystemParam.
-    fn run(
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure the `UnsafeWorldCell`
+    /// grants access only to the components and
+    /// resources declared by `self.access()`.
+    /// Concurrent systems must have non-
+    /// overlapping access sets validated by the
+    /// scheduler before dispatch.
+    unsafe fn run(
         &mut self,
-        world: &World,
+        world: UnsafeWorldCell<'_>,
     );
 
     /// Report the access set for scheduling.
@@ -1719,12 +1751,16 @@ impl<'w> Commands<'w> {
 }
 
 /// Commands scoped to a specific entity.
-pub struct EntityCommands<'a> {
+/// Uses separate lifetimes: `'a` for the borrow
+/// of Commands, `'w` for the world borrow inside
+/// Commands. This avoids reborrow conflicts when
+/// chaining entity commands.
+pub struct EntityCommands<'a, 'w> {
     entity: Entity,
-    commands: &'a mut Commands<'a>,
+    commands: &'a mut Commands<'w>,
 }
 
-impl<'a> EntityCommands<'a> {
+impl<'a, 'w> EntityCommands<'a, 'w> {
     pub fn insert(
         &mut self,
         bundle: impl Bundle,
@@ -1763,7 +1799,7 @@ enum Command {
     },
     Remove {
         entity: Entity,
-        component_ids: SmallVec<[ComponentId; 4]>,
+        component_ids: Vec<ComponentId>,
     },
     SetParent {
         child: Entity,
@@ -1854,9 +1890,43 @@ pub struct Observer {
 // `ObserverRegistry`, trigger types, and callback
 // dispatch are canonical there.
 
+/// Which propagation phase an observer fires in.
+/// Capture fires root → target; Bubble fires
+/// target → root.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PropagationPhase {
+    /// Root-to-target pass (descend before firing).
+    Capture,
+    /// Target-to-root pass (fire then ascend).
+    Bubble,
+}
+
+/// Context passed to every entity event observer.
+/// Allows the observer to halt further propagation.
+pub struct EventContext<'a, E: EntityEvent> {
+    pub event: &'a E,
+    pub target: Entity,
+    pub current: Entity,
+    pub phase: PropagationPhase,
+    stopped: bool,
+}
+
+impl<'a, E: EntityEvent> EventContext<'a, E> {
+    /// Stop propagation after this observer returns.
+    /// No further observers in this phase will fire.
+    pub fn stop_propagation(&mut self) {
+        self.stopped = true;
+    }
+}
+
 /// Custom entity event. Emitted at a specific
 /// entity and optionally propagated along
 /// relationship edges.
+///
+/// Both capture (root → target) and bubble
+/// (target → root) phases are dispatched.
+/// Observers declare which phase they run in via
+/// [events-plugins.md](events-plugins.md).
 pub trait EntityEvent:
     Send + Sync + 'static
 {
@@ -1871,7 +1941,9 @@ pub trait EntityEvent:
 impl World {
     /// Emit a custom event targeted at an entity.
     /// The event is queued and dispatched at the
-    /// next sync point.
+    /// next sync point. Observers fire in capture
+    /// phase (root → target) then bubble phase
+    /// (target → root).
     pub fn emit_event<E: EntityEvent>(
         &mut self,
         entity: Entity,
@@ -2327,26 +2399,26 @@ reused across frames until the system set changes.
 ```mermaid
 sequenceDiagram
     participant ML as Main Loop
-    participant RE as Tokio Runtime
+    participant MT as Main Thread
     participant CF as CompiledFrame
-    participant TP as ThreadPool
+    participant JS as JobSystem
     participant W as Workers
     participant CB as CommandBuffers
     participant OB as Observers
 
     loop Every Frame
-        ML->>RE: poll()
-        RE->>TP: re-enqueue woken tasks
+        ML->>MT: drain channel
+        MT->>JS: re-enqueue completed jobs
 
-        ML->>CF: execute(world, pool, reactor)
+        ML->>CF: execute(world, job_system)
 
         loop Each Phase in TaskGraph
-            CF->>TP: dispatch phase tasks
-            TP->>W: work-steal ready systems
+            CF->>JS: dispatch phase tasks
+            JS->>W: work-steal ready systems
             W->>W: execute systems in parallel
             Note over W: Systems read/write components
             Note over W: Systems record commands
-            W-->>TP: all systems in phase complete
+            W-->>JS: all systems in phase complete
 
             CF->>CB: flush_all(world)
             Note over CB: Apply structural changes
@@ -2356,7 +2428,7 @@ sequenceDiagram
             OB->>CB: flush observer commands
         end
 
-        ML->>RE: poll()
+        ML->>MT: drain channel
     end
 ```
 
@@ -2402,7 +2474,7 @@ sequenceDiagram
     participant QC as QueryCache
     participant AS as ArchetypeStorage
     participant CD as ChangeDetector
-    participant TP as ThreadPool
+    participant JS as JobSystem
 
     SYS->>QS: iter(world)
     QS->>QC: check_cache(archetype_count)
@@ -2423,10 +2495,10 @@ sequenceDiagram
     end
 
     alt Parallel iteration
-        SYS->>QS: par_iter(world, pool)
-        QS->>TP: partition chunks across workers
-        TP->>TP: each worker iterates its chunks
-        TP-->>SYS: all chunks processed
+        SYS->>QS: par_iter(world, job_system)
+        QS->>JS: partition chunks across workers
+        JS->>JS: each worker iterates its chunks
+        JS-->>SYS: all chunks processed
     end
 ```
 
@@ -2462,15 +2534,13 @@ schedule.order(movement_id, collision_id);
 
 // Build game loop graph, then compile once
 let graph = schedule.build_game_loop(&world)?;
-let frame = graph.compile(&world, &pool)?;
+let frame = graph.compile(&world, &job_system)?;
 
 // --- Frame Execution (reuses CompiledFrame) ---
 
 loop {
-    runtime.poll();
-    frame.execute(
-        &mut world, &pool, &mut runtime,
-    );
+    io_channel.drain();
+    frame.execute(&mut world, &job_system);
 }
 ```
 
@@ -2594,7 +2664,7 @@ for transform in query_changed.iter() {
 | Switch | 256 bytes | 8 KiB |
 | Desktop | 512 bytes | No cap |
 
-### Thread Pool Integration
+### Job System Integration
 
 The ECS scheduler no longer directly builds a `TaskGraph`. Instead, it populates a `SystemPhase`
 within the `GameLoopGraph` (defined in [platform/threading.md](../platform/threading.md)). The game
@@ -2623,12 +2693,14 @@ tick:
 ```rust
 // Build once (or when systems change)
 let graph = schedule.build_game_loop(&world)?;
-let frame = graph.compile(&world, &pool)?;
+let frame = graph.compile(
+    &world, &job_system,
+)?;
 
 // Per-frame execution
 loop {
-    runtime.poll();
-    frame.execute(&mut world, &pool, &mut runtime);
+    io_channel.drain();
+    frame.execute(&mut world, &job_system);
 }
 ```
 
@@ -2638,20 +2710,20 @@ sequenceDiagram
     participant SC as Schedule
     participant GLG as GameLoopGraph
     participant CF as CompiledFrame
-    participant TP as ThreadPool
+    participant JS as JobSystem
 
     ML->>SC: build_game_loop(world)
     SC-->>ML: GameLoopGraph
 
-    ML->>GLG: compile(world, pool)
+    ML->>GLG: compile(world, job_system)
     GLG-->>ML: CompiledFrame
 
     loop Every Frame
-        ML->>CF: execute(world, pool, reactor)
-        CF->>TP: dispatch task graph
-        TP->>TP: work-steal systems in parallel
-        Note over TP: Sync barriers flush commands
-        TP-->>CF: frame complete
+        ML->>CF: execute(world, job_system)
+        CF->>JS: dispatch task graph
+        JS->>JS: work-steal systems in parallel
+        Note over JS: Sync barriers flush commands
+        JS-->>CF: frame complete
     end
 ```
 
@@ -2671,7 +2743,7 @@ schedule's topological ordering and access-set analysis are preserved within eac
 **Non-send systems** are pinned to the game loop thread by the scheduler. They run at designated
 points in the phase, never dispatched to worker threads.
 
-**Parallel query iteration** (`par_iter`) still uses `ThreadPool::scope` internally. The outer
+**Parallel query iteration** (`par_iter`) still uses `job_system::scope` internally. The outer
 scheduling is driven by the compiled game loop graph, but within a system, `par_iter` splits work
 across workers via scoped fork-join. Query borrows from the calling system are valid across worker
 tasks without `'static` or `Arc` overhead.
@@ -2683,23 +2755,73 @@ are aligned to the component type's natural alignment. Numeric component types (
 `Mat4`) with proper alignment can be processed with SIMD intrinsics without additional alignment
 adjustments.
 
+### AoSoA Tiled Storage
+
+Within each chunk, component data is laid out as Array of Structs of Arrays (AoSoA). Rather than a
+flat SoA column, data is interleaved in tiles of N entities where N equals the platform SIMD lane
+width:
+
+- **SSE/NEON**: N = 4 (128-bit registers, 4 × f32 lanes)
+- **AVX2**: N = 8 (256-bit registers, 8 × f32 lanes)
+- **SVE2**: N = variable (runtime register length)
+
+Tile width is determined at codegen time from component field types and the target architecture.
+Because all user types are statically generated (RF-9), tile size is a compile-time constant — no
+runtime branching in the inner loop.
+
+```text
+Chunk layout (AVX2, N=8, component = f32):
+
+Tile 0:  [e0.x  e1.x  e2.x  e3.x  e4.x  e5.x  e6.x  e7.x ]  <- 8 × f32, one AVX2 register
+         [e0.y  e1.y  e2.y  e3.y  e4.y  e5.y  e6.y  e7.y ]
+         [e0.z  e1.z  e2.z  e3.z  e4.z  e5.z  e6.z  e7.z ]
+Tile 1:  [e8.x  e9.x  ...                                  ]
+         ...
+```
+
+This layout allows full SIMD vectorization without gather/scatter: an entire register-width batch of
+entity fields is loaded in one instruction. The query iterator advances by N entities per iteration
+step. Scalar fallback handles the final partial tile.
+
 ### Proposed Dependencies
 
-| Crate             |
-|-------------------|
-| `fixedbitset`     |
-| `smallvec`        |
-| `crossbeam-utils` |
-| `glam`            |
+| Crate               |
+|----------------------|
+| `crossbeam-channel` |
+| `crossbeam-deque`   |
+| `glam`              |
 
-1. **`fixedbitset`** — Compact bitsets for AccessSet, enable bits
-   - **Justification:** Efficient set operations for component access tracking
-2. **`smallvec`** — Inline-allocated small vectors
-   - **Justification:** Matched archetype lists, hook arrays, command component lists
-3. **`crossbeam-utils`** — `CachePadded` for atomics
-   - **Justification:** Prevents false sharing on change tick counters
-4. **`glam`** — Math types (Vec3, Quat, Mat4)
-   - **Justification:** SIMD-accelerated math implied by Transform components and spatial operations
+1. **`crossbeam-deque`** — Work-stealing deques for the job system
+   - **Justification:** Lock-free work distribution for parallel system execution and par_iter
+2. **`crossbeam-channel`** — MPMC channels for I/O completion delivery
+   - **Justification:** Platform I/O completions drained at frame boundary
+3. **`glam`** — Math types (Vec3, Quat, Mat4)
+   - **Justification:** SIMD-accelerated math for Transform components and spatial operations
+
+### Codegen and Middleman .dylib
+
+All codegen'd types (components, events, enums, systems, type descriptors, property panels,
+blueprint functions, serialization derives) live in a single **middleman .dylib** — not in the
+engine binary.
+
+**Engine binary role.** The engine binary is a thin shell: job system, platform I/O, GPU, render
+graph, ECS core. It loads the middleman via `libloading` at startup and on hot-reload.
+
+**Hot-reload cycle** (editor only):
+
+1. User changes component schema or blueprint in the visual editor.
+2. Codegen regenerates the middleman `.rs` files.
+3. Bundled `rustc` recompiles the middleman `.dylib` (incremental — seconds).
+4. Engine hot-reloads middleman via `libloading`; calls `register_from_plugin()` for each type.
+5. All engine code sees updated types with full static dispatch.
+
+**Shipping.** Everything compiles into one binary with LTO. No `.dylib` at runtime. The codegen step
+runs as part of the export build, and the middleman source is compiled directly into the game
+binary.
+
+**Single source of truth.** One middleman ensures no type divergence across the engine/editor
+boundary. All archetypes, queries, and system access sets reference the same `ComponentId` values
+for every codegen'd type.
 
 ## Safety Invariants
 
@@ -2735,14 +2857,16 @@ Stale relationships to despawned-and-reused entities must be detected and cleane
 
 ### ComponentDescriptor::drop_fn (High)
 
-`drop_fn: Option<unsafe fn(*mut u8)>` must match the type at the pointer. `register_dynamic` callers
-must provide a `TypeId` witness. Add `debug_assert!` comparing `TypeId` when invoking `drop_fn`.
+`drop_fn: Option<unsafe fn(*mut u8)>` must match the type at the pointer. `register_from_plugin`
+callers must provide a `TypeId` witness. Add `debug_assert!` comparing `TypeId` when invoking
+`drop_fn`.
 
 ### Enableable Components (Critical)
 
-`set_enabled` claims atomic safety but `FixedBitSet` is not atomic. Implementation must use
-`Vec<AtomicU64>` with `fetch_or`/`fetch_and` (Release/Acquire ordering) for bit toggles, or require
-`&mut self` and defer through command buffers.
+`set_enabled` uses `Vec<AtomicU64>` with `fetch_or`/`fetch_and` (Release/Acquire ordering) for bit
+toggles. Callers must ensure the `Vec<AtomicU64>` is sized to cover all entity rows in the
+archetype. Growing the bit vector requires exclusive archetype access (during structural changes
+only).
 
 ### ParallelCommandWriter (High)
 
@@ -3028,11 +3152,11 @@ modules, and why? How could we make it more cohesive? How can we improve it to m
 The ECS design is the backbone and other modules (scene hierarchy F-1.2, spatial index F-1.9, events
 F-1.5) depend heavily on it. It aligns well with the engine constraints: static dispatch via
 generics, no singletons, composition over inheritance. One cohesion gap is between the ECS command
-buffer model (F-1.1.32) and Tokio async I/O (F-1.8): command buffers are synchronous and
-frame-scoped while I/O completions arrive when the game loop polls the Tokio runtime. Bridging these
-requires batching I/O completions into command buffers at the frame poll point. Making the command
-buffer API aware of async completion tokens would improve cohesion between the ECS and async I/O
-subsystems.
+buffer model (F-1.1.32) and platform I/O: command buffers are synchronous and frame-scoped while I/O
+completions arrive via a crossbeam-channel drained at the frame boundary. Bridging these requires
+batching I/O completions into command buffers at the channel drain point. Making the command buffer
+API aware of I/O completion tokens would improve cohesion between the ECS and the platform I/O
+layer.
 
 ## Open Questions
 
@@ -3067,3 +3191,313 @@ subsystems.
    type-erased paths that may be slower than statically-registered components. What is the
    acceptable performance gap? Should dynamic components be excluded from parallel iteration if they
    cannot guarantee Send + Sync?
+
+## Review Feedback
+
+### RF-1: Custom ECS — no bevy_ecs dependency [APPLIED]
+
+Build a custom ECS with full feature parity with bevy_ecs plus the extensions needed for this
+engine. bevy_ecs's executor is private, its thread pool (`bevy_tasks`) cannot be replaced with the
+custom job system (crossbeam-deque), and its schedule cannot integrate non-ECS nodes (platform I/O
+polling, render graph dispatch). A custom ECS integrates cleanly with our GameLoopGraph and custom
+job system (crossbeam-deque).
+
+Use bevy_ecs (0.18+) source code as a reference implementation during development. Its archetype
+storage, query engine, system scheduling, observer dispatch, relationship pairs, and command buffer
+designs are battle-tested and inform our implementation — but we own the code and can integrate with
+the custom job system (crossbeam-deque), GameLoopGraph, and platform I/O directly.
+
+The existing design is a strong foundation. The fixes below address specific issues found during
+review.
+
+### RF-2: Fix ComponentId sizing for relationship pairs [APPLIED]
+
+`ComponentId` is `u32` but `RelationPair::to_component_id()` encodes 64 bits (high 32 =
+relationship, low 32 = target entity index). This is a type-level contradiction.
+
+Options:
+
+1. Make `ComponentId(u64)` — simple, but doubles memory for all component lookups
+2. Introduce a separate `PairId(u64)` type — relationships use `PairId`, regular components use
+   `ComponentId(u32)`, archetype storage indexes by either
+3. Use a `ComponentId(u32)` registry where each unique `(relationship, target)` pair gets its own
+   `u32` ID via registration — simpler indexing, but limits total pair count to 4B
+
+Recommend option 3: register each pair as a regular `ComponentId`. The `RelationPair` struct becomes
+a convenience for encoding/decoding, but storage uses the registered `u32` ID. This keeps all
+archetype lookups uniform.
+
+### RF-3: System::run safety — UnsafeWorldCell [APPLIED]
+
+`System::run(&mut self, world: &World)` takes `&World` but systems that write components need
+mutable access to archetype columns via `UnsafeCell`. The safety contract must be explicit.
+
+Adopt the `UnsafeWorldCell<'_>` pattern:
+
+```rust
+pub trait System: Send + Sync + 'static {
+    /// # Safety
+    /// Caller guarantees no aliasing mutable
+    /// access — enforced by the scheduler via
+    /// AccessSet validation.
+    unsafe fn run(
+        &mut self,
+        world: UnsafeWorldCell<'_>,
+    );
+
+    fn access(&self) -> &AccessSet;
+    fn name(&self) -> &'static str;
+}
+```
+
+This makes the unsafe boundary explicit. The scheduler is the only caller, and it validates
+non-aliasing through `AccessSet` analysis before dispatching systems to the job system. The safe
+public API (`IntoSystem`, function systems, `SystemParam::fetch`) wraps this unsafe call.
+
+Key invariants:
+
+1. Scheduler validates no two parallel systems have overlapping mutable access
+2. `UnsafeWorldCell` prevents accidental `&mut World` usage
+3. `ParallelCommandWriter` must use `WorkerToken` (not raw `u32` index) to prevent aliasing
+
+### RF-4: Fix enableable component atomicity [APPLIED]
+
+`set_enabled(&self, ...)` claims atomic safety but `FixedBitSet` is not atomic. Replace with
+`Vec<AtomicU64>` using `fetch_or`/`fetch_and` (Release/Acquire ordering) for bit toggles. Document
+the memory ordering requirements.
+
+Additionally, the `tags` field of `Archetype` was updated from `HashSet<ComponentId>` to a sorted
+`Vec<ComponentId>` for deterministic iteration and reduced memory overhead.
+
+### RF-5: Fix EntityCommands lifetime [APPLIED]
+
+`EntityCommands<'a>` holds `commands: &'a mut Commands<'a>` — self-referential borrow that won't
+compile. Use separate lifetimes: `EntityCommands<'a, 'w>`.
+
+### RF-6: Replace all Tokio references with compio [APPLIED]
+
+The frame execution sequence diagram references "Tokio Runtime" and `runtime.poll()`. The Q&A
+section references "Tokio async I/O" and "Tokio runtime." Replace all with compio per
+constraints.md.
+
+### RF-7: Add event capture/bubble phases [APPLIED]
+
+Per feedback (feedback_ecs_events_hierarchy.md), entity events require both capture phase (root →
+target) and bubble phase (target → root). The current design only shows bubble. Add
+`PropagationPhase` enum and `stop_propagation()` on the event context.
+
+### RF-8: Remove crossbeam-utils and smallvec [APPLIED]
+
+Per constraints.md, `crossbeam-utils` is removed. Use `#[repr(align(64))]` wrapper for cache-line
+padding. `smallvec` is also removed per constraints.
+
+### RF-9: Zero reflection — static codegen [APPLIED]
+
+Remove `harmonius_core::reflect` (Reflect trait, TypeRegistry) from the architecture diagram. No
+runtime reflection anywhere in the engine.
+
+All user-defined components are created in the visual editor and compiled to static Rust code by the
+engine's bundled build pipeline:
+
+1. User defines component schema visually (field names, types, defaults, constraints)
+2. Engine generates `.rs` with `#[derive(Component)]`, serde derives, typed getter/setter methods,
+   and a static `TypeDescriptor`
+3. Bundled Rust toolchain compiles to `.dylib` (incremental — seconds)
+4. Engine hot-reloads the library into the running editor
+5. Static dispatch everywhere — editor and shipped game
+
+The Rust toolchain is bundled inside the engine installer. Users never see it. Same pattern as
+Unreal bundling MSVC or Unity bundling IL2CPP.
+
+Generated code per component:
+
+```rust
+// Generated from visual editor schema
+#[derive(Component, serde::Serialize,
+    serde::Deserialize)]
+pub struct HealthComponent {
+    hp: f32,
+    max_hp: f32,
+    regen_rate: f32,
+}
+
+impl HealthComponent {
+    pub fn hp(&self) -> f32 { self.hp }
+    pub fn set_hp(&mut self, v: f32) {
+        self.hp = v;
+    }
+    pub fn max_hp(&self) -> f32 { self.max_hp }
+    pub fn set_max_hp(&mut self, v: f32) {
+        self.max_hp = v;
+    }
+    pub fn regen_rate(&self) -> f32 {
+        self.regen_rate
+    }
+    pub fn set_regen_rate(&mut self, v: f32) {
+        self.regen_rate = v;
+    }
+}
+
+/// Static type descriptor for editor UI binding
+pub static HEALTH_DESCRIPTOR: TypeDescriptor =
+    TypeDescriptor {
+        name: "HealthComponent",
+        fields: &[
+            FieldDescriptor {
+                name: "hp",
+                ty: FieldType::F32,
+                default: FieldDefault::F32(100.0),
+            },
+            FieldDescriptor {
+                name: "max_hp",
+                ty: FieldType::F32,
+                default: FieldDefault::F32(100.0),
+            },
+            FieldDescriptor {
+                name: "regen_rate",
+                ty: FieldType::F32,
+                default: FieldDefault::F32(1.0),
+            },
+        ],
+    };
+```
+
+Editor property panels bind to generated getters/setters. No offsets, no unsafe, no reflection.
+
+### RF-10: Keep dynamic registration for DLL-loaded components [APPLIED]
+
+The middleman `.dylib` (RF-19) contains all codegen'd types. When the engine hot-reloads the
+middleman, it calls `ComponentRegistry::register_from_plugin()` for each type defined there. These
+are real compiled Rust types — not reflected types — but must register with the World after loading.
+
+`ComponentRegistry::register_dynamic()` has been renamed to `register_from_plugin()`. After
+registration, middleman components are indistinguishable from built-in components.
+
+Remove open question #7 — no performance gap since all plugin components are compiled Rust.
+
+**Deferred to:** plugin system / editor plugin design.
+
+### RF-11: Blueprint system compiles to static Rust [APPLIED]
+
+Visual logic graphs compile to static Rust function calls. Engine generates system functions →
+compiled and hot-reloaded. No interpreter, no bytecode VM, no reflection.
+
+**Deferred to:** visual scripting / blueprint design.
+
+### RF-12: Deferred feedback for other designs [APPLIED]
+
+Saved in project memory for inclusion when those designs are reviewed:
+
+1. **Codegen pipeline design** — component schema → Rust codegen → incremental compile → hot-reload.
+   TypeDescriptor, FieldDescriptor, getter/setter generation. Bundled Rust toolchain packaging and
+   installation.
+2. **Visual scripting / blueprint design** — logic graphs compile to static Rust system functions.
+   No interpreter, no VM.
+3. **Editor / tools design** — property panels bind to generated getters/setters. Undo/redo
+   integration with ECS. Component schema editor UI.
+4. **Build pipeline design** — final game export compiles all user components and blueprints into
+   the shipping binary. AOT compilation for consoles/iOS.
+5. **Asset pipeline design** — bridging compio I/O completions into ECS command buffers at frame
+   poll point (from Q&A Q5).
+6. **Plugin system design** — codegen pipeline, middleman `.dylib` hot-reload, plugin-as-data
+   packaging convention.
+
+### RF-13: Custom job system replaces Rayon for parallel execution [APPLIED]
+
+All references to Rayon, ThreadPool, and rayon::par_iter in the ECS design must be updated. The ECS
+scheduler dispatches systems as jobs to the custom job system (built on crossbeam-deque).
+Data-parallel primitives (par_iter, par_for_each, join, scope) are provided by the job system, not
+Rayon.
+
+The game loop runs ON a job system worker thread. When it calls scope(), the calling thread
+participates in work-stealing. No dedicated game loop thread.
+
+The schedule builds a job dependency graph from system access sets. Independent systems are
+dispatched as parallel jobs. Workers work-steal to balance load.
+
+### RF-14: AoSoA tiled storage for SIMD [APPLIED]
+
+Replace pure SoA column storage with AoSoA (Array of Structs of Arrays) tiled to SIMD register
+width. Component data for N entities is tiled together in adjacent cache lines, enabling full SIMD
+vectorization.
+
+Tile width is determined at compile time by codegen based on component sizes and target architecture
+(AVX2 = 8-wide, NEON = 4-wide, SVE2 = variable). This is a unique optimization enabled by our
+zero-reflection static codegen approach — no existing ECS can do this because they don't know
+component sizes until runtime.
+
+### RF-15: Compiled query plans with bloom filters [APPLIED]
+
+Each query type gets a codegen'd specialized iterator with:
+
+1. Bloom filter for O(1) archetype rejection
+2. Pre-resolved column offsets per matched archetype
+3. Prefetch hints tuned to component sizes
+4. Branchless change detection via SIMD bitmask comparison
+
+No type erasure in the hot path. LLVM sees concrete types end-to-end and can auto-vectorize.
+
+### RF-16: Platform I/O integration [APPLIED]
+
+The ECS integrates with platform-native I/O (not compio) via the main thread:
+
+1. Main thread polls I/O completions (io_uring / IOCP / GCD)
+2. Completions posted as jobs to worker pool via crossbeam-channel
+3. Job inserts result components into World
+4. ECS systems read results as normal component queries
+
+The frame execution sequence diagram must replace "compio" / "Tokio Runtime" references with
+"Platform I/O" showing the main thread polling completions and posting jobs.
+
+### RF-17: Plugins are data, not DLLs [APPLIED]
+
+Remove the entire DLL/PluginRegistrar concept. Plugins are data packages (component schemas, visual
+logic graphs, assets) processed by the codegen pipeline. The engine generates Rust code from all
+plugin metadata and compiles everything together into one binary.
+
+This eliminates:
+
+- PluginRegistrar and register_from_plugin() (RF-10 is superseded)
+- extern "C" export convention
+- DLL hot-loading, dlopen/dlclose/LoadLibrary
+- Function pointer registration
+- lookup_by_name() for cross-plugin mapping
+- All DLL ABI concerns
+
+Cross-plugin queries are fully monomorphized because all types compile together. A query spanning
+components from Plugin A and Plugin B has zero indirection — the compiler sees all types in one
+compilation unit.
+
+For editing: codegen compiles output to a .dylib internally for hot-reload. This is a private engine
+implementation detail, not a user concept. The bundled rustc guarantees ABI consistency.
+
+For shipping: everything compiles into one binary with LTO. Zero DLLs.
+
+### RF-18: All dispatch is static — zero dyn for plugins [APPLIED]
+
+With plugins as data (RF-17), there is no need for dyn Plugin, dyn ObserverCallback at plugin
+boundaries, or any trait objects for plugin interop. All plugin code is generated and compiled
+together with the engine. The only remaining acceptable uses of dyn are:
+
+- dyn FnOnce / dyn Fn for command buffer closures
+- dyn in editor/tool cold paths (not game runtime)
+
+### RF-19: Middleman .dylib for all codegen'd types [APPLIED]
+
+All codegen'd types (components, events, enums, systems, type descriptors, property panels,
+blueprint functions, serialization derives) live in a single **middleman .dylib** — not in the
+engine binary or directly in plugin .dylibs.
+
+The engine binary is a thin shell (job system, platform I/O, GPU, render graph, ECS core). It loads
+the middleman via `libloading`. Plugin .dylibs link against the middleman for shared types.
+
+When users change components, materials, or blueprints:
+
+1. Codegen regenerates the middleman .rs files
+2. Bundled rustc recompiles the middleman .dylib
+3. Engine hot-reloads middleman via libloading
+4. Plugin .dylibs recompiled against updated middleman
+5. All code sees updated types with full static dispatch
+
+This ensures one source of truth for all types that cross the engine/plugin boundary. See
+constraints.md "Codegen and Hot-Reload Architecture."

@@ -51,7 +51,7 @@ support contracts, and optional managed hosting.
 | Open source asset store  |
 | External store purchases |
 | AI content generation    |
-| Self-hosting (AWS CDK)   |
+| Self-hosting (AWS)       |
 | All server services      |
 | Marketplace commission   |
 
@@ -61,7 +61,7 @@ support contracts, and optional managed hosting.
    third-party store purchases
 4. **AI content generation** — Runs locally on user hardware; no cloud dependency, no per-generation
    fee
-5. **Self-hosting (AWS CDK)** — Full CDK stacks provided; user pays only AWS infrastructure costs
+5. **Self-hosting (AWS)** — Deployment templates provided; user pays only AWS infrastructure costs
 6. **All server services** — Build cache, collaboration, matchmaking, asset store -- all open source
    and free to self-host
 7. **Marketplace commission** — No built-in paid marketplace; the open source store is free and
@@ -70,7 +70,7 @@ support contracts, and optional managed hosting.
 ## 1. Component Classification
 
 All engine components are open source under Apache 2.0. Developers can self-host every service using
-provided AWS CDK stacks. The only proprietary components are console SDKs (due to platform NDA
+provided deployment templates. The only proprietary components are console SDKs (due to platform NDA
 requirements) and the optional managed hosting service.
 
 ### Classification Definitions
@@ -146,7 +146,7 @@ requirements) and the optional managed hosting service.
     - **Rationale:** Artists and tech artists need to extend particle systems for community effect
       libraries.
 11. **Content Pipeline (import, processing)** — Content Pipeline (import, processing)
-    - **Rationale:** DCC plugin ecosystem depends on open formats. Community contributes importers.
+    - **Rationale:** Import pipeline depends on open formats. Community contributes importers.
 12. **Game Framework (gameplay systems)** — Game Framework (gameplay systems)
     - **Rationale:** Combat, progression, and camera systems must be customizable per genre.
 13. **Platform (windowing, OS)** — Platform (windowing, OS)
@@ -157,28 +157,28 @@ requirements) and the optional managed hosting service.
     - **Rationale:** Core no-code promise; open source enables custom node authoring by the
       community.
 16. **Collaboration service (CRDT, cloud)** — Collaboration service (CRDT, cloud)
-    - **Rationale:** Self-hosted via AWS CDK with open-source deps (PostgreSQL, Redis, NATS).
-      Managed hosting available for convenience.
-17. **Shared build cache** — Shared build cache
-    - **Rationale:** Self-hosted via AWS CDK with S3-compatible storage and Redis index. Managed
+    - **Rationale:** Self-hosted on AWS with open-source deps (PostgreSQL, Redis, NATS). Managed
       hosting available for convenience.
-18. **Matchmaking service** — Matchmaking service
-    - **Rationale:** Self-hosted via AWS CDK with PostgreSQL, Redis, and NATS. Managed hosting
+17. **Shared build cache** — Shared build cache
+    - **Rationale:** Self-hosted on AWS with S3-compatible storage and Redis index. Managed hosting
       available for convenience.
+18. **Matchmaking service** — Matchmaking service
+    - **Rationale:** Self-hosted on AWS with PostgreSQL, Redis, and NATS. Managed hosting available
+      for convenience.
 19. **Asset marketplace** — Asset marketplace
-    - **Rationale:** Self-hosted via AWS CDK with PostgreSQL, OpenSearch, and S3. Managed hosting
+    - **Rationale:** Self-hosted on AWS with PostgreSQL, OpenSearch, and S3. Managed hosting
       available for convenience.
 20. **Universe generation server** — Universe generation server
-    - **Rationale:** Self-hosted via AWS CDK. Managed hosting available for convenience.
+    - **Rationale:** Self-hosted on AWS. Managed hosting available for convenience.
 21. **Mod hosting and moderation** — Mod hosting and moderation
-    - **Rationale:** Self-hosted via AWS CDK. Managed hosting available for convenience.
+    - **Rationale:** Self-hosted on AWS. Managed hosting available for convenience.
 22. **AI assistant (LLM-based)** — AI assistant (LLM-based)
     - **Rationale:** Self-hosted with user-provided LLM API keys. Managed hosting available.
-23. **CDK deployment stacks** — CDK deployment stacks
-    - **Rationale:** TypeScript CDK stacks using exclusively open-source dependencies. Free on AWS
-      Marketplace.
+23. **Deployment configuration** — Deployment configuration
+    - **Rationale:** Infrastructure templates using exclusively open-source dependencies. Free on
+      AWS Marketplace.
 24. **Monitoring stack** — Monitoring stack
-    - **Rationale:** Prometheus + Grafana + Loki. Self-hosted via AWS CDK. No CloudWatch dependency.
+    - **Rationale:** Prometheus + Grafana + Loki. Self-hosted on AWS. No CloudWatch dependency.
 25. **Console backends (PS5, Xbox, Switch)** — Console backends (PS5, Xbox, Switch)
     - **Rationale:** Platform holder NDAs prohibit open-sourcing console SDKs.
 26. **Managed hosting service** — Managed hosting service
@@ -220,7 +220,7 @@ convenience service (managed hosting).
 | Aspect                       | Price                |
 |------------------------------|----------------------|
 | Engine (all components)      | Free                 |
-| Self-hosting (AWS CDK)       | Free (user pays AWS) |
+| Self-hosting (AWS)           | Free (user pays AWS) |
 | Managed hosting              | $29/user/month       |
 | Enterprise support           | $10,000-$50,000/year |
 | Console SDK license (PS5)    | $10,000/year         |
@@ -231,7 +231,7 @@ convenience service (managed hosting).
 | Education and non-commercial | Free                 |
 
 1. **Engine (all components)** — Apache 2.0, no royalties, no per-seat fees
-2. **Self-hosting (AWS CDK)** — Full AWS CDK stacks provided for all services
+2. **Self-hosting (AWS)** — Deployment templates provided for all services
 3. **Managed hosting** — Optional; for teams who prefer not to self-host
 4. **Enterprise support** — Priority bug fixes, dedicated engineer, SLA
 5. **Console SDK license (PS5)** — Covers NDA compliance, 24/7 support, and platform updates
@@ -279,7 +279,7 @@ team size and budget.
 | Portability                   | Locked to Harmonius managed service |
 | SLA                           | 99.9% uptime guarantee              |
 
-1. **Setup effort** — 1-click Marketplace or CDK CLI
+1. **Setup effort** — 1-click Marketplace or deployment CLI
 2. **Monthly cost (solo)** — ~$20 (Solo profile)
 3. **Monthly cost (10-person team)** — ~$100 (Team profile)
 4. **Monthly cost (50-person team)** — ~$500 (Studio profile)
@@ -522,7 +522,7 @@ more heavily on console SDK adoption and enterprise support contracts.
 | No-code tools    | Logic Graph (open source)                                                 |
 | AI assistant     | Open source (self-hosted)                                                 |
 | Mod support      | Built-in hosting (open source)                                            |
-| Deployment infra | AWS CDK stacks (open-source deps: PostgreSQL, Redis, NATS, Keycloak)      |
+| Deployment infra | AWS deployment (open-source deps: PostgreSQL, Redis, NATS, Keycloak)     |
 | Matchmaking      | Built-in open-source matchmaker (PostgreSQL, Redis, NATS)                 |
 
 | Aspect           |

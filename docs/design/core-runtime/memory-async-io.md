@@ -45,7 +45,7 @@
 | F-1.8.8 | R-1.8.8, R-1.8.8a |
 | F-1.8.9 | R-1.8.9           |
 
-1. **F-1.8.1** — Tokio-based async I/O abstraction
+1. **F-1.8.1** — Platform-native async I/O abstraction
 2. **F-1.8.2** — Completion-based proactor model
 3. **F-1.8.3** — Async file I/O with explicit byte offsets
 4. **F-1.8.4** — Async network socket I/O (TCP/UDP)
@@ -64,11 +64,17 @@ Together they form the allocation and I/O foundation consumed by every other dom
 generational handles for safe indirect references, a slot map container for cache-friendly
 iteration, per-subsystem memory budgets, and allocation profiling/tagging.
 
-**Async I/O** wraps a Tokio `current_thread` runtime with a higher-level `AsyncIo` facade, adding
-cancellation tokens (via `tokio_util::sync::CancellationToken`), a virtual file system (VFS) for
-path resolution, and typed operation interfaces for files, sockets, and audio streams. Tokio handles
-platform-specific I/O internally. All I/O uses `async`/`await` with `'static` futures. No Rust
-stdlib file I/O is permitted.
+**Async I/O** provides a platform-native `AsyncIo` facade that owns the OS I/O reactor on the main
+thread. Each platform uses its native completion-based API: io_uring via rustix (Linux), IOCP via
+windows-rs (Windows), GCD dispatch_io via dispatch2 (Apple). The facade adds cooperative
+cancellation tokens, a virtual file system (VFS) for path resolution, typed operation interfaces for
+files, sockets, and audio streams, and GPU DMA asset loading via DirectStorage (Windows), Metal I/O
+(Apple), and io_uring + Vulkan upload (Linux). All I/O is non-blocking via platform APIs. No Rust
+stdlib file I/O is permitted. No blocking thread pool exists -- every operation (DNS, file stat,
+directory listing) uses the platform's non-blocking API.
+
+**Scope boundary:** ECS manages its own archetype-based dense storage internally. This design covers
+non-ECS allocation only (per-frame scratch, GPU upload staging, I/O buffers, and typed asset pools).
 
 ### Interop Contracts Defined Here
 
@@ -76,7 +82,7 @@ stdlib file I/O is permitted.
 |----------|-------------|
 | Allocator types (`FrameArena`, `PoolAllocator`) | All domains |
 | `Handle<T>` / `HandleMap<T>` / `SlotMap<T>` | All domains (ECS, assets, rendering) |
-| `AsyncIo` facade (wraps Tokio runtime) | Content Pipeline, Platform, Networking |
+| `AsyncIo` facade (platform-native I/O) | Content Pipeline, Platform, Networking |
 | `VirtualFileSystem` | Content Pipeline, Save System |
 | `MemoryBudget` / `MemoryTracker` | All domains |
 
@@ -87,6 +93,7 @@ stdlib file I/O is permitted.
 ```mermaid
 graph TD
     subgraph "harmonius_core::memory"
+        PTA[PerThreadArena]
         FA[FrameArena]
         SA[ScopedArena]
         PA[PoolAllocator]
@@ -105,13 +112,18 @@ graph TD
         AIO[AudioOps]
         VIO[VectoredIo]
         CT[CancelToken]
+        DMA[GpuDmaLoader]
     end
 
-    subgraph "tokio"
-        TR[tokio current_thread Runtime]
-        TU[tokio_util CancellationToken]
+    subgraph "platform backends"
+        IU[io_uring via rustix - Linux]
+        IOCP[IOCP via windows-rs - Windows]
+        GCD[dispatch_io via dispatch2 - Apple]
+        DS[DirectStorage - Windows]
+        MIO[Metal I/O - Apple]
     end
 
+    PTA -->|owns per worker| FA
     SA -->|child of| FA
     GH -->|backs| SM
     PA -->|tracked by| MB
@@ -119,12 +131,16 @@ graph TD
     MB -->|reports to| MT
     AT -->|tags| MT
 
-    AI -->|wraps| TR
+    AI -->|Linux| IU
+    AI -->|Windows| IOCP
+    AI -->|Apple| GCD
+    DMA -->|Windows| DS
+    DMA -->|Apple| MIO
+    DMA -->|Linux| IU
     FIO -->|uses| AI
     NIO -->|uses| AI
     AIO -->|uses| AI
     VIO -->|uses| AI
-    CT -->|wraps| TU
     CT -->|cancels via| AI
     VFS -->|resolves to| FIO
 ```
@@ -135,6 +151,7 @@ graph TD
 harmonius_core/
 ├── memory/
 │   ├── arena.rs          # FrameArena, ScopedArena
+│   ├── per_thread.rs     # PerThreadArena
 │   ├── pool.rs           # PoolAllocator<T>
 │   ├── handle.rs         # Handle<T>, HandleMap<T>
 │   ├── slot_map.rs       # SlotMap<T>
@@ -143,8 +160,15 @@ harmonius_core/
 │   ├── tag.rs            # AllocationTag, SubsystemId
 │   └── precision.rs      # BigInt, BigFloat
 └── async_io/
-    ├── io.rs             # AsyncIo (wraps Tokio
-    │                     # current_thread)
+    ├── io.rs             # AsyncIo (platform-native
+    │                     # I/O reactor)
+    ├── backend_uring.rs  # Linux: io_uring via rustix
+    ├── backend_iocp.rs   # Windows: IOCP via
+    │                     # windows-rs
+    ├── backend_gcd.rs    # Apple: GCD dispatch_io
+    │                     # via dispatch2
+    ├── gpu_dma.rs        # DirectStorage, Metal I/O,
+    │                     # io_uring + Vulkan upload
     ├── vfs.rs            # VirtualFileSystem,
     │                     # MountPoint, VfsHandle
     ├── file.rs           # FileOps (read, write,
@@ -154,9 +178,8 @@ harmonius_core/
     │                     # hints)
     ├── vectored.rs       # VectoredIo
     │                     # (scatter-gather)
-    ├── cancel.rs         # CancelToken (wraps
-    │                     # tokio_util
-    │                     # CancellationToken)
+    ├── cancel.rs         # CancelToken (AtomicBool
+    │                     # + waker list)
     └── error.rs          # IoError
 ```
 
@@ -194,10 +217,16 @@ graph TD
 
 ```mermaid
 classDiagram
+    class PerThreadArena {
+        -arenas Vec~FrameArena~
+        +get(worker_index) FrameArena ref
+        +reset_all()
+    }
+
     class FrameArena {
         -base *mut u8
         -capacity usize
-        -watermark AtomicUsize
+        -watermark usize
         -tag AllocationTag
         +new(capacity, tag) FrameArena
         +alloc(layout) Result
@@ -220,7 +249,7 @@ classDiagram
 
     class PoolAllocator~T~ {
         -blocks *mut u8
-        -free_head AtomicU32
+        -free_head u32
         -block_count u32
         -block_size u32
         -tag AllocationTag
@@ -281,6 +310,7 @@ classDiagram
         +peak_usage() usize
     }
 
+    PerThreadArena --> FrameArena : owns per worker
     ScopedArena --> FrameArena : borrows
     HandleMap --> Handle : issues
     SlotMap --> Handle : issues
@@ -294,13 +324,30 @@ classDiagram
 ```mermaid
 classDiagram
     class AsyncIo {
-        -runtime tokio Runtime
+        -backend IoBackend
         +new() AsyncIo
         +poll()
         +read(handle, offset, len) Future
         +write(handle, data, offset) Future
         +cancel(token)
-        +block_on(future) T
+    }
+
+    class IoBackend {
+        <<enum>>
+        IoUring(rustix)
+        Iocp(windows-rs)
+        Gcd(dispatch2)
+    }
+
+    class GpuDmaLoader {
+        +load_gpu(path, gpu_handle) Future
+    }
+
+    class GpuDmaBackend {
+        <<enum>>
+        DirectStorage
+        MetalIo
+        IoUringVulkanUpload
     }
 
     class VirtualFileSystem {
@@ -314,14 +361,18 @@ classDiagram
     }
 
     class CancelToken {
-        -inner CancellationToken
+        -cancelled AtomicBool
+        -wakers Vec~Waker~
+        -children Vec~CancelToken~
         +new() CancelToken
         +child() CancelToken
         +cancel()
         +is_cancelled() bool
     }
 
+    AsyncIo --> IoBackend : selects
     AsyncIo --> CancelToken : accepts
+    GpuDmaLoader --> GpuDmaBackend : selects
     VirtualFileSystem --> AsyncIo : wraps
 ```
 
@@ -356,22 +407,20 @@ sequenceDiagram
 sequenceDiagram
     participant S as ECS System
     participant VFS as VirtualFileSystem
-    participant AIO as AsyncIo
-    participant TK as Tokio Runtime
+    participant AIO as AsyncIo (main thread)
+    participant OS as Platform Backend
 
-    S->>VFS: read(path, 0, 4096).await
+    S->>VFS: read(path, 0, 4096)
     VFS->>VFS: resolve mount point
-    VFS->>AIO: read(raw_handle, 0, 4096)
-    AIO->>TK: spawn 'static read future
+    VFS->>AIO: submit read(raw_handle, 0, 4096)
 
-    Note over S: Future yields, worker runs other tasks
+    Note over S: System yields, job system runs other jobs
 
-    Note over TK: Tokio polls platform I/O internally
-    TK->>TK: platform async read completes
-
-    TK-->>AIO: wake future with data
-    AIO-->>VFS: Vec of u8
-    VFS-->>S: read result
+    AIO->>OS: submit to io_uring / IOCP / GCD
+    OS->>OS: async read completes
+    AIO->>AIO: poll() drains completion
+    AIO-->>VFS: completion with data
+    VFS-->>S: read result posted as job
 ```
 
 ## API Design
@@ -379,15 +428,43 @@ sequenceDiagram
 ### Frame Arena Allocator
 
 ```rust
-/// Per-frame bump allocator backed by platform-native
-/// virtual memory (VirtualAlloc / mmap).
-/// Resets at zero cost at frame boundaries.
+/// Per-worker-thread bump allocator backed by
+/// platform-native virtual memory (VirtualAlloc /
+/// mmap). Resets at zero cost at frame boundaries.
+/// Each job system worker gets its own arena -- no
+/// atomics on the hot path.
 pub struct FrameArena {
     base: *mut u8,
     capacity: usize,
-    watermark: AtomicUsize,
+    watermark: usize,
     tag: AllocationTag,
-    budget: *const MemoryBudget,
+    budget: &'static MemoryBudget,
+}
+
+/// Owns one `FrameArena` per job system worker
+/// thread. Indexed by job system worker index.
+/// Resets all arenas at frame start.
+pub struct PerThreadArena {
+    arenas: Vec<FrameArena>,
+}
+
+impl PerThreadArena {
+    /// Create arenas for `worker_count` job system
+    /// threads.
+    pub fn new(
+        worker_count: usize,
+        config: ArenaConfig,
+        budget: &'static MemoryBudget,
+    ) -> Self;
+
+    /// Get the arena for the current worker by index.
+    pub fn get(
+        &self,
+        worker_index: usize,
+    ) -> &FrameArena;
+
+    /// Reset all per-thread arenas (frame boundary).
+    pub fn reset_all(&mut self);
 }
 
 pub struct ArenaConfig {
@@ -487,15 +564,16 @@ pub enum ArenaError {
 
 ```rust
 /// Fixed-size block pool. O(1) alloc and dealloc via
-/// intrusive free list. Zero fragmentation.
-/// Backs ECS component columns and resource containers.
+/// intrusive free list. Zero fragmentation. Per-thread
+/// (no atomics). Backs non-ECS typed resource
+/// containers. ECS manages its own archetype storage.
 pub struct PoolAllocator<T> {
     blocks: *mut u8,
-    free_head: AtomicU32,
+    free_head: u32,
     block_count: u32,
     block_size: u32,
     tag: AllocationTag,
-    budget: *const MemoryBudget,
+    budget: &'static MemoryBudget,
     _marker: PhantomData<T>,
 }
 
@@ -549,7 +627,7 @@ impl<T> PoolSlot<T> {
 /// `Handle<T>` is the canonical engine-wide
 /// generational index. ECS `Entity` and spatial
 /// `BvhHandle` are aliases or wrappers of this type.
-/// See [shared-primitives.md](shared-primitives.md)
+/// See [algorithms.md](algorithms.md)
 /// for the full contract.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Handle<T> {
@@ -808,9 +886,10 @@ impl MemoryTracker {
 
 ### AsyncIo Facade
 
-The `AsyncIo` layer wraps a Tokio `current_thread` runtime with cancellation and typed operation
-interfaces. Tokio manages task scheduling and platform I/O internally. It is the sole I/O path for
-all engine subsystems. All spawned futures must be `'static`.
+The `AsyncIo` layer owns the platform-native I/O reactor on the main thread. It polls completions
+each frame and posts results as jobs to the compute worker pool via crossbeam-channel. Each platform
+uses its native completion-based API directly. No blocking thread pool exists -- all operations use
+non-blocking platform APIs.
 
 ```rust
 /// Platform-agnostic I/O errors.
@@ -826,107 +905,102 @@ pub enum IoError {
     Platform { code: i32 },
 }
 
-/// The engine's async I/O facade. Wraps a Tokio
-/// `current_thread` runtime. All I/O operations in
-/// the engine route through this layer.
+/// Platform I/O backend selected at compile time.
+pub enum IoBackend {
+    /// Linux: io_uring via rustix.
+    IoUring,
+    /// Windows: IOCP via windows-rs.
+    Iocp,
+    /// Apple: GCD dispatch_io via dispatch2.
+    Gcd,
+}
+
+/// The engine's async I/O facade. Owns the
+/// platform-native I/O reactor on the main thread.
+/// All I/O operations in the engine route through
+/// this layer. No blocking thread pool.
 pub struct AsyncIo {
-    runtime: tokio::runtime::Runtime,
+    backend: IoBackend,
+    completions: crossbeam_channel::Sender<IoResult>,
 }
 
 impl AsyncIo {
-    /// Build a Tokio `current_thread` runtime.
+    /// Initialize the platform I/O backend.
     pub fn new() -> Result<Self, IoError>;
 
     /// Non-blocking I/O poll. Drains ready I/O
-    /// completions, runs woken futures until they
-    /// yield, then returns immediately.
+    /// completions from the platform backend and
+    /// posts results as jobs to the compute worker
+    /// pool. Called on the main thread each frame.
     pub fn poll(&self);
 
-    /// Drive I/O until `future` completes. Blocks
-    /// the calling thread.
-    pub fn block_on<F: Future + 'static>(
-        &self,
-        future: F,
-    ) -> F::Output;
-
-    /// Spawn a `'static` future on the runtime.
-    pub fn spawn<F>(
-        &self,
-        future: F,
-    ) -> tokio::task::JoinHandle<F::Output>
-    where
-        F: Future + Send + 'static,
-        F::Output: Send + 'static;
-
-    /// Async file read at explicit byte offset.
-    pub async fn read(
+    /// Submit an async file read at explicit byte
+    /// offset.
+    pub fn submit_read(
         &self,
         handle: RawHandle,
         offset: u64,
         len: u32,
-    ) -> Result<Vec<u8>, IoError>;
+        token: Option<&CancelToken>,
+    ) -> IoRequestId;
 
-    /// Async file write at explicit byte offset.
-    pub async fn write(
+    /// Submit an async file write at explicit byte
+    /// offset.
+    pub fn submit_write(
         &self,
         handle: RawHandle,
-        data: Vec<u8>,
+        data: &[u8],
         offset: u64,
-    ) -> Result<u32, IoError>;
+        token: Option<&CancelToken>,
+    ) -> IoRequestId;
 
-    /// Scatter-gather read into multiple buffers.
-    pub async fn read_vectored(
+    /// Submit scatter-gather read into multiple
+    /// buffers.
+    pub fn submit_read_vectored(
         &self,
         handle: RawHandle,
         ops: &[(u64, u32)],
-    ) -> Vec<Result<Vec<u8>, IoError>>;
+        token: Option<&CancelToken>,
+    ) -> IoRequestId;
 
-    /// Scatter-gather write from multiple buffers.
-    pub async fn write_vectored(
+    /// Submit scatter-gather write from multiple
+    /// buffers.
+    pub fn submit_write_vectored(
         &self,
         handle: RawHandle,
-        bufs: Vec<Vec<u8>>,
+        bufs: &[&[u8]],
         offset: u64,
-    ) -> Result<u32, IoError>;
+        token: Option<&CancelToken>,
+    ) -> IoRequestId;
 
-    /// Async TCP accept.
-    pub async fn tcp_accept(
+    /// Submit async TCP accept.
+    pub fn submit_tcp_accept(
         &self,
         listener: RawHandle,
-    ) -> Result<RawHandle, IoError>;
+        token: Option<&CancelToken>,
+    ) -> IoRequestId;
 
-    /// Async TCP connect.
-    pub async fn tcp_connect(
+    /// Submit async TCP connect.
+    pub fn submit_tcp_connect(
         &self,
         addr: SocketAddr,
-    ) -> Result<RawHandle, IoError>;
+        token: Option<&CancelToken>,
+    ) -> IoRequestId;
 
-    /// Async TCP/UDP send.
-    pub async fn send(
+    /// Submit async TCP/UDP send.
+    pub fn submit_send(
         &self,
         handle: RawHandle,
-        data: Vec<u8>,
-    ) -> Result<u32, IoError>;
+        data: &[u8],
+        token: Option<&CancelToken>,
+    ) -> IoRequestId;
 
-    /// Async TCP/UDP receive.
-    pub async fn recv(
+    /// Submit async TCP/UDP receive.
+    pub fn submit_recv(
         &self,
         handle: RawHandle,
-    ) -> Result<Vec<u8>, IoError>;
-
-    /// Async UDP sendto.
-    pub async fn sendto(
-        &self,
-        handle: RawHandle,
-        data: Vec<u8>,
-        addr: SocketAddr,
-    ) -> Result<u32, IoError>;
-
-    /// Async UDP recvfrom.
-    pub async fn recvfrom(
-        &self,
-        handle: RawHandle,
-    ) -> Result<(Vec<u8>, SocketAddr), IoError>;
+        token: Option<&CancelToken>,
+    ) -> IoRequestId;
 
     /// Cancel an in-flight operation.
     pub fn cancel(
@@ -934,18 +1008,80 @@ impl AsyncIo {
         token: &CancelToken,
     );
 }
+
+/// Opaque request ID for tracking submitted I/O.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct IoRequestId(u64);
+
+/// Completion result posted to the job system.
+pub struct IoResult {
+    pub request_id: IoRequestId,
+    pub result: Result<IoData, IoError>,
+}
+
+pub enum IoData {
+    Read(Vec<u8>),
+    Write { bytes_written: u32 },
+    Accept(RawHandle),
+    Connect(RawHandle),
+}
+```
+
+### GPU DMA Asset Loading
+
+GPU assets bypass CPU memory on Windows and Apple via DirectStorage and Metal I/O respectively. On
+Linux, io_uring reads to a CPU staging buffer, then Vulkan uploads to GPU memory.
+
+```rust
+/// GPU DMA backend selected at compile time.
+pub enum GpuDmaBackend {
+    /// Windows: DirectStorage (disk-to-GPU DMA with
+    /// GPU-side decompression).
+    DirectStorage,
+    /// Apple: Metal I/O (disk-to-GPU DMA).
+    MetalIo,
+    /// Linux: io_uring to CPU staging buffer, then
+    /// Vulkan buffer upload.
+    IoUringVulkanUpload,
+}
+
+/// Loads assets directly to GPU memory, bypassing
+/// CPU processing where the platform supports it.
+pub struct GpuDmaLoader {
+    backend: GpuDmaBackend,
+}
+
+impl GpuDmaLoader {
+    pub fn new() -> Result<Self, IoError>;
+
+    /// Submit a GPU DMA load. On Windows/Apple, data
+    /// goes directly from disk to GPU memory. On
+    /// Linux, data is read to a CPU staging buffer
+    /// and then uploaded via Vulkan.
+    pub fn submit_load(
+        &self,
+        path: &str,
+        gpu_handle: GpuResourceHandle,
+        token: Option<&CancelToken>,
+    ) -> IoRequestId;
+
+    /// Poll for completed GPU loads.
+    pub fn poll(&self) -> Vec<IoResult>;
+}
 ```
 
 ### Cancellation Token
 
 ```rust
 /// Cooperative cancellation for in-flight I/O.
-/// Wraps `tokio_util::sync::CancellationToken`.
-/// The completion always fires (with
+/// Uses `AtomicBool` + waker list with parent-child
+/// hierarchy. The completion always fires (with
 /// `IoError::Cancelled` if cancelled before the
 /// underlying operation completed).
 pub struct CancelToken {
-    inner: tokio_util::sync::CancellationToken,
+    cancelled: AtomicBool,
+    wakers: Vec<Waker>,
+    children: Vec<CancelToken>,
 }
 
 impl CancelToken {
@@ -955,15 +1091,13 @@ impl CancelToken {
     /// also cancels all children.
     pub fn child(&self) -> Self;
 
-    /// Request cancellation.
+    /// Request cancellation. Sets the flag and wakes
+    /// all registered wakers. Recursively cancels
+    /// all child tokens.
     pub fn cancel(&self);
 
     /// Check if cancellation was requested.
     pub fn is_cancelled(&self) -> bool;
-
-    /// Returns a future that completes when the
-    /// token is cancelled.
-    pub async fn cancelled(&self);
 }
 ```
 
@@ -973,9 +1107,9 @@ impl CancelToken {
 /// Resolve virtual paths to physical file handles.
 /// Enables content pipeline to mount asset directories,
 /// archive files, and mod overlay paths.
-pub struct VirtualFileSystem {
+pub struct VirtualFileSystem<'a> {
     mounts: Vec<MountPoint>,
-    io: *const AsyncIo,
+    io: &'a AsyncIo,
 }
 
 pub struct MountPoint {
@@ -997,8 +1131,8 @@ pub struct FileMetadata {
     pub content_hash: [u8; 32],
 }
 
-impl VirtualFileSystem {
-    pub fn new(io: &AsyncIo) -> Self;
+impl<'a> VirtualFileSystem<'a> {
+    pub fn new(io: &'a AsyncIo) -> Self;
 
     /// Mount a physical path at a virtual location.
     /// Higher priority mounts override lower ones.
@@ -1010,38 +1144,41 @@ impl VirtualFileSystem {
     );
 
     /// Open a file by virtual path.
-    pub async fn open(
+    pub fn open(
         &self,
         path: &str,
     ) -> Result<VfsHandle, IoError>;
 
-    /// Async read from an opened file.
-    pub async fn read(
+    /// Submit read to platform I/O layer; returns
+    /// request ID. Completion arrives via
+    /// crossbeam-channel as a job.
+    pub fn read(
         &self,
         handle: &VfsHandle,
         offset: u64,
         len: u32,
-    ) -> Result<Vec<u8>, IoError>;
+    ) -> IoRequestId;
 
-    /// Async write to an opened file.
-    pub async fn write(
+    /// Submit write to platform I/O layer; returns
+    /// request ID.
+    pub fn write(
         &self,
         handle: &VfsHandle,
         data: Vec<u8>,
         offset: u64,
-    ) -> Result<u32, IoError>;
+    ) -> IoRequestId;
 
     /// Check if a virtual path exists.
-    pub async fn exists(
+    pub fn exists(
         &self,
         path: &str,
     ) -> Result<bool, IoError>;
 
-    /// Query file metadata including BLAKE3 hash.
-    pub async fn metadata(
+    /// Submit metadata query; returns request ID.
+    pub fn metadata(
         &self,
         path: &str,
-    ) -> Result<FileMetadata, IoError>;
+    ) -> IoRequestId;
 }
 ```
 
@@ -1093,56 +1230,55 @@ impl BigFloat {
 
 ### Frame Lifecycle with Memory and I/O
 
-The game loop owns the `FrameArena` and `AsyncIo`. The `AsyncIo` wraps a Tokio `current_thread`
-runtime. Each frame proceeds as:
+The main thread owns both the `PerThreadArena` and `AsyncIo`. The main thread polls the platform I/O
+reactor and posts completions as jobs to the compute worker pool. Each frame proceeds as:
 
 ```rust
 loop {
-    // 1. Reset frame arena (zero cost)
-    frame_arena.reset();
+    // 1. Reset all per-thread arenas (zero cost)
+    per_thread_arena.reset_all();
 
-    // 2. Non-blocking I/O poll: drain completions
+    // 2. Main thread polls I/O: drain completions,
+    //    post results as jobs to worker pool
     async_io.poll();
+    gpu_dma.poll();
 
-    // 3. Build and run ECS systems
+    // 3. Build and run ECS systems on job system
     let graph = ecs.build_frame_graph();
-    async_io.block_on(pool.execute_graph(graph));
-    // Systems allocate transient data from
-    // frame_arena. Async systems submit I/O
-    // through async_io.spawn() with 'static
-    // futures and yield at .await points.
+    job_system.execute_graph(graph);
+    // Systems allocate transient data from their
+    // worker's PerThreadArena. I/O requests are
+    // submitted to async_io; completions arrive
+    // as jobs in a future frame.
 
-    // 4. Mid-frame I/O poll (optional)
-    async_io.poll();
-
-    // 5. Render submission
+    // 4. Render submission
     renderer.submit_commands();
 
-    // 6. GPU sync (blocks until present)
-    async_io.block_on(renderer.present());
+    // 5. GPU present
+    renderer.present();
 }
 ```
 
 ### Scoped Arena Usage
 
 ```rust
-pool.scope(|scope| {
-    let query_results = frame_arena.child_scope(
-        AllocationTag {
-            subsystem: PHYSICS_ID,
-            label: Some("broadphase"),
-        },
-    );
-    // Allocate broadphase results in child scope
-    let pairs = query_results.alloc_typed::<
-        ContactPair
-    >();
-    // ... use pairs ...
+// Inside a job system worker (worker_index known)
+let arena = per_thread_arena.get(worker_index);
+let query_results = arena.child_scope(
+    AllocationTag {
+        subsystem: PHYSICS_ID,
+        label: Some("broadphase"),
+    },
+);
+// Allocate broadphase results in child scope
+let pairs = query_results.alloc_typed::<
+    ContactPair
+>();
+// ... use pairs ...
 
-    // Child scope drops here -> watermark restored.
-    // Peak memory is reduced vs. waiting for
-    // frame end.
-});
+// Child scope drops here -> watermark restored.
+// Peak memory is reduced vs. waiting for
+// frame end.
 ```
 
 ### VFS Resolution Order
@@ -1157,9 +1293,10 @@ When multiple mounts overlap, the VFS resolves paths by mount priority (highest 
 ### I/O Cancellation Flow
 
 1. Caller creates `CancelToken` and passes it when submitting I/O
-2. I/O futures use `tokio::select!` to race `token.cancelled()` against the operation
-3. To cancel, caller calls `token.cancel()`
-4. Child tokens are also cancelled automatically
+2. The platform backend checks `token.is_cancelled()` before submitting and on each completion poll
+3. To cancel, caller calls `token.cancel()`, which sets the `AtomicBool` and wakes all registered
+   wakers
+4. Child tokens are also cancelled recursively
 5. The result is either the original data (if completed before cancellation) or `IoError::Cancelled`
 
 ## Platform Considerations
@@ -1178,9 +1315,17 @@ When multiple mounts overlap, the VFS resolves paths by mount priority (highest 
 
 ### I/O Backend
 
-AsyncIo delegates all platform I/O to Tokio. Tokio selects the optimal platform backend internally
-(IOCP on Windows, kqueue on macOS, epoll/io_uring on Linux). The engine does not manage platform I/O
-primitives directly.
+AsyncIo uses platform-native completion-based I/O APIs directly. The main thread owns the I/O
+reactor and polls completions each frame. No blocking thread pool exists.
+
+| Platform | I/O API | GPU DMA |
+|----------|---------|---------|
+| Linux | io_uring via rustix | io_uring + Vulkan upload |
+| Windows | IOCP via windows-rs | DirectStorage |
+| Apple | GCD dispatch_io via dispatch2 | Metal I/O |
+
+All operations (DNS, file stat, file open, directory listing) use non-blocking platform APIs. I/O
+completions are posted as jobs to the compute worker pool via crossbeam-channel.
 
 ### Memory Budget Defaults
 
@@ -1204,13 +1349,14 @@ primitives directly.
 
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
-| `blake3` | BLAKE3 content hashing | Fast, SIMD, pure Rust |
-| `tokio` | Async runtime | Mature, single-threaded mode |
-| `tokio-util` | CancellationToken | Cooperative cancellation |
-| `windows-rs` | Win32 `VirtualAlloc` | Zero-cost FFI to Win32 |
-
-Note: `crossbeam-deque`, `crossbeam-utils`, and `smallvec` are already approved in
-[platform/threading.md](../platform/threading.md).
+| `blake3` | BLAKE3 hashing | Fast, SIMD, pure Rust |
+| `crossbeam-channel` | I/O completion posting | MPMC channel for jobs |
+| `crossbeam-deque` | Job system work-stealing | Lock-free deques |
+| `crossbeam-utils` | CachePadded, Backoff | Low-level concurrency |
+| `dispatch2` | GCD dispatch_io | Apple I/O backend |
+| `objc2` | Apple framework FFI | Safe Objective-C interop |
+| `rustix` | io_uring (Linux) | Safe syscall wrappers |
+| `windows-rs` | IOCP + VirtualAlloc | Zero-cost FFI to Win32 |
 
 ## Safety Invariants
 
@@ -1223,16 +1369,15 @@ during reset.
 
 ### FrameArena Thread Safety (Critical)
 
-`watermark: AtomicUsize` suggests concurrent alloc. Implementation must use a CAS loop:
-`compare_exchange(old, align_up(old, align) + size)`. Plain `fetch_add` without alignment interleave
-check causes overlapping allocations. Specify `Ordering::Relaxed` for the watermark (single-object
-allocation has no inter-allocation ordering dependency).
+Each `FrameArena` is owned by a single job system worker thread. The watermark is a plain `usize`
+with no atomic operations. Cross-thread reads are safe because the job system graph enforces system
+ordering -- if system B depends on system A, A's arena data is visible to B without synchronization.
+The `PerThreadArena` must only be reset from the main thread when no workers are running.
 
-### PoolAllocator ABA Problem (Critical)
+### PoolAllocator Thread Safety (Critical)
 
-`free_head: AtomicU32` intrusive free list is susceptible to ABA. Use `AtomicU64` with
-`[count:32][index:32]` tagged pointer, or add a generation counter per slot (matching `Handle<T>`
-pattern). Without ABA protection, concurrent alloc/dealloc silently corrupts the free list.
+Each `PoolAllocator` is per-thread with a plain `u32` free head. No ABA problem exists because there
+is no concurrent access. The job system graph enforces ordering for cross-thread reads.
 
 ### PoolSlot Lifetime (Critical)
 
@@ -1240,11 +1385,11 @@ pattern). Without ABA protection, concurrent alloc/dealloc silently corrupts the
 the slot is freed. Implementation must tie `PoolSlot<T>` to the allocator's lifetime, or use
 generational indices (like `Handle<T>`) with runtime validation.
 
-### AsyncIo Tokio Runtime Ownership (Critical)
+### AsyncIo Platform Backend Ownership (Critical)
 
-`AsyncIo` owns the Tokio `current_thread` runtime. The runtime must not be dropped while spawned
-tasks are still running. `AsyncIo::drop` must shut down the runtime gracefully, allowing pending
-tasks to complete or be cancelled.
+`AsyncIo` owns the platform I/O backend (io_uring ring, IOCP handle, or GCD dispatch queue). The
+backend must not be dropped while submitted operations are still in flight. `AsyncIo::drop` must
+drain all pending completions or cancel them before releasing platform resources.
 
 ### ScopedArena Child Lifetimes (High)
 
@@ -1326,11 +1471,11 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 | `test_cancel_fires_completion`    | R-1.8.8  |
 | `test_cancel_child_token`         | R-1.8.8  |
 | `test_cancel_1000_no_leaks`       | R-1.8.8a |
-| `test_tokio_runtime_init`         | R-1.8.1  |
-| `test_static_future_spawn`        | R-1.8.1  |
+| `test_platform_backend_init`      | R-1.8.1  |
+| `test_gpu_dma_load`               | R-1.8.1  |
 
-1. **`test_async_read_data_integrity`** — Write 4 MB at explicit offsets from 4 `'static` tasks.
-   Read back. Verify integrity.
+1. **`test_async_read_data_integrity`** — Submit 4 MB read at explicit offsets. Poll completions.
+   Verify data integrity.
 2. **`test_no_std_fs_calls`** — Static analysis: verify no `std::fs` or `std::io::Read/Write` in
    codebase.
 3. **`test_completion_typed_result`** — Submit 1 MB write. Verify completion carries correct byte
@@ -1347,10 +1492,10 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
    also cancelled.
 9. **`test_cancel_1000_no_leaks`** — Submit 1,000 ops, cancel all. Verify all complete within 10 ms.
    Verify no handle leaks.
-10. **`test_tokio_runtime_init`** — Create `current_thread` runtime. Verify it initializes and shuts
-    down cleanly.
-11. **`test_static_future_spawn`** — Spawn a `'static` future. Verify it completes and returns the
-    expected value.
+10. **`test_platform_backend_init`** — Initialize platform I/O backend (io_uring / IOCP / GCD).
+    Verify it initializes and shuts down cleanly.
+11. **`test_gpu_dma_load`** — Submit a GPU DMA load via `GpuDmaLoader`. Verify completion on each
+    platform (DirectStorage / Metal I/O / io_uring + Vulkan).
 
 ### Integration Tests
 
@@ -1365,8 +1510,8 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 | `test_vfs_blake3_hash`          | -       |
 | `test_budget_24h_server`        | R-1.7.6 |
 
-1. **`test_backend_per_platform`** — Same test suite passes on Windows, macOS, Linux via CI (Tokio
-   handles platform differences).
+1. **`test_backend_per_platform`** — Same test suite passes on Windows (IOCP), macOS (GCD), Linux
+   (io_uring) via CI.
 2. **`test_tcp_connect_accept_1mb`** — Async connect/accept, send 1 MB, verify receipt.
 3. **`test_udp_1000_datagrams`** — Send 1,000 datagrams. Verify delivery count.
 4. **`test_concurrent_tcp_500`** — 500 concurrent TCP connections. No handle leaks.
@@ -1385,7 +1530,7 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 | Pool alloc/dealloc | O(1), < 50 ns | US-1.7.5 |
 | Handle validation | O(1), < 10 ns | US-1.7.7 |
 | SlotMap dense iter 10k | < 50 us | US-1.7.8 |
-| Tokio file I/O throughput | >= 80% raw disk | US-1.8.19 |
+| Platform I/O throughput | >= 80% raw disk | US-1.8.19 |
 | Vectored vs. individual | >= 30% fewer syscalls | US-1.8.14 |
 
 ## Design Q & A
@@ -1394,29 +1539,28 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 constraint? What is the best possible solution imaginable without those constraints? What is the
 impact of removing them?
 
-The `'static` future requirement is the most limiting constraint. All spawned futures must own their
-data, preventing zero-cost borrows across await points. Lifting this would allow scoped borrows in
-async tasks, reducing clones and allocations. However, `'static` futures are required by Tokio's
-`spawn` and simplify reasoning about task lifetimes. The trade-off is acceptable given Tokio's
-maturity and ecosystem support.
+Maintaining three platform I/O backends (io_uring, IOCP, GCD) is the biggest constraint. Each
+platform has different completion semantics, buffer ownership rules, and error models. Lifting this
+would mean a single unified API, but we gain direct control over poll timing, buffer registration,
+and GPU DMA paths that no third-party runtime provides. The trade-off is more platform code in
+exchange for zero extra threads and optimal I/O performance.
 
 **Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
 trade-offs are we making?
 
-Using Tokio `current_thread` removes the complexity of maintaining three platform I/O backends, but
-couples the engine to Tokio's release cycle and API stability. Memory budgets (F-1.7.6) with
-eviction policies add runtime overhead to every allocation path. The `current_thread` runtime is
-single- threaded, which simplifies reasoning but limits I/O parallelism to one OS thread. Adding
-integration tests across all target platforms and clearer lifetime annotations in the API would
-mitigate these weaknesses.
+The per-platform backend approach requires maintaining and testing three I/O implementations. Memory
+budgets (F-1.7.6) with eviction policies add runtime overhead to every allocation path. Resource
+residency decisions (load/evict/LOD swap) belong in the asset pipeline, which consults
+`MemoryBudget` for pressure info. The main thread polls I/O, which limits I/O completion throughput
+to one poll per frame. Adding integration tests across all target platforms and clearer lifetime
+annotations in the API would mitigate these weaknesses.
 
 **Q3. Is there a better approach?** If we are not taking it, why not?
 
-A custom IoReactor built directly on platform-native primitives (IOCP, GCD, io_uring) would give
-finer control over poll points and buffer registration. We chose Tokio instead because it is
-battle-tested, has a large ecosystem (HTTP, gRPC, database drivers), and eliminates maintaining
-three separate platform backends. Tokio's `current_thread` mode gives us control over when I/O is
-polled via `block_on`, which is sufficient for frame pacing.
+A third-party async runtime (Tokio, compio) (both rejected) would reduce platform code but adds
+threads, removes control over poll timing, and prevents GPU DMA integration (DirectStorage, Metal
+I/O). We chose platform-native APIs because they give direct control over buffer registration,
+completion ordering, and disk-to-GPU DMA paths with zero extra threads.
 
 **Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
 user stories? What are they? How would adding them improve the engine? What kinds of games does it
@@ -1436,10 +1580,11 @@ modules, and why? How could we make it more cohesive? How can we improve it to m
 
 Memory management and async I/O are foundational layers that all other modules depend on, giving
 them strong structural cohesion. The generational handle design (F-1.7.4) is shared across ECS
-entities (F-1.1.11) and spatial index (F-1.9.1), unified via the shared primitives module. Since
-Tokio manages its own I/O buffers internally, the gap between frame arenas and I/O buffer lifetimes
-is no longer a concern. All async tasks use `'static` futures, making ownership clear and avoiding
-lifetime entanglement between the frame arena and I/O completions.
+entities (F-1.1.11) and spatial index (F-1.9.1), unified via the core algorithms module. ECS manages
+its own archetype-based storage separately, keeping this design focused on non-ECS allocation.
+Per-thread arenas indexed by job system worker avoid atomics on the hot path. I/O buffer ownership
+is explicit -- the platform backend owns buffers until completion, then transfers ownership to the
+completion handler posted as a job.
 
 ## Open Questions
 
@@ -1466,5 +1611,131 @@ lifetime entanglement between the frame arena and I/O completions.
    complicates the API.
 
 7. **Audio I/O integration depth** — The current design routes audio I/O through `AsyncIo` backed by
-   Tokio. Should audio have a completely separate I/O path (dedicated thread with deadline
-   scheduling) to guarantee sub-10 ms latency even under I/O saturation?
+   platform-native APIs. Should audio have a completely separate I/O path (dedicated thread with
+   deadline scheduling) to guarantee sub-10 ms latency even under I/O saturation?
+
+## Review feedback
+
+### Architecture changes
+
+#### Replace Tokio with compio
+
+All I/O references must change from Tokio to compio. Update `AsyncIo` internals, `CancelToken`,
+architecture diagrams, data flow diagrams, dependency table, Design Q&A, and all test cases. compio
+runs on the main thread.
+
+| Tokio reference | compio replacement |
+|----------------|-------------------|
+| `tokio::runtime::Runtime` | compio proactor |
+| `tokio_util::CancellationToken` | Custom `CancelToken` |
+| `tokio::task::JoinHandle` | `compio::runtime::spawn` handle |
+| `tokio::select!` | compio equivalent |
+| `tokio::fs` | `compio-fs` |
+| `tokio::net` | `compio-net` |
+
+Build a custom `CancelToken` using `AtomicBool` + waker list with parent-child hierarchy, since
+compio lacks one.
+
+#### Move `AsyncIo` to main thread
+
+The game loop must not own or poll I/O. The main thread owns the compio runtime. Game loop sends I/O
+requests via channel, receives completions via channel.
+
+Remove `poll()` and `block_on()` calls from the frame loop pseudocode. The game loop drains a
+completion channel at frame start.
+
+#### Per-thread allocators (no atomics on hot path)
+
+Each Rayon worker gets its own `FrameArena` — plain bump pointer with no synchronization:
+
+| Allocator | Sync | Use case |
+|-----------|------|----------|
+| `PerThreadArena` | None | Per-frame scratch in systems |
+| `PoolAllocator` | None (per-thread) | Typed non-ECS pools |
+| `MemoryBudget` | Atomic | Global budget tracking |
+
+`FrameArena` uses plain `usize` watermark, not `AtomicUsize`. Cross-thread reads are safe because
+the `GameLoopGraph` enforces system ordering — if B depends on A, A's arena data is visible to B
+without sync.
+
+Frame lifecycle:
+
+1. `reset_all()` per-thread arenas at frame start
+2. Systems allocate from their thread's arena
+3. Graph ordering ensures safe cross-thread reads
+4. Arenas valid until next `reset_all()`
+
+#### ECS data is out of scope
+
+This design covers non-ECS allocation only. ECS manages its own archetype-based dense storage
+internally.
+
+| Data | Managed by |
+|------|-----------|
+| Components | ECS archetype storage |
+| Entity metadata | ECS slot map |
+| Per-frame scratch | `PerThreadArena` |
+| GPU upload staging | Render thread ring buffers |
+| I/O buffers | compio (main thread) |
+| Asset CPU data | `PoolAllocator` per type |
+
+#### Avoid allocation on the game loop hot path
+
+Systems must not call `malloc` during gameplay:
+
+- Use `PerThreadArena` for all temporary data
+- Pre-size all collections at startup
+- Use slot maps with fixed capacity for handles
+- Pre-allocate channel buffers and ring buffers
+- Avoid `String`/`Vec` growth in systems
+
+#### Resource residency tracking
+
+`MemoryBudget` provides raw byte tracking. Residency decisions (load/evict/LOD swap) belong in the
+asset pipeline design, which consults `MemoryBudget` for pressure information.
+
+### Other accepted recommendations
+
+- Remove raw pointers (`*const AsyncIo`, `*const MemoryBudget`) — use references with lifetimes
+- Add explicit `close()` to `VfsHandle`
+- Exploit compio's native io_uring buffer registration for R-1.8.9
+- Relocate `BigInt`/`BigFloat` to algorithms or math
+- Document `MemoryBudget` interior mutability — atomics justified for cross-thread budget reporting
+- Add missing test cases: VFS mount priority, idle poll, graceful shutdown
+
+### Open items
+
+1. Custom `CancelToken` design — parent-child hierarchy without tokio_util
+2. Audio I/O path — separate deadline-scheduled thread or routed through compio with priority
+3. VFS archive support (zip/pak) — needed for shipping
+4. BLAKE3 streaming hash — lazy vs eager computation
+
+### RF-NEW: compio removed — platform-native I/O replaces it [APPLIED]
+
+All references to compio in this design must be updated. compio created 1 thread per core, which
+doubled the thread count when combined with the compute job system. Replace with direct platform
+APIs:
+
+- Linux: io_uring via rustix (zero userspace threads for I/O)
+- Windows: IOCP via windows-rs + DirectStorage for GPU assets
+- Apple: GCD dispatch_io via dispatch2 + Metal I/O for GPU assets
+
+The main thread owns the OS event loop AND polls I/O completions. I/O completions are posted as jobs
+to the compute worker pool via crossbeam-channel.
+
+The AsyncIo section of this design should be restructured around platform-native I/O backends rather
+than a single runtime abstraction.
+
+### RF-NEW: No blocking thread pool [APPLIED]
+
+Remove any references to blocking I/O pools. Every blocking operation (DNS, file stat, file open,
+directory listing) has a non-blocking platform alternative through io_uring, IOCP, or GCD.
+
+### RF-NEW: GPU DMA asset loading [APPLIED]
+
+Add DirectStorage (Windows) and Metal I/O (Apple) as primary GPU asset loading paths. These bypass
+CPU memory entirely — disk-to-GPU DMA with GPU-side decompression. Linux uses io_uring to CPU
+staging buffer, then Vulkan upload.
+
+This affects the asset loading state machine: GPU assets skip the CPU processing stage entirely on
+Windows/Apple.

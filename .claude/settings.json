@@ -7,34 +7,39 @@
             "command": ".claude/hooks/fmt-markdown.sh",
             "timeout": 30,
             "type": "command"
-          },
-          {
-            "command": ".claude/hooks/check-rust.sh",
-            "timeout": 120,
-            "type": "command"
-          },
-          {
-            "command": ".claude/hooks/check-python.sh",
-            "timeout": 30,
-            "type": "command"
-          },
-          {
-            "command": ".claude/hooks/check-swift.sh",
-            "timeout": 60,
-            "type": "command"
-          },
+          }
+        ],
+        "matcher": "Write|Edit"
+      },
+      {
+        "hooks": [
           {
             "command": ".claude/hooks/check-config.sh",
-            "timeout": 30,
-            "type": "command"
-          },
-          {
-            "command": ".claude/hooks/run-xcodegen.sh",
             "timeout": 30,
             "type": "command"
           }
         ],
         "matcher": "Write|Edit"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": ".claude/hooks/check-rust-stop.sh",
+            "timeout": 60,
+            "type": "command"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "command": ".claude/hooks/run-xcodegen-stop.sh",
+            "timeout": 30,
+            "type": "command"
+          }
+        ]
       }
     ]
   }

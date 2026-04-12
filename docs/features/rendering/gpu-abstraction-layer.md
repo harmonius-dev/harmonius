@@ -29,14 +29,12 @@
 
 | ID      | Feature                               |
 |---------|---------------------------------------|
-| F-2.1.4 | Metal Backend (swift-bridge) |
+| F-2.1.4 | Metal Backend (objc2-metal) |
 
-1. **F-2.1.4** — Metal GPU backend implemented as a Swift library with Rust interop via
-   swift-bridge. Swift types and functions are exposed directly to Rust through swift-bridge
-   generated bindings, wrapping them in safe Rust types that implement the backend trait.
+1. **F-2.1.4** — Metal GPU backend implemented via the `objc2-metal` Rust crate. Metal types and
+   functions are accessed through safe Rust wrappers that implement the backend trait.
    - **Deps:** F-2.1.1
-   - **Platform:** macOS and iOS only. Requires Swift toolchain for the Metal wrapper library. No
-     Objective-C in the FFI boundary.
+   - **Platform:** macOS and iOS only.
 
 ## D3D12 Backend
 

@@ -8,9 +8,9 @@
 | US-12.1.2  | engine developer (P-26)    |
 | US-12.1.3  | build engineer (P-16)      |
 
-1. **US-12.1.1** — **As a** technical artist (P-13), **I want** assets exported from DCC plugins to
-   be validated and registered automatically on ingestion, **so that** I know immediately if an
-   export is corrupt or incompatible.
+1. **US-12.1.1** — **As a** technical artist (P-13), **I want** imported assets to be validated and
+   registered automatically on ingestion, **so that** I know immediately if an import is corrupt or
+   incompatible.
 2. **US-12.1.2** — **As an** engine developer (P-26), **I want** native binary imports to verify
    BLAKE3 content hashes against embedded digests, **so that** data integrity is guaranteed before
    any asset enters the database.
@@ -26,7 +26,7 @@
 | US-12.1.5  | technical artist (P-13)    |
 
 1. **US-12.1.4** — **As an** environment artist (P-8), **I want** to import PNG, JPEG, EXR, HDR, and
-   TIFF textures directly without a DCC plugin round-trip, **so that** I can quickly bring in
+   TIFF textures directly using intermediate format import, **so that** I can quickly bring in
    reference or sourced textures.
 2. **US-12.1.5** — **As a** technical artist (P-13), **I want** sRGB and linear HDR color spaces
    decoded correctly based on file format, **so that** textures feed into the compression pipeline

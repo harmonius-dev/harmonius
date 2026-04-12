@@ -45,8 +45,7 @@ prerequisites are satisfied by completion of prior waves.
    primitives, terrain, UI)
 6. **5** — Advanced systems (advanced rendering, editor, logic graph, abilities, weapons,
    destruction, cloth, weather)
-7. **6** — Capstone systems (DCC plugins, procedural generation, MMO, genre-specific, CRDT
-   collaboration)
+7. **6** — Capstone systems (procedural generation, MMO, genre-specific, CRDT collaboration)
 
 ### Critical Path
 
@@ -360,7 +359,7 @@ feedback.
 | Procedural gen | Limited | Planet-scale universe generation |
 | Collaboration | Git only | Real-time CRDT + Git integration |
 | Performance | GDScript is slow, C# is better | Rust native performance |
-| Asset pipeline | Basic import | Full DCC plugin ecosystem |
+| Asset pipeline | Basic import | Intermediate format import pipeline |
 
 **vs Bevy:**
 
@@ -369,7 +368,7 @@ feedback.
 | ECS | bevy_ecs (excellent) | Similar scope, relationships built in |
 | Editor | None (code only) | Full visual editor with no-code authoring |
 | Visual scripting | None | Logic graph system |
-| Asset pipeline | bevy_asset (basic) | Full DCC plugins, hot reload, versioning |
+| Asset pipeline | bevy_asset (basic) | Full import pipeline, hot reload, versioning |
 | Scope | Growing organically | Complete engine specification from day one |
 | Collaboration | None | Real-time collaborative editing |
 

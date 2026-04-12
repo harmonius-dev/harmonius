@@ -1998,3 +1998,124 @@ exception, similar to how the audio runtime is documented in the constraints fil
    determinism is harder to guarantee. Is strict cross-platform determinism required for fluid
    (server-authoritative), or is approximate consistency acceptable since fluid is primarily a
    visual effect?
+
+## Review Feedback
+
+### RF-1: Replace all "shared BVH" with "physics BVH"
+
+7+ references throughout. Physics uses its own private BVH per Design #19 RF-1. Update F-4.4.1,
+architecture diagrams, data flow, and all test cases.
+
+### RF-2: Remove Tokio reference (line 1702)
+
+Replace with platform-native I/O. No async/await, no async runtimes.
+
+### RF-3: Fix buoyancy scheduling cycle
+
+Fluid runs after Integration, but Buoyancy runs after Fluid and before Integration — unresolvable
+cycle. Options:
+
+- Split integration into pre-fluid and post-buoyancy sub-steps
+- Run buoyancy with one-frame-delayed fluid state
+- Move fluid to run before integration (if physics allows)
+
+### RF-4: Reconcile CollisionLayerMask with CollisionLayers
+
+Foundation defines `CollisionLayers` with `membership: u32` and `filter: u32`. This design uses
+`CollisionLayerMask(u64)`. Adopt the foundation's `CollisionLayers` type and u32 bitmask.
+
+### RF-5: Replace TypeIdSet with codegen archetype bitmasks
+
+`TypeIdSet` uses runtime `TypeId` which conflicts with zero reflection. The `with_component<T>()`
+builder should expand to a compile-time archetype filter via codegen.
+
+### RF-6: Decide vehicle joint composition
+
+Design #20 RF-7 maps vehicles to constraint primitives (prismatic
+
+- spring for suspension, revolute + motor for wheels). This design
+implements standalone force systems instead. Either:
+
+- Refactor to use constraint primitives (more unified)
+
+- Document why standalone forces are preferred (simpler tuning, cheaper, no constraint solve
+  overhead for vehicles)
+
+### RF-7: Spatial query rotation — see foundation RF-13
+
+Rotation parameter for spatial queries is defined in the physics foundation design (RF-13). This
+design should reference it.
+
+### RF-8: Fix Metal Shader Converter
+
+Line 1696 says "via C ABI." Must be CLI subprocess per constraints.
+
+### RF-9: Rename ThreadPool to job system type
+
+Avoid ambiguity with external thread pool crates.
+
+### RF-10: Batch query predicate dispatch
+
+Replace `Box<dyn Fn>` for batch predicates with function pointer or generic parameter. Batch of 4096
+queries with boxed closures is a hot path.
+
+### RF-11: Algorithm references
+
+**Spatial queries:** See physics foundation RF-14.
+
+**Vehicles:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Pacejka tire | [Pacejka, "Tire and Vehicle Dynamics"](https://www.elsevier.com/books/tire-and-vehicle-dynamics/pacejka/978-0-08-097016-5) |
+| Raycast suspension | [Bullet vehicle](https://github.com/bulletphysics/bullet3/blob/master/src/BulletDynamics/Vehicle/) |
+
+**Destruction:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Voronoi fracture | [Müller et al. (2013)](https://matthias-research.github.io/pages/publications/fracture.pdf) |
+| Structural analysis | [Parker & O'Brien (2009)](https://dl.acm.org/doi/10.1145/1576246.1531346) |
+
+**Soft body / cloth:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| XPBD | [Macklin et al. (2016)](https://matthias-research.github.io/pages/publications/XPBD.pdf) |
+| PBD | [Müller et al. (2007)](https://matthias-research.github.io/pages/publications/posBasedDyn.pdf) |
+| Self-collision hash | [Teschner et al. (2003)](https://matthias-research.github.io/pages/publications/tetraederCollision.pdf) |
+
+**Fluids:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| SPH | [Müller et al. (2003)](https://matthias-research.github.io/pages/publications/sca03.pdf) |
+| FLIP/PIC | [Zhu & Bridson (2005)](https://www.cs.ubc.ca/~rbridson/docs/zhu-siggraph05-sandfluid.pdf) |
+| Marching cubes | [Lorensen & Cline (1987)](https://dl.acm.org/doi/10.1145/37402.37422) |
+| Buoyancy | [Bender & Koschier (2017)](https://animation.rwth-aachen.de/publication/051/) |
+
+### RF-12: ECS integration boundaries
+
+ECS is designed for millions of entities, not billions. Bulk simulation data must NOT be stored as
+individual ECS entities:
+
+| System | ECS Entity | NOT ECS Entity |
+|--------|-----------|----------------|
+| Rigid bodies | One entity per body | — |
+| Vehicles | One entity per vehicle + wheel | — |
+| Destruction | One entity per fragment | — |
+| Cloth | One entity per cloth mesh | Per-vertex particle data (GPU buffer) |
+| Soft body | One entity per soft body | Per-vertex constraint data (GPU buffer) |
+| Fluid | One entity per fluid volume | Per-particle SPH data (GPU buffer) |
+| Debris | One entity per debris piece | Particle-only debris (VFX system) |
+
+The ECS entity is the **handle** that gameplay systems interact with. The bulk simulation data
+(particles, vertices, constraints) lives in GPU buffers or CPU-side dense arrays owned by the
+subsystem — NOT as individual ECS entities.
+
+Example: a cloth entity has `ClothComponent` with a handle to the GPU particle buffer. ECS systems
+read/write `ClothComponent` (wind, attachment, tearing threshold). The XPBD solver reads/writes the
+GPU buffer directly. Per-vertex data never touches the ECS.
+
+This is a sanctioned exception to ECS-primary (~90%). Document it alongside the audio runtime
+exception in constraints.md.

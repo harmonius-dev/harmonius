@@ -12,16 +12,16 @@
    guild recruitment text. Image clipboard support enables screenshot sharing without saving to
    disk.
    - **Platform:** Windows uses `OpenClipboard`/`SetClipboardData` with COM wrappers; macOS uses
-     `NSPasteboard` via Swift swift-bridge bindings; Linux uses X11 selections
-     (`XCB_ATOM_CLIPBOARD`) or the `wl_data_device` protocol on Wayland. Clipboard operations must
-     run asynchronously on Wayland since the compositor mediates data transfer.
+     `NSPasteboard` via `objc2-app-kit`; Linux uses X11 selections (`XCB_ATOM_CLIPBOARD`) or the
+     `wl_data_device` protocol on Wayland. Clipboard operations must run asynchronously on Wayland
+     since the compositor mediates data transfer.
 2. **F-14.2.2** — Open file-picker and folder-picker dialogs for importing add-ons, selecting
    screenshot export paths, and loading user-provided assets. Dialogs run on a separate thread to
    avoid blocking the game loop and support file-type filters.
    - **Platform:** Windows uses `IFileOpenDialog`/`IFileSaveDialog` COM interfaces; macOS uses
-     `NSOpenPanel`/`NSSavePanel` via Swift swift-bridge bindings; Linux uses the portal D-Bus
-     interface (`org.freedesktop.portal.FileChooser`) for Flatpak/Snap compatibility, falling back
-     to `zenity` or `kdialog`.
+     `NSOpenPanel`/`NSSavePanel` via `objc2-app-kit`; Linux uses the portal D-Bus interface
+     (`org.freedesktop.portal.FileChooser`) for Flatpak/Snap compatibility, falling back to `zenity`
+     or `kdialog`.
 
 ## System Interaction
 
@@ -35,16 +35,16 @@
    system tray icon with a context menu for quick status checks.
    - **Deps:** F-14.1.1
    - **Platform:** Windows uses `Shell_NotifyIcon` and `ToastNotificationManager` (WinRT); macOS
-     uses `NSUserNotificationCenter` or `UNUserNotificationCenter` via Swift swift-bridge bindings;
-     Linux uses `org.freedesktop.Notifications` D-Bus interface. Console platforms do not support
-     OS-level notifications — use in-game UI instead.
+     uses `NSUserNotificationCenter` or `UNUserNotificationCenter` via `objc2`; Linux uses
+     `org.freedesktop.Notifications` D-Bus interface. Console platforms do not support OS-level
+     notifications — use in-game UI instead.
 2. **F-14.2.4** — Accept files and data dragged from the OS desktop onto the game window. Useful for
    importing add-on archives, dropping screenshots into chat, or loading custom UI themes. The
    engine validates MIME types and file extensions before accepting the drop.
    - **Deps:** F-14.1.1
    - **Platform:** Windows uses `IDropTarget` COM interface registered via `RegisterDragDrop`; macOS
-     uses `NSDraggingDestination` protocol on `NSWindow` via Swift swift-bridge bindings; Linux X11
-     uses XDND protocol, Wayland uses `wl_data_device` drag-and-drop events.
+     uses `NSDraggingDestination` protocol on `NSWindow` via `objc2-app-kit`; Linux X11 uses XDND
+     protocol, Wayland uses `wl_data_device` drag-and-drop events.
 
 ## Text Input
 
@@ -65,9 +65,9 @@
    hint and handles composition, commit, and candidate-list events.
    - **Deps:** F-14.2.5, F-14.1.1
    - **Platform:** Windows uses `ImmGetContext` / TSF (`ITfThreadMgr`); macOS uses
-     `NSTextInputClient` protocol via Swift swift-bridge bindings; Linux uses `IBus` or `Fcitx` via
-     their respective D-Bus or direct C APIs. The candidate window must track the text cursor
-     position in screen coordinates, updating as the game window moves or resizes.
+     `NSTextInputClient` protocol via `objc2-app-kit`; Linux uses `IBus` or `Fcitx` via their
+     respective D-Bus or direct C APIs. The candidate window must track the text cursor position in
+     screen coordinates, updating as the game window moves or resizes.
 
 ## Async API Surface
 

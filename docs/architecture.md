@@ -2,11 +2,10 @@
 
 ## Engine Overview
 
-Harmonius is a cross-platform no-code game engine written in Rust (stable) with `swift-bridge` FFI
-to Apple platform backends (macOS/iOS). It targets Metal 4, Direct3D 12, and Vulkan 1.4 with mesh
-shaders and ray tracing as minimum requirements. All simulation runs through a 100% ECS architecture
-with no separate data stores. Users build all gameplay by composing generic primitives in visual
-editors — no code required.
+Harmonius is a cross-platform no-code game engine written in Rust (stable). It targets Metal 4,
+Direct3D 12, and Vulkan 1.4 with mesh shaders and ray tracing as minimum requirements. All
+simulation runs through a 100% ECS architecture with no separate data stores. Users build all
+gameplay by composing generic primitives in visual editors — no code required.
 
 See [design/constraints.md](design/constraints.md) for the full constraint set.
 
@@ -56,17 +55,17 @@ graph TB
         ECS[ECS]
         LOOP[Game Loop]
         SCENE[Scene / Transforms]
-        REFLECT[Reflection / Serialization]
+        REFLECT[Serialization]
         EVENTS[Events / Plugins]
-        MEM[Memory / Async I/O]
+        MEM[Memory / Platform I/O]
         SPATIAL[Spatial Index]
-        PRIMS[Shared Primitives]
+        PRIMS[Core Algorithms]
     end
 
     subgraph "Platform"
         PLAT[Platform Services]
         WIN[Windowing]
-        THREAD[Threading / Tokio Runtime]
+        THREAD[Threading / Job System]
     end
 
     TOOLS --> GF & RENDER & REFLECT & EVENTS & UI
@@ -75,7 +74,7 @@ graph TB
     GF --> AI & ANIM & AUDIO & PHYS
 
     DS_DG --> ECS & PRIMS
-    DS_DT --> ECS & REFLECT
+    DS_DT --> ECS & PRIMS
     DS_AE --> ECS & PRIMS
     DS_CS --> ECS & PRIMS
     SIM_G --> ECS & SPATIAL
@@ -89,12 +88,12 @@ graph TB
     GEO --> ECS & SPATIAL & RENDER
     VFX --> ECS & RENDER
     UI --> ECS & RENDER & INPUT
-    NET --> ECS & REFLECT & MEM
+    NET --> ECS & MEM
     INPUT --> ECS & EVENTS & PLAT
     PHYS --> ECS & SPATIAL
 
     RENDER --> ECS & SCENE & SPATIAL & MEM
-    CP --> REFLECT & MEM
+    CP --> MEM
 
     LOOP --> ECS & THREAD
     ECS --> MEM & THREAD
@@ -169,52 +168,42 @@ graph TB
 
 ## Dedicated Thread Model
 
-Four thread roles with clear ownership boundaries.
+Three thread roles with clear ownership boundaries.
 
 ```mermaid
 flowchart LR
-    subgraph MT["Main Thread"]
+    subgraph MT["Main Thread (E-core)"]
         ME[OS Event Loop]
-        MI[Window / Input Events]
+        MI[Platform I/O Drain]
     end
 
-    subgraph GLT["Game Loop Thread"]
-        GL[Simulation Phases 1-8]
-        RF[Build RenderFrame]
-    end
-
-    subgraph RT["Render Thread"]
-        RC[Cull / Sort / Record]
-        RS[GPU Submit / Present]
-    end
-
-    subgraph WT["Worker Pool"]
-        W1[Worker 1]
+    subgraph WK["Workers (N on P-cores)"]
+        W1[Worker 1 — game loop]
         W2[Worker 2]
         WN[Worker N]
     end
 
-    MT -->|SPSC queue| GLT
-    GLT -->|triple buffer| RT
-    GLT -.->|task fan-out| WT
-    RT -.->|task fan-out| WT
+    subgraph RT["Render Thread (E-core)"]
+        RC[Cull / Sort / Record]
+        RS[GPU Submit / Present]
+    end
+
+    MT -->|SPSC queue| WK
+    WK -->|triple buffer| RT
 ```
 
-**Main thread** — owns the OS event loop. Pumps window events, raw input, and platform UI (UIKit on
-iOS, Activity on Android). Forwards to game loop thread via lock-free SPSC queue. On iOS/Android the
-OS mandates this thread; on desktop it is still cleanly separated.
+**Main thread** — runs on an E-core. Owns the OS event loop and platform I/O. Pumps window events,
+raw input, and platform UI (UIKit on iOS, Activity on Android). Forwards to workers via lock-free
+SPSC queue. On iOS/Android the OS mandates this thread; on desktop it is still cleanly separated.
 
-**Game loop thread** — simulation driver. Runs all gameplay phases sequentially. Produces an
-immutable `RenderFrame` snapshot each tick. Submits to render thread via triple buffer. Fans out to
-worker threads for data-parallel work.
+**Workers** — N threads on P-cores using crossbeam-deque work-stealing. One worker drives the game
+loop each frame, running all gameplay phases sequentially. Other workers execute data-parallel tasks
+(physics broadphase, AI queries, visibility culling, draw sorting). Produces an immutable
+`RenderFrame` snapshot each tick, submitted to the render thread via triple buffer.
 
-**Render thread** — GPU command buffer recording and submission. Consumes `RenderFrame` from triple
-buffer. Executes the render graph, records command buffers, presents. Pipelined: renders frame N
-while game loop computes frame N+1. Owns swapchain and presentation timing.
-
-**Worker threads** — work-stealing pool sized to performance cores. Short scoped tasks that borrow
-from the calling frame. Used by game loop (physics broadphase, AI queries) and render thread
-(visibility culling, draw sorting).
+**Render thread** — runs on an E-core. GPU command buffer recording and submission. Consumes
+`RenderFrame` from triple buffer. Executes the render graph, records command buffers, presents.
+Pipelined: renders frame N while workers compute frame N+1. Owns swapchain and presentation timing.
 
 ### Frame Pipelining
 
@@ -246,8 +235,8 @@ buffering ensures the game loop never stalls waiting for the render thread.
 
 ## Game Loop Phases
 
-Within the game loop thread, each frame executes these phases sequentially. Worker threads provide
-parallelism *within* each phase via task graph fan-out. Full design in
+Within the game loop (worker thread), each frame executes these phases sequentially. Worker threads
+provide parallelism *within* each phase via task graph fan-out. Full design in
 [game-loop.md](design/core-runtime/game-loop.md).
 
 ```mermaid
@@ -280,7 +269,7 @@ flowchart TD
 | 5 Physics | Fixed | Broadphase, solve, destruction |
 | 6 Animation | Variable | State machines, IK, cloth, hair |
 | 7 Snapshot | Variable | Build RenderFrame, audio mix |
-| 8 Frame End | Variable | Save, Tokio poll, stats |
+| 8 Frame End | Variable | Save, platform I/O drain, stats |
 
 ### Render Thread Steps
 
@@ -292,6 +281,75 @@ flowchart LR
     R4 --> R5[GPU Submit]
     R5 --> R6[Present]
 ```
+
+---
+
+## Codegen Pipeline
+
+The engine is no-code: users never write Rust. Instead, visual editors produce data that the
+**codegen pipeline** compiles into actual Rust source, which the **bundled rustc** compiles into the
+**middleman .dylib**. The engine loads this .dylib at startup (editor) or statically links it
+(shipping builds).
+
+Everything compiles to Rust. All visual graphs — gameplay logic, formulas, AI behavior, quest
+conditions, dialogue branching — codegen actual `.rs` source. Inline data embedded in tables and
+logic graphs uses `include_bytes!`. Shipped games statically link all code into one binary; assets
+(meshes, textures, audio, baked tables) remain on disk loaded via the asset pipeline. No bytecode
+VM, no interpreter.
+
+```mermaid
+flowchart LR
+    A[Visual Editor] -->|schema / graph| B[Codegen Pipeline]
+    B -->|.rs source| C[Bundled rustc]
+    C -->|middleman .dylib| D[Engine loads .dylib]
+    D -->|hot-reload| A
+
+    style B fill:#f9f,stroke:#333
+    style C fill:#ff9,stroke:#333
+```
+
+### What gets codegen'd
+
+| Source | Codegen output |
+|--------|---------------|
+| Table schemas | Typed row structs, accessors, ECS binding fns |
+| Inline table/graph data | `include_bytes!` for embedded blobs |
+| Formula graphs | Pure `fn` computing column values |
+| Logic graphs | Gameplay systems with ECS access |
+| AI behavior graphs | Behavior tree / utility AI tick fns |
+| Quest/dialogue graphs | Condition eval + transition fns |
+| Material graphs | HLSL shader source (not Rust) |
+| VFX effect graphs | HLSL compute shaders (not Rust) |
+| Custom components | Component structs, rkyv derives |
+| Custom enums | Enum types with exhaustive match |
+| Custom widgets | WidgetKind variants, layout/paint fns |
+| Animation blend exprs | Blend weight computation fns |
+| AI utility scores | Score evaluation fns |
+
+### Everything is Rust
+
+All visual graph nodes codegen actual Rust source code (`#![no_std]` + `core` + `libm`). This is not
+"Rust-inspired" — it literally IS Rust. Generated code has full type safety, zero runtime overhead,
+and benefits from rustc optimizations (inlining, constant folding, dead code elimination).
+
+The expression node palette maps directly to Rust:
+
+- Arithmetic: `+`, `-`, `*`, `/`, `%`
+- Case analysis: `match` (exhaustive pattern matching)
+- Let-binding: `let name = expr;`
+- Option/Result: `.unwrap_or()`, `.map()`, `.and_then()`, `?`
+- Explicit cast: `as` (no implicit coercion)
+- Iterators: `.iter().filter().map().sum()`
+
+One language, one compiler, one type system across the entire engine. This is part of being
+Harmonius.
+
+### Development vs shipping
+
+| Mode | Code | Assets |
+|------|------|--------|
+| Editor | .dylib hot-reloaded via libloading | Files on disk |
+| Shipping | Statically linked into binary | Files on disk |
 
 ---
 
@@ -336,13 +394,13 @@ stories.
 
 ### Platform
 
-Platform abstraction for windowing, threading, async I/O, OS integration, and platform services.
+Platform abstraction for windowing, threading, platform I/O, OS integration, and platform services.
 
 ```mermaid
 graph TB
     subgraph "Platform"
         W[Windowing]
-        T[Threading / Tokio Runtime]
+        T[Threading / Job System]
         PS[Platform Services]
     end
 ```
@@ -395,8 +453,8 @@ graph TB
 
 ### Core Runtime
 
-ECS, game loop, scene hierarchy, reflection, events, memory, async I/O, spatial indexing, and shared
-primitives.
+ECS, game loop, scene hierarchy, serialization, events, memory, platform I/O, spatial indexing, and
+core algorithms.
 
 ```mermaid
 graph TB
@@ -404,11 +462,11 @@ graph TB
         E[ECS]
         GL[Game Loop]
         SC[Scene / Transforms]
-        RF[Reflection / Serialization]
+        RF[Serialization]
         EV[Events / Plugins]
-        MA[Memory / Async I/O]
+        MA[Memory / Platform I/O]
         SI[Spatial Index]
-        SP[Shared Primitives]
+        SP[Core Algorithms]
     end
 ```
 
@@ -423,7 +481,7 @@ graph TB
 | [events-plugins.md](design/core-runtime/events-plugins.md) | [events-plugins-test-cases.md](design/core-runtime/events-plugins-test-cases.md) |
 | [memory-async-io.md](design/core-runtime/memory-async-io.md) | [memory-async-io-test-cases.md](design/core-runtime/memory-async-io-test-cases.md) |
 | [spatial-index.md](design/core-runtime/spatial-index.md) | [spatial-index-test-cases.md](design/core-runtime/spatial-index-test-cases.md) |
-| [shared-primitives.md](design/core-runtime/shared-primitives.md) | [shared-primitives-test-cases.md](design/core-runtime/shared-primitives-test-cases.md) |
+| [algorithms.md](design/core-runtime/algorithms.md) | [algorithms-test-cases.md](design/core-runtime/algorithms-test-cases.md) |
 
 #### Features
 
@@ -483,8 +541,8 @@ graph TB
         CS[Containers / Slots]
     end
 
-    DG --> ECS[ECS] & PR[Shared Primitives]
-    DT --> ECS & RF[Reflection]
+    DG --> ECS[ECS] & PR[Core Algorithms]
+    DT --> ECS & PR[Core Algorithms]
     AE --> ECS & PR
     CS --> ECS & PR
 ```
@@ -752,7 +810,7 @@ GPU abstraction, render graph, core rendering, lighting, post-processing, and ma
 
 ### Content Pipeline
 
-Asset import, processing, streaming, hot reload, DCC plugins, and asset versioning.
+Asset import, processing, streaming, hot reload, and asset versioning.
 
 #### Design Documents
 
@@ -770,7 +828,6 @@ Asset import, processing, streaming, hot reload, DCC plugins, and asset versioni
 | [asset-database.md](features/content-pipeline/asset-database.md) |
 | [streaming-io.md](features/content-pipeline/streaming-io.md) |
 | [hot-reload.md](features/content-pipeline/hot-reload.md) |
-| [dcc-plugins.md](features/content-pipeline/dcc-plugins.md) |
 | [asset-versioning.md](features/content-pipeline/asset-versioning.md) |
 
 #### Requirements
@@ -782,7 +839,6 @@ Asset import, processing, streaming, hot reload, DCC plugins, and asset versioni
 | [asset-database.md](requirements/content-pipeline/asset-database.md) |
 | [streaming-io.md](requirements/content-pipeline/streaming-io.md) |
 | [hot-reload.md](requirements/content-pipeline/hot-reload.md) |
-| [dcc-plugins.md](requirements/content-pipeline/dcc-plugins.md) |
 | [asset-versioning.md](requirements/content-pipeline/asset-versioning.md) |
 
 #### User Stories
@@ -794,7 +850,6 @@ Asset import, processing, streaming, hot reload, DCC plugins, and asset versioni
 | [asset-database.md](user-stories/content-pipeline/asset-database.md) |
 | [streaming-io.md](user-stories/content-pipeline/streaming-io.md) |
 | [hot-reload.md](user-stories/content-pipeline/hot-reload.md) |
-| [dcc-plugins.md](user-stories/content-pipeline/dcc-plugins.md) |
 | [asset-versioning.md](user-stories/content-pipeline/asset-versioning.md) |
 
 ---
@@ -1387,7 +1442,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant GT as GameThread
-    participant IO as Tokio Runtime
+    participant IO as Platform I/O
     participant DC as Decoder
     participant RB as RingBuffer
     participant AT as AudioThread
@@ -1413,7 +1468,7 @@ sequenceDiagram
     participant CP as ClientProxy
 
     SA->>SA: Spawn entity + components
-    SA->>NT: Replicate via Reflection
+    SA->>NT: Replicate via Serialization
     NT->>CP: Reliable channel deliver
     CP->>CP: Spawn local proxy
 
@@ -1432,41 +1487,41 @@ sequenceDiagram
 ```mermaid
 graph TB
     subgraph "Engine"
-        TOKIO[Tokio Runtime]
+        PIO[Platform I/O]
         WINDOW[Window Manager]
         GPUHAL[GPU Abstraction]
     end
 
     subgraph "macOS"
-        KQUEUE[Tokio kqueue]
-        NSWIN[NSWindow via Swift]
+        KQUEUE[kqueue]
+        NSWIN[NSWindow]
         METAL[Metal 4]
     end
 
     subgraph "Windows"
-        WIOCP[Tokio IOCP]
+        WIOCP[IOCP]
         WIN32[Win32 CreateWindowEx]
         D3D12[Direct3D 12]
     end
 
     subgraph "Linux"
-        EPOLL[Tokio epoll]
+        EPOLL[epoll]
         XCB[xcb / Wayland]
         VK[Vulkan 1.4]
     end
 
-    TOKIO --> KQUEUE & WIOCP & EPOLL
+    PIO --> KQUEUE & WIOCP & EPOLL
     WINDOW --> NSWIN & WIN32 & XCB
     GPUHAL --> METAL & D3D12 & VK
 ```
 
-| Platform | Async I/O | Windowing | Graphics | FFI |
-|----------|-----------|-----------|----------|-----|
-| macOS | Tokio (kqueue) | NSWindow (swift-bridge) | Metal 4 | swift-bridge |
-| Windows | Tokio (IOCP) | Win32 (windows-rs) | D3D12 | windows-rs |
-| Linux | Tokio (epoll) | x11rb / wayland | Vulkan 1.4 | ash |
-| iOS | Tokio (kqueue) | UIWindow (swift-bridge) | Metal 4 | swift-bridge |
-| Android | Tokio (epoll) | ndk crate | Vulkan 1.4 | ash |
+| Platform | Platform I/O | Windowing | Graphics | FFI |
+|----------|--------------|-----------|----------|-----|
+| macOS | kqueue | NSWindow | Metal 4 | objc2 |
+| Windows | IOCP | Win32 (windows-rs) | D3D12 | windows-rs |
+| Linux | epoll | x11rb / wayland | Vulkan 1.4 | ash |
+| iOS | kqueue | UIWindow | Metal 4 | objc2 |
+| Android | epoll | ndk crate | Vulkan 1.4 | ash |
 
 ---
 

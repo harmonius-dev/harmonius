@@ -23,7 +23,7 @@ rendering subsystems.
 1. **F-2.1.1** -- GPU backend trait, static dispatch via generics
 2. **F-2.1.2** -- Command buffer for graphics, compute, copy
 3. **F-2.1.3** -- Unified pipeline state objects pre-validated
-4. **F-2.1.4** -- Metal backend via Swift through swift-bridge
+4. **F-2.1.4** -- Metal backend via `objc2-metal`
 5. **F-2.1.5** -- D3D12 backend via windows-rs
 6. **F-2.1.6** -- Vulkan backend via ash
 
@@ -655,7 +655,7 @@ flowchart TD
 
 | Component | D3D12 | Vulkan | Metal |
 |-----------|-------|--------|-------|
-| Device | ID3D12Device | VkDevice (ash) | MTLDevice (swift-bridge) |
+| Device | ID3D12Device | VkDevice (ash) | MTLDevice (objc2-metal) |
 | Cmd buf | ID3D12GraphicsCommandList | VkCommandBuffer | MTLCommandBuffer |
 | Fence | ID3D12Fence | VkSemaphore (timeline) | MTLEvent |
 | Barriers | ResourceBarrier | vkCmdPipelineBarrier2 | Driver-managed |
@@ -798,3 +798,486 @@ Test cases are defined inline below.
    backward pass needed.
 6. **Work graph integration** -- Boundary between render-graph and GPU-managed scheduling needs
    definition.
+
+## Review Feedback
+
+### RF-1: No Future, no blocking — poll fences
+
+Replace `wait_fence(handle, value) -> Future` with non-blocking poll:
+
+```rust
+fn poll_fence(
+    &self, handle: FenceHandle, value: u64,
+) -> bool;
+```
+
+No `Future`, no async, no spin loops for fence synchronization. Use `poll_fence` to check GPU
+completion without blocking.
+
+The **only acceptable block** on the render thread is `swapchain.acquire_next_image()`. This blocks
+until v-sync releases a swapchain image. This is intentional — the render thread is on its own
+E-core, so blocking it does not steal compute time from game loop workers on P-cores. Blocking here
+= sleeping = low power while waiting for the display.
+
+Render thread frame loop:
+
+```rust
+fn render_loop(/* ... */) {
+    loop {
+        // Only blocking call — waits for v-sync
+        let image = swapchain.acquire_next_image();
+
+        let rf = triple_buffer.read();
+
+        job_system::scope(|s| {
+            // Parallel command buffer encoding
+        });
+        queue.submit(command_buffers);
+
+        swapchain.present(image);
+    }
+}
+```
+
+Open question #3 is resolved: poll-based for fences, blocking only for swapchain acquire.
+
+### RF-2: Add ray tracing management API
+
+`AccelerationStructureBuild` and `RayTracingDispatch` pass types exist but have no backing API. Add
+to `GpuDevice`:
+
+```rust
+fn create_blas(
+    &self, desc: &BlasDesc,
+) -> Result<BlasHandle, GpuError>;
+fn create_tlas(
+    &self, desc: &TlasDesc,
+) -> Result<TlasHandle, GpuError>;
+```
+
+Add to `CommandBuffer`:
+
+```rust
+fn build_acceleration_structure(
+    &mut self, tlas: TlasHandle,
+    instances: &[BlasInstance],
+);
+fn trace_rays(
+    &mut self, pipeline: RtPipelineHandle,
+    width: u32, height: u32, depth: u32,
+);
+```
+
+### RF-3: Clarify render thread in diagrams
+
+Replace "Main Loop" participant in the parallel encoding sequence diagram with "Render Thread."
+`ExecutionPlan.execute()` runs on the render thread (E-core), which coordinates worker threads for
+parallel encoding via `job_system::scope()`. Add a note that the render thread receives
+`RenderFrame` via triple buffer and drives the render graph.
+
+### RF-4: Add native mesh shader dispatch
+
+Add `dispatch_mesh_tasks` to `CommandBuffer`:
+
+```rust
+fn dispatch_mesh_tasks(
+    &mut self, group_count_x: u32,
+    group_count_y: u32, group_count_z: u32,
+);
+```
+
+Route through `FeatureEmulation` only when `DeviceCapabilities::mesh_shaders` is false.
+
+### RF-5: Rename swift_bridge test
+
+Rename `test_metal_ffi_swift_bridge` to `test_metal_ffi_objc2`. Swift is forbidden. Metal uses
+objc2-metal.
+
+### RF-6: Add objc2-metal to proposed dependencies
+
+Add `objc2-metal` and `objc2` to the dependency table. Request approval for `bitflags` (not in core
+deps list).
+
+### RF-7: Add Metal 4 specifics
+
+Document which Metal 4 APIs are targeted:
+
+- Placement heaps for explicit memory management
+- Sparse resources (virtual textures)
+- Improved shader compilation pipeline
+- Minimum requirement: Apple Silicon with Metal 4 support
+
+### RF-8: Add sparse resource API
+
+Add to `GpuDevice`:
+
+```rust
+fn create_sparse_texture(
+    &self, desc: &SparseTextureDesc,
+) -> Result<SparseTextureHandle, GpuError>;
+fn update_sparse_bindings(
+    &mut self, texture: SparseTextureHandle,
+    bindings: &[SparseBinding],
+);
+```
+
+Required for virtual textures and GPU-driven terrain streaming.
+
+### RF-9: Add shader hot-reload and PSO caching
+
+Document the shader hot-reload flow:
+
+1. FileWatcher detects HLSL change on main thread
+2. Main thread posts recompile job via channel
+3. Worker runs dxc/msc subprocess
+4. New shader bytecode sent to render thread via channel
+5. Render thread invalidates affected PSOs
+6. PSO recompiled on next use (lazy) or eagerly in background
+
+PSO cache:
+
+- Serialize compiled PSOs to disk (rkyv format)
+- Warm-up at startup: load cached PSOs, validate against current shader bytecode hashes
+- Cache invalidation: hash(shader bytecode + pipeline state desc)
+
+### RF-10: Frames in flight resource management
+
+With triple buffering, up to 3 frames are in flight simultaneously. The GPU may read frame N-2
+resources while the render thread writes frame N. Two categories of resources:
+
+**Static resources** (textures, meshes, materials) — shared across all frames. Only freed when
+`poll_fence` confirms no in-flight frame references them. The residency manager (asset pipeline)
+tracks this.
+
+**Per-frame resources** (uniform buffers, instance data, indirect command buffers, dynamic vertex
+buffers) — need one copy per frame in flight to avoid write-after-read hazards:
+
+```rust
+pub struct PerFrameBuffer<T> {
+    buffers: [GpuBuffer; MAX_FRAMES_IN_FLIGHT],
+    frame_index: usize,
+}
+
+impl<T> PerFrameBuffer<T> {
+    /// Get the buffer for the current frame.
+    /// Safe: previous frames' buffers are untouched.
+    pub fn current_mut(&mut self) -> &mut GpuBuffer {
+        &mut self.buffers[self.frame_index
+            % MAX_FRAMES_IN_FLIGHT]
+    }
+
+    /// Advance to next frame.
+    pub fn advance(&mut self) {
+        self.frame_index += 1;
+    }
+}
+```
+
+`MAX_FRAMES_IN_FLIGHT` = 3 (triple buffering). Each frame gets its own copy of dynamic data. The
+render thread advances the frame index after present. `poll_fence` confirms when old frame resources
+are safe to reuse.
+
+Resources that must be per-frame:
+
+| Resource | Why |
+|----------|-----|
+| Uniform/constant buffers | Camera, lighting change per frame |
+| Instance data buffer | Transforms differ per frame |
+| Indirect argument buffer | Culling results differ per frame |
+| Query results (occlusion) | Per-frame visibility |
+
+Resources shared across frames:
+
+| Resource | Why |
+|----------|-----|
+| Textures | Immutable after upload |
+| Mesh vertex/index buffers | Immutable after upload |
+| Acceleration structures | Rebuilt infrequently |
+| PSO cache | Shared, invalidated on shader change |
+
+### RF-11: Create companion test cases file
+
+Create `render-pipeline-test-cases.md` with TC-X.Y.Z.N IDs. Add defragmentation test for
+`GpuAllocator::defragment_step()`.
+
+### RF-12: Algorithm implementation references
+
+Each major algorithm in the render pipeline should reference an existing implementation for guidance
+during development.
+
+**Render graph:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| DAG + barriers | [Wihlidal, "Optimizing Graphics Pipeline" (GDC 2016)](https://www.wihlidal.com/projects/fb-gdc16/) |
+| Resource aliasing | [Themaister/Granite](https://github.com/Themaister/Granite) |
+| Transient alloc | [O'Donnell, "FrameGraph" (GDC 2017)](https://www.gdcvault.com/play/1024612/FrameGraph-Extensible-Rendering-Architecture-in) |
+| Dead pass elim | Frostbite frame graph: prune zero-reader passes |
+
+**GPU-driven rendering:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| GPU culling + indirect | [Haar & Aaltonen (SIGGRAPH 2015)](https://advances.realtimerendering.com/s2015/aaltonenhaar_siggraph2015_combined_final_footer_220dpi.pdf) |
+| Meshlet culling | [Karis, "Nanite" (SIGGRAPH 2021)](https://advances.realtimerendering.com/s2021/Karis_Nanite_SIGGRAPH_Advances_2021_final.pdf) |
+| Hi-Z occlusion | [GPU Gems Ch. 29](https://developer.nvidia.com/gpugems/gpugems/part-v-performance-and-practicalities/chapter-29-efficient-occlusion-culling) |
+
+**Mesh shaders:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Meshlet gen | [meshopt-rs](https://crates.io/crates/meshopt-rs) |
+| Mesh shader intro | [Kubisch (NVIDIA)](https://developer.nvidia.com/blog/introduction-turing-mesh-shaders/) |
+| Advanced mesh | [Kubisch (NVIDIA)](https://developer.nvidia.com/blog/advanced-api-performance-mesh-shaders/) |
+
+**Ray tracing:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| BLAS/TLAS | [Ray Tracing Gems (Apress)](https://www.realtimerendering.com/raytracinggems/rtg/index.html) |
+| Parallel BVH | [Karras (HPG 2012)](https://research.nvidia.com/publication/2013-07_megakernels-considered-harmful-wavefront-path-tracing-gpus) |
+| Visibility buffer | [Burns (diary of a graphics programmer)](http://diaryofagraphicsprogrammer.blogspot.com/2018/03/triangle-visibility-buffer.html) |
+
+**Memory management:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| GPU sub-allocator | [VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) |
+| Ring buffer | [Vulkan Guide ch. 5](https://vkguide.dev/docs/extra-chapter/multithreading/) |
+
+**Shader compilation + PSO caching:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| PSO cache | D3D12 GetCachedBlob / CreatePipelineState |
+| Shader pipeline | [Wihlidal shader blog](https://www.wihlidal.com/blog/pipeline/2018-12-28-containerized-shader-compilers/) |
+| Hot reload | [Tatarchuk, Destiny (GDC 2017)](https://advances.realtimerendering.com/destiny/gdc_2017/) |
+
+**V-sync + frame pacing:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Triple buffering | van Waveren, "Latency Mitigation" (GDC 2016) |
+| Frame pacing | [Android AGDK](https://developer.android.com/games/sdk/frame-pacing) |
+| iOS display sync | [CAMetalDisplayLink](https://developer.apple.com/documentation/quartzcore/cametaldisplaylink) |
+
+### RF-13: Multi-frame async compute
+
+The render graph supports compute passes that span multiple frames for expensive GPGPU work
+(procedural generation, physics simulation, GI baking).
+
+**AsyncComputeTask:**
+
+```rust
+pub struct AsyncComputeTask {
+    pub id: AsyncTaskId,
+    pub passes: Vec<ComputePassDesc>,
+    pub current_pass: usize,
+    pub fence: FenceHandle,
+    pub status: AsyncTaskStatus,
+}
+
+pub enum AsyncTaskStatus {
+    Queued,
+    InProgress { frame_started: u64 },
+    Complete,
+    Failed,
+}
+```
+
+**Execution model:**
+
+Each frame, the render graph submits the NEXT pass of each active async task to the async compute
+queue. The previous pass's fence is polled — if not done, the task waits. If done, the next pass is
+submitted.
+
+```text
+Frame N:   Submit pass 0 (noise generation)
+Frame N+1: Poll fence. Done → submit pass 1 (erosion)
+Frame N+2: Poll fence. Done → submit pass 2 (splatmap)
+Frame N+3: Poll fence. Done → task complete.
+```
+
+Async compute passes overlap with graphics work on the graphics queue. The render graph inserts
+cross-queue semaphores when an async compute result is consumed by a graphics pass.
+
+**Budget control:**
+
+The render graph limits async compute passes per frame to prevent GPU starvation of rendering:
+
+| Tier | Async passes/frame | Max tasks in flight |
+|------|-------------------|-------------------|
+| Ultra | 4 | 8 |
+| High | 2 | 4 |
+| Medium | 1 | 2 |
+| Low | 1 | 1 |
+
+**Use cases:**
+
+| Consumer | Passes | Duration |
+|----------|--------|----------|
+| Terrain generation | 3-5 (noise → erode → splat) | 3-5 frames |
+| Vegetation scatter | 1-2 (Poisson → instance) | 1-2 frames |
+| GI probe bake | 10+ (trace → accumulate) | Many frames |
+| Physics cloth init | 1 (constraint build) | 1 frame |
+| Navmesh voxelize | 2-3 (raster → filter → mesh) | 2-3 frames |
+
+Async compute tasks are registered like any render graph pass but with
+`queue: QueueType::AsyncCompute` and a multi-pass lifecycle managed by the render graph scheduler.
+
+**Consuming async compute results in graphics passes:**
+
+When an async compute task completes, its output buffers/ textures become available to graphics
+passes. The render graph handles the handoff:
+
+```rust
+// Register async compute output as a render graph resource:
+let terrain_heightmap = render_graph.register_async_output(
+    "terrain_chunk_42_heightmap",
+    async_task.output_buffer,
+);
+
+// Graphics pass declares a read dependency on it:
+render_graph.add_pass(RenderPass {
+    name: "terrain_render",
+    queue: QueueType::Graphics,
+    reads: &[terrain_heightmap],  // async compute output
+    writes: &[gbuffer_color, gbuffer_depth],
+    execute: |cmd| {
+        // Heightmap is guaranteed ready — render graph
+        // inserted a cross-queue semaphore
+        cmd.bind_buffer(terrain_heightmap);
+        cmd.draw_terrain();
+    },
+});
+```
+
+**Cross-queue synchronization:**
+
+The render graph automatically inserts:
+
+1. A GPU semaphore between the async compute queue and the graphics queue
+2. A pipeline barrier transitioning the resource from compute-write to graphics-read layout
+3. Scheduling dependency: the graphics pass waits for the semaphore before executing
+
+This is transparent to the pass author — they declare reads/writes, the render graph handles
+synchronization.
+
+**Result availability patterns:**
+
+| Pattern | Use Case | Mechanism |
+|---------|----------|-----------|
+| Same-frame | Simple compute (< 1 pass) | Barrier within frame |
+| Next-frame | Multi-frame task completes | Fence poll → register output |
+| On-demand | Terrain chunk ready | ChunkManager signals render graph |
+| Streaming | Progressive LOD | Each pass produces usable intermediate |
+
+**Progressive results:**
+
+Some async tasks produce usable intermediate results. Terrain generation can render a low-quality
+heightmap after pass 1 (noise) while erosion (pass 2) and splatmap (pass 3) are still in flight:
+
+```text
+Frame N:   Noise pass completes → register as LOD 0
+           Render terrain with noise-only heightmap
+Frame N+1: Erosion completes → register as LOD 1
+           Render terrain with eroded heightmap
+Frame N+2: Splatmap completes → register as LOD 2
+           Render terrain with final quality
+```
+
+Each intermediate is a valid render graph resource. The terrain render pass reads whichever LOD is
+currently available. Quality improves over frames without any pop — smooth transition from rough to
+detailed.
+
+**Resource lifetime:**
+
+Async compute output resources persist across frames (unlike transient render graph resources that
+are aliased per frame). They are explicitly freed when no longer needed (chunk evicted, asset
+unloaded). The render graph tracks which passes read them and prevents aliasing of persistent async
+outputs.
+
+### RF-14: GPU readback for procedural asset persistence
+
+Support reading GPU buffer/texture data back to CPU for:
+
+- Persisting procedurally generated assets to disk (rkyv)
+- Exporting editor-generated content as baked assets
+- Saving runtime-generated terrain, vegetation, textures
+
+**Readback pipeline:**
+
+```rust
+pub struct GpuReadbackRequest {
+    pub source: GpuResourceHandle,
+    pub offset: u64,
+    pub size: u64,
+    pub callback: ReadbackCallback,
+}
+
+pub enum ReadbackCallback {
+    /// Write to file via platform I/O
+    SaveToFile { path: AssetPath },
+    /// Post as job with CPU-side buffer
+    PostJob { job_fn: fn(&[u8]) },
+}
+```
+
+**Render graph integration:**
+
+GPU readback is a render graph pass on the copy queue:
+
+```rust
+render_graph.add_pass(CopyPass {
+    name: "readback_terrain_heightmap",
+    queue: QueueType::Copy,
+    reads: &[terrain_heightmap],
+    writes: &[],  // writes to staging buffer
+    execute: |cmd| {
+        cmd.copy_buffer_to_staging(
+            terrain_heightmap,
+            staging_buffer,
+        );
+    },
+});
+```
+
+**Multi-frame readback (no stall):**
+
+1. Frame N: submit copy from GPU buffer → staging buffer
+2. Frame N+1: poll fence — copy done
+3. Frame N+2: map staging buffer, read data to CPU
+4. Post data as job: serialize via rkyv → write to disk via platform I/O
+
+The game loop never stalls. Readback is async across frames, same as async compute.
+
+**Staging buffer pool:**
+
+Readback uses a pool of staging buffers (CPU-visible GPU memory). Ring-buffered per frame in flight:
+
+```rust
+pub struct StagingPool {
+    buffers: Vec<StagingBuffer>,
+    frame_index: usize,
+}
+```
+
+**Use cases:**
+
+| Use Case | Source | Output |
+|----------|--------|--------|
+| Bake terrain | GPU heightmap | .terrain asset (rkyv) |
+| Bake vegetation | GPU scatter buffer | .vegetation asset |
+| Export texture | GPU render target | .ktx2 / .png |
+| Save voxel edits | GPU SDF volume | .voxel asset |
+| Capture lightmap | GPU surfel irradiance | .lightmap asset |
+| Editor screenshot | Swapchain | .png |
+
+**Editor workflow:**
+
+1. Designer generates terrain procedurally in editor
+2. Tweaks parameters until satisfied
+3. Clicks "Bake" → GPU readback → rkyv asset on disk
+4. Baked asset loads instantly (zero-copy mmap)
+5. Procedural generation no longer runs for this chunk
+6. Designer can re-generate any time (non-destructive)

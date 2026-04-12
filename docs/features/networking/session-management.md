@@ -129,7 +129,7 @@
    prioritizes low-latency server assignments (player connects to nearest AWS region). Cross-play
    matchmaking respects platform preferences (opt-in/opt-out of cross-platform matches). The
    matchmaking service runs as a standalone microservice with a REST/gRPC API, deployable via the
-   AWS CDK stack (F-15.18.1). Queue status, estimated wait time, and match quality metrics are
+   server deployment (F-15.18.1). Queue status, estimated wait time, and match quality metrics are
    exposed to the client for UI display.
    - **Deps:** F-8.5.1, F-8.5.6 (Cross-Play), F-8.5.8 (Headless Server)
    - **Platform:** Deployed as an AWS Lambda function or ECS Fargate container.

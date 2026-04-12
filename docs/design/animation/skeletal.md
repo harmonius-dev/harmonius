@@ -1411,8 +1411,7 @@ Animation events follow this path:
 ### Compute Shader Dispatch
 
 All three compute stages (keyframe eval, blend, skinning) use HLSL compiled via DXC. On macOS, DXIL
-is translated to MSL via Metal Shader Converter (DXC via C API, MSC via swift-bridge per project
-constraints).
+is translated to MSL via Metal Shader Converter (CLI subprocess per project constraints).
 
 Thread group sizes:
 
@@ -1439,7 +1438,7 @@ events. These are replicated as components via standard replication. Skeleton LO
 determined per-client based on distance, not replicated.
 
 Curve evaluation for animation clips uses the shared `Curve<T>` type (see
-[shared-primitives.md](../core-runtime/shared-primitives.md)).
+[algorithms.md](../core-runtime/algorithms.md)).
 
 ## Test Plan
 
@@ -1639,3 +1638,1058 @@ ambiguity and align both modules.
    On the skipped frame, the previous bone palette is reused. This introduces one frame of
    staleness. Whether to interpolate between the two most recent palettes (adding a read-back) or
    accept the staleness needs profiling.
+
+## Review Feedback
+
+### RF-1: Per-cluster skinning in mesh shader
+
+Skinning happens inside the mesh shader, not as a separate compute pass writing to a vertex buffer.
+Each meshlet cluster reads the bone palette and skins vertices during meshlet decode:
+
+```hlsl
+// In mesh shader per meshlet:
+// 1. Load meshlet vertex indices
+// 2. Read bone palette from structured buffer
+// 3. Skin each vertex (LBS or DQS)
+// 4. Output transformed position + normal
+```
+
+Benefits:
+
+- No intermediate skinned vertex buffer (saves VRAM)
+- Compatible with GPU-driven meshlet pipeline (no extra pass)
+- Bone palette is per-instance, shared across all meshlets
+- LOD naturally works (coarser meshlet levels skin fewer verts)
+
+The bone palette is uploaded per instance per frame to a structured buffer. The mesh shader reads it
+via instance ID.
+
+### RF-2: Remove Tokio reference
+
+Line 1600. Replace with platform-native I/O for clip streaming.
+
+### RF-3: Per-frame ring buffer for GpuArenaBuffer
+
+N-buffer the arena (one per frame in flight). GPU may still read frame N-1's bone palette while CPU
+writes frame N:
+
+```rust
+pub struct GpuArenaRing {
+    arenas: [GpuArenaBuffer; MAX_FRAMES_IN_FLIGHT],
+    frame_index: usize,
+}
+```
+
+Advance frame index after submit. Poll fence before reusing.
+
+### RF-4: Previous bone palette for motion vectors
+
+Store the previous frame's bone palette alongside the current one. The mesh shader reads both to
+compute per-vertex motion vectors for TAA and motion blur:
+
+```hlsl
+float3 curr_pos = skin(vertex, curr_palette);
+float3 prev_pos = skin(vertex, prev_palette);
+float2 motion = project(curr_pos) - project(prev_pos);
+```
+
+### RF-5: Inertialization blend mode — see state-machine RF-5
+
+Inertialization blend mode is defined in the animation state machine design (Design #25, RF-5).
+
+### RF-6: Animation phase = PostUpdate
+
+Animation systems run in PostUpdate phase with variable timestep. Ordering within PostUpdate:
+
+1. AnimationLodSystem (reads distance from camera)
+2. AnimationAdvanceSystem (advance time, fire events)
+3. RootMotionSystem (extract and apply root delta)
+4. GpuAnimationUploadSystem (upload bone palettes)
+5. TransformPropagation (reads updated transforms)
+
+Systems 1-3 can run in parallel across entities via job_system::par_for_each. System 4 is a single
+GPU upload.
+
+### RF-7: 2D spritesheet state machine — see state-machine RF-2
+
+Spritesheet animation driven by the state machine is defined in Design #25 (state-machine.md, RF-2).
+Rendering is in rendering-core RF-15.
+
+### RF-8: 2D skeletal animation with vector graphics
+
+Support 2D skeletal animation where bones deform vector graphic meshes (Spine/DragonBones style):
+
+- 2D bone hierarchy using Transform2D (Vec2 + f32 rotation)
+- Mesh deformation: bone weights on 2D mesh vertices
+- FFD (Free-Form Deformation) for mesh morphing
+- Vector graphic rendering: triangulated 2D meshes with texture regions from a sprite atlas
+- Skinning in vertex shader (2D LBS — simpler than 3D)
+
+Use cases: character animation in 2D games, animated UI elements, cutscene characters in
+side-scrollers.
+
+The 2D skeleton shares the same `Skeleton` hierarchy, `AnimationClip` format, blending, and state
+machine as 3D. Only the transform type (Transform2D vs Transform) and skinning shader (2D LBS vs 3D
+LBS/DQS) differ.
+
+Asset import: support Spine JSON/binary format and DragonBones JSON as import formats in the asset
+pipeline.
+
+#### RF-9: Foliage wind bone chain
+
+Add a simplified bone chain concept for Nanite-style foliage wind animation:
+
+- Trunk: 1-3 bones (primary sway)
+- Branches: 1-2 bones per major branch (secondary motion)
+- Leaves: no bones (mesh shader noise displacement)
+
+Wind force applied as external torque on bones. Same skeletal animation pipeline but with fewer
+bones and no keyframe clips — purely procedural from wind input.
+
+Cross-references world-geometry RF-6 (Nanite foliage) and procedural animation Design #26.
+
+#### RF-10: Complete DQS shader
+
+Lines 1138-1139 are a stub. Fill in the dual quaternion position/normal transform. The LBS shader is
+complete; DQS should match its structure.
+
+#### RF-11: Clarify CompressedCurve naming
+
+Rename `CompressedCurve<T>` to `KeyframeCurve<T>` (it's the decompressed CPU-side form).
+`CompressedAnimationClip.packed_data` is the actual compressed data. The naming is misleading.
+
+#### RF-12: Motion matching — see state-machine RF-3
+
+Motion matching integration with the state machine is defined in Design #25 (state-machine.md,
+RF-3).
+
+#### RF-13: Algorithm references
+
+| Algorithm | Reference |
+|-----------|-----------|
+| LBS skinning | Standard vertex skinning |
+| DQS skinning | [Kavan et al. (2008)](https://www.cs.utah.edu/~ladislav/kavan08geometric/kavan08geometric.pdf) |
+| Hermite interpolation | Standard cubic Hermite |
+| Smallest-three quat | [Frey (GDC 2017)](https://gdcvault.com/play/1024231/) |
+| Inertialization | [Bonavita (GDC 2018)](https://www.gdcvault.com/play/1025165/Inertialization-High-Performance-Animation-Transitions) |
+| Motion matching | [Holden et al. (2020)](https://montreal.ubisoft.com/en/introducing-learned-motion-matching/) |
+| Spine format | [Spine runtime](http://esotericsoftware.com/spine-runtime-guide) |
+
+### RF-14: FK/IK pipeline ordering
+
+FK (forward kinematics) is the default — animation clips drive bones parent→child. IK (inverse
+kinematics) runs AFTER the animation blend but BEFORE skinning, overriding FK results for specific
+chains:
+
+```text
+Animation Blend (FK poses)
+  → IK Solve (override target chains)
+  → Final Bone Palette
+  → GPU Upload → Mesh Shader Skinning
+```
+
+IK types (defined in procedural animation Design #26):
+
+- Two-bone IK (arms, legs) — analytical solution
+- FABRIK (spines, tails, tentacles) — iterative
+- CCD (chains with many joints) — iterative
+- Look-at (head/eye tracking) — single bone aim
+
+The skeletal design provides the IK application point. The procedural design provides the solvers.
+Both share the bone palette.
+
+### RF-15: Humanoid skeleton standard
+
+Define a canonical humanoid rig for automatic retargeting:
+
+```rust
+pub struct HumanoidRig {
+    pub hips: BoneIndex,
+    pub spine: BoneChain,       // 1-4 bones
+    pub chest: BoneIndex,
+    pub neck: BoneChain,        // 1-2 bones
+    pub head: BoneIndex,
+    pub left_arm: LimbChain,    // shoulder, upper, lower, hand
+    pub right_arm: LimbChain,
+    pub left_leg: LimbChain,    // upper, lower, foot
+    pub right_leg: LimbChain,
+    pub left_fingers: Option<FingerChain>,  // 5x3 bones
+    pub right_fingers: Option<FingerChain>,
+}
+
+pub struct LimbChain {
+    pub root: BoneIndex,    // shoulder or hip joint
+    pub upper: BoneIndex,
+    pub lower: BoneIndex,
+    pub end: BoneIndex,     // hand or foot
+}
+```
+
+Any skeleton with these bones mapped can share animations via automatic retargeting. The mapping is
+created once per skeleton asset (at import or in the editor) and stored alongside the skeleton.
+
+This is similar to Unity's Humanoid Avatar and Unreal's IK Retargeter. The canonical rig is the
+intermediate representation — source animation → canonical → target skeleton.
+
+### RF-16: Animal and non-humanoid skeletons
+
+Not all skeletons are humanoid. Support arbitrary topologies via named bone chains:
+
+```rust
+pub enum SkeletonType {
+    Humanoid(HumanoidRig),
+    Quadruped(QuadrupedRig),
+    Bird(BirdRig),
+    Custom(Vec<NamedBoneChain>),
+}
+
+pub struct QuadrupedRig {
+    pub spine: BoneChain,
+    pub neck: BoneChain,
+    pub head: BoneIndex,
+    pub front_left: LimbChain,
+    pub front_right: LimbChain,
+    pub rear_left: LimbChain,
+    pub rear_right: LimbChain,
+    pub tail: Option<BoneChain>,
+}
+
+pub struct BirdRig {
+    pub spine: BoneChain,
+    pub neck: BoneChain,
+    pub head: BoneIndex,
+    pub left_wing: BoneChain,
+    pub right_wing: BoneChain,
+    pub left_leg: LimbChain,
+    pub right_leg: LimbChain,
+    pub tail_feathers: Option<BoneChain>,
+}
+```
+
+Retargeting between different skeleton types (e.g., humanoid animation on a quadruped) is NOT
+automatic — it requires a custom retarget map authored in the editor. Retargeting within the same
+type (human A → human B) IS automatic via the canonical rig.
+
+### RF-17: Named bone chains
+
+Bone chains are named groups of sequential bones used for:
+
+- Per-chain IK targets (foot IK on left_leg chain)
+- Per-chain blend masks (override only the spine chain)
+- Per-chain LOD (reduce finger bones first)
+- Per-chain physics (ragdoll only on arm chains)
+
+```rust
+pub struct NamedBoneChain {
+    pub name: StringId,
+    pub bones: SmallVec<[BoneIndex; 8]>,
+    pub chain_type: ChainType,
+}
+
+pub enum ChainType {
+    Spine,      // sequential, root-to-tip
+    Limb,       // upper-lower-end (IK-friendly)
+    Digits,     // finger/toe chains
+    Tail,       // flexible appendage
+    Custom,     // user-defined
+}
+```
+
+Chains are defined at import time from the skeleton hierarchy or manually assigned in the editor.
+The `BoneMask` bitset can be built from chains: `BoneMask::from_chains(&[spine, left_arm])`.
+
+### RF-18: Editor tooling requirements
+
+The editor needs these tools for skeleton authoring:
+
+**Skeleton viewer:**
+
+- 3D bone visualization (wireframe bones, joint spheres)
+- Bone selection, renaming, hierarchy editing
+- Bind pose preview with mesh overlay
+- Bone axis visualization (local X/Y/Z)
+
+**Bone chain assignment:**
+
+- Visual chain painting: click bones to add to a chain
+- Predefined chain templates (humanoid, quadruped, bird)
+- Auto-detect chains from naming conventions (LeftArm_*, Spine_*, etc.)
+
+**Retarget mapping:**
+
+- Side-by-side source/target skeleton preview
+- Drag-drop bone mapping between skeletons
+- Auto-map by bone name similarity
+- Preview retargeted animation in real-time
+- Save/load retarget maps as assets
+
+**IK target visualization:**
+
+- Gizmos showing IK target positions in the viewport
+- Chain visualization (bones affected by each IK solver)
+- Interactive IK target dragging for testing
+
+**Animation preview:**
+
+- Timeline scrubbing with bone palette inspection
+- Blend weight sliders for multi-layer preview
+- Root motion visualization (trajectory path)
+- Event marker display on timeline
+
+All editor tools are visual and no-code. Deferred to the tools/visual-editors design (Design #50)
+for full UI specification.
+
+### RF-19: Tree and vegetation skeletons
+
+Trees use skeletal animation for wind. Add a `TreeRig`:
+
+```rust
+pub struct TreeRig {
+    pub trunk: BoneChain,          // 2-4 bones
+    pub branches: Vec<BranchChain>,
+}
+
+pub struct BranchChain {
+    pub chain: BoneChain,          // 1-3 bones
+    pub sub_branches: Vec<BoneChain>, // 0-2 each
+    pub level: u8,                 // 0=primary, 1=secondary
+}
+```
+
+Tree skeletons have no keyframe clips — purely procedural wind animation. Wind force → torque on
+bones, propagated down the hierarchy. Higher-level branches sway more slowly (higher inertia). Leaf
+displacement handled by mesh shader noise (not bones).
+
+FABRIK is the ideal IK solver for tree branches — handles arbitrary chain lengths, natural drooping
+under gravity, and collision avoidance with nearby branches.
+
+### RF-20: Additional skeleton types
+
+Extend `SkeletonType` for more creature topologies:
+
+```rust
+pub enum SkeletonType {
+    Humanoid(HumanoidRig),
+    Quadruped(QuadrupedRig),
+    Bird(BirdRig),
+    Tree(TreeRig),
+    Fish(FishRig),
+    Snake(SnakeRig),
+    Insect(InsectRig),
+    Mechanical(MechanicalRig),
+    Custom(Vec<NamedBoneChain>),
+}
+```
+
+| Type | Chains | IK | Use Case |
+|------|--------|-----|----------|
+| Fish | spine, fins, tail | FABRIK spine | Swimming creatures |
+| Snake | single long spine | FABRIK | Snakes, worms, ropes |
+| Insect | thorax, 6 legs, wings, antennae | Two-bone legs | Spiders, ants, beetles |
+| Mechanical | rigid segments, pistons, gears | Analytic | Robots, vehicles, machinery |
+
+Each type defines which chains exist and which IK solvers apply. The `Custom` type allows arbitrary
+topology for creatures that don't fit any predefined type.
+
+### RF-21: Motion capture integration
+
+Mocap data flows from the input system (Design #14, RF-3 item 6: MocapEvent) into skeletal animation
+via retargeting:
+
+```text
+Mocap source (OptiTrack, Vicon, Rokoko)
+  → Network packets → Main thread
+  → MocapEvent (full skeleton per frame)
+  → Retarget: mocap rig → canonical humanoid → game skeleton
+  → Override blend layer (highest priority)
+  → Bone palette → GPU skinning
+```
+
+The retarget map from mocap rig to canonical humanoid is created once per mocap setup. Live mocap
+overrides the animation blend as an additive or override layer.
+
+Also supports offline mocap: recorded mocap → imported as AnimationClip via the asset pipeline. Same
+retargeting path but from a clip file instead of live stream.
+
+Face mocap (ARKit ARFaceAnchor) drives blend shapes, not bones. Blend shape support is defined in
+procedural animation (Design #26).
+
+### RF-22: FABRIK for organic chains
+
+FABRIK (Forward And Backward Reaching Inverse Kinematics) is the preferred IK solver for non-limb
+organic chains:
+
+| Chain Type | Why FABRIK |
+|-----------|-----------|
+| Spine | Flexible, multi-joint |
+| Tail | Arbitrary length, natural sway |
+| Tentacle | Many joints, smooth curvature |
+| Tree branch | Gravity droop, wind response |
+| Snake body | Full-body undulation |
+| Vine/rope | Physics-like draping |
+
+FABRIK iterates: reach toward target (forward pass), then pull back to root (backward pass).
+Converges in 5-10 iterations for most chains. Supports joint constraints (angle limits per bone) to
+prevent unnatural bending.
+
+Reference: [Aristidou & Lasenby, "FABRIK" (2011)](https://www.sciencedirect.com/science/article/pii/S1524070311000178)
+
+### RF-23: Hip bone to physics collider alignment
+
+The humanoid hip bone (root of the skeleton hierarchy) must stay aligned with the physics capsule
+collider. Without this, the visual character drifts from its collision representation.
+
+**Problem:** The animation clip positions the hip bone relative to the skeleton root. The physics
+capsule is positioned by the physics solver. These can diverge — the animation might lower the hips
+(crouching) while the capsule stays tall, or root motion might move the skeleton while the capsule
+lags.
+
+**Solution:** The pelvis height is NOT fixed — it moves dynamically based on IK foot constraints and
+terrain:
+
+```text
+1. Physics capsule positioned by character controller
+2. Foot IK raycasts find ground under each foot
+3. Feet placed on ground (IK targets)
+4. Pelvis height computed from foot positions:
+   - Average planted foot height + leg length offset
+   - Only planted feet contribute (airborne legs ignored)
+   - Front foot priority when moving uphill
+5. Pelvis interpolated smoothly (no snapping)
+6. Capsule height resizes to match (crouch, slope)
+7. All spine/arm bones relative to adjusted pelvis
+```
+
+The pelvis is a DEPENDENT variable, not a fixed offset. It follows from where the feet land. This is
+how UE5's Full Body IK and Leg IK work — the body adjusts to terrain.
+
+**Smooth adaptation:**
+
+- Pelvis delta smoothed at configurable rate (cm/s)
+- Prevents visual popping on terrain transitions
+- Separate up/down rates (fast down for drops, slow up for steps)
+
+**Capsule sync:**
+
+- Capsule bottom stays at lowest planted foot
+- Capsule height = pelvis height + head clearance
+- Dynamic resize: crouch shrinks capsule AND lowers pelvis
+- Jump: pelvis follows animation (no IK override in air)
+
+**For quadrupeds:** Body height from average of 4 foot positions. Spine curves to match terrain
+slope via FABRIK. No single "hip" — the spine chain distributes the height adjustment across
+multiple bones.
+
+### RF-24: Detailed humanoid rig anatomy
+
+The humanoid canonical rig needs more detail than simple chains. Real humanoid skeletons have:
+
+**Spine articulation:**
+
+- Pelvis (root) — attached to physics capsule
+- Spine1, Spine2, Spine3 — progressive bending
+- Chest — attachment point for arms
+- Neck1, Neck2 — head rotation range
+- Head — look-at target
+
+**Arm structure:**
+
+- Clavicle — shoulder raise/shrug (often overlooked)
+- Upper arm — shoulder ball joint
+- Lower arm — elbow hinge
+- Hand — wrist twist + bend
+- Twist bones — forearm roll distribution (1-2 twist bones between upper/lower to prevent
+  candy-wrapper deformation)
+
+**Leg structure:**
+
+- Upper leg — hip ball joint
+- Lower leg — knee hinge
+- Foot — ankle pitch + roll
+- Toe — ball of foot bend
+- Twist bones — thigh roll distribution
+
+**Fingers (optional):**
+
+- 5 fingers × 3 bones each = 15 bones per hand
+- Metacarpal → proximal → middle → distal
+- Can be LOD'd away at distance
+
+**Face (optional):**
+
+- Jaw bone for mouth open
+- Eye bones for gaze direction
+- Remaining face animation via blend shapes (Design #26)
+
+```rust
+pub struct HumanoidRig {
+    pub pelvis: BoneIndex,
+    pub spine: SmallVec<[BoneIndex; 4]>,
+    pub chest: BoneIndex,
+    pub neck: SmallVec<[BoneIndex; 2]>,
+    pub head: BoneIndex,
+    pub left_clavicle: Option<BoneIndex>,
+    pub left_upper_arm: BoneIndex,
+    pub left_lower_arm: BoneIndex,
+    pub left_hand: BoneIndex,
+    pub left_arm_twist: SmallVec<[BoneIndex; 2]>,
+    pub right_clavicle: Option<BoneIndex>,
+    pub right_upper_arm: BoneIndex,
+    pub right_lower_arm: BoneIndex,
+    pub right_hand: BoneIndex,
+    pub right_arm_twist: SmallVec<[BoneIndex; 2]>,
+    pub left_upper_leg: BoneIndex,
+    pub left_lower_leg: BoneIndex,
+    pub left_foot: BoneIndex,
+    pub left_toe: Option<BoneIndex>,
+    pub left_leg_twist: SmallVec<[BoneIndex; 2]>,
+    pub right_upper_leg: BoneIndex,
+    pub right_lower_leg: BoneIndex,
+    pub right_foot: BoneIndex,
+    pub right_toe: Option<BoneIndex>,
+    pub right_leg_twist: SmallVec<[BoneIndex; 2]>,
+    pub left_fingers: Option<FingerSet>,
+    pub right_fingers: Option<FingerSet>,
+    pub jaw: Option<BoneIndex>,
+    pub left_eye: Option<BoneIndex>,
+    pub right_eye: Option<BoneIndex>,
+}
+```
+
+### RF-25: Ragdoll ↔ animation blending
+
+Ragdoll integration crosses skeletal animation (this design) and physics constraints (Design #20).
+Three modes of operation:
+
+**1. Animated → ragdoll transition (death, knockback):**
+
+- On trigger: spawn ragdoll bodies from current bone poses
+- Each bone gets a rigid body at its current world transform
+- Joint constraints connect bones per RagdollDef (Design #20)
+- Animation stops, physics takes over
+- Velocity inherited from animation (last frame delta)
+
+**2. Ragdoll → animated transition (get-up):**
+
+- Blend from current ragdoll pose toward get-up animation
+- `RagdollBlendWeight` component: 1.0 = full ragdoll, 0.0 = full animation
+- Lerp each bone: `lerp(ragdoll_pose, anim_pose, weight)`
+- Smoothly transition weight over ~0.5 seconds
+- When weight reaches 0, despawn ragdoll bodies
+
+**3. Partial ragdoll (hit reaction):**
+
+- Upper body ragdoll, lower body animated (still walking)
+- Per-chain blend: spine/arms = ragdoll, legs = animation
+- Uses bone mask to partition which chains are physics-driven
+- Joint at the partition point (e.g., spine base) constrains the ragdoll upper body to the animated
+  lower body
+
+**Bone-to-body mapping:**
+
+Each ragdoll body corresponds to a bone. The physics solver writes world transforms; the animation
+system reads them as bone overrides in the final palette:
+
+```text
+Per bone:
+  if ragdoll_active AND bone in ragdoll_mask:
+    bone_pose = rigid_body.transform (physics)
+  else:
+    bone_pose = animation_blend_result (FK/IK)
+  final = lerp(animation, physics, ragdoll_weight)
+```
+
+**Collision shapes per bone:**
+
+- Head: sphere or capsule
+- Torso: box or capsule
+- Upper arm/leg: capsule
+- Lower arm/leg: capsule
+- Hands/feet: box (simplified)
+
+Shapes defined in the `RagdollDef` asset alongside joint types and limits (Design #20). Collision
+shapes use the collision layer system — ragdoll layer for body-vs-world, not body-vs-self (prevents
+ragdoll limbs colliding with each other unless intended).
+
+### RF-26: Detailed quadruped rig
+
+Quadrupeds also need more anatomical detail:
+
+```rust
+pub struct QuadrupedRig {
+    pub pelvis: BoneIndex,
+    pub spine: SmallVec<[BoneIndex; 4]>,
+    pub chest: BoneIndex,
+    pub neck: SmallVec<[BoneIndex; 3]>,
+    pub head: BoneIndex,
+    pub jaw: Option<BoneIndex>,
+    pub left_ear: Option<BoneChain>,
+    pub right_ear: Option<BoneChain>,
+    pub front_left: QuadLimb,
+    pub front_right: QuadLimb,
+    pub rear_left: QuadLimb,
+    pub rear_right: QuadLimb,
+    pub tail: Option<BoneChain>,
+}
+
+pub struct QuadLimb {
+    pub shoulder_or_hip: BoneIndex,
+    pub upper: BoneIndex,
+    pub lower: BoneIndex,
+    pub pastern: Option<BoneIndex>, // ankle equiv
+    pub hoof_or_paw: BoneIndex,
+}
+```
+
+Quadruped IK: four-point ground contact. Foot IK raycasts from each leg end-effector to the ground.
+Body height adjusts based on average ground height. Spine curves to match uneven terrain. FABRIK for
+tail procedural animation.
+
+### RF-27: Comprehensive algorithm reference
+
+**IK Solvers:**
+
+| Algorithm | Use Case | Reference |
+|-----------|----------|-----------|
+| Two-bone IK | Arms, legs (analytical) | Standard trigonometric |
+| FABRIK | Spines, tails, tentacles | [Aristidou & Lasenby (2011)](https://www.sciencedirect.com/science/article/pii/S1524070311000178) |
+| CCDIK | Multi-bone with angle limits | [Kenwright (2012)](https://dl.acm.org/doi/10.1145/2159616.2159637) |
+| Full Body IK | Multi-target simultaneous | [UE5 FBIK](https://dev.epicgames.com/documentation/en-us/unreal-engine/control-rig-full-body-ik-in-unreal-engine) |
+| Look-at | Head/eye tracking | Single-bone aim constraint |
+
+**Skinning:**
+
+| Algorithm | Use Case | Reference |
+|-----------|----------|-----------|
+| LBS | Standard vertex skinning | Standard linear blend |
+| DQS | No volume loss | [Kavan et al. (2008)](https://www.cs.utah.edu/~ladislav/kavan08geometric/kavan08geometric.pdf) |
+| Per-cluster mesh shader | Meshlet integration | RF-1 (this design) |
+
+**Blending:**
+
+| Algorithm | Use Case | Reference |
+|-----------|----------|-----------|
+| Linear blend | Standard crossfade | Weighted lerp/slerp |
+| Additive | Layered animation | Delta pose application |
+| Inertialization | Motion matching transitions | [Bonavita (GDC 2018)](https://www.gdcvault.com/play/1025165/Inertialization-High-Performance-Animation-Transitions) |
+| Blend space | Locomotion (speed/direction) | [UE5 Blend Spaces](https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-spaces-in-unreal-engine) |
+
+**Motion Matching:**
+
+| Algorithm | Use Case | Reference |
+|-----------|----------|-----------|
+| Pose search (KD-tree) | Nearest pose lookup | [Holden et al. (2020)](https://montreal.ubisoft.com/en/introducing-learned-motion-matching/) |
+| Motion matching | Locomotion selection | [Clavet (GDC 2016)](https://www.gdcvault.com/play/1023280/Motion-Matching-and-The-Road) |
+| UE5 PoseSearch | Database + schema | [UE5 Motion Matching](https://dev.epicgames.com/documentation/en-us/unreal-engine/motion-matching-in-unreal-engine) |
+
+**Compression:**
+
+| Algorithm | Use Case | Reference |
+|-----------|----------|-----------|
+| Smallest-three quat | Rotation compression | [Frey (GDC 2017)](https://gdcvault.com/play/1024231/) |
+| Range reduction | Translation compression | Fixed-point quantization |
+| Keyframe reduction | LOD compression | Error-bounded decimation |
+| ACL | Animation Compression Lib | [ACL GitHub](https://github.com/nfrechette/acl) |
+
+**Retargeting:**
+
+| Algorithm | Use Case | Reference |
+|-----------|----------|-----------|
+| IK-based retarget | Cross-skeleton sharing | [UE5 IK Retargeter](https://dev.epicgames.com/documentation/en-us/unreal-engine/ik-rig-animation-retargeting-in-unreal-engine) |
+| Proportional scaling | Different body proportions | Scale by bone length ratio |
+| Runtime retarget | Live mocap → game skeleton | [UE5 Runtime Retarget](https://dev.epicgames.com/documentation/en-us/unreal-engine/runtime-ik-retargeting-in-unreal-engine) |
+
+**Motion Capture:**
+
+| System | Integration | Reference |
+|--------|-------------|-----------|
+| Live Link (UE5 equiv) | Streaming mocap to engine | [UE5 Live Link](https://dev.epicgames.com/documentation/en-us/unreal-engine/live-link-in-unreal-engine) |
+| ARKit face (52 blendshapes) | iPhone face tracking | [UE5 Face Capture](https://dev.epicgames.com/documentation/en-us/unreal-engine/recording-face-animation-on-ios-device-in-unreal-engine) |
+| OptiTrack/Vicon | Professional body mocap | Vendor Live Link plugins |
+
+**Ground Adaptation:**
+
+| Algorithm | Use Case | Reference |
+|-----------|----------|-----------|
+| Foot IK + pelvis adjust | Terrain adaptation | [UE5 Ground Node](https://poweranimated.github.io/unreal/ground_node/) |
+| Pelvis height from feet | Dynamic hip height | [UE5 Walk Node](https://poweranimated.github.io/unreal/walk_node/) |
+| Slope spine alignment | Quadruped terrain | FABRIK on spine chain |
+
+**Procedural (Design #26):**
+
+| Algorithm | Use Case | Reference |
+|-----------|----------|-----------|
+| Control Rig (UE5 equiv) | Procedural bone manip | [UE5 Control Rig](https://dev.epicgames.com/documentation/en-us/unreal-engine/control-rig-in-unreal-engine) |
+| Virtual bones | IK helper joints | [UE5 Virtual Bones](https://dev.epicgames.com/documentation/en-us/unreal-engine/virtual-bones-in-unreal-engine) |
+| Blend shapes / morphs | Facial animation | Design #26 |
+
+**UE5 Comparison:**
+
+| Feature | UE5 | Harmonius |
+|---------|-----|-----------|
+| Skinning | CPU or GPU compute | GPU mesh shader (per-cluster) |
+| IK | Control Rig nodes | ECS systems + GPU compute |
+| State machine | AnimGraph (visual) | Visual + codegen to static Rust |
+| Motion matching | PoseSearch plugin | ECS-native with job system |
+| Retargeting | IK Rig + IK Retargeter | Canonical rig + IK chains |
+| Mocap | Live Link | Input system MocapEvent |
+| Face | 52 ARKit blendshapes | Same (blend shapes in Design #26) |
+| LOD | AnimUpdateRate | 4-tier (Full → VAT) |
+| Compression | ACL-compatible | Smallest-three + range reduction |
+| 2D skeletal | Not built-in | First-class (Spine/DragonBones) |
+
+### RF-28: Animation masking, blending, and layering
+
+The blend system evaluates a stack of animation layers. Each layer has a blend mode, weight, and
+bone mask. Layers are evaluated bottom-to-top. This is the core of the animation graph output.
+
+**Layer stack:**
+
+```rust
+pub struct AnimationLayerStack {
+    pub layers: SmallVec<[AnimationLayer; 4]>,
+}
+
+pub struct AnimationLayer {
+    pub source: LayerSource,
+    pub blend_mode: LayerBlendMode,
+    pub weight: f32,         // 0.0-1.0
+    pub mask: BoneMask,      // which bones affected
+    pub inertialization: Option<InertializationState>,
+}
+
+pub enum LayerBlendMode {
+    Override,    // replace base pose
+    Additive,    // add delta to base pose
+    Multiply,    // multiply with base (for scaling)
+}
+
+pub enum LayerSource {
+    Clip(Handle<AnimationClip>, f32),   // clip + time
+    BlendSpace(BlendSpaceId, Vec2),     // 2D blend
+    MotionMatching(MotionMatchResult),  // pose search
+    Ragdoll(RagdollPoseRef),            // physics
+    IK(IkResult),                       // IK override
+    Procedural(ProceduralPose),         // runtime-generated
+}
+```
+
+**Evaluation order:**
+
+```text
+Layer 0 (base): Full body locomotion
+  mode: Override, weight: 1.0, mask: ALL
+Layer 1: Upper body aim offset
+  mode: Additive, weight: 0.7, mask: spine+arms
+Layer 2: Left hand IK (holding weapon)
+  mode: Override, weight: 1.0, mask: left_arm
+Layer 3: Facial expression
+  mode: Additive, weight: 1.0, mask: head+jaw+eyes
+Layer 4: Hit reaction (partial ragdoll)
+  mode: Override, weight: 0.5, mask: spine+right_arm
+```
+
+Per bone, the final pose is computed:
+
+```text
+for each bone:
+  pose = identity
+  for each layer (bottom to top):
+    if mask.includes(bone):
+      match layer.blend_mode:
+        Override → pose = lerp(pose, layer_pose, weight)
+        Additive → pose = pose + (layer_pose * weight)
+        Multiply → pose = pose * lerp(identity, layer_pose, weight)
+```
+
+**Bone masks:**
+
+Masks are bitsets (one bit per bone). Built from:
+
+- Named chains: `BoneMask::from_chain(&left_arm)`
+- Subtrees: `BoneMask::from_subtree(spine_root)` (spine and all descendants)
+- Union/intersection: `mask_a | mask_b`, `mask_a & mask_b`
+- Exclusion: `mask_all & !mask_legs`
+- Weight gradients: per-bone float weight (0.0-1.0) for smooth falloff at mask boundaries (e.g.,
+  spine blends from 100% upper body to 0% at pelvis)
+
+**Common patterns:**
+
+| Pattern | Layers | Example |
+|---------|--------|---------|
+| Locomotion + aim | Base full body + additive upper | Shooter aiming while running |
+| Locomotion + carry | Base + override one arm | Carrying object |
+| Full body + face | Base + additive head | Talking while walking |
+| Anim + hit react | Base + partial ragdoll override | Getting hit while fighting |
+| Anim + IK feet | Base + override foot positions | Walking on stairs |
+| Montage | Override all with blend in/out | Playing an emote |
+
+**Blend spaces (1D/2D):**
+
+Parameterized blending between multiple clips based on continuous input values:
+
+- 1D: speed → walk/jog/run blend
+- 2D: (speed, direction) → 8-way locomotion blend
+- Triangle sampling: find enclosing triangle in 2D space, barycentric interpolation of 3 clip poses
+- Snapping: optional snap to nearest sample for low-cost LOD
+
+**Montages (one-shot override):**
+
+Full-body or masked one-shot animations that temporarily override the base layer:
+
+- Blend in over N frames
+- Play to completion (or until interrupted)
+- Blend out over N frames
+- Support sections/markers for gameplay logic
+- Can be chained (combo attacks)
+
+All blending is evaluated on the GPU via compute shader. The layer stack is uploaded as a structured
+buffer alongside the bone palette. The blend compute shader evaluates all layers per bone in
+parallel.
+
+### RF-29: Variable vertex bone influence count
+
+Support 1, 2, 4, or 8 bone influences per vertex, selectable per mesh. Lower counts save GPU
+bandwidth; higher counts enable complex deformation.
+
+| Influences | Use Case | Bandwidth |
+|-----------|----------|-----------|
+| 1 | Rigid props, weapons | Minimal |
+| 2 | Simple characters, LOD meshes | Low |
+| 4 | Standard characters (default) | Medium |
+| 8 | Faces, muscle sim, cloth-bone hybrid | High |
+
+Storage per vertex:
+
+```rust
+// Packed vertex skin data (variable size)
+pub enum SkinInfluences {
+    One { bone: u16, weight: f32 },
+    Two { bones: [u16; 2], weights: [f32; 2] },
+    Four { bones: [u16; 4], weights: [f32; 4] },
+    Eight { bones: [u16; 8], weights: [f32; 8] },
+}
+```
+
+The mesh shader reads the influence count from meshlet metadata and unrolls accordingly. The asset
+pipeline normalizes weights to sum to 1.0 and optionally reduces influence count (8→4→2) for LOD
+meshes.
+
+**Weight painting** is an editor concern — the visual editor provides brush-based weight painting on
+the mesh surface, with auto-normalization and mirror-symmetry tools. Deferred to the
+tools/visual-editors design (Design #50).
+
+### RF-30: Complex rig support (spider, vehicle, mechanical)
+
+The rig system must support arbitrary topology beyond humanoid and quadruped templates.
+
+**Spider rig:**
+
+```rust
+pub struct SpiderRig {
+    pub body: BoneIndex,
+    pub head: BoneIndex,
+    pub abdomen: BoneIndex,
+    pub mandibles: Option<BoneChain>,
+    pub legs: [SpiderLeg; 8],
+}
+
+pub struct SpiderLeg {
+    pub coxa: BoneIndex,     // hip
+    pub femur: BoneIndex,    // upper
+    pub tibia: BoneIndex,    // lower
+    pub tarsus: BoneIndex,   // foot
+}
+```
+
+- 8-leg simultaneous IK (all legs solve each frame)
+- Alternating gait: legs move in groups of 4 (1,3,5,7 then 2,4,6,8) for natural spider walk
+- Body height from average of 8 foot positions
+- Body pitch/roll from foot plane normal
+
+**Vehicle rig:**
+
+```rust
+pub struct VehicleRig {
+    pub chassis: BoneIndex,
+    pub wheels: SmallVec<[WheelBone; 6]>,
+    pub doors: SmallVec<[HingeBone; 4]>,
+    pub turret: Option<TurretBone>,
+    pub suspension: SmallVec<[SuspensionBone; 6]>,
+}
+
+pub struct WheelBone {
+    pub bone: BoneIndex,
+    pub axis: Vec3,        // rotation axis
+    pub radius: f32,
+}
+
+pub struct TurretBone {
+    pub yaw: BoneIndex,    // horizontal rotation
+    pub pitch: BoneIndex,  // barrel elevation
+}
+```
+
+- Wheels rotate based on vehicle speed (angular velocity = linear_speed / wheel_radius)
+- Suspension bones driven by physics spring compression
+- Doors/hatches driven by interaction events
+- Turret bones driven by aim input
+- No organic deformation — purely rigid transforms
+- Vertex weights are 1 bone per vertex (rigid binding)
+
+**Centipede / segmented rig:**
+
+```rust
+pub struct SegmentedRig {
+    pub segments: Vec<SegmentDef>,
+    pub legs_per_segment: u8,
+}
+
+pub struct SegmentDef {
+    pub body: BoneIndex,
+    pub legs: SmallVec<[LimbChain; 4]>,
+}
+```
+
+- N segments with M legs each
+- Procedural body wave: each segment follows the one ahead with a time delay (sine wave along body)
+- Per-segment IK for legs (same as spider but variable count)
+- Body adapts to terrain curvature via FABRIK on the segment spine
+
+**Mechanical rig (robots, pistons):**
+
+```rust
+pub struct MechanicalRig {
+    pub joints: Vec<MechanicalJoint>,
+}
+
+pub enum MechanicalJoint {
+    Revolute {
+        bone: BoneIndex,
+        axis: Vec3,
+        limits: (f32, f32),
+    },
+    Prismatic {
+        bone: BoneIndex,
+        axis: Vec3,
+        limits: (f32, f32),
+    },
+    Piston {
+        bone_a: BoneIndex,
+        bone_b: BoneIndex,
+        length: f32,  // fixed distance
+    },
+}
+```
+
+- Pistons maintain fixed distance between attachment points (constraint-driven, not keyframed)
+- Gears rotate at linked angular velocities
+- All joints have hard limits (no organic flexibility)
+- IK solves mechanical constraints analytically where possible (pistons, linkages)
+
+**The `Custom(Vec<NamedBoneChain>)` variant in `SkeletonType` handles any topology not covered by
+predefined rigs.** Users build custom rigs in the skeleton editor by assigning bones to named chains
+and selecting IK solver types per chain.
+
+### RF-31: Bone sockets for attachment
+
+Sockets are named attachment points on bones. Entities attached to a socket inherit the bone's world
+transform with an optional local offset.
+
+```rust
+#[derive(Component)]
+pub struct BoneSocket {
+    pub bone: BoneIndex,
+    pub name: StringId,
+    pub offset: Transform,  // local offset from bone
+}
+
+#[derive(Component)]
+pub struct AttachedToSocket {
+    pub parent_entity: Entity,
+    pub socket_name: StringId,
+}
+```
+
+Use cases:
+
+| Socket | Bone | Attached Entity |
+|--------|------|----------------|
+| right_hand | Hand_R | Weapon mesh |
+| head_top | Head | Helmet/hat |
+| back | Spine_03 | Backpack/shield |
+| left_hip | Pelvis | Sheathed sword |
+| muzzle | Weapon bone | Particle emitter |
+| eye_left | Head | Eye glow VFX |
+
+**Evaluation:** After the bone palette is computed (post-blend, post-IK), a `SocketTransformSystem`
+reads the bone's world transform and applies it to the attached entity's `Transform`:
+
+```text
+attached.transform =
+    parent.global_transform
+    * bone_world_matrix
+    * socket.offset
+```
+
+Sockets are defined on the skeleton asset (created in the editor by clicking a bone and naming the
+socket). Multiple sockets can reference the same bone with different offsets.
+
+Attached entities are regular ECS entities — they can have their own meshes, colliders, particles,
+audio sources, etc. Weapons attached to a hand socket participate in the meshlet pipeline like any
+other mesh.
+
+### RF-32: Character customization via mesh parts
+
+Support modular character meshes where body parts are swappable (head, torso, arms, legs, hair,
+accessories).
+
+**Approach: multi-mesh sharing one skeleton.**
+
+```rust
+#[derive(Component)]
+pub struct SkeletonRef {
+    pub skeleton_entity: Entity,
+}
+```
+
+Multiple mesh entities reference the same skeleton entity. Each mesh is skinned against the same
+bone palette. Only the meshes change — the skeleton and animations stay.
+
+| Slot | Mesh Asset | Bones Used |
+|------|-----------|------------|
+| Head | head_human_01 | Head, Neck, Jaw, Eyes |
+| Torso | torso_armor_plate | Spine, Chest, Clavicles |
+| Arms | arms_bare_01 | Upper/Lower Arm, Hand |
+| Legs | legs_pants_02 | Upper/Lower Leg, Foot |
+| Hair | hair_long_01 | Head (+ hair bones) |
+| Cape | cape_01 | Spine_03 (+ cape bones) |
+
+**Requirements:**
+
+- All part meshes are authored against the same canonical skeleton (same bone indices, same bind
+  pose)
+- Each part mesh only weights vertices to bones it uses
+- Seam matching: vertices at part boundaries must align (shared vertex positions and normals at
+  neck, waist, wrist, ankle seam lines)
+- Material slots per part (skin color, armor texture)
+
+**Mesh merging (optional optimization):**
+
+At load time or in the asset pipeline, merge multiple part meshes into one combined mesh for fewer
+draw calls. The merged mesh shares the same bone palette. Re-merge when parts change (equip new
+armor).
+
+**Morph target customization:**
+
+Body proportions (height, weight, muscle mass) via morph targets / blend shapes on the base mesh.
+Morph targets are additive vertex offsets applied before skinning:
+
+```text
+final_vertex = base_vertex + morph_offset * morph_weight
+→ then skin with bone palette
+```
+
+Multiple morphs combine additively (tall + muscular). Morph weights are ECS components, tweakable in
+the editor via sliders. Deferred to procedural animation (Design #26) for blend shape implementation
+details.

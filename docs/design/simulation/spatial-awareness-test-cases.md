@@ -1,0 +1,139 @@
+# Spatial Awareness — Test Cases
+
+Companion to [spatial-awareness.md](spatial-awareness.md). All test cases follow the `TC-X.Y.Z.N`
+format. Requirements traced per the design Requirements Trace section.
+
+## Unit Tests
+
+| ID            | Test Name                              | Req       |
+|---------------|----------------------------------------|-----------|
+| TC-7.6.1.1    | `test_sphere_sense_candidates`         | R-7.6.2   |
+| TC-7.6.1.2    | `test_cone_sense_fov_inside`           | R-7.6.1   |
+| TC-7.6.1.3    | `test_cone_sense_fov_outside`          | R-7.6.1   |
+| TC-7.6.1.4    | `test_box_sense_candidates`            | R-7.6.7   |
+| TC-7.6.1.5    | `test_cylinder_sense_candidates`       | R-7.6.7   |
+| TC-7.6.1.6    | `test_circle2d_sense_candidates`       | R-7.6.7   |
+| TC-7.6.1.7    | `test_cone2d_sense_fov_inside`         | R-7.6.1   |
+| TC-7.6.1.8    | `test_rect2d_sense_candidates`         | R-7.6.7   |
+| TC-7.6.2.1    | `test_falloff_linear`                  | R-7.6.1   |
+| TC-7.6.2.2    | `test_falloff_inverse_linear`          | R-7.6.1   |
+| TC-7.6.2.3    | `test_falloff_quadratic`               | R-7.6.1   |
+| TC-7.6.2.4    | `test_falloff_custom_curve`            | R-7.6.7   |
+| TC-7.6.3.1    | `test_scoring_distance_only`           | R-7.6.1   |
+| TC-7.6.3.2    | `test_scoring_angle_weight`            | R-7.6.1   |
+| TC-7.6.3.3    | `test_scoring_occlusion_penalty`       | R-7.6.1   |
+| TC-7.6.3.4    | `test_scoring_modifier_bonus`          | R-7.6.7   |
+| TC-7.6.3.5    | `test_score_clamp_zero_one`            | R-7.6.1   |
+| TC-13.18.1.1  | `test_awareness_unaware_to_suspicious` | R-13.18.2 |
+| TC-13.18.1.2  | `test_awareness_suspicious_to_alert`   | R-13.18.2 |
+| TC-13.18.1.3  | `test_awareness_alert_to_tracking`     | R-13.18.2 |
+| TC-13.18.1.4  | `test_awareness_tracking_to_lost`      | R-13.18.2 |
+| TC-13.18.1.5  | `test_awareness_lost_to_unaware`       | R-13.18.2 |
+| TC-13.18.1.6  | `test_awareness_lost_to_suspicious`    | R-13.18.2 |
+| TC-7.6.4.1    | `test_awareness_decay_reduces_score`   | R-7.6.6   |
+| TC-7.6.4.2    | `test_awareness_decay_below_threshold` | R-7.6.6   |
+| TC-7.6.5.1    | `test_awareness_max_targets_eviction`  | R-7.6.5   |
+| TC-13.18.2.1  | `test_highest_threat_returns_max`      | R-13.18.1 |
+| TC-13.18.2.2  | `test_entities_at_level_filter`        | R-13.18.2 |
+| TC-13.18.2.3  | `test_is_aware_of_above_unaware`       | R-13.18.2 |
+| TC-13.11.1.1  | `test_selection_raycast_nearest`       | R-13.11.1 |
+| TC-13.11.1.2  | `test_selection_box_all_inside`        | R-13.11.1 |
+| TC-13.11.1.3  | `test_selection_sphere_radius`         | R-13.11.1 |
+| TC-13.11.1.4  | `test_selection_nearest_n_count`       | R-13.11.1 |
+| TC-13.11.1.5  | `test_selection_filter_excludes`       | R-13.11.1 |
+| TC-13.11.1.6  | `test_selection_sorted_by_distance`    | R-13.11.1 |
+| TC-13.11.2.1  | `test_selection_boxselect2d`           | R-13.11.2 |
+| TC-13.11.2.2  | `test_selection_circleselect2d`        | R-13.11.2 |
+| TC-7.6.6.1    | `test_deterministic_sort_entity_tiebreak` | R-7.6.1 |
+| TC-7.6.6.2    | `test_fixed_update_tick_determinism`   | R-7.6.1   |
+
+### Unit Test Details
+
+1. **TC-7.6.1.1** -- Sphere sense radius 10; 3 targets inside, 2 outside; verify 3 results.
+2. **TC-7.6.1.2** -- Cone half-angle 90°; target at 45°; verify non-zero score.
+3. **TC-7.6.1.3** -- Target at 100° from cone forward; verify zero score.
+4. **TC-7.6.1.4** -- Box half-extents (5, 5, 5); targets inside and outside; verify correct
+   inclusion.
+5. **TC-7.6.1.5** -- Cylinder radius 5, height 10; target above height; verify excluded.
+6. **TC-7.6.1.6** -- `Circle2D` radius 10; 3 targets inside, 2 outside; verify 3 results using 2D
+   BVH.
+7. **TC-7.6.1.7** -- `Cone2D` half-angle 45°; target at 30°; verify non-zero score.
+8. **TC-7.6.1.8** -- `Rect2D` half-extents (5, 5); targets inside and outside; verify correct
+   inclusion.
+9. **TC-7.6.2.1** -- Linear falloff; target at half range; verify score is 0.5.
+10. **TC-7.6.2.2** -- Inverse linear; target at half range; verify score is 0.5.
+11. **TC-7.6.2.3** -- Quadratic falloff; target at half range; verify score is 0.25.
+12. **TC-7.6.2.4** -- Custom curve asset; verify score matches curve sample at distance 0.5.
+13. **TC-7.6.3.1** -- `distance_weight` 1.0, others 0.0; verify `final_score` equals distance
+    factor.
+14. **TC-7.6.3.2** -- `angle_weight` 1.0; target at 45° of 90° cone; verify score is 0.5.
+15. **TC-7.6.3.3** -- Occluded target, `occlusion_penalty` 0.8; verify score reduced by 0.8.
+16. **TC-7.6.3.4** -- `modifier_bonus` 0.2; verify `final_score` increased by 0.2.
+17. **TC-7.6.3.5** -- Weights sum to 1.5; verify clamped to 1.0. Negative sum; verify 0.0.
+18. **TC-13.18.1.1** -- Score exceeds `suspicious_threshold`; verify level changes to Suspicious.
+19. **TC-13.18.1.2** -- Score exceeds `alert_threshold`; verify transition to Alert.
+20. **TC-13.18.1.3** -- Score exceeds `tracking_threshold`; verify transition to Tracking.
+21. **TC-13.18.1.4** -- No stimulus for `lost_timeout_ticks`; verify transition to Lost.
+22. **TC-13.18.1.5** -- Lost entry times out; verify removal or revert to Unaware.
+23. **TC-13.18.1.6** -- New stimulus while Lost; verify transition to Suspicious.
+24. **TC-7.6.4.1** -- No stimulus; advance one FixedUpdate tick; verify score reduced by
+    `decay_rate`.
+25. **TC-7.6.4.2** -- Decay drops score below `suspicious_threshold`; verify demotion to Unaware.
+26. **TC-7.6.5.1** -- Exceed `max_targets_per_entity`; verify oldest entry evicted.
+27. **TC-13.18.2.1** -- Three entries with scores 0.3, 0.8, 0.5; verify `highest_threat` returns 0.8
+    entry.
+28. **TC-13.18.2.2** -- Mixed awareness levels; verify `entities_at_level` returns correct subset.
+29. **TC-13.18.2.3** -- Entry at Suspicious; verify `is_aware_of` returns true. No entry; verify
+    false.
+30. **TC-13.11.1.1** -- Ray hits 3 entities; verify nearest returned first.
+31. **TC-13.11.1.2** -- 5 entities inside box, 3 outside; verify 5 results.
+32. **TC-13.11.1.3** -- Sphere radius 10; verify only entities within 10 returned.
+33. **TC-13.11.1.4** -- `NearestN` count 3; 10 entities in range; verify 3 closest returned.
+34. **TC-13.11.1.5** -- Filter predicate rejects 2 of 5 candidates; verify 3 results.
+35. **TC-13.11.1.6** -- Verify results sorted ascending by distance.
+36. **TC-13.11.2.1** -- `BoxSelect2D` min (-5,-5), max (5,5); 3 targets inside, 2 outside; verify 3
+    results.
+37. **TC-13.11.2.2** -- `CircleSelect2D` center (0,0), radius 10; verify correct 2D radius
+    inclusion.
+38. **TC-7.6.6.1** -- Two results with equal `final_score`; verify sorted by ascending `Entity` ID
+    (deterministic tiebreaker).
+39. **TC-7.6.6.2** -- Run `update_awareness` with the same inputs in two FixedUpdate ticks at the
+    same `current_tick`; verify identical output (tick-determinism).
+
+## Integration Tests
+
+| ID           | Test Name                               | Req       |
+|--------------|-----------------------------------------|-----------|
+| TC-SA.I.1    | `test_100_sources_1000_targets_budget`  | NFR-SA.1  |
+| TC-SA.I.2    | `test_50_selections_budget`             | NFR-SA.2  |
+| TC-SA.I.3    | `test_stimulus_to_awareness_latency`    | NFR-SA.3  |
+| TC-SA.I.4    | `test_full_awareness_lifecycle`         | R-13.18.2 |
+| TC-SA.I.5    | `test_selection_with_awareness`         | R-13.11.1 |
+| TC-SA.I.6    | `test_fixed_update_selection_handoff`   | R-7.6.1   |
+| TC-SA.I.7    | `test_2d_sense_with_transform2d`        | R-7.6.7   |
+
+1. **TC-SA.I.1** -- Spawn 100 sources and 1000 targets; measure FixedUpdate frame time; verify < 2
+   ms (NFR-SA.1).
+2. **TC-SA.I.2** -- Execute 50 concurrent `SelectionQuery` events in one Update frame; verify < 0.5
+   ms (NFR-SA.2).
+3. **TC-SA.I.3** -- Inject sense result; verify `AwarenessTransitionEvent` fires within 1 frame
+   (NFR-SA.3).
+4. **TC-SA.I.4** -- Entity progresses through all 5 awareness levels and back to Unaware via decay
+   and timeout.
+5. **TC-SA.I.5** -- Selection query picks entity; verify result overlaps entities in awareness
+   state.
+6. **TC-SA.I.6** -- `AwarenessState` written in FixedUpdate; verify AI reads updated state in same
+   or next Update frame. `SelectionResult` available in same Update frame as query.
+7. **TC-SA.I.7** -- Entity with `Transform2D`; `SenseShape::Circle2D` sense; verify 2D BVH queried
+   and correct candidates returned.
+
+## Benchmarks
+
+| ID        | Benchmark                      | Target       | Req      |
+|-----------|--------------------------------|--------------|----------|
+| TC-SA.B.1 | 100 sources, 1000 targets      | < 2 ms/frame | NFR-SA.1 |
+| TC-SA.B.2 | 50 selection queries           | < 0.5 ms     | NFR-SA.2 |
+| TC-SA.B.3 | Single sense eval (4 factors)  | < 10 µs      | NFR-SA.1 |
+| TC-SA.B.4 | Awareness transition check     | < 1 µs       | NFR-SA.1 |
+| TC-SA.B.5 | Selection raycast              | < 50 µs      | NFR-SA.2 |
+| TC-SA.B.6 | Awareness decay (100 entries)  | < 20 µs      | NFR-SA.1 |

@@ -282,12 +282,12 @@ __marimo__/
 
 # Xcode
 #
-# gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
+# gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore
 
 ## User settings
 xcuserdata/
 
-## Obj-C/Swift specific
+## Obj-C specific
 *.hmap
 
 ## App packaging
@@ -299,9 +299,6 @@ xcuserdata/
 timeline.xctimeline
 playground.xcworkspace
 
-# Swift Package Manager
-#
-# Add this line if you want to avoid checking in source code from Swift Package Manager dependencies.
 # Packages/
 # Package.pins
 # Package.resolved
@@ -309,8 +306,6 @@ playground.xcworkspace
 #
 # Xcode automatically generates this directory with a .xcworkspacedata file and xcuserdata
 # hence it is not needed unless you have added a package configuration file to your project
-# .swiftpm
-
 .build/
 
 # CocoaPods

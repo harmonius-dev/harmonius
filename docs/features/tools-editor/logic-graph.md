@@ -67,7 +67,7 @@
 2. **F-15.8.5b** — The shader graph compiles to HLSL, which DXC compiles to DXIL (for D3D12) and
    SPIR-V (for Vulkan). Metal Shader Converter translates DXIL to MSL (for Metal). DXC and Metal
    Shader Converter are accessed via Rust FFI bindings (DXC via windows-rs on Windows, libloading on
-   Linux; Metal Shader Converter via swift-bridge on macOS). HLSL is the sole shader intermediate
+   Linux; Metal Shader Converter via CLI subprocess on macOS). HLSL is the sole shader intermediate
    language. Compilation errors map back to the originating graph node. MSL on macOS. All formats
    are produced through DXC and Metal Shader Converter.
    - **Deps:** F-15.8.5a

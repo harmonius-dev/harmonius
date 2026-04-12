@@ -17,8 +17,8 @@
 2. **R-12.1.2** — The engine **SHALL** import raw texture source files in PNG, JPEG, EXR, HDR, and
    TIFF formats, decode sRGB color data from PNG and JPEG and linear HDR data from EXR, HDR, and
    TIFF, and feed all decoded textures into the texture compression pipeline.
-   - **Rationale:** A fallback for textures not exported through DCC plugins lets artists import
-     standard image formats without a round-trip through the plugin workflow.
+   - **Rationale:** Importing standard image formats lets artists bring in textures directly without
+     an intermediate export step.
    - **Verification:** Import one file of each format and confirm correct color-space decoding (sRGB
      vs. linear) and successful handoff to texture compression.
 
@@ -28,7 +28,7 @@
    formats, extract metadata (sample rate, channel count, bit depth, loop points, cue markers), and
    store raw audio data alongside metadata for downstream encoding.
    - **Rationale:** Accepting standard lossless and compressed audio formats allows sound designers
-     to supply assets directly without requiring a DCC plugin export step.
+     to supply assets directly using standard audio formats.
    - **Verification:** Import WAV, FLAC, and Ogg Vorbis files and confirm extracted metadata matches
      the source; confirm raw audio data is passed to the audio encoding stage.
 

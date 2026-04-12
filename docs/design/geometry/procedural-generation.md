@@ -2049,5 +2049,170 @@ but the coupling is implicit.
 9. **AI-driven generation integration** -- R-3.6.29 requires an AI agent interface. Should this be a
    first-class PCG node type, or an external API that drives existing nodes programmatically?
 10. **Ecosystem simulation tick rate** -- Lotka-Volterra dynamics on the server need a simulation
-    tick rate. Should it run at a fixed real-time interval (e.g. once per game-day) or in batch
-    during world generation only?
+    tick rate. Should it run at a fixed real-time interval or in batch during world generation only?
+
+## Review Feedback
+
+### RF-1: Remove async — use render graph compute passes
+
+Replace all `async fn` in GpuGenerator with render graph compute passes. GPU procedural generation
+IS render graph work — not separate from it.
+
+### RF-2: Multi-frame async compute via render graph
+
+Procedural generation is too expensive for one frame. Use multi-frame async compute dispatches:
+
+```rust
+pub struct AsyncComputeTask {
+    pub id: AsyncTaskId,
+    pub passes: Vec<ComputePassDesc>,
+    pub current_pass: usize,
+    pub fence: FenceHandle,
+    pub status: AsyncTaskStatus,
+}
+
+pub enum AsyncTaskStatus {
+    Queued,
+    InProgress { frame_started: u64 },
+    Complete,
+    Failed,
+}
+```
+
+**Multi-frame execution model:**
+
+```text
+Frame N:   Submit compute pass 0 (noise generation)
+Frame N+1: Poll fence — pass 0 done. Submit pass 1 (erosion)
+Frame N+2: Poll fence — pass 1 done. Submit pass 2 (splatmap)
+Frame N+3: Poll fence — pass 2 done. Result ready.
+           ChunkManager transitions chunk to Ready.
+```
+
+Each pass runs on the GPU async compute queue (overlapping with graphics work on the graphics
+queue). The render graph schedules compute passes alongside render passes, handling barrier
+insertion and resource aliasing.
+
+**Render graph integration:**
+
+Procedural generation compute passes are render graph nodes just like shadow maps or GI. The render
+graph:
+
+1. Allocates transient GPU buffers for intermediate data (noise field, erosion map, splatmap)
+2. Inserts barriers between compute and graphics
+3. Aliases memory for intermediate buffers (noise field reused after erosion consumes it)
+4. Schedules on async compute queue when possible
+
+```rust
+// Register procedural compute passes in render graph:
+render_graph.add_pass(ComputePass {
+    name: "terrain_noise",
+    queue: QueueType::AsyncCompute,
+    reads: &[],
+    writes: &[heightfield_buffer],
+    execute: |cmd| {
+        cmd.dispatch_compute(
+            noise_pipeline,
+            chunk_size / 8,
+            chunk_size / 8,
+            1,
+        );
+    },
+});
+
+render_graph.add_pass(ComputePass {
+    name: "terrain_erosion",
+    queue: QueueType::AsyncCompute,
+    reads: &[heightfield_buffer],
+    writes: &[eroded_buffer],
+    execute: |cmd| {
+        cmd.dispatch_compute(
+            erosion_pipeline,
+            chunk_size / 8,
+            chunk_size / 8,
+            1,
+        );
+    },
+});
+```
+
+**Budget control:**
+
+The ChunkManager submits N compute passes per frame (configurable per platform tier):
+
+| Tier | Passes/frame | Chunks in flight |
+|------|-------------|-----------------|
+| Ultra | 4 | 8 |
+| High | 2 | 4 |
+| Medium | 1 | 2 |
+| Low | 1 | 1 |
+
+This prevents GPU procedural generation from stealing too much compute time from rendering.
+
+### RF-3: Fix platform I/O table
+
+Replace Tokio references with platform-native I/O.
+
+### RF-4: Replace TypeId with codegen'd enum
+
+Replace `TypeId` in `AttributeColumn` with a codegen'd `AttributeTypeId` enum.
+
+### RF-5: Clarify ReflectMap as codegen
+
+Document that ReflectMap is codegen'd via middleman .dylib, not runtime reflection.
+
+### RF-6: Add erosion, BSP, cellular automata nodes
+
+- `ErosionNode`: thermal + hydraulic erosion on heightmaps
+- `BspPartitionNode`: recursive binary space partition for dungeon rooms
+- `CellularAutomataNode`: 2D CA with configurable birth/ survival rules (roguelike caves)
+
+### RF-7: Resolve GPU float determinism
+
+Use integer arithmetic in noise shaders for guaranteed cross-vendor determinism. Or relax test
+TC-3.6.33.4 to accept tolerance (1e-5). Document the decision.
+
+### RF-8: Algorithm references
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Simplex noise | [Gustavson (2005)](https://weber.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf) |
+| Perlin noise | [Perlin (1985)](https://mrl.cs.nyu.edu/~perlin/paper445.pdf) |
+| Worley/cellular | [Worley (1996)](https://dl.acm.org/doi/10.1145/237170.237267) |
+| WFC | [Gumin (2016)](https://github.com/mxgmn/WaveFunctionCollapse) |
+| Poisson disk | [Bridson (2007)](https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) |
+| Hydraulic erosion | [Mei et al. (2007)](https://dl.acm.org/doi/10.1145/1274871.1274890) |
+| BSP dungeon | [Shaker et al. (2016)](http://pcgbook.com/) |
+| Cellular automata caves | [Johnson (2010)](http://www.roguebasin.com/index.php/Cellular_Automata_Method_for_Generating_Random_Cave-Like_Levels) |
+| xxHash | [Collet (2012)](https://github.com/Cyan4973/xxHash) |
+| Whittaker biomes | [Whittaker (1975)](https://en.wikipedia.org/wiki/Biome#Whittaker's_biome_classification) |
+
+### RF-9: GPU readback for baking procedural assets
+
+Procedural assets generated on the GPU can be read back to CPU and persisted to disk as baked assets
+(rkyv):
+
+1. Async compute generates terrain/vegetation/texture
+2. GPU readback via render graph copy pass (RF-14 in render-pipeline.md)
+3. Staging buffer mapped to CPU
+4. Data serialized via rkyv → written to disk via platform I/O
+5. Baked asset loads instantly (zero-copy mmap)
+
+**Editor "Bake" workflow:**
+
+- Designer generates content procedurally
+- Tweaks parameters, previews in real-time
+- Clicks "Bake" → readback → rkyv asset on disk
+- Baked asset replaces procedural generation for that chunk (instant load, no runtime generation)
+- Can re-generate any time (non-destructive)
+
+**Runtime persistence:**
+
+Games with player-modified terrain (voxel editing, building) readback the modified GPU data and save
+it alongside the save game. On load, the baked data is mmap'd directly — no re-generation needed.
+
+Cross-references render-pipeline RF-14 for the GPU readback pipeline and staging buffer pool.
+
+### RF-10: Create companion test cases file
+
+Verify `procedural-generation-test-cases.md` exists with TC-X.Y.Z.N IDs.

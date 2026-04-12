@@ -1261,3 +1261,249 @@ Test cases are defined inline below.
    (fast but coarse)?
 6. **Alembic large cache handling.** Alembic files can be very large (multi-GB). Stream-parse or
    require pre-split sub-files?
+
+## Review Feedback
+
+### RF-1: Replace all Tokio with platform-native I/O + job system
+
+The entire design is built on Tokio (7+ references). Replace with:
+
+- Platform-native I/O: io_uring (Linux), IOCP (Windows), GCD dispatch_io (Apple)
+- Main thread submits I/O, polls completions, posts as jobs via crossbeam-channel
+- Import functions become synchronous, run on job system workers
+- `CAS.store()`, `CAS.load()`, `MetadataStore` methods use platform I/O layer
+- Remove `tokio` from proposed dependencies and cross-cutting deps table
+
+All `async fn` in the design must be rethought as synchronous functions that submit I/O requests and
+receive completions via channels.
+
+### RF-2: Remove AsyncRwLock
+
+`MetadataStore` and `ImportCoordinator` use `AsyncRwLock`. This violates "no custom async
+primitives" and "no shared mutable state." Replace with:
+
+- Channel-serialized access: single worker owns the data, processes requests from a
+  crossbeam-channel
+- Or make them single-owner resources accessed within job system scope
+
+### RF-3: Remove all Reflect derives
+
+16 structs derive `Reflect`. Zero reflection is the constraint. Remove all `#[derive(Reflect)]`. If
+type metadata is needed for the editor, use static codegen (generated TypeDescriptor, serde
+derives).
+
+### RF-4: Add GPU DMA asset loading
+
+Add a GPU asset loading path that bypasses CPU memory entirely:
+
+- Windows: DirectStorage with GPU decompression via compute queue
+- Apple: Metal I/O (MTLIOCommandQueue) for disk-to-GPU DMA
+- Linux: io_uring to CPU staging buffer, then Vulkan upload
+
+Add `GpuAssetLoader` with platform backends. Textures and meshes destined for GPU should skip CPU
+processing when possible. The asset state machine should include a `GpuUploading` state for assets
+in the DMA pipeline.
+
+### RF-5: Add asset state machine
+
+Add per-handle state tracking:
+
+```rust
+pub enum AssetState {
+    Queued,
+    Loading,
+    BytesReady,
+    Processing,
+    GpuUploading,
+    Ready,
+    Failed(AssetError),
+}
+```
+
+Store in the handle table. ECS systems query state via `asset_server.state(handle)`.
+
+### RF-6: Add synchronous AssetServer
+
+Add the user-facing synchronous API per constraints:
+
+```rust
+pub struct AssetServer { /* ... */ }
+
+impl AssetServer {
+    /// Load an asset. Returns handle immediately.
+    /// I/O happens asynchronously on main thread.
+    pub fn load<T: Asset>(
+        &self, path: &str,
+    ) -> AssetHandle<T>;
+
+    /// Query asset state.
+    pub fn state<T: Asset>(
+        &self, handle: AssetHandle<T>,
+    ) -> AssetState;
+
+    /// Check if ready.
+    pub fn is_ready<T: Asset>(
+        &self, handle: AssetHandle<T>,
+    ) -> bool;
+}
+```
+
+`AssetServer` is an ECS resource (`Res<AssetServer>`). Systems call `load()` synchronously; the I/O
+is dispatched to the main thread internally.
+
+### RF-7: Add resource residency manager
+
+Add streaming and memory management:
+
+- Memory budget tracking per asset type (textures, meshes, audio)
+- LRU eviction when budget is exceeded
+- Priority-based unloading (distance from camera, last access time)
+- Integration with spatial queries for distance-based streaming
+- Prefetching based on camera velocity and predicted position
+
+This is critical for open-world games. The residency manager owns the decision of which assets are
+loaded and which are evicted.
+
+### RF-8: Use rkyv for baked assets
+
+Add `rkyv` to proposed dependencies. Use rkyv for typed section data within the binary asset format:
+
+- Baked assets use `#[derive(Archive, rkyv::Serialize, rkyv::Deserialize)]`
+- mmap access without deserialization (zero-copy)
+- Throughput well above the 500 MB/s target
+
+The custom `AssetHeader` / `SectionDescriptor` format can remain as the container envelope. rkyv
+handles the typed payload within each section.
+
+### RF-9: Create companion test cases file
+
+Extract the inline test tables into `docs/design/content-pipeline/asset-pipeline-test-cases.md` with
+full TC-X.Y.Z.N IDs, explicit inputs, and expected outputs per design rules.
+
+### RF-10: Fix async fn in Importer trait
+
+`trait Importer` uses `async fn import()`. With Tokio removed, importers become synchronous
+functions that run on job system workers. I/O within an importer is submitted to the main thread and
+completions are received via channel. Replace `async fn` with synchronous `fn`.
+
+### RF-11: No async/await anywhere
+
+Remove ALL `async fn`, `.await`, and `Future` types from the design body. All code is synchronous.
+I/O is submitted to the main thread via channels and completions arrive as jobs. This applies to
+`CAS.store()`, `CAS.load()`, `AssetReader`, `Importer::import()`, and all filesystem operations.
+
+### RF-12: Residency manager with usage-based eviction
+
+The residency manager must track three signals for eviction decisions:
+
+1. **Reference count** — never evict assets currently in use by any system (active Handle
+   references)
+2. **Last access time** — LRU eviction for assets not accessed in N frames
+3. **Predictive priority** — assets likely to be needed soon get higher priority. Prediction uses:
+   - Player position + velocity → next terrain tiles, next streaming cells
+   - Camera frustum direction → assets in predicted view
+   - Navigation path → assets along the planned route
+   - Spatial index query → nearby assets ranked by distance
+
+Eviction policy:
+
+```rust
+pub struct ResidencyManager {
+    budget_per_type: HashMap<AssetType, usize>,
+    entries: Vec<ResidencyEntry>,
+}
+
+pub struct ResidencyEntry {
+    handle: ErasedHandle,
+    asset_type: AssetType,
+    size_bytes: usize,
+    ref_count: u32,
+    last_access_frame: u64,
+    priority: f32,
+}
+
+impl ResidencyManager {
+    /// Called when memory pressure exceeds budget.
+    /// Evicts lowest-priority unreferenced assets.
+    pub fn evict_to_budget(&mut self) -> Vec<ErasedHandle>;
+
+    /// Update priorities based on camera position,
+    /// velocity, and spatial queries.
+    pub fn update_priorities(
+        &mut self,
+        camera_pos: Vec3,
+        camera_vel: Vec3,
+        spatial: &SpatialIndex,
+    );
+
+    /// Prefetch assets predicted to be needed soon.
+    pub fn prefetch(
+        &mut self,
+        predicted: &[AssetId],
+        asset_server: &AssetServer,
+    );
+}
+```
+
+The eviction loop: never evict `ref_count > 0`, then sort remaining by `priority * recency_weight`,
+evict lowest until within budget. Run once per frame after all systems have released handles.
+
+Scene transitions trigger explicit bulk unloading. When switching scenes:
+
+1. Diff old scene asset set vs new scene asset set
+2. Assets in old but not new → mark for unload (drop ref count)
+3. Assets in both → keep (no reload needed)
+4. Assets in new but not old → queue for load
+
+```rust
+impl ResidencyManager {
+    /// Explicit scene transition. Unloads assets
+    /// exclusive to the old scene, keeps shared,
+    /// queues new.
+    pub fn transition_scene(
+        &mut self,
+        old_assets: &HashSet<AssetId>,
+        new_assets: &HashSet<AssetId>,
+        asset_server: &AssetServer,
+    );
+}
+```
+
+This avoids the LRU eviction delay for scene changes — assets from the old scene are unloaded
+immediately rather than waiting for memory pressure. Shared assets (UI, player model, global audio)
+survive the transition without reload.
+
+**LOD-aware eviction.** When an entity moves closer to the camera, it transitions from a low-LOD
+mesh to a high-LOD mesh. The low-LOD asset is no longer needed and should be unloaded. Conversely,
+moving away transitions high→low and the high-LOD can be evicted:
+
+- Each LOD level is a separate asset with its own Handle
+- The LOD system updates which Handle is active per entity
+- Inactive LOD handles drop their ref count → eligible for eviction
+- The residency manager sees `ref_count == 0` and evicts on next pass
+
+**OS memory pressure events.** The platform layer (main thread) receives low-memory warnings from
+the OS:
+
+- iOS: `didReceiveMemoryWarning` / `os_proc_available_memory`
+- Android: `onTrimMemory` / `ComponentCallbacks2`
+- Windows: `CreateMemoryResourceNotification`
+- Linux: cgroup memory pressure notifications
+
+On receiving a memory pressure event, the residency manager enters emergency eviction mode:
+
+```rust
+impl ResidencyManager {
+    /// Emergency eviction triggered by OS memory
+    /// pressure. Unloads all unreferenced assets
+    /// below the given priority threshold.
+    pub fn emergency_evict(
+        &mut self,
+        priority_threshold: f32,
+    ) -> usize; // bytes freed
+}
+```
+
+Emergency eviction unloads everything with `ref_count == 0` below the priority threshold, regardless
+of LRU age. If still insufficient, it can downgrade LOD levels (swap high-LOD for low-LOD on active
+entities) to free memory while keeping content visible.

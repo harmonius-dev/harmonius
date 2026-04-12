@@ -688,3 +688,275 @@ See companion file [rendering-core-test-cases.md](rendering-core-test-cases.md).
    sessions.
 5. **V-buffer alternative** -- Once mesh shaders are ubiquitous, migrating to visibility buffer
    would unify lighting paths.
+
+## Review Feedback
+
+### RF-1: Add mesh shader dispatch path
+
+The GPU culling pipeline terminates at "Indirect Draw Buffer." Mesh shaders are required (Design
+
+## 15). Extend the pipeline
+
+1. Meshlet culling (compute) outputs surviving meshlet indices
+2. Dispatch mesh shader groups: one group per surviving meshlet
+3. Mesh shader decodes vertices from meshlet data, outputs triangles
+4. No traditional vertex buffer / index buffer path
+
+Show alongside indirect draw as fallback for emulation.
+
+### RF-2: Register all passes as render graph nodes
+
+Cross-reference the render graph (Design #15, F-2.2.x). Each pass in this design (culling, shadow,
+AO, forward+, deferred, composite) becomes a render graph node with declared reads/writes. The
+render graph handles barrier insertion, resource aliasing, and pass ordering.
+
+#### RF-3: Reconcile RenderWorld with RenderFrame
+
+Adopt `RenderFrame` (immutable snapshot via triple buffer) from Design #15. `RenderWorld` can exist
+as the render thread's persistent state (GPU resources, caches, atlases), but per-frame data
+(transforms, draw lists, lights) arrives via the immutable `RenderFrame`.
+
+#### RF-4: Add transform interpolation
+
+Add `interpolation_alpha: f32` to the extraction/proxy system. Before GPU upload, compute
+`lerp(prev_transform, current_transform, alpha)` for smooth fixed-timestep rendering.
+
+#### RF-5: Add ring-buffered per-frame resources
+
+Replace single `instance_buffer` with `PerFrameBuffer` ring indexed by
+`frame_index % MAX_FRAMES_IN_FLIGHT` (3). Same for uniform buffers and indirect argument buffers.
+
+#### RF-6: Surfel-based global illumination
+
+Replace baked-only SH light probes with a scalable surfel-based GI system inspired by Unity URP
+adaptive probe volumes and NVIDIA surfel GI research.
+
+**Architecture:**
+
+1. **Surfel placement** — surfels distributed on scene surfaces via camera-relative importance
+   sampling. Denser near camera, sparser far away. Persistent across frames — only re-placed when
+   camera moves significantly or geometry changes.
+
+2. **Surfel irradiance update** — each frame, trace a small number of rays from a subset of surfels
+   (amortized over many frames). Accumulate irradiance per surfel using exponential moving average.
+   Target: < 0.25 rays per pixel per frame on average.
+
+3. **Surfel cache** — store surfel irradiance in a GPU buffer. Surfels persist across frames. New
+   surfels inherit from neighbors. Evict surfels outside the active radius.
+
+4. **Screen-space gather** — for each pixel, find nearby surfels and interpolate irradiance. Use a
+   screen-space surfel grid or spatial hash for fast lookup.
+
+5. **Denoising** — temporal accumulation + spatial filter (A-trous wavelet or SVGF). Reuse history
+   buffer with reprojection. Discard history on disocclusion.
+
+**Scalability tiers:**
+
+| Tier | Platform | Rays/frame | Surfels | Denoise |
+|------|----------|-----------|---------|---------|
+| Ultra | High-end PC | 1 ray/px | 2M | SVGF |
+| High | Console/mid PC | 0.25 ray/px | 1M | A-trous |
+| Medium | Low PC/Switch | 0.1 ray/px | 256K | Bilateral |
+| Low | Mobile | 0 (probes only) | 0 | None |
+
+On mobile (Low tier), fall back to baked SH probes with no runtime ray tracing — the surfel system
+is disabled entirely.
+
+**References:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Surfel GI | [Barre-Brisebois (SIGGRAPH 2024)][surfel-gi] |
+| DDGI | [Majercik et al. (JCGT 2019)][ddgi] |
+| Lumen surfels | [Hillaire (UE5 blog)][lumen] |
+| SVGF denoiser | [Schied et al. (HPG 2017)][svgf] |
+| A-trous wavelet | [Dammertz et al. (2010)][atrous] |
+| Temporal reprojection | [Karis (SIGGRAPH 2014)][temporal] |
+
+[surfel-gi]: https://advances.realtimerendering.com/s2021/SIGGRAPH%20Advances%202021%20-%20Surfel%20GI.pdf
+[ddgi]: https://jcgt.org/published/0008/02/01/
+[lumen]: https://www.unrealengine.com/en-US/blog/lumen-in-ue5-let-there-be-light
+[svgf]: https://www.highperformancegraphics.org/wp-content/uploads/2017/Papers-Session1/HPG2017_SpatiotemporalVarianceGuidedFiltering.pdf
+[atrous]: https://www.highperformancegraphics.org/previous/www_2010/media/RayTracing_I/HPG2010_RayTracing_I_Dammertz.pdf
+[temporal]: https://de45xmedrsdbp.cloudfront.net/Resources/files/TemporalAA_small-59732822.pdf
+
+#### RF-7: RT features, GI, and path tracing moved to render-effects
+
+Surfel GI (RF-6), RT feature set, hybrid/path tracing pipelines, and denoising are moved to
+render-effects.md. Rendering-core owns primary visibility (meshlets, G-buffer, materials, lighting
+eval). Render-effects owns all secondary effects (GI, shadows, reflections, AO, post-process).
+
+The surfel GI section (RF-6 above) remains here as the original decision record but the canonical
+design lives in render-effects.
+
+#### RF-8: Add threading details
+
+Reference `job_system::scope()` for parallel command encoding, crossbeam-channel for extraction
+handoff from game loop to render thread, and `poll_fence` for GPU completion checking.
+
+#### RF-10: Clarify light culling spatial structure
+
+CPU-side light culling can use the shared BVH (acceptable — lights are few, not millions like
+meshlets). State explicitly that the shared BVH serves light culling in addition to AI/gameplay, or
+use a separate small structure for lights.
+
+#### RF-11: No-code material authoring
+
+Cross-reference the visual material editor design (tools layer). Add a note explaining how
+`MaterialId` maps to a user-authored visual material graph → codegen → compiled shader permutation.
+
+#### RF-12: Create companion test cases file
+
+Create `rendering-core-test-cases.md`. Add tests for mesh shader dispatch, RT
+shadow/reflection/AO/GI paths, render graph pass registration, triple buffer handoff, transform
+interpolation, per-frame resource ring buffer, and material permutations.
+
+### RF-13: Competitive analysis — exceed Unreal Engine 5
+
+The rendering core must match or exceed UE5 in every measurable area. UE5 has specific weaknesses we
+can exploit.
+
+**UE5 performance baseline (approximate GPU ms at 1080p):**
+
+| System | UE5 Cost | Our Target | How to beat |
+|--------|---------|------------|-------------|
+| GI (Lumen) | 2-8 ms | < 2 ms | Surfel GI with < 0.25 ray/px; amortized tracing |
+| Shadows (VSM) | 2-5 ms | < 2 ms | CSM + RT soft shadows; no VSM camera-rotation spikes |
+| Culling | ~5 ms | < 1 ms | Single-pass compute; no CPU-side culling |
+| Translucency | 3-10 ms | < 2 ms | OIT or stochastic; avoid UE5's multi-layer overdraw |
+| Post-process | 1-3 ms | < 1.5 ms | Fused passes in render graph; fewer barriers |
+
+**UE5 weaknesses to exploit:**
+
+1. **Lumen GI cost** — 2-8 ms is too expensive for 60 fps games with budget headroom. Our surfel GI
+   targets < 2 ms via amortized tracing (< 0.25 rays/px/frame) and aggressive temporal caching.
+
+2. **VSM camera-rotation spikes** — UE5's Virtual Shadow Maps spike during fast rotation in
+   semi-complex scenes. "Not suitable for fast-paced games" (developer consensus). Our CSM + RT soft
+   shadows avoid this entirely — CSM is stable, RT is optional.
+
+3. **Translucency expense** — UE5's translucent shading is "extremely costly." Use order-independent
+   transparency (OIT) or stochastic transparency to avoid multi-layer overdraw.
+
+4. **Foliage shadow noise** — UE5's distance field and VSM shadows produce visible noise on small
+   moving geometry (foliage). Our CSM with PCF/PCSS handles foliage cleanly at lower cost.
+
+5. **Version regressions** — UE 5.3→5.4 saw 120→15 fps regressions. 5.4.4 serialized render work to
+   CPU. Our test suite catches regressions via benchmark targets with automated CI.
+
+6. **Shader iteration speed** — UE5 has painful shader compilation cycles. Our hot-reload (file
+   watch → dxc subprocess → PSO swap) targets < 2 s shader iteration.
+
+7. **Nanite overhead on simple meshes** — Nanite adds overhead on low-poly assets. Our meshlet
+   system only activates on meshes with sufficient triangle density; simple meshes use standard
+   indirect draw.
+
+**What UE5 does well (must match):**
+
+- Nanite geometry throughput: billions of triangles. Our meshlet pipeline must handle 100M+
+  triangles at 60 fps.
+- Lumen quality: multi-bounce GI is visually excellent. Our surfel GI must match quality at lower
+  cost.
+- VSM resolution: 16K virtual resolution. Our shadow atlas must support equivalent detail at
+  distance.
+- Scalability: 4-tier quality presets. Our tier system (Ultra/High/ Medium/Low) must match breadth.
+- Path tracing reference: UE5 has a production path tracer. Ours must match feature parity for
+  cinematics.
+
+**Items NOT in this design (belong in other designs):**
+
+- Post-processing effects (bloom, DOF, motion blur) → render-effects
+- NPR/stylized rendering → render-styles
+- Material graph visual editor → tools layer
+- Particle rendering → VFX
+
+### RF-14: Render layers
+
+Add a bitmask-based render layer system. Each renderable entity, camera, and light has a
+`RenderLayers` component (u32 bitmask, 32 layers). An entity is visible to a camera only if their
+layer masks overlap (bitwise AND != 0). A light affects an entity only if their masks overlap.
+
+```rust
+#[derive(Component, Clone, Copy)]
+pub struct RenderLayers(pub u32);
+
+impl RenderLayers {
+    pub const DEFAULT: Self = Self(1);
+    pub const ALL: Self = Self(u32::MAX);
+
+    pub fn layer(n: u32) -> Self { Self(1 << n) }
+    pub fn with(self, n: u32) -> Self {
+        Self(self.0 | (1 << n))
+    }
+    pub fn without(self, n: u32) -> Self {
+        Self(self.0 & !(1 << n))
+    }
+    pub fn intersects(self, other: Self) -> bool {
+        (self.0 & other.0) != 0
+    }
+}
+```
+
+Use cases:
+
+- UI camera renders only layer 31 (UI widgets)
+- Main camera renders layers 0-30 (world objects)
+- Minimap camera renders layer 0 (terrain) + layer 5 (icons)
+- A spotlight affects only layer 0 (main scene), not layer 1 (cutscene characters in separate
+  lighting)
+- Post-process effects can target specific layers (bloom on layer 0 only, no bloom on UI)
+- An object on layers 0 AND 5 appears in both the main camera and minimap
+
+The same object can be in multiple layers simultaneously. Layer membership is a bitmask, not an
+exclusive assignment.
+
+The GPU culling pipeline checks `camera.layers.intersects(entity.layers)` during instance culling.
+Lights check `light.layers.intersects(entity.layers)` during light assignment.
+
+### RF-15: 2D rendering path
+
+Add a 2D rendering path for 2D/2.5D games, running through the same render graph.
+
+**Sprite rendering:**
+
+- Sprite batching by texture atlas + blend mode + render layer
+- Instanced draw: one draw call per batch
+- Z-sorting for depth ordering (painter's algorithm or depth buffer with Z from sprite order)
+- Sprite animation via atlas UV offset
+
+**Tilemap rendering:**
+
+- Chunked tilemap renderer (one draw call per visible chunk)
+- Auto-tiling (bitmask-based neighbor lookup for tile variant selection)
+- Animated tiles via atlas frame cycling
+- Collision shape generation from tile properties (solid/slope/platform)
+
+**2D lighting:**
+
+- 2D point lights with radius and falloff
+- 2D shadow casting via ray marching against tile geometry
+- Global ambient light
+- Normal-mapped sprites for 2D lighting response
+
+**Parallax layers:**
+
+- Multiple background layers scrolling at different rates relative to camera
+- Infinite repeat for seamless scrolling
+
+**Pixel-perfect mode:**
+
+- Integer-snapped camera position
+- Nearest-neighbor texture filtering
+- Render at native pixel resolution, upscale to display
+
+**Spritesheet animation:**
+
+- `SpriteAnimation` component: atlas handle, frame list, frame rate, loop mode (loop, once,
+  ping-pong)
+- Animation system updates UV offset per frame based on elapsed time and frame rate
+- Multiple animations per entity via animation state machine (walk, run, idle, attack) — same state
+  machine as skeletal animation (Design #25) but driving UV offsets instead of bones
+- Sprite flip (horizontal/vertical) via UV mirror, no mesh change
+
+All 2D render passes are render graph nodes alongside 3D passes. A 2.5D game can mix sprite
+rendering and 3D mesh rendering in the same frame.

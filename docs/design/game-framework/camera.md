@@ -233,64 +233,47 @@ graph TD
     ext --> CB
 ```
 
-```text
-harmonius_game/
-├── camera/
-│   ├── brain.rs          # CameraBrain, channel
-│   │                     # selection, output
-│   ├── virtual.rs        # VirtualCamera,
-│   │                     # CameraOutput
-│   ├── blend.rs          # BlendSystem,
-│   │                     # BlendCurve, custom
-│   │                     # blend assets
-│   ├── mixer.rs          # CameraMixer (weighted)
-│   ├── modifier.rs       # ModifierStack, built-in
-│   │                     # modifiers
-│   ├── input.rs          # CameraInputAxisController
-│   ├── position/
-│   │   ├── follow.rs     # Follow (6 binding modes)
-│   │   ├── orbital.rs    # OrbitalFollow
-│   │   ├── third_person.rs # ThirdPersonFollow
-│   │   ├── hard_lock.rs  # HardLockToTarget
-│   │   ├── composer.rs   # PositionComposer
-│   │   └── spline.rs     # SplineDolly
-│   ├── rotation/
-│   │   ├── composer.rs   # RotationComposer
-│   │   ├── hard_look.rs  # HardLookAt
-│   │   ├── pan_tilt.rs   # PanTilt
-│   │   └── rotate_with.rs # RotateWithTarget
-│   ├── collision/
-│   │   ├── spring_arm.rs # SpringArm
-│   │   ├── deoccluder.rs # CameraDeoccluder
-│   │   └── decollider.rs # CameraDecollider
-│   ├── shake/
-│   │   ├── perlin.rs     # PerlinNoiseProfile
-│   │   ├── impulse.rs    # ImpulseSource,
-│   │   │                 # ImpulseListener
-│   │   ├── wave.rs       # WaveOscillation
-│   │   ├── composite.rs  # CompositeShake
-│   │   └── sequencer.rs  # SequencerShake
-│   ├── intelligence/
-│   │   ├── state_driven.rs # StateDrivenCamera
-│   │   ├── clear_shot.rs # ClearShot,
-│   │   │                 # ShotQualityEval
-│   │   └── sequencer.rs  # CameraSequencer
-│   ├── group/
-│   │   ├── target.rs     # TargetGroup
-│   │   └── framing.rs    # GroupFraming
-│   ├── extensions/
-│   │   ├── confiner_2d.rs # CameraConfiner2D
-│   │   ├── confiner_3d.rs # CameraConfiner3D
-│   │   ├── follow_zoom.rs # FollowZoom
-│   │   ├── auto_focus.rs  # AutoFocus
-│   │   ├── aim.rs        # ThirdPersonAim
-│   │   ├── free_look.rs  # FreeLookModifier
-│   │   └── recomposer.rs # Recomposer
-│   └── cinematic/
-│       ├── cine_camera.rs # CineCameraProperties
-│       ├── rigs.rs       # DollyRig, CraneRig
-│       └── pip.rs        # PictureInPicture
-```
+| File | Types defined |
+|------|--------------|
+| `camera/brain.rs` | `CameraBrain`, blend selection, output |
+| `camera/virtual.rs` | `VirtualCamera`, `CameraOutput`, `CameraProjection` |
+| `camera/blend.rs` | `BlendSystem`, `BlendCurve`, `CustomBlends` |
+| `camera/mixer.rs` | `CameraMixer` |
+| `camera/modifier.rs` | `CameraModifierStack`, `CameraModifierType` |
+| `camera/input.rs` | `CameraInputAxisController` |
+| `camera/vr.rs` | `VrCameraBrain`, `XrHeadPose`, `EyeTrackingInput`, `FoveationMap` |
+| `camera/position/follow.rs` | `Follow`, `FollowBindingMode` |
+| `camera/position/orbital.rs` | `OrbitalFollow`, `OrbitMode`, `RecenterConfig` |
+| `camera/position/third_person.rs` | `ThirdPersonFollow` |
+| `camera/position/hard_lock.rs` | `HardLockToTarget` |
+| `camera/position/composer.rs` | `PositionComposer` |
+| `camera/position/spline.rs` | `SplineDolly`, `SplinePositionMode`, `AutoDollyMode` |
+| `camera/rotation/composer.rs` | `RotationComposer` |
+| `camera/rotation/hard_look.rs` | `HardLookAt` |
+| `camera/rotation/pan_tilt.rs` | `PanTilt`, `PanTiltReference` |
+| `camera/rotation/rotate_with.rs` | `RotateWithFollowTarget` |
+| `camera/collision/spring_arm.rs` | `SpringArm` |
+| `camera/collision/deoccluder.rs` | `CameraDeoccluder`, `DeocclusionStrategy` |
+| `camera/collision/decollider.rs` | `CameraDecollider` |
+| `camera/shake/perlin.rs` | `PerlinNoiseShake`, `NoiseProfile`, `NoiseChannel` |
+| `camera/shake/impulse.rs` | `ImpulseSource`, `ImpulseListener` |
+| `camera/shake/wave.rs` | `WaveOscillation` |
+| `camera/shake/composite.rs` | `CompositeShake` |
+| `camera/intelligence/state_driven.rs` | `StateDrivenCamera`, `StateCameraMapping` |
+| `camera/intelligence/clear_shot.rs` | `ClearShot`, `ShotQualityEvaluator` |
+| `camera/intelligence/sequencer.rs` | `CameraSequencer`, `SequencerEntry` |
+| `camera/group/target.rs` | `TargetGroup`, `TargetGroupMember` |
+| `camera/group/framing.rs` | `GroupFraming`, `FramingMode`, `SizeAdjustment` |
+| `camera/extensions/confiner_2d.rs` | `CameraConfiner2D` |
+| `camera/extensions/confiner_3d.rs` | `CameraConfiner3D` |
+| `camera/extensions/follow_zoom.rs` | `FollowZoom` |
+| `camera/extensions/auto_focus.rs` | `AutoFocus`, `AutoFocusMode` |
+| `camera/extensions/aim.rs` | `ThirdPersonAim` |
+| `camera/extensions/free_look.rs` | `FreeLookModifier` |
+| `camera/extensions/recomposer.rs` | `Recomposer` |
+| `camera/cinematic/cine_camera.rs` | `CineCameraProperties` |
+| `camera/cinematic/rigs.rs` | `DollyRig`, `CraneRig` |
+| `camera/cinematic/pip.rs` | `PictureInPicture` |
 
 ### Camera Evaluation Pipeline
 
@@ -367,6 +350,7 @@ classDiagram
     class VirtualCamera {
         +priority i32
         +channel_mask u32
+        +render_layers u32
         +tracking_target Option~Entity~
         +look_at_target Option~Entity~
     }
@@ -377,9 +361,11 @@ classDiagram
         +near_clip f32
         +far_clip f32
         +focus_distance f32
+        +projection CameraProjection
     }
     class CameraBrain {
         +channel_mask u32
+        +render_layers u32
         +update_mode CameraUpdateMode
         +default_blend BlendDefinition
     }
@@ -479,24 +465,49 @@ classDiagram
 ```rust
 /// Virtual camera component. Describes desired
 /// camera behavior; does not render independently.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct VirtualCamera {
     /// Numeric priority. Higher wins.
     pub priority: i32,
     /// Output channel mask for brain matching.
     pub channel_mask: u32,
+    /// Render layer bitmask. Only renderable entities
+    /// whose render_layers overlap this mask are
+    /// visible to this camera. Enables split-screen
+    /// per-player visibility, minimap-only layers,
+    /// editor overlays, and PiP subsets. See
+    /// constraints.md "Render layers" definition.
+    pub render_layers: u32,
     /// Entity to track for position behaviors.
     pub tracking_target: Option<Entity>,
     /// Entity to aim at for rotation behaviors.
     pub look_at_target: Option<Entity>,
 }
 
+/// Projection mode for a camera.
+///
+/// Needed for isometric/RTS orthographic rendering,
+/// editor viewports, and minimap cameras (RF-26).
+#[derive(Clone, Debug)]
+pub enum CameraProjection {
+    /// Standard perspective projection.
+    Perspective {
+        /// Vertical field of view (degrees).
+        fov: f32,
+    },
+    /// Orthographic projection (no perspective
+    /// foreshortening).
+    /// `size` = half-height of the view in world units.
+    Orthographic { size: f32 },
+}
+
 /// Computed output from virtual camera evaluation.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct CameraOutput {
     pub position: Vec3,
     pub rotation: Quat,
-    pub fov: f32,
+    /// Active projection mode.
+    pub projection: CameraProjection,
     pub near_clip: f32,
     pub far_clip: f32,
     pub focus_distance: f32,
@@ -508,10 +519,17 @@ pub struct CameraOutput {
 ```rust
 /// Per-player camera brain that selects the active
 /// camera and drives the rendered view.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CameraBrain {
     /// Channel mask to filter virtual cameras.
     pub channel_mask: u32,
+    /// Render layer bitmask forwarded from the active
+    /// VirtualCamera to the RenderView node. Determines
+    /// which renderable entities this brain's viewport
+    /// sees. Typical values: 0x01 = player 1 objects,
+    /// 0x02 = player 2 objects, 0xFF = all layers,
+    /// 0x10 = minimap-only layer.
+    pub render_layers: u32,
     /// Update timing mode.
     pub update_mode: CameraUpdateMode,
     /// Default blend when no custom blend matches.
@@ -520,7 +538,7 @@ pub struct CameraBrain {
     pub custom_blends: Option<Handle<CustomBlends>>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CameraUpdateMode {
     /// After all systems, before render.
     LateUpdate,
@@ -535,7 +553,7 @@ pub enum CameraUpdateMode {
 
 ```rust
 /// Follow with fixed offset and 6 binding modes.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct Follow {
     /// Offset from tracking target.
     pub offset: Vec3,
@@ -547,7 +565,7 @@ pub struct Follow {
     pub angular_damping: f32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FollowBindingMode {
     WorldSpace,
     LockToTarget,
@@ -558,7 +576,7 @@ pub enum FollowBindingMode {
 }
 
 /// Orbital follow on sphere or three-ring surface.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct OrbitalFollow {
     /// Orbit mode.
     pub mode: OrbitMode,
@@ -574,7 +592,7 @@ pub struct OrbitalFollow {
     pub target_offset: Vec3,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub enum OrbitMode {
     /// Single radius sphere.
     Sphere { radius: f32 },
@@ -587,7 +605,7 @@ pub enum OrbitMode {
     },
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct RecenterConfig {
     /// Seconds of idle before recentering starts.
     pub wait_time: f32,
@@ -596,7 +614,7 @@ pub struct RecenterConfig {
 }
 
 /// Third-person follow with four-pivot rig.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct ThirdPersonFollow {
     /// Lateral shoulder offset.
     pub shoulder_offset: Vec3,
@@ -615,11 +633,11 @@ pub struct ThirdPersonFollow {
 }
 
 /// Copies target position directly. Zero latency.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct HardLockToTarget;
 
 /// Adaptive framing with dead/soft/hard zones.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct PositionComposer {
     /// Screen-space dead zone (no movement).
     pub dead_zone: Rect,
@@ -639,8 +657,8 @@ pub struct PositionComposer {
 ///
 /// Spline evaluation for dolly cameras and blend
 /// curves use the shared `Curve<T>` type (see
-/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
-#[derive(Component, Reflect)]
+/// [algorithms.md](../core-runtime/algorithms.md)).
+#[derive(Component)]
 pub struct SplineDolly {
     /// Handle to the spline asset.
     pub spline: Handle<SplineAsset>,
@@ -654,21 +672,21 @@ pub struct SplineDolly {
     pub damping: f32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SplinePositionMode {
     KnotIndex,
     Distance,
     Normalized,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AutoDollyMode {
     None,
     FixedSpeed { speed: f32 },
     NearestToTarget,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SplineRotationMode {
     Default,
     FollowTangent,
@@ -682,7 +700,7 @@ pub enum SplineRotationMode {
 
 ```rust
 /// Adaptive aim with screen-space composition.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct RotationComposer {
     /// Offset in target-local space.
     pub target_offset: Vec3,
@@ -698,11 +716,11 @@ pub struct RotationComposer {
 }
 
 /// Rigid aim at look-at target. No damping.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct HardLookAt;
 
 /// Input-driven pan and tilt rotation.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct PanTilt {
     /// Reference frame for rotation.
     pub reference_frame: PanTiltReference,
@@ -716,7 +734,7 @@ pub struct PanTilt {
     pub recenter: Option<RecenterConfig>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PanTiltReference {
     ParentObject,
     World,
@@ -725,7 +743,7 @@ pub enum PanTiltReference {
 }
 
 /// Copies tracking target rotation to camera.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct RotateWithFollowTarget;
 ```
 
@@ -733,7 +751,7 @@ pub struct RotateWithFollowTarget;
 
 ```rust
 /// Spring arm that retracts on collision.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct SpringArm {
     /// Natural arm distance (meters).
     pub target_length: f32,
@@ -756,7 +774,7 @@ pub struct SpringArm {
 }
 
 /// Line-of-sight preservation extension.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CameraDeoccluder {
     /// Repositioning strategy.
     pub strategy: DeocclusionStrategy,
@@ -773,7 +791,7 @@ pub struct CameraDeoccluder {
     pub obstacle_layers: LayerMask,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DeocclusionStrategy {
     PullForward,
     PreserveHeight,
@@ -781,7 +799,7 @@ pub enum DeocclusionStrategy {
 }
 
 /// Geometry penetration prevention.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CameraDecollider {
     /// Minimum distance from geometry.
     pub camera_radius: f32,
@@ -800,7 +818,7 @@ pub struct CameraDecollider {
 
 ```rust
 /// Blend definition between two cameras.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct BlendDefinition {
     /// Curve shape.
     pub curve: BlendCurve,
@@ -808,7 +826,7 @@ pub struct BlendDefinition {
     pub duration: f32,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub enum BlendCurve {
     Cut,
     EaseInOut,
@@ -821,13 +839,13 @@ pub enum BlendCurve {
 }
 
 /// Per-camera-pair custom blend rules.
-#[derive(Asset, Reflect)]
+#[derive(Asset, Archive, Serialize, Deserialize)]
 pub struct CustomBlends {
     /// Ordered rules. First match wins.
     pub rules: Vec<BlendRule>,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct BlendRule {
     /// Source camera name ("*" = wildcard).
     pub from: StringId,
@@ -838,7 +856,7 @@ pub struct BlendRule {
 }
 
 /// Weighted multi-camera mixer (up to 8).
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CameraMixer {
     /// Child cameras and their weights.
     pub children: SmallVec<
@@ -852,14 +870,14 @@ pub struct CameraMixer {
 
 ```rust
 /// Multi-channel Perlin noise profile asset.
-#[derive(Asset, Reflect)]
+#[derive(Asset, Archive, Serialize, Deserialize)]
 pub struct NoiseProfile {
     /// Per-channel noise curves.
     pub channels: [NoiseChannel; 6],
 }
 
 /// One axis of noise (pos X/Y/Z or rot P/Y/R).
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct NoiseChannel {
     /// Frequency (Hz).
     pub frequency: f32,
@@ -868,7 +886,7 @@ pub struct NoiseChannel {
 }
 
 /// Perlin noise shake on a virtual camera.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct PerlinNoiseShake {
     /// Noise profile asset.
     pub profile: Handle<NoiseProfile>,
@@ -881,7 +899,7 @@ pub struct PerlinNoiseShake {
 }
 
 /// Impulse source that emits shake signals.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct ImpulseSource {
     /// Direction of the impulse.
     pub direction: Vec3,
@@ -894,7 +912,7 @@ pub struct ImpulseSource {
 }
 
 /// Impulse listener on a virtual camera.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct ImpulseListener {
     /// Gain multiplier on received impulses.
     pub gain: f32,
@@ -903,7 +921,7 @@ pub struct ImpulseListener {
 }
 
 /// Sinusoidal wave oscillation shake.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct WaveOscillation {
     /// Per-axis amplitude for position.
     pub position_amplitude: Vec3,
@@ -926,7 +944,7 @@ pub struct WaveOscillation {
 }
 
 /// Composite shake layering multiple patterns.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CompositeShake {
     /// Child shake entities contributing
     /// additively.
@@ -938,7 +956,7 @@ pub struct CompositeShake {
 
 ```rust
 /// State-driven camera switching.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct StateDrivenCamera {
     /// Target entity with animation state machine.
     pub state_source: Entity,
@@ -948,7 +966,7 @@ pub struct StateDrivenCamera {
     pub default_blend: BlendDefinition,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct StateCameraMapping {
     /// Animation state name.
     pub state_name: StringId,
@@ -961,7 +979,7 @@ pub struct StateCameraMapping {
 }
 
 /// Clear shot: automatic best-camera selection.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct ClearShot {
     /// Child cameras to evaluate.
     pub children: Vec<Entity>,
@@ -974,7 +992,7 @@ pub struct ClearShot {
 }
 
 /// Shot quality scorer for clear shot.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct ShotQualityEvaluator {
     /// Near distance limit.
     pub near_limit: f32,
@@ -987,7 +1005,7 @@ pub struct ShotQualityEvaluator {
 }
 
 /// Timed camera playlist.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CameraSequencer {
     /// Ordered camera entries.
     pub entries: Vec<SequencerEntry>,
@@ -995,7 +1013,7 @@ pub struct CameraSequencer {
     pub loop_mode: bool,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct SequencerEntry {
     /// Virtual camera entity.
     pub camera: Entity,
@@ -1011,7 +1029,7 @@ pub struct SequencerEntry {
 ```rust
 /// Aggregates multiple targets into one virtual
 /// target.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct TargetGroup {
     /// Group members.
     pub members: Vec<TargetGroupMember>,
@@ -1021,14 +1039,14 @@ pub struct TargetGroup {
     pub rotation_mode: GroupRotationMode,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct TargetGroupMember {
     pub entity: Entity,
     pub weight: f32,
     pub radius: f32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GroupPositionMode {
     /// AABB center of all members.
     BoundingBoxCenter,
@@ -1036,7 +1054,7 @@ pub enum GroupPositionMode {
     WeightedAverage,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GroupRotationMode {
     Manual,
     GroupAverage,
@@ -1044,7 +1062,7 @@ pub enum GroupRotationMode {
 
 /// Adjusts zoom/position to frame all group
 /// members.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct GroupFraming {
     /// Framing axis mode.
     pub framing_mode: FramingMode,
@@ -1060,14 +1078,14 @@ pub struct GroupFraming {
     pub damping: f32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FramingMode {
     Horizontal,
     Vertical,
     BestFit,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SizeAdjustment {
     ZoomOnly,
     DollyOnly,
@@ -1079,7 +1097,7 @@ pub enum SizeAdjustment {
 
 ```rust
 /// 2D polygon boundary confiner.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CameraConfiner2D {
     /// Polygon boundary collider entity.
     pub bounding_shape: Entity,
@@ -1090,7 +1108,7 @@ pub struct CameraConfiner2D {
 }
 
 /// 3D volume boundary confiner.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CameraConfiner3D {
     /// Bounding volume entity.
     pub bounding_volume: Entity,
@@ -1099,7 +1117,7 @@ pub struct CameraConfiner3D {
 }
 
 /// Dynamic FOV to maintain constant screen size.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct FollowZoom {
     /// Target world-space width to maintain.
     pub target_width: f32,
@@ -1112,7 +1130,7 @@ pub struct FollowZoom {
 }
 
 /// Focus distance control for depth of field.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct AutoFocus {
     /// Focus target mode.
     pub mode: AutoFocusMode,
@@ -1122,7 +1140,7 @@ pub struct AutoFocus {
     pub damping: f32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AutoFocusMode {
     LookAtTarget,
     FollowTarget,
@@ -1132,7 +1150,7 @@ pub enum AutoFocusMode {
 }
 
 /// Third-person aim parallax correction.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct ThirdPersonAim {
     /// Maximum ray distance for aim detection.
     pub max_distance: f32,
@@ -1143,7 +1161,7 @@ pub struct ThirdPersonAim {
 }
 
 /// Camera input bridge component.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CameraInputAxisController {
     /// Player index for input routing.
     pub player_index: u32,
@@ -1160,7 +1178,7 @@ pub struct CameraInputAxisController {
 }
 
 /// Physical camera simulation.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CineCameraProperties {
     /// Sensor size (mm).
     pub sensor_size: Vec2,
@@ -1173,21 +1191,24 @@ pub struct CineCameraProperties {
 }
 
 /// Modifier stack for post-brain adjustments.
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct CameraModifierStack {
     /// Ordered modifiers by priority.
     pub modifiers: Vec<CameraModifierEntry>,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct CameraModifierEntry {
     /// Execution priority (lower = first).
     pub priority: i32,
-    /// Modifier type.
+    /// Modifier type (enum dispatch — no dyn trait
+    /// objects). Custom variants added by users are
+    /// codegen'd into the middleman .dylib and extend
+    /// this enum at compile time. See RF-9.
     pub modifier: CameraModifierType,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub enum CameraModifierType {
     /// Override FOV with smooth transition.
     FovOverride {
@@ -1204,6 +1225,96 @@ pub enum CameraModifierType {
         vignette_intensity: f32,
         grain_intensity: f32,
     },
+}
+```
+
+### Cinematic Rigs and PiP
+
+```rust
+/// Free-look modifier: lets the player temporarily
+/// aim the camera independently of the virtual
+/// camera's rotation behavior. When active,
+/// pan/tilt input drives the look direction instead
+/// of the configured rotation behavior.
+#[derive(Component)]
+pub struct FreeLookModifier {
+    /// Horizontal range (degrees, symmetric).
+    pub horizontal_range: f32,
+    /// Vertical range (degrees, symmetric).
+    pub vertical_range: f32,
+    /// Time to restore to default look (seconds).
+    pub recenter_time: f32,
+    /// Idle time before auto-recentering starts.
+    pub recenter_wait: f32,
+    /// Player index for input routing.
+    pub player_index: u32,
+}
+
+/// Recomposer: timeline-driven property override
+/// that temporarily takes control of camera
+/// parameters from the behavior stack. Used for
+/// scripted camera moments in cinematics.
+#[derive(Component)]
+pub struct Recomposer {
+    /// Additional position offset in camera-local
+    /// space (timeline-driven).
+    pub position_offset: Vec3,
+    /// Additional rotation offset (euler degrees,
+    /// timeline-driven).
+    pub rotation_offset: Vec3,
+    /// FOV delta added on top of computed FOV.
+    pub fov_delta: f32,
+    /// Tilt offset (degrees, dutch angle).
+    pub dutch: f32,
+    /// Blend weight (0 = no effect, 1 = full).
+    pub blend_weight: f32,
+}
+
+/// Camera dolly rig: camera on a linear track with
+/// motorized movement.
+#[derive(Component)]
+pub struct DollyRig {
+    /// Handle to the track spline asset.
+    pub track: Handle<SplineAsset>,
+    /// Current position along the track (normalized
+    /// [0, 1]).
+    pub position: f32,
+    /// Motorized movement speed (units/s).
+    /// Zero = manual positioning.
+    pub motor_speed: f32,
+}
+
+/// Camera crane rig: camera on a vertical arm that
+/// rotates around a base pivot.
+#[derive(Component)]
+pub struct CraneRig {
+    /// Arm length (meters).
+    pub arm_length: f32,
+    /// Tilt angle of the arm (degrees).
+    /// 0 = horizontal, 90 = vertical-up.
+    pub tilt_angle: f32,
+    /// Rotation around the vertical axis (degrees).
+    pub pan_angle: f32,
+    /// Offset at the crane head.
+    pub head_offset: Vec3,
+    /// Rotation speed for motorized movement.
+    pub rotation_speed: f32,
+}
+
+/// Picture-in-Picture: renders a secondary virtual
+/// camera's view into an off-screen texture consumed
+/// by the UI overlay.
+#[derive(Component)]
+pub struct PictureInPicture {
+    /// Virtual camera entity to render in the PiP.
+    pub source_camera: Entity,
+    /// Render texture resolution.
+    pub resolution: (u32, u32),
+    /// Screen-space rect (normalized [0,1]).
+    pub viewport_rect: Rect,
+    /// Update frequency (frames per update).
+    /// 1 = every frame, 2 = every other frame.
+    pub update_interval: u32,
 }
 ```
 
@@ -1242,9 +1353,65 @@ pub struct CameraSequencerSystem;
 pub struct GroupFramingSystem;
 ```
 
+### Lifecycle Events
+
+ECS events emitted by `CameraBrainSystem`. Gameplay systems and logic graphs wire to these for
+no-code camera scripting (RF-30).
+
+```rust
+/// Fired when a VirtualCamera becomes the brain's
+/// active camera.
+pub struct CameraActivated {
+    /// The camera entity that was activated.
+    pub camera: Entity,
+    /// The brain entity that activated it.
+    pub brain: Entity,
+}
+
+/// Fired when a VirtualCamera is deactivated
+/// (another camera took over).
+pub struct CameraDeactivated {
+    /// The camera entity that was deactivated.
+    pub camera: Entity,
+    /// The brain entity.
+    pub brain: Entity,
+}
+
+/// Fired when a blend to/from this camera starts.
+pub struct CameraBlendStarted {
+    /// Outgoing (losing) camera entity.
+    pub from: Entity,
+    /// Incoming (gaining) camera entity.
+    pub to: Entity,
+    /// Total blend duration (seconds).
+    pub duration: f32,
+    /// Brain managing the blend.
+    pub brain: Entity,
+}
+
+/// Fired when a camera blend completes.
+pub struct CameraBlendCompleted {
+    /// Camera that is now fully active.
+    pub camera: Entity,
+    /// Brain entity.
+    pub brain: Entity,
+}
+```
+
 ## Data Flow
 
 ### Per-Frame Camera Pipeline
+
+#### Game Loop Phase (RF-14)
+
+Camera systems execute in the `PostUpdate` phase — after all gameplay systems have run but before
+the render graph is compiled. VR late-latch runs in `PreRender` (after `PostUpdate`, just before GPU
+submission). Ordering constraints:
+
+1. `CameraEvaluationSystem` — `PostUpdate`, before `CameraBrainSystem`
+2. Intelligence systems — `PostUpdate`, before `CameraBrainSystem`
+3. `CameraBrainSystem` — `PostUpdate`, last in phase
+4. VR late-latch view matrix update — `PreRender`
 
 Each frame the camera pipeline executes:
 
@@ -1264,9 +1431,18 @@ Each frame the camera pipeline executes:
    - Interpolates position, rotation, FOV, and post-process between outgoing and incoming cameras
      using the blend curve
    - Applies the modifier stack
-   - Writes the final render view
+   - Emits `CameraActivated`/`CameraDeactivated`/`CameraBlendStarted`/`CameraBlendCompleted` events
+   - Writes `CameraOutput` to the current ring-buffer write slot (RF-8, RF-10)
+   - Writes the active camera's position/rotation to `AudioListener` on the brain entity (RF-15)
 4. **ImpulseDispatchSystem** propagates impulse source events to listeners with distance
    attenuation.
+
+#### Frame-Boundary Ring Buffer (RF-8, RF-10)
+
+`CameraOutput` and `RenderView` are triple-buffered. The brain writes to slot `frame_index % 3` each
+frame. The render thread reads slot `(frame_index - 1) % 3`. A `crossbeam_channel` signal notifies
+the render thread that the write slot is ready. No mutex needed — each slot is owned by exactly one
+thread at a time.
 
 ### Blend Interpolation
 
@@ -1320,6 +1496,79 @@ assigned viewport.
 //   (visible to both brains)
 ```
 
+Dynamic split behavior (RF-29): single player starts fullscreen; a second player joining animates a
+viewport rect split via timeline-driven property animation on the rect boundaries. Each brain has an
+independently configurable viewport rect supporting asymmetric splits (e.g. 70/30 for a racing
+game). Horizontal, vertical, or quadrant split orientation is configurable at runtime. Each brain's
+HUD is scoped to its viewport rect — see `ui-framework.md` RF-42 for the UI anchoring contract.
+
+### Render Graph Integration (RF-4)
+
+Each `CameraBrain` writes a `RenderView` node into the render graph:
+
+1. **`RenderView` node** — contains view matrix, projection matrix, viewport rect, render layer
+   mask, and near/far planes. The render graph compiler derives pass ordering from declared node
+   dependencies.
+2. **Split-screen** — each brain writes a separate `RenderView` node with its own viewport rect and
+   `render_layers` mask. Multiple nodes execute in parallel where GPU resources permit.
+3. **PiP** — `PictureInPicture` creates an additional render graph subgraph that renders to an
+   off-screen texture. The UI system samples that texture as a widget.
+4. **Post-process** — `CameraModifierStack` entries of type `PostProcessBlend` attach as
+   post-process nodes chained after the main opaque/transparent passes in the camera's render graph
+   chain.
+5. **VR** — `VrCameraBrain` writes two `RenderView` nodes (left eye, right eye) with per-eye view
+   matrices. Late-latch updates both matrices in `PreRender` after the last simulation write.
+6. **Barriers** — the render graph compiler inserts resource barriers automatically based on
+   declared read/write dependencies. Camera systems declare no GPU resources directly.
+
+### 2.5D Camera Compositing (RF-5, RF-12)
+
+Camera2D (orthographic, parallax, pixel-perfect) is designed in `rendering/2d.md`. Integration
+boundary:
+
+- `Camera2D` and `CameraBrain` are distinct component types. `Camera2D` is simpler: no modifier
+  stack, no intelligence system, no VR support.
+- Both produce `RenderView` nodes consumed by the same render graph.
+- 2D position follow/dead-zone reuses `Follow` and `PositionComposer` behaviors with the Z axis
+  locked (via a `lock_z: bool` flag on the behavior).
+- 2.5D games layer one `Camera2D` for 2D sprite/tilemap layers and one `CameraBrain`-driven
+  perspective camera for 3D background geometry. Viewport rects may overlap; compositing order is
+  determined by the render graph viewport stack from `rendering/2d.md` RF-21.
+
+### Cross-Subsystem Integration (RF-16)
+
+| Subsystem | Direction | Data | Mechanism |
+|-----------|-----------|------|-----------|
+| Audio | produces | Listener position/rotation | `AudioListener` on brain entity |
+| Timelines | consumes | Property animation tracks | `Recomposer` reads `Track<T>` |
+| UI | produces | Viewport mapping for hit testing | `CameraOutput` screen-to-world |
+| VFX | consumes | Screen effects from modifiers | `PostProcessBlend` modifier node |
+| XR runtime | consumes | Head pose, eye tracking | `XrHeadPose`, `EyeTrackingInput` |
+| Input | consumes | Mouse/gamepad axes | `CameraInputAxisController` |
+| Physics | consumes | Raycast/sphere sweep | `SpringArm`, `CameraDecollider` |
+| Spatial index | consumes | Frustum for gameplay queries | `CameraOutput` frustum |
+| Rendering | produces | `RenderView` nodes | Brain writes to render graph |
+| Networking | bidirectional | Replicated camera state | Server-auth spectator |
+
+### Spatial Structures for Collision (RF-11)
+
+Each collision component uses a specific spatial structure:
+
+| Component | Query type | Spatial structure |
+|-----------|-----------|------------------|
+| `SpringArm` | Ray cast | Physics-private BVH |
+| `CameraDecollider` | Sphere sweep | Physics-private BVH |
+| `CameraDeoccluder` | Ray cast | Physics-private BVH |
+| `CameraConfiner3D` | AABB query | Shared BVH (gameplay) |
+| `CameraConfiner2D` | 2D AABB query | Shared 2D BVH (gameplay) |
+
+### Per-Thread Arenas (RF-22)
+
+Camera evaluation allocates `CameraOutput` temporaries and blend state each frame. These allocations
+use thread-local arenas (per-worker arena from `harmonius_core::arena`). Arenas reset at the frame
+boundary after `CameraBrainSystem` completes, consistent with the engine-wide pattern in
+`constraints.md` "Performance Patterns".
+
 ## Platform Considerations
 
 ### Performance Budget
@@ -1333,15 +1582,34 @@ assigned viewport.
 
 ### Platform-Specific Notes
 
-- **All platforms:** Camera evaluation is single-threaded per brain. Multiple brains can evaluate in
-  parallel on the thread pool.
-- **Mobile:** PiP limited to one viewport at quarter resolution.
+| Platform | Notes |
+|----------|-------|
+| Windows | D3D12 VRS Tier 2 for foveated rendering |
+| macOS | Metal rasterization rate maps for foveated rendering |
+| Linux | Vulkan fragment shading rate for foveated rendering |
+| iOS | UIKit main thread owns event loop; camera eval on worker |
+| Android | Same threading model as desktop |
+| Nintendo Switch | 4-player split-screen capped at 2 brains per memory budget |
+| Xbox | D3D12 VRS; DirectStorage for camera-related asset streaming |
+| PlayStation | GNM VRS (PSVR2 foveated); DualSense gyro for FP shake |
+| Quest (Meta) | OpenXR; foveated via Vulkan; passthrough blend support |
+| SteamVR | OpenXR; Tobii/Vive eye tracking optional |
+| Apple Vision Pro | ARKit; built-in eye tracking; passthrough blend support |
+
+Additional notes:
+
+- **All platforms:** Camera evaluation is single-threaded per brain. Multiple brains evaluate in
+  parallel on the job system's worker threads.
+- **Mobile (iOS/Android):** PiP limited to one viewport at quarter resolution. Touch-to-orbit input
+  handled via `CameraInputAxisController` mapping touch delta to pan/tilt axes.
 - **Desktop:** Multiple PiP viewports at configurable resolution.
-- **Networking:** Camera state is client-only. Only the tracking target entity positions are
-  replicated. Virtual camera evaluation runs entirely on the client.
-- **No-code:** All camera components are exposed to the visual editor. Designers create cameras by
-  adding components to entities. Camera presets (third-person action, top-down RPG, side-scroller)
-  are available as entity templates.
+- **Consoles:** Split-screen memory budgets constrain number of simultaneous brains. Nintendo Switch
+  caps at 2 brains for 4-player split-screen at 540p per viewport.
+- **VR platforms:** `VrCameraBrain` required; standard `CameraBrain` not used. See VR subsection.
+- **Networking:** Camera state is client-only. Only tracking target entity positions are replicated.
+  Virtual camera evaluation runs entirely on the client.
+- **No-code:** All camera components are exposed to the visual editor. Camera presets (third-person
+  action, top-down RPG, side-scroller) are available as entity templates.
 
 ### Proposed Dependencies
 
@@ -1420,6 +1688,15 @@ No new external dependencies. Uses existing engine modules:
 | `test_input_frame_independence`     | R-13.25.37 |
 | `test_input_blend_suppression`      | R-13.25.37 |
 | `test_cine_camera_fov`              | R-13.25.38 |
+| `test_cinematic_shake_timeline`     | R-13.25.22 |
+| `test_free_look_range_clamp`        | R-13.25.34 |
+| `test_free_look_recenter`           | R-13.25.34 |
+| `test_recomposer_fov_override`      | R-13.25.35 |
+| `test_recomposer_timeline_blend`    | R-13.25.35 |
+| `test_dolly_rig_position`           | R-13.25.39 |
+| `test_crane_rig_tilt`               | R-13.25.39 |
+| `test_pip_render_texture`           | R-13.25.40 |
+| `test_pip_update_interval`          | R-13.25.40 |
 
 1. **`test_priority_selection`** — 3 cameras (priority 1, 5, 10); brain selects 10. Change 10 to 0;
    brain selects 5.
@@ -1480,6 +1757,15 @@ No new external dependencies. Uses existing engine modules:
 56. **`test_input_frame_independence`** — Same input at 30 fps and 120 fps; same result.
 57. **`test_input_blend_suppression`** — Input suppressed during active blend.
 58. **`test_cine_camera_fov`** — Super 35 + 50 mm = expected vertical FOV.
+59. **`test_cinematic_shake_timeline`** — Timeline-authored shake asset plays correct offsets.
+60. **`test_free_look_range_clamp`** — FreeLookModifier clamps pan/tilt to configured range.
+61. **`test_free_look_recenter`** — FreeLookModifier recenters after wait time elapses.
+62. **`test_recomposer_fov_override`** — Recomposer fov_delta adds to computed FOV.
+63. **`test_recomposer_timeline_blend`** — blend_weight 0 → 1 interpolates override smoothly.
+64. **`test_dolly_rig_position`** — DollyRig position 0.5 maps to midpoint of track spline.
+65. **`test_crane_rig_tilt`** — CraneRig tilt_angle 90 places camera directly above pivot.
+66. **`test_pip_render_texture`** — PiP renders source camera to off-screen texture each frame.
+67. **`test_pip_update_interval`** — PiP update_interval 2 skips every other frame.
 
 ### Integration Tests
 
@@ -1545,13 +1831,10 @@ without the complexity of a full graph.
 
 **Q4. Does this design solve all customer problems?**
 
-VR camera support is absent from the design and only mentioned as an open question. VR requires
-stereoscopic rendering with IPD offset, head-tracking integration, and strict frame timing (must
-match HMD refresh rate). Without VR camera support, the engine cannot ship VR games -- a requirement
-per the project's all-genre scope. The design also lacks a first-person camera body awareness system
-(seeing your own hands, feet, and shadow) which is standard in modern FPS games. There is no camera
-replay/rewind system for sports games or kill-cam features. Adding VR brain and first-person body
-awareness would expand the engine's genre coverage significantly.
+VR camera support is now fully designed as `VrCameraBrain` (see VR subsection in Architecture). FPS
+first-person body awareness (head bob, weapon sway, ADS, lean, landing impact) is covered by the
+`HardLockToTarget` + `PanTilt` combination with procedural modifiers. Camera replay/rewind for
+sports games and kill-cam is not yet designed — this remains a gap for a future iteration.
 
 **Q5. Is this design cohesive with the overall engine?**
 
@@ -1559,10 +1842,9 @@ The camera system integrates well with the ECS (virtual cameras as entities), th
 index (collision queries for spring arm, deoccluder, and decollider), the input system (F-6.2.1 for
 orbital and pan/tilt control), and the animation system (F-9.4.1 for state-driven camera switching).
 The split-screen model (multiple brains with channel masks) avoids singletons per the constraints.
-One inconsistency is that the camera modifier stack (F-13.25.36) uses `dyn` for custom modifiers,
-which is acceptable per the constraints document for editor/tool paths but is explicitly in the
-runtime path here. This should be justified or changed to enum dispatch. The PiP system (F-13.25.40)
-aligns with the multi-view rendering system (F-2.10.5) for consistent render target management.
+The modifier stack uses `CameraModifierType` enum dispatch (no `dyn`) — custom variants are
+codegen'd into the middleman .dylib. The PiP system (F-13.25.40) aligns with the multi-view
+rendering system (F-2.10.5) for consistent render target management.
 
 ## Open Questions
 
@@ -1581,6 +1863,338 @@ aligns with the multi-view rendering system (F-2.10.5) for consistent render tar
 5. **Editor camera preview.** The no-code editor needs a live preview of each virtual camera's
    output. Should the editor render thumbnails per camera, or cycle through a full-viewport preview?
    Thumbnails add rendering cost but provide at-a-glance comparison.
-6. **VR stereo cameras.** VR requires two cameras with IPD offset. Should VR be a modifier on the
-   brain, or a special dual-output brain variant? VR-specific timing constraints (must match HMD
-   refresh rate) also affect update mode.
+6. **Camera replay/rewind.** A kill-cam or sports replay system requires rewinding and replaying
+   camera state. This is not yet designed. Options: record `CameraOutput` ring buffer at reduced
+   frequency; replay at normal speed from the recording.
+
+## Review feedback
+
+### RF-1: Remove all Reflect derives
+
+Remove `Reflect` from all 60+ types. Remove `TypeRegistry` dependencies. Replace with codegen'd
+metadata in the middleman .dylib. Asset types (`NoiseProfile`, `CustomBlends`) derive rkyv traits
+for zero-copy loading.
+
+### RF-2: Codegen for custom camera behaviors
+
+Add a "Codegen integration" section:
+
+1. Custom camera behaviors authored in the visual editor compile to Rust via the codegen pipeline
+   into the middleman .dylib
+2. `CameraModifierType` variants extended by users are codegen'd enums
+3. `BlendCurve::Custom` evaluators are codegen'd Rust functions
+4. Hot-reload recompiles middleman when camera definitions change
+5. Camera rig presets are data-driven templates, not hardcoded
+
+### RF-3: Render layers (u32 bitmask)
+
+Add `render_layers: u32` to `VirtualCamera` or `CameraBrain`. Document how it filters renderable
+entities for split-screen (each player sees only their layer), minimap (minimap camera renders only
+terrain + markers), editor overlays (debug camera sees gizmos + wireframes), and PiP (preview camera
+sees a subset). Cross-reference the constraints render layer definition.
+
+### RF-4: Render graph integration
+
+Add a "Render graph integration" subsection:
+
+1. `CameraBrain` output creates a `RenderView` node in the render graph with view/projection
+   matrices, viewport rect, and render layer mask
+2. Split-screen creates multiple `RenderView` nodes, each with its own viewport rect and render
+   layer
+3. PiP creates an additional render graph subgraph rendering to an off-screen texture consumed by
+   the UI
+4. Post-process volumes from the modifier stack attach as post-process nodes in the camera's render
+   graph chain
+5. The render graph compiler orders passes and inserts barriers automatically based on declared
+   dependencies
+
+### RF-5: Camera2D integration
+
+Camera2D (orthographic, parallax, pixel-perfect, dead zone, split-screen) is designed in
+`rendering/2d.md`. Add an explicit cross-reference and document the integration boundary:
+
+1. `Camera2D` and `CameraBrain` are separate component types — Camera2D is simpler (no modifier
+   stack, no intelligence system)
+2. Both produce `RenderView` nodes consumed by the render graph
+3. Camera2D follow/dead-zone behavior reuses the same `OrbitalFollow` / `ThirdPersonFollow` position
+   behaviors with the Z axis locked
+4. 2.5D games use one Camera2D for 2D layers and one 3D camera for the background — composed via the
+   viewport stack (rendering/2d.md RF-21)
+
+### RF-6: VR stereo camera design
+
+VR is not deferred. Design a full VR camera subsystem:
+
+1. **`VrCameraBrain`** — dual-output brain variant that produces two `RenderView` nodes (left eye,
+   right eye). Each view has an IPD/2 offset from the head position. The brain reads head pose from
+   the XR runtime (OpenXR `XrView` per eye).
+2. **Head tracking** — `XrHeadPose` component updated by the XR input system each frame. The VR
+   brain reads this instead of using OrbitalFollow or ThirdPersonFollow. Head tracking bypasses the
+   modifier stack for position (no smoothing on head tracking — must be zero-latency to prevent
+   nausea).
+3. **IPD** — `interpupillary_distance: f32` from the XR runtime. Automatically applied as horizontal
+   offset per eye view.
+4. **Late-latching** — to minimize motion-to-photon latency, the VR brain writes view matrices as
+   late as possible in the frame. The render graph supports a late-latch injection point where the
+   VR brain updates view matrices after all other work, just before GPU submission. This reduces
+   perceived latency by 1+ frames.
+5. **Foveated rendering** — the render graph supports variable-rate shading (VRS) driven by eye
+   tracking data:
+   - `EyeTrackingInput` component updated by the XR runtime with gaze direction per eye
+     (`XrEyeTrackerEXT`)
+   - `FoveationMap` resource computed each frame: high-resolution center at gaze point, reduced
+     resolution in periphery
+   - The render graph's rasterization passes apply VRS based on the foveation map via D3D12 VRS Tier
+     2 / Vulkan fragment shading rate / Metal rasterization rate maps
+   - Foveation parameters: inner radius (full res), transition region, outer region (quarter res).
+     Configurable per quality tier.
+6. **Eye tracking** — beyond foveated rendering, eye tracking enables:
+   - Gaze-based UI interaction (dwell-to-select for accessibility)
+   - Gaze-directed DOF (depth of field focused where the user looks)
+   - Social eye contact in multiplayer (avatar eyes track where the player looks, replicated via
+     networking)
+   - Analytics (gaze heatmaps for level design feedback)
+7. **Refresh rate** — VR brain enforces HMD refresh rate (72/90/120 Hz) as the update mode. If the
+   frame misses the deadline, reprojection (ASW/ATW) kicks in. The camera system does not implement
+   reprojection — that is the XR compositor's responsibility — but it must deliver frames on time.
+8. **Comfort** — configurable vignette during locomotion (reduces FOV to prevent motion sickness).
+   Snap rotation (discrete angle steps) vs smooth rotation option. Teleport-based movement avoids
+   camera translation entirely. These are VR-specific camera modifiers.
+9. **Passthrough** — mixed reality passthrough cameras (Quest 3, Apple Vision Pro). The VR brain can
+   blend between virtual scene rendering and passthrough video. Passthrough is an XR compositor
+   feature, but the camera system controls the blend factor.
+10. **Platform support:**
+
+| Platform | XR Runtime | Eye Tracking | Foveated | VRS API |
+|----------|-----------|-------------|---------|---------|
+| Quest | OpenXR | Quest Pro/3 | Yes | Vulkan |
+| SteamVR | OpenXR | Tobii/Vive | Yes | Vulkan |
+| PSVR2 | Platform SDK | Built-in | Yes | GNM |
+| Apple Vision | ARKit | Built-in | Yes | Metal |
+| Windows MR | OpenXR | Varies | Yes | D3D12 |
+
+### RF-7: Timeline/property animation integration
+
+Cross-reference timelines.md RF-20. Document:
+
+1. Animatable camera properties: FOV, position offset, rotation offset, exposure, focus distance,
+   shake intensity, blend weight, aperture, vignette intensity
+2. Cinematic camera sequences use timeline playback — each camera parameter is a `Track<T>` in a
+   `MultiTrackTimeline`
+3. The Recomposer modifier reads timeline overrides that temporarily take control of camera
+   parameters from the behavior stack
+4. Camera shake can be authored as a timeline (noise profile sampled over time) rather than only
+   runtime Perlin noise
+
+### RF-8: Frame-boundary handoff
+
+`CameraBrainSystem` writes to a ring-buffered `RenderView` slot. The render thread reads the
+previous frame's slot. Document which ring-buffer index is written per frame and how synchronization
+works (crossbeam channel or atomic swap).
+
+### RF-9: Resolve dyn on camera modifier stack
+
+Change `CameraModifierType` to enum dispatch with codegen-extended variants in the middleman .dylib.
+Custom modifiers authored in the editor compile to Rust enum variants, not `dyn` trait objects.
+
+### RF-10: Per-frame ring-buffering for camera output
+
+`CameraOutput` and `RenderView` are double- or triple-buffered. Document which slot the brain writes
+to each frame and how the render thread reads without stalling.
+
+### RF-11: Specify spatial structure for collision
+
+Document which spatial structure each collision component uses:
+
+- `SpringArm` — physics raycast (physics-private BVH)
+- `CameraDecollider` — physics sphere sweep (physics-private BVH)
+- `CameraConfiner3D` — shared BVH AABB query (gameplay queries)
+- `CameraConfiner2D` — shared 2D BVH (gameplay queries)
+
+### RF-12: 2.5D camera compositing
+
+Document how 3D and 2D cameras compose in a 2.5D game. Reference the viewport stack from
+rendering/2d.md RF-21.
+
+### RF-13: Missing test coverage
+
+Add unit tests for: F-13.25.22 (cinematic shake), F-13.25.34 (FreeLook), F-13.25.35
+(Recomposer/timeline), F-13.25.39 (dolly/crane/jib rigs), F-13.25.40 (PiP configuration).
+
+### RF-14: Game loop phase
+
+Name exact phases: camera behavior evaluation in PostUpdate (after gameplay but before rendering),
+VR late-latch in PreRender. Document ordering constraints between CameraEvaluationSystem,
+intelligence systems, and CameraBrainSystem.
+
+### RF-15: Audio listener integration
+
+The active camera's position/rotation is written to an `AudioListener` component so the audio system
+uses the camera as the spatial audio listener. Document this in the cross-subsystem integration
+list.
+
+### RF-16: Expand cross-subsystem integration list
+
+Add missing integrations:
+
+| Subsystem | Direction | Data | Mechanism |
+|-----------|-----------|------|-----------|
+| Audio | produces | listener position | AudioListener component on brain entity |
+| Timelines | consumes | property animation tracks | Timeline drives camera params (RF-20) |
+| UI | produces | viewport mapping for hit testing | CameraOutput provides screen-to-world |
+| VFX | consumes | screen effects from modifiers | Modifier stack applies post-process |
+| XR runtime | consumes | head pose, eye tracking | XrHeadPose, EyeTrackingInput components |
+| Input | consumes | mouse/gamepad axes | CameraInputAxisController reads actions |
+| Physics | consumes | raycast/sphere sweep | SpringArm, Decollider use physics BVH |
+| Spatial index | consumes | frustum for gameplay queries | CameraOutput frustum fed to shared BVH |
+| Rendering | produces | RenderView nodes | Brain writes view/projection to render graph |
+| Networking | bidirectional | replicated camera state | Server-auth for spectator, client-auth for player |
+
+### RF-17: Algorithm reference URLs
+
+Add URLs for: Perlin noise (Ken Perlin), spherical interpolation (slerp), spring arm collision (UE5
+reference), screen-space dead zones (Unity Cinemachine), adaptive framing algorithms.
+
+### RF-18: Expand platform considerations
+
+Name all platforms: Windows, macOS, Linux, iOS, Android, Switch, Xbox, PlayStation, Quest, SteamVR,
+Apple Vision Pro. Add console split-screen memory budgets, mobile touch-to-orbit input, VR
+per-platform eye tracking availability.
+
+### RF-19: Add missing API definitions
+
+Add Rust pseudocode struct definitions for: `FreeLookModifier`, `Recomposer`, `DollyRig`,
+`CraneRig`, `PictureInPicture`.
+
+### RF-20: Complete class diagram
+
+Expand to cover all ~40 defined types. Split into focused sub-diagrams if needed (position,
+rotation, collision, shake, intelligence, extensions, VR).
+
+### RF-21: rkyv for camera assets
+
+Replace `#[derive(Asset, Archive, Serialize, Deserialize)]` with rkyv derives for zero-copy loading
+of `NoiseProfile`, `CustomBlends`, and spline assets.
+
+### RF-22: Per-thread arenas for evaluation temporaries
+
+Camera evaluation allocates `CameraOutput` and temporary blend state each frame. Use thread-local
+arenas consistent with the engine pattern.
+
+### RF-23: Convert file layout to Mermaid or table
+
+Replace the `text` code block directory tree with a Mermaid diagram or flat Markdown table.
+
+### RF-24: Third-person camera missing details
+
+`ThirdPersonFollow` has shoulder offset and collision damping but is missing:
+
+1. **Lock-on targeting** — soft lock to an enemy entity. Camera orbits around the lock target while
+   the player character stays in frame. Lock-on changes the orbit center from the player to a
+   midpoint between player and target. Disengage on distance threshold or input.
+2. **Over-the-shoulder aim transition** — when the player aims, the camera zooms in, shifts
+   laterally to the aiming shoulder, and reduces FOV. This is a blend between the normal
+   ThirdPersonFollow state and an `AimState` with tighter parameters. Should be a timeline-driven
+   property animation (timelines.md RF-20) blending between two parameter sets.
+3. **Cover system camera** — when in cover, camera shifts to peek left/right of the cover surface.
+   The camera position is offset perpendicular to the cover normal. Input controls lean direction.
+4. **Character turn follow** — when the character turns, the camera can optionally auto-rotate to
+   stay behind the character. Controlled by a `follow_heading` flag with configurable rotation
+   speed.
+
+### RF-25: First-person camera missing details
+
+`HardLockToTarget` + `PanTilt` provides basic first-person but is missing:
+
+1. **Head bob** — procedural camera bob synchronized to character movement speed and gait. Vertical
+   sine wave + horizontal figure-8. Amplitude scales with movement speed. This is a property
+   animation (timelines.md RF-20) driven by the character locomotion state.
+2. **Weapon sway** — subtle camera micro-movement when moving or turning. Lagged response to mouse
+   input creating a floating feel. Separate from head bob. A spring-damper on the rotation output.
+3. **Aim-down-sights (ADS)** — FOV reduction + position shift to align with weapon sights. Smooth
+   transition in/out. Per-weapon ADS parameters (FOV, position offset, transition time) stored in
+   data tables.
+4. **Lean** — peek left/right by tilting the camera roll and offsetting position laterally.
+   Input-driven with smooth in/out. Collision check to prevent leaning through walls.
+5. **Landing impact** — brief downward camera dip on landing from a fall. Amplitude proportional to
+   fall distance. Impulse shake variant.
+
+### RF-26: 3D orthographic projection
+
+The 3D camera system has no orthographic projection option. Needed for:
+
+1. **Isometric games** — 3D-rendered but orthographic projection (Diablo, Hades, Factorio). The
+   camera entity needs a `ProjectionMode::Orthographic { size: f32 }` alongside the existing
+   perspective projection.
+2. **Top-down strategy** — RTS/MOBA cameras use orthographic or near-orthographic projection with
+   zoom controlling the ortho size.
+3. **Editor viewports** — front/side/top orthographic views in the level editor. These are already
+   in the editor design but the camera system must support the projection mode.
+4. **Minimap camera** — renders a top-down orthographic view of the scene into a texture consumed by
+   the minimap widget.
+
+Add `CameraProjection` enum with `Perspective { fov }` and `Orthographic { size }` variants to
+`CameraOutput` or as a component.
+
+### RF-27: Camera collision depth
+
+`CameraDeoccluder` and `CameraDecollider` exist but are missing:
+
+1. **Transparent material fallback** — instead of moving the camera forward, make occluding objects
+   transparent (fade-out based on camera proximity). This is a render-side effect: the camera system
+   identifies occluding entities and sets a `CameraOccluded` component that the material system
+   reads to lerp opacity. Common in third-person games (walls between camera and player go
+   transparent).
+2. **Multi-probe collision** — single raycast misses thin obstacles. Use 3-5 probes in a cone
+   pattern around the camera-to-target line for wider collision detection.
+3. **Dynamic probe size** — probe radius scales with zoom distance. Close zoom = small probe, far
+   zoom = large probe to prevent clipping through large objects at distance.
+4. **Collision response curve** — configurable blend between instant snap (hard collision) and
+   smooth pullback (soft collision) via an easing curve on the retraction speed.
+
+### RF-28: Camera shake depth
+
+Four shake variants exist but are missing:
+
+1. **Directional damage shake** — shake biased toward the damage source direction. The
+   `ImpulseSource.direction` already exists but the listener needs to convert world-direction to
+   camera-local shake bias (more shake on the hit side).
+2. **Reduced motion accessibility** — global shake intensity multiplier (0.0 = no shake, 1.0 =
+   full). Read from `ReducedMotionSettings` (accessibility system). All shake systems multiply their
+   output by this global factor. Players with motion sensitivity can reduce or disable shake.
+3. **Shake frequency filtering** — `ImpulseListener` has gain but no frequency filter. Add optional
+   low-pass/high-pass to allow cameras to respond only to certain shake frequencies (e.g., ignore
+   small weapon recoil, respond to large explosions).
+4. **Cinematic shake curves** — authored shake as a timeline asset (timelines.md RF-20) rather than
+   only runtime Perlin noise. The designer keyframes exact shake motion for scripted moments. The
+   timeline drives camera position/rotation offsets.
+
+### RF-29: Split-screen depth
+
+Channel mask-based multi-brain exists but is missing:
+
+1. **Dynamic split** — single player = fullscreen. Second player joins = animate split transition.
+   Player leaves = animate merge back to fullscreen. The split animation is a timeline-driven
+   property animation on viewport rect boundaries.
+2. **Asymmetric split** — different viewport sizes per player (e.g., driver gets 70% in a racing
+   game, navigator gets 30%). Configurable per-brain viewport rect.
+3. **Split orientation** — horizontal split, vertical split, or quadrant split. Configurable at
+   runtime for player preference.
+4. **Split-screen UI** — each viewport needs its own HUD anchored to its viewport rect, not the full
+   screen. The UI framework must scope widget layout to the brain's viewport (cross-reference
+   ui-framework.md RF-42).
+
+### RF-30: Virtual camera lifecycle events
+
+`VirtualCamera` has priority-based selection but no lifecycle events:
+
+1. **OnActivated** — fired when this camera becomes the brain's active camera. Used to start
+   cinematic effects, enable post-processing, begin recording.
+2. **OnDeactivated** — fired when this camera is no longer active. Used to clean up effects, stop
+   recording.
+3. **OnBlendStarted** — fired when a blend to/from this camera begins. Includes blend duration and
+   target camera.
+4. **OnBlendCompleted** — fired when a blend completes.
+
+These are ECS events consumed by gameplay systems (logic graphs can wire to them for no-code camera
+scripting).

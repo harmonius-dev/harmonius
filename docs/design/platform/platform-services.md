@@ -89,7 +89,7 @@
 | F-14.6.6 | R-14.6.6    |
 | F-14.6.7 | R-14.6.7    |
 
-1. **F-14.6.1** -- Async file I/O via Tokio
+1. **F-14.6.1** -- Async file I/O via platform-native backends
 2. **F-14.6.2** -- Async create/delete with batch unlink
 3. **F-14.6.3** -- Async metadata and batch stat
 4. **F-14.6.4** -- Directory enumeration with depth and glob
@@ -116,15 +116,48 @@
 ## Overview
 
 Consolidates OS integration, crash reporting, filesystem, platform services, storage, and SDK
-integration. All share `harmonius_platform`, `Tokio runtime`, and overlapping F-14.5.x features. All
-use static dispatch (`cfg`-gated). No `Arc`, `Rc`, `Cell`, `RefCell`.
+integration. All share `harmonius_platform` and overlapping F-14.5.x features. All use static
+dispatch (`cfg`-gated). No `Arc`, `Rc`, `Cell`, `RefCell`.
+
+All user-facing platform service APIs are **synchronous**. Async I/O is an invisible implementation
+detail handled by platform-native backends (io_uring on Linux, IOCP on Windows, GCD dispatch_io on
+macOS). Main-thread-only OS calls are cached as read-only ECS resources (`Res<ClipboardState>`,
+`Res<PowerState>`, etc.).
 
 - **OS integration** -- clipboard, file dialogs, notifications, drag-drop, keyboard, IME
 - **Crash reporting** -- out-of-process handler, logging, perf counters, GPU breadcrumbs
-- **Filesystem** -- async I/O via Tokio; no `std::fs` anywhere
+- **Filesystem** -- async I/O via platform-native backends (io_uring / IOCP / GCD); no `std::fs`
+  anywhere
 - **Platform services** -- achievements, leaderboards, presence, cloud, entitlements, auth
 - **Storage** -- preferences (TOML), player cache (LRU), dev cache (BLAKE3), PSO cache, temp files
 - **SDK integration** -- IAP, subscriptions, matchmaking, anti-cheat, friends, mods, account linking
+
+### Thread Affinity
+
+Every API documents which thread it runs on. Main-thread-only APIs send requests via channel; the
+main thread executes them.
+
+| Affinity | APIs |
+|----------|------|
+| Main thread only | `Clipboard`, `FileDialog`, `Notifications` |
+| Main thread only | `DragDrop`, `IME`, `CrashHandler` |
+| Any thread | `PerfCounters`, `Logger`, `ContentHasher` |
+| Any thread | `CanonicalPath`, `PlatformPaths` |
+| Main thread | `AsyncFile`, `FileWatcher`, `PlayerCache` |
+| Main thread | `DeveloperCache`, `PsoCacheStore` |
+| Main thread | `TempFileManager`, `PreferencesStore` |
+
+### ECS Resource Cache
+
+OS state requiring main-thread access is cached each frame and exposed as read-only ECS resources:
+
+| OS data | ECS resource |
+|---------|-------------|
+| Clipboard contents | `Res<ClipboardState>` |
+| System locale | `Res<LocaleInfo>` |
+| Battery/power | `Res<PowerState>` |
+| Display info | `Res<DisplayInfo>` |
+| IME state | `Res<ImeState>` |
 
 ## Architecture
 
@@ -185,7 +218,7 @@ graph TD
     end
 
     subgraph "harmonius_core"
-        IO[Tokio runtime]
+        IO[Platform I/O]
         EV[EventDispatcher]
     end
 
@@ -218,19 +251,19 @@ classDiagram
         +entitlements EntitlementService
         +auth AuthenticationService
         +profile UserProfileService
-        +init(reactor) Result
-        +shutdown(reactor) Result
+        +init() Result
+        +shutdown() Result
     }
 
     class AchievementService {
         -defs Vec~AchievementDef~
         -progress HashMap
         -deferred DeferredQueue
-        +unlock(id, reactor) Result
-        +increment(id, amount, reactor) Result
+        +unlock(id) Result
+        +increment(id, amount) Result
         +state(id) AchievementProgress
-        +sync(reactor) Result
-        +flush_deferred(reactor) Result
+        +sync() Result
+        +flush_deferred() Result
     }
 
     class AchievementDef {
@@ -260,9 +293,9 @@ classDiagram
         -cache HashMap
         -cache_ttl_secs u32
         -pending_submissions Vec
-        +submit(id, score, reactor) Result
-        +query(id, scope, offset, count, reactor) Result
-        +flush_pending(reactor) Result
+        +submit(id, score) Result
+        +query(id, scope, offset, count) Option
+        +flush_pending() Result
     }
 
     class LeaderboardSort {
@@ -289,8 +322,8 @@ classDiagram
         -current Option~PresenceState~
         -last_update u64
         -throttle_interval_ms u64
-        +update(state, reactor) Result
-        +clear(reactor) Result
+        +update(state) Result
+        +clear() Result
         +current() PresenceState
     }
 
@@ -304,10 +337,10 @@ classDiagram
     class CloudStorageService {
         -quota_bytes u64
         -used_bytes u64
-        +upload(key, data, reactor) Result
-        +download(key, reactor) Result
-        +check_conflict(key, data, ts, reactor) Result
-        +metadata(key, reactor) Result
+        +upload(key, data) Result
+        +download(key) Result
+        +check_conflict(key, data, ts) Result
+        +remaining_quota() u64
     }
 
     class ConflictResult {
@@ -320,7 +353,7 @@ classDiagram
         -entitlements Vec~Entitlement~
         -last_check u64
         -poll_interval_secs u32
-        +refresh(reactor) Result
+        +refresh() Result
         +is_owned(id) bool
         +is_subscription_active(id) bool
     }
@@ -343,9 +376,9 @@ classDiagram
     class AuthenticationService {
         -user Option~PlatformUser~
         -token Option~AuthToken~
-        +authenticate(reactor) Result
+        +authenticate() Result
         +current_user() PlatformUser
-        +token(reactor) Result
+        +token() Result
     }
 
     class PlatformUser {
@@ -362,8 +395,8 @@ classDiagram
     class UserProfileService {
         -local_profile Option~UserProfile~
         -friends_cache Vec~UserProfile~
-        +fetch_local(reactor) Result
-        +fetch_friends(reactor) Result
+        +fetch_local() Result
+        +fetch_friends() Result
     }
 
     class UserProfile {
@@ -604,10 +637,10 @@ classDiagram
     class PreferencesStore {
         -values HashMap
         -dirty bool
-        +load(path, cloud, reactor) Result
+        +load(path, cloud) Result
         +get(key) PrefValue
         +set(key, value)
-        +save(cloud, reactor) Result
+        +save(cloud) Result
     }
 
     class PrefValue {
@@ -621,9 +654,9 @@ classDiagram
     class PlayerCache {
         -root PathBuf
         -max_bytes u64
-        +put(key, cat, data, reactor) Result
-        +get(key, reactor) Result
-        +evict_to_budget(reactor) Result
+        +put(key, cat, data) Result
+        +get(key) Result
+        +evict_to_budget() Result
         +stats() CacheStats
     }
 
@@ -639,8 +672,8 @@ classDiagram
     class DeveloperCache {
         -root PathBuf
         -shared_url Option~String~
-        +lookup(hash, cat, reactor) Result
-        +store(hash, cat, data, reactor) Result
+        +lookup(hash, cat) Result
+        +store(hash, cat, data) Result
         +hash(data) ContentHash
     }
 
@@ -654,17 +687,18 @@ classDiagram
     class PsoCacheStore {
         -gpu_driver GpuDriverKey
         -entries HashMap
-        +load_all(reactor) Result
-        +store(key, data, reactor) Result
-        +get(key, reactor) Result
+        +load_all() Result
+        +store(key, data) Result
+        +get(key) Option~bytes~
     }
 
     class TempFileManager {
         -root PathBuf
         -max_bytes u64
-        +init(root, max, reactor) Result
+        -cleanup_list Vec
+        +init(root, max) Result
         +allocate(name) Result
-        +cleanup_orphans(reactor) Result
+        +cleanup_orphans() Result
     }
 
     Clipboard --> ImageData
@@ -802,36 +836,42 @@ classDiagram
 
 ```rust
 /// RGBA image data for clipboard operations.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct ImageData {
     pub width: u32,
     pub height: u32,
     pub pixels: Vec<u8>,
 }
 
-/// Platform clipboard access. All operations are
-/// async. Uses cfg-gated platform backends.
-#[derive(Reflect)]
+/// Cached clipboard state exposed as ECS resource.
+/// Main thread updates each frame via OS API.
+/// **Thread affinity: main thread only.**
+#[derive(Clone, Debug, Codegen)]
+pub struct ClipboardState {
+    pub text: Option<String>,
+    pub image: Option<ImageData>,
+}
+
+/// Platform clipboard access. Reads from cached
+/// `Res<ClipboardState>`. Writes are queued and
+/// executed on the main thread next frame.
+/// Uses cfg-gated platform backends.
+/// **Thread affinity: main thread only.**
+#[derive(Codegen)]
 pub struct Clipboard { /* platform fields */ }
 
 impl Clipboard {
     pub fn new(window: &Window) -> Self;
 
-    pub async fn read_text(
-        &self,
-    ) -> Result<Option<String>, OsError>;
-
-    pub async fn write_text(
-        &self,
+    /// Queue a text write. Executed on main thread.
+    pub fn set_text(
+        &mut self,
         text: &str,
     ) -> Result<(), OsError>;
 
-    pub async fn read_image(
-        &self,
-    ) -> Result<Option<ImageData>, OsError>;
-
-    pub async fn write_image(
-        &self,
+    /// Queue an image write. Executed on main thread.
+    pub fn set_image(
+        &mut self,
         image: &ImageData,
     ) -> Result<(), OsError>;
 }
@@ -840,52 +880,71 @@ impl Clipboard {
 #### File Dialogs (F-14.2.2 / R-14.2.2)
 
 ```rust
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct FileFilter {
     pub label: &'static str,
     pub extensions: &'static [&'static str],
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct FileDialogConfig {
     pub title: &'static str,
     pub initial_dir: Option<CanonicalPath>,
     pub filters: Vec<FileFilter>,
 }
 
+/// Opaque handle returned by dialog requests.
+/// Poll via `FileDialog::result()` each frame.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
+pub struct DialogHandle(pub(crate) u32);
+
 /// Dialogs run on a separate OS thread so the game
-/// loop continues rendering (R-14.2.2).
-#[derive(Reflect)]
+/// loop continues rendering (R-14.2.2). Callers
+/// submit a request and poll the handle for the
+/// result. All methods are synchronous.
+/// **Thread affinity: main thread only.**
+#[derive(Codegen)]
 pub struct FileDialog { /* platform fields */ }
 
 impl FileDialog {
     pub fn new() -> Self;
 
-    pub async fn open_file(
-        &self,
+    /// Request an open-file dialog. Returns a handle
+    /// to poll for the result.
+    pub fn request_open(
+        &mut self,
         config: &FileDialogConfig,
-    ) -> Result<Option<CanonicalPath>, OsError>;
+    ) -> DialogHandle;
 
-    pub async fn save_file(
-        &self,
+    /// Request a save-file dialog.
+    pub fn request_save(
+        &mut self,
         config: &FileDialogConfig,
-    ) -> Result<Option<CanonicalPath>, OsError>;
+    ) -> DialogHandle;
 
-    pub async fn pick_folder(
-        &self,
+    /// Request a folder picker.
+    pub fn request_pick_folder(
+        &mut self,
         title: &str,
         initial_dir: Option<&CanonicalPath>,
-    ) -> Result<Option<CanonicalPath>, OsError>;
+    ) -> DialogHandle;
+
+    /// Poll for a dialog result. Returns `None`
+    /// while the dialog is still open.
+    pub fn result(
+        &self,
+        handle: DialogHandle,
+    ) -> Option<Result<Option<CanonicalPath>, OsError>>;
 }
 ```
 
 #### Notifications (F-14.2.3 / R-14.2.3)
 
 ```rust
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
 pub enum NotificationUrgency { Low, Normal, Critical }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct NotificationConfig<'a> {
     pub title: &'a str,
     pub body: &'a str,
@@ -893,14 +952,15 @@ pub struct NotificationConfig<'a> {
     pub icon: Option<&'a str>,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct TrayMenuItem {
     pub label: String,
     pub id: u32,
     pub enabled: bool,
 }
 
-#[derive(Reflect)]
+/// **Thread affinity: main thread only.**
+#[derive(Codegen)]
 pub struct Notifications { /* platform fields */ }
 
 impl Notifications {
@@ -921,7 +981,7 @@ impl Notifications {
 #### Drag and Drop (F-14.2.4 / R-14.2.4)
 
 ```rust
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum DragEvent {
     Enter {
         position: (f32, f32),
@@ -936,19 +996,20 @@ pub enum DragEvent {
     Leave,
 }
 
-#[derive(Debug, Clone, Copy, Reflect)]
+#[derive(Debug, Clone, Copy, Codegen)]
 pub enum DragResponse {
     Accept,
     Reject,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct MimeFilter {
     pub mime_types: Vec<String>,
     pub extensions: Vec<String>,
 }
 
-#[derive(Reflect)]
+/// **Thread affinity: main thread only.**
+#[derive(Codegen)]
 pub struct DragDropHandler { /* platform fields */ }
 
 impl DragDropHandler {
@@ -966,13 +1027,13 @@ impl DragDropHandler {
 #### Keyboard Layouts (F-14.2.5 / R-14.2.5)
 
 ```rust
-#[derive(Clone, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Codegen)]
 pub struct KeyboardLayout {
     pub name: String,
     pub id: KeyboardLayoutId,
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum DeadKeyResult {
     Char(char),
     Pending,
@@ -980,7 +1041,8 @@ pub enum DeadKeyResult {
     Cancelled { dead_key: char, follow: char },
 }
 
-#[derive(Reflect)]
+/// **Thread affinity: main thread only.**
+#[derive(Codegen)]
 pub struct Keyboard { /* platform fields */ }
 
 impl Keyboard {
@@ -1001,7 +1063,7 @@ impl Keyboard {
 #### IME (F-14.2.6 / R-14.2.6)
 
 ```rust
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum ImeEvent {
     Composition { text: String, cursor: usize },
     Commit { text: String },
@@ -1014,14 +1076,15 @@ pub enum ImeEvent {
     Cancel,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct ImePosition {
     pub x: f32,
     pub y: f32,
     pub line_height: f32,
 }
 
-#[derive(Reflect)]
+/// **Thread affinity: main thread only.**
+#[derive(Codegen)]
 pub struct ImeHandler { /* platform fields */ }
 
 impl ImeHandler {
@@ -1041,14 +1104,15 @@ impl ImeHandler {
 #### Crash Handler (F-14.4.1 / R-14.4.1)
 
 ```rust
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct CrashHandlerConfig {
     pub crash_dir: CanonicalPath,
     pub oop_handler_path: CanonicalPath,
     pub max_retained_dumps: u32,
 }
 
-#[derive(Reflect)]
+/// **Thread affinity: main thread only.**
+#[derive(Codegen)]
 pub struct CrashHandler { /* platform fields */ }
 
 impl CrashHandler {
@@ -1067,8 +1131,10 @@ impl CrashHandler {
         &self,
     ) -> Vec<CanonicalPath>;
 
-    pub async fn delete_dump(
-        &self,
+    /// Queues dump deletion. Executed by platform
+    /// I/O layer (io_uring / IOCP / GCD).
+    pub fn delete_dump(
+        &mut self,
         path: &CanonicalPath,
     ) -> Result<(), CrashError>;
 }
@@ -1077,14 +1143,14 @@ impl CrashHandler {
 #### Symbol Upload (F-14.4.2 / R-14.4.2)
 
 ```rust
-#[derive(Clone, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Codegen)]
 pub enum SymbolFormat {
     Pdb { guid: String, age: u32 },
     Dsym { uuid: String },
     Dwarf { build_id: String },
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct SymbolUploader { /* ... */ }
 
 impl SymbolUploader {
@@ -1094,8 +1160,11 @@ impl SymbolUploader {
         binary_path: &CanonicalPath,
     ) -> Result<SymbolFormat, CrashError>;
 
-    pub async fn upload_symbols(
-        &self,
+    /// Queues symbol upload. Executed by platform
+    /// I/O layer (io_uring / IOCP / GCD).
+    /// **Thread affinity: Main thread.**
+    pub fn queue_upload(
+        &mut self,
         binary_path: &CanonicalPath,
         symbol_path: &CanonicalPath,
     ) -> Result<(), CrashError>;
@@ -1107,16 +1176,16 @@ impl SymbolUploader {
 ```rust
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq,
-    PartialOrd, Ord, Reflect,
+    PartialOrd, Ord, Codegen,
 )]
 pub enum Severity {
     Trace, Debug, Info, Warn, Error, Fatal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Codegen)]
 pub struct Channel(pub &'static str);
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct LogRecord<'a> {
     pub timestamp: u64,
     pub severity: Severity,
@@ -1125,21 +1194,31 @@ pub struct LogRecord<'a> {
     pub fields: &'a [(&'a str, &'a str)],
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct LogFilter {
     pub channel_levels: Vec<(Channel, Severity)>,
     pub default_level: Severity,
 }
 
+/// Enum dispatch for log sinks. No trait objects
+/// on the hot path (< 1 us per emit).
+#[derive(Clone, Debug, Codegen)]
+pub enum LogSink {
+    File { path: CanonicalPath },
+    Platform,
+    RingBuffer { capacity: usize },
+}
+
 /// Log emission never blocks > 1 us (R-14.4.4).
 /// Records go to a lock-free ring buffer.
-#[derive(Reflect)]
+/// **Thread affinity: any thread.**
+#[derive(Codegen)]
 pub struct Logger { /* ... */ }
 
 impl Logger {
     pub fn new(
         filter: LogFilter,
-        sinks: Vec<Box<dyn LogSink>>,
+        sinks: Vec<LogSink>,
         ring_buffer_capacity: usize,
     ) -> Self;
 
@@ -1152,10 +1231,10 @@ impl Logger {
 #### Performance Counters (F-14.4.5 / R-14.4.5)
 
 ```rust
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Codegen)]
 pub struct CounterName(pub &'static str);
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct Snapshot {
     pub timestamp: u64,
     pub values: Vec<(CounterName, f64)>,
@@ -1163,7 +1242,8 @@ pub struct Snapshot {
 
 /// Lock-free per-thread counters.
 /// Increment latency < 50 ns (R-14.4.5).
-#[derive(Reflect)]
+/// **Thread affinity: any thread.**
+#[derive(Codegen)]
 pub struct PerfCounters { /* ... */ }
 
 impl PerfCounters {
@@ -1182,13 +1262,13 @@ impl PerfCounters {
 #### GPU Breadcrumbs (F-14.4.6 / R-14.4.6)
 
 ```rust
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
 pub struct PassId(pub u32);
 
 /// Writes incrementing markers into a GPU-visible
 /// buffer per render pass. On device-lost, the last
 /// marker identifies the faulting pass (R-14.4.6).
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct GpuBreadcrumbs { /* ... */ }
 
 impl GpuBreadcrumbs {
@@ -1214,7 +1294,7 @@ impl GpuBreadcrumbs {
 #### Async File Operations (F-14.6.1 / R-14.6.1)
 
 ```rust
-#[derive(Clone, Copy, Debug, Reflect)]
+#[derive(Clone, Copy, Debug, Codegen)]
 pub struct OpenFlags {
     pub read: bool,
     pub write: bool,
@@ -1231,52 +1311,63 @@ impl OpenFlags {
 }
 
 /// No Rust stdlib file I/O (R-14.6.1). Backends:
-/// Tokio (IOCP on Windows, kqueue on macOS,
-/// epoll on Linux).
-#[derive(Reflect)]
+/// io_uring on Linux, IOCP on Windows, GCD
+/// dispatch_io on macOS. Async is an internal
+/// implementation detail; callers never see futures.
+/// **Thread affinity: Main thread.**
+#[derive(Codegen)]
 pub struct AsyncFile { /* platform fields */ }
 
 impl AsyncFile {
-    pub async fn open(
+    pub fn open(
         path: &CanonicalPath, flags: OpenFlags,
     ) -> Result<Self, FsError>;
 
-    pub async fn read(
+    /// Submit read; returns request ID. Completion
+    /// arrives via crossbeam-channel as a job.
+    pub fn read(
         &self, buf: &mut [u8], offset: u64,
-    ) -> Result<usize, FsError>;
+    ) -> IoRequestId;
 
-    pub async fn read_to_end(
-        &self,
-    ) -> Result<Vec<u8>, FsError>;
+    /// Submit read-to-end; returns request ID.
+    pub fn read_to_end(&self) -> IoRequestId;
 
-    pub async fn write(
+    /// Submit write; returns request ID.
+    pub fn write(
         &self, data: &[u8], offset: u64,
-    ) -> Result<usize, FsError>;
+    ) -> IoRequestId;
 
-    pub async fn flush(&self) -> Result<(), FsError>;
-    pub async fn close(self) -> Result<(), FsError>;
+    /// Submit flush; returns request ID.
+    pub fn flush(&self) -> IoRequestId;
+
+    /// Submit close; returns request ID.
+    pub fn close(self) -> IoRequestId;
 }
 ```
 
 #### File Create, Delete, Metadata (F-14.6.2--3)
 
+All metadata operations use platform-native async alternatives (io_uring `IORING_OP_STATX` on Linux,
+IOCP overlapped on Windows, GCD dispatch_io on macOS). No blocking `stat()` calls.
+
 ```rust
-pub async fn create_dir_all(
+/// **Thread affinity: Main thread.**
+pub fn create_dir_all(
     path: &CanonicalPath,
-) -> Result<(), FsError>;
+) -> IoRequestId;
 
-pub async fn delete_file(
+pub fn delete_file(
     path: &CanonicalPath,
-) -> Result<(), FsError>;
+) -> IoRequestId;
 
-pub async fn delete_batch(
+pub fn delete_batch(
     paths: &[CanonicalPath],
-) -> Vec<Result<(), FsError>>;
+) -> Vec<IoRequestId>;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
 pub enum FileType { File, Directory, Symlink }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct FileMetadata {
     pub file_type: FileType,
     pub size: u64,
@@ -1285,19 +1376,19 @@ pub struct FileMetadata {
     pub read_only: bool,
 }
 
-pub async fn stat(
+pub fn stat(
     path: &CanonicalPath,
-) -> Result<FileMetadata, FsError>;
+) -> IoRequestId;
 
-pub async fn stat_batch(
+pub fn stat_batch(
     paths: &[CanonicalPath],
-) -> Vec<Result<FileMetadata, FsError>>;
+) -> Vec<IoRequestId>;
 ```
 
 #### Directory Enumeration (F-14.6.4 / R-14.6.4)
 
 ```rust
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct DirEntry {
     pub name: String,
     pub path: CanonicalPath,
@@ -1305,22 +1396,22 @@ pub struct DirEntry {
     pub size: u64,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct EnumerateOptions {
     pub max_depth: u32,
     pub glob: Option<String>,
 }
 
-pub async fn enumerate_dir(
+pub fn enumerate_dir(
     path: &CanonicalPath,
     options: &EnumerateOptions,
-) -> Result<DirEntryStream, FsError>;
+) -> IoRequestId;
 ```
 
 #### File Watcher (F-14.6.5 / R-14.6.5)
 
 ```rust
-#[derive(Clone, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Codegen)]
 pub enum FileEventKind {
     Created,
     Modified,
@@ -1328,18 +1419,18 @@ pub enum FileEventKind {
     Renamed { from: CanonicalPath },
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct FileEvent {
     pub path: CanonicalPath,
     pub kind: FileEventKind,
 }
 
 #[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash, Reflect,
+    Clone, Copy, Debug, PartialEq, Eq, Hash, Codegen,
 )]
 pub struct WatchId(pub(crate) u32);
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct FileWatcher { /* ... */ }
 
 impl FileWatcher {
@@ -1363,25 +1454,28 @@ impl FileWatcher {
 
 ```rust
 #[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash, Reflect,
+    Clone, Copy, Debug, PartialEq, Eq, Hash, Codegen,
 )]
 pub struct Blake3Hash(pub [u8; 32]);
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct ContentHasher { /* ... */ }
 
 impl ContentHasher {
     pub fn new() -> Self;
 
-    pub async fn hash_file(
+    /// Submit hash computation; returns request ID.
+    pub fn hash_file(
         &self, path: &CanonicalPath,
-    ) -> Result<Blake3Hash, FsError>;
+    ) -> IoRequestId;
 
-    pub async fn has_content_changed(
+    /// Submit content-change check; returns request
+    /// ID.
+    pub fn has_content_changed(
         &self,
         path: &CanonicalPath,
         old_hash: &Blake3Hash,
-    ) -> Result<bool, FsError>;
+    ) -> IoRequestId;
 
     pub fn cache_hash(
         &mut self,
@@ -1394,7 +1488,7 @@ impl ContentHasher {
 #### Canonical Path (F-14.6.7 / R-14.6.7)
 
 ```rust
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Codegen)]
 pub struct CanonicalPath { /* ... */ }
 
 impl CanonicalPath {
@@ -1416,7 +1510,13 @@ impl CanonicalPath {
 #### Service Facade (F-14.5.1--7)
 
 ```rust
-#[derive(Reflect)]
+/// All methods are synchronous. Async I/O is an
+/// invisible implementation detail handled by
+/// platform-native backends (io_uring / IOCP /
+/// GCD dispatch_io).
+/// **Thread affinity: Main thread (init/shutdown);
+/// individual services specify their own.**
+#[derive(Codegen)]
 pub struct PlatformServices {
     pub achievements: AchievementService,
     pub leaderboards: LeaderboardService,
@@ -1428,12 +1528,10 @@ pub struct PlatformServices {
 }
 
 impl PlatformServices {
-    pub async fn init(
-        reactor: &Tokio runtime,
-    ) -> Result<Self, PlatformError>;
+    pub fn init() -> Result<Self, PlatformError>;
 
-    pub async fn shutdown(
-        &mut self, reactor: &Tokio runtime,
+    pub fn shutdown(
+        &mut self,
     ) -> Result<(), PlatformError>;
 }
 ```
@@ -1441,10 +1539,10 @@ impl PlatformServices {
 #### Achievement Service (F-14.5.1 / R-14.5.1)
 
 ```rust
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Codegen)]
 pub struct AchievementId(pub String);
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct AchievementDef {
     pub id: AchievementId,
     pub name: StringKey,
@@ -1454,10 +1552,10 @@ pub struct AchievementDef {
     pub platform_ids: PlatformIdMap,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
 pub enum UnlockState { Locked, Unlocked, Pending }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct AchievementProgress {
     pub id: AchievementId,
     pub current: u32,
@@ -1465,7 +1563,7 @@ pub struct AchievementProgress {
     pub state: UnlockState,
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct AchievementService {
     defs: Vec<AchievementDef>,
     progress: HashMap<
@@ -1474,30 +1572,37 @@ pub struct AchievementService {
     deferred: DeferredQueue<AchievementId>,
 }
 
+/// All methods are synchronous. Unlock and
+/// increment queue requests; platform I/O flushes
+/// them asynchronously.
+/// **Thread affinity: any thread.**
 impl AchievementService {
-    pub async fn unlock(
+    /// Queues an unlock request.
+    pub fn unlock(
         &mut self,
         id: &AchievementId,
-        reactor: &Tokio runtime,
     ) -> Result<(), AchievementError>;
 
-    pub async fn increment(
+    /// Queues an increment request.
+    pub fn increment(
         &mut self,
         id: &AchievementId,
         amount: u32,
-        reactor: &Tokio runtime,
     ) -> Result<(), AchievementError>;
 
     pub fn state(
         &self, id: &AchievementId,
     ) -> Option<&AchievementProgress>;
 
-    pub async fn sync(
-        &mut self, reactor: &Tokio runtime,
+    /// Queues a sync. Platform I/O executes it.
+    pub fn sync(
+        &mut self,
     ) -> Result<(), AchievementError>;
 
-    pub async fn flush_deferred(
-        &mut self, reactor: &Tokio runtime,
+    /// Queues deferred retries. Platform I/O
+    /// executes them.
+    pub fn flush_deferred(
+        &mut self,
     ) -> Result<u32, AchievementError>;
 }
 ```
@@ -1505,18 +1610,18 @@ impl AchievementService {
 #### Leaderboard Service (F-14.5.2 / R-14.5.2)
 
 ```rust
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Codegen)]
 pub struct LeaderboardId(pub String);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
 pub enum LeaderboardSort { Ascending, Descending }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
 pub enum LeaderboardScope {
     Global, FriendsOnly, AroundPlayer,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct LeaderboardRow {
     pub rank: u32,
     pub player_name: String,
@@ -1524,7 +1629,7 @@ pub struct LeaderboardRow {
     pub player_id: Option<String>,
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct LeaderboardService {
     cache: HashMap<
         (LeaderboardId, LeaderboardScope),
@@ -1534,25 +1639,29 @@ pub struct LeaderboardService {
     pending_submissions: Vec<(LeaderboardId, i64)>,
 }
 
+/// All methods are synchronous. Submissions are
+/// queued; queries return cached results.
+/// **Thread affinity: any thread.**
 impl LeaderboardService {
-    pub async fn submit(
+    /// Queues a score submission.
+    pub fn submit(
         &mut self,
         id: &LeaderboardId,
         score: i64,
-        reactor: &Tokio runtime,
     ) -> Result<(), LeaderboardError>;
 
-    pub async fn query(
-        &mut self,
+    /// Returns cached leaderboard data.
+    pub fn query(
+        &self,
         id: &LeaderboardId,
         scope: LeaderboardScope,
         offset: u32,
         count: u32,
-        reactor: &Tokio runtime,
-    ) -> Result<&LeaderboardResult, LeaderboardError>;
+    ) -> Option<&LeaderboardResult>;
 
-    pub async fn flush_pending(
-        &mut self, reactor: &Tokio runtime,
+    /// Queues pending submissions for flush.
+    pub fn flush_pending(
+        &mut self,
     ) -> Result<u32, LeaderboardError>;
 }
 ```
@@ -1560,7 +1669,7 @@ impl LeaderboardService {
 #### Rich Presence (F-14.5.3 / R-14.5.3)
 
 ```rust
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct PresenceState {
     pub activity: String,
     pub zone: Option<String>,
@@ -1569,22 +1678,26 @@ pub struct PresenceState {
     pub details: Option<String>,
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct RichPresenceService {
     current: Option<PresenceState>,
     last_update: u64,
     throttle_interval_ms: u64,
 }
 
+/// All methods are synchronous. Updates are
+/// throttled and queued for platform I/O.
+/// **Thread affinity: any thread.**
 impl RichPresenceService {
-    pub async fn update(
+    /// Queues a presence update (throttled).
+    pub fn update(
         &mut self,
         state: PresenceState,
-        reactor: &Tokio runtime,
     ) -> Result<(), PresenceError>;
 
-    pub async fn clear(
-        &mut self, reactor: &Tokio runtime,
+    /// Queues a presence clear.
+    pub fn clear(
+        &mut self,
     ) -> Result<(), PresenceError>;
 
     pub fn current(&self) -> Option<&PresenceState>;
@@ -1594,10 +1707,10 @@ impl RichPresenceService {
 #### Cloud Storage (F-14.5.5 / R-14.5.5)
 
 ```rust
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Codegen)]
 pub struct CloudKey(pub String);
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct CloudMetadata {
     pub key: CloudKey,
     pub size_bytes: u64,
@@ -1605,7 +1718,7 @@ pub struct CloudMetadata {
     pub checksum: u64,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub enum ConflictResult {
     NoConflict(Vec<u8>),
     Conflict {
@@ -1616,30 +1729,33 @@ pub enum ConflictResult {
     },
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct CloudStorageService {
     quota_bytes: u64,
     used_bytes: u64,
 }
 
+/// All methods are synchronous. Upload/download
+/// queue requests; platform I/O executes them.
+/// **Thread affinity: Main thread.**
 impl CloudStorageService {
-    pub async fn upload(
-        &self, key: &CloudKey, data: &[u8],
-        reactor: &Tokio runtime,
+    /// Queues an upload request.
+    pub fn upload(
+        &mut self, key: &CloudKey, data: &[u8],
     ) -> Result<(), CloudError>;
 
-    pub async fn download(
-        &self, key: &CloudKey,
-        reactor: &Tokio runtime,
-    ) -> Result<Vec<u8>, CloudError>;
+    /// Queues a download request.
+    pub fn download(
+        &mut self, key: &CloudKey,
+    ) -> Result<(), CloudError>;
 
-    pub async fn check_conflict(
-        &self,
+    /// Queues a conflict check.
+    pub fn check_conflict(
+        &mut self,
         key: &CloudKey,
         local_data: &[u8],
         local_timestamp: u64,
-        reactor: &Tokio runtime,
-    ) -> Result<ConflictResult, CloudError>;
+    ) -> Result<(), CloudError>;
 
     pub fn remaining_quota(&self) -> u64;
 }
@@ -1648,12 +1764,12 @@ impl CloudStorageService {
 #### Entitlement Service (F-14.5.6 / R-14.5.6)
 
 ```rust
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
 pub enum EntitlementKind {
     BaseGame, Expansion, CosmeticDlc, Subscription,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct Entitlement {
     pub id: String,
     pub kind: EntitlementKind,
@@ -1661,16 +1777,20 @@ pub struct Entitlement {
     pub expires: Option<u64>,
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct EntitlementService {
     entitlements: Vec<Entitlement>,
     last_check: u64,
     poll_interval_secs: u32,
 }
 
+/// All methods are synchronous. Refresh queues a
+/// request; platform I/O fetches entitlements.
+/// **Thread affinity: any thread.**
 impl EntitlementService {
-    pub async fn refresh(
-        &mut self, reactor: &Tokio runtime,
+    /// Queues an entitlement refresh.
+    pub fn refresh(
+        &mut self,
     ) -> Result<(), EntitlementError>;
 
     pub fn is_owned(&self, id: &str) -> bool;
@@ -1684,7 +1804,7 @@ impl EntitlementService {
 #### Deferred Queue
 
 ```rust
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct DeferredEntry<T> {
     pub item: T,
     pub enqueued_at: u64,
@@ -1692,7 +1812,7 @@ pub struct DeferredEntry<T> {
     pub next_retry_at: u64,
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct DeferredQueue<T> {
     pending: Vec<DeferredEntry<T>>,
     max_retries: u32,
@@ -1725,7 +1845,7 @@ impl<T: Clone> DeferredQueue<T> {
 #### Preferences Store (F-14.5.8 / R-14.5.8)
 
 ```rust
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub enum PrefValue {
     Bool(bool),
     Int(i64),
@@ -1733,13 +1853,13 @@ pub enum PrefValue {
     String(String),
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct PrefKey {
     pub key: &'static str,
     pub default: PrefValue,
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct PreferencesStore {
     values: HashMap<String, PrefValue>,
     dirty: bool,
@@ -1747,20 +1867,23 @@ pub struct PreferencesStore {
     cloud_key: CloudKey,
 }
 
+/// Load and save queue I/O requests. Get/set
+/// operate on the in-memory cache synchronously.
+/// **Thread affinity: Main thread (load/save).**
 impl PreferencesStore {
-    pub async fn load(
+    /// Queues a load from local + cloud.
+    pub fn load(
         local_path: &CanonicalPath,
         cloud: &CloudStorageService,
-        reactor: &Tokio runtime,
     ) -> Result<Self, PrefsError>;
 
     pub fn get(&self, key: &PrefKey) -> PrefValue;
     pub fn set(&mut self, key: &str, value: PrefValue);
 
-    pub async fn save(
+    /// Queues an atomic save + cloud sync.
+    pub fn save(
         &mut self,
         cloud: &CloudStorageService,
-        reactor: &Tokio runtime,
     ) -> Result<(), PrefsError>;
 
     pub fn reset_to_defaults(
@@ -1774,7 +1897,7 @@ impl PreferencesStore {
 
 ```rust
 #[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash, Reflect,
+    Clone, Copy, Debug, PartialEq, Eq, Hash, Codegen,
 )]
 pub enum CacheCategory {
     AssetBundle,
@@ -1784,7 +1907,7 @@ pub enum CacheCategory {
     GenerationOutput,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct CacheStats {
     pub total_bytes: u64,
     pub max_bytes: u64,
@@ -1792,7 +1915,7 @@ pub struct CacheStats {
     pub entry_count: u32,
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct PlayerCache {
     root: CanonicalPath,
     entries: Vec<CacheEntry>,
@@ -1800,20 +1923,24 @@ pub struct PlayerCache {
     total_bytes: u64,
 }
 
+/// Put/get queue I/O requests. Platform I/O
+/// (io_uring / IOCP / GCD) executes them.
+/// **Thread affinity: Main thread.**
 impl PlayerCache {
-    pub async fn put(
+    /// Queues a cache write.
+    pub fn put(
         &mut self, key: &str,
         category: CacheCategory, data: &[u8],
-        reactor: &Tokio runtime,
     ) -> Result<(), CacheError>;
 
-    pub async fn get(
+    /// Queues a cache read.
+    pub fn get(
         &mut self, key: &str,
-        reactor: &Tokio runtime,
     ) -> Result<Option<Vec<u8>>, CacheError>;
 
-    pub async fn evict_to_budget(
-        &mut self, reactor: &Tokio runtime,
+    /// Queues eviction to stay within budget.
+    pub fn evict_to_budget(
+        &mut self,
     ) -> Result<u32, CacheError>;
 
     pub fn stats(&self) -> CacheStats;
@@ -1823,11 +1950,11 @@ impl PlayerCache {
 #### Developer Cache (F-14.5.10 / R-14.5.10)
 
 ```rust
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Codegen)]
 pub struct ContentHash(pub [u8; 32]);
 
 #[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash, Reflect,
+    Clone, Copy, Debug, PartialEq, Eq, Hash, Codegen,
 )]
 pub enum DevCacheCategory {
     CompiledAsset,
@@ -1837,28 +1964,31 @@ pub enum DevCacheCategory {
     HotReloadIntermediate,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
 pub enum CacheHitTier { Local, SharedNetwork, Miss }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct DeveloperCache {
     root: CanonicalPath,
     shared_url: Option<String>,
 }
 
+/// Lookup/store queue I/O requests. Platform I/O
+/// (io_uring / IOCP / GCD) executes them.
+/// **Thread affinity: Main thread.**
 impl DeveloperCache {
-    pub async fn lookup(
-        &self, hash: &ContentHash,
+    /// Queues a 3-tier cache lookup.
+    pub fn lookup(
+        &mut self, hash: &ContentHash,
         category: DevCacheCategory,
-        reactor: &Tokio runtime,
     ) -> Result<
         (CacheHitTier, Option<Vec<u8>>), CacheError,
     >;
 
-    pub async fn store(
-        &self, hash: &ContentHash,
+    /// Queues a cache store.
+    pub fn store(
+        &mut self, hash: &ContentHash,
         category: DevCacheCategory, data: &[u8],
-        reactor: &Tokio runtime,
     ) -> Result<(), CacheError>;
 
     pub fn hash(data: &[u8]) -> ContentHash;
@@ -1868,14 +1998,14 @@ impl DeveloperCache {
 #### PSO Cache (F-14.5.11 / R-14.5.11)
 
 ```rust
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Codegen)]
 pub struct GpuDriverKey {
     pub gpu_vendor_id: u32,
     pub gpu_device_id: u32,
     pub driver_version: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Reflect)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Codegen)]
 pub struct PsoKey {
     pub shader_hash: ContentHash,
     pub render_state_hash: u64,
@@ -1883,31 +2013,40 @@ pub struct PsoKey {
     pub render_target_hash: u64,
 }
 
-#[derive(Reflect)]
+/// PSO blobs are preloaded into memory by
+/// `load_all()`. `get()` is a pure synchronous
+/// HashMap lookup, trivially meeting < 1 ms
+/// (R-14.5.11).
+/// **Thread affinity: Main thread (load/store/
+/// invalidate); any thread (get).**
+#[derive(Codegen)]
 pub struct PsoCacheStore {
     cache_dir: CanonicalPath,
     gpu_driver: GpuDriverKey,
-    entries: HashMap<PsoKey, CanonicalPath>,
+    entries: HashMap<PsoKey, Vec<u8>>,
 }
 
 impl PsoCacheStore {
-    pub async fn load_all(
-        &mut self, reactor: &Tokio runtime,
+    /// Preloads all PSO blobs into the in-memory
+    /// HashMap. Queues I/O via platform backend.
+    pub fn load_all(
+        &mut self,
     ) -> Result<u32, CacheError>;
 
-    pub async fn store(
+    /// Queues a PSO blob write to disk.
+    pub fn store(
         &mut self, key: PsoKey, data: &[u8],
-        reactor: &Tokio runtime,
     ) -> Result<(), CacheError>;
 
-    /// Must complete in < 1 ms.
-    pub async fn get(
+    /// Synchronous HashMap lookup. Must complete
+    /// in < 1 ms (R-14.5.11). No I/O.
+    pub fn get(
         &self, key: &PsoKey,
-        reactor: &Tokio runtime,
-    ) -> Result<Option<Vec<u8>>, CacheError>;
+    ) -> Option<&[u8]>;
 
-    pub async fn invalidate_all(
-        &mut self, reactor: &Tokio runtime,
+    /// Queues invalidation of all cached PSOs.
+    pub fn invalidate_all(
+        &mut self,
     ) -> Result<u32, CacheError>;
 }
 ```
@@ -1915,31 +2054,48 @@ impl PsoCacheStore {
 #### Temp File Manager (F-14.5.12 / R-14.5.12)
 
 ```rust
-/// RAII handle. File deleted on drop.
-#[derive(Reflect)]
+/// RAII handle. `Drop` does NOT delete the file
+/// directly (no blocking I/O in destructors).
+/// Instead, `Drop` registers the path in the
+/// manager's cleanup list. `TempFileManager::
+/// cleanup_orphans()` processes the list via
+/// platform I/O (io_uring / IOCP / GCD).
+#[derive(Codegen)]
 pub struct TempFileHandle {
     path: CanonicalPath,
 }
 
-#[derive(Reflect)]
+impl Drop for TempFileHandle {
+    /// Registers path in cleanup list. Does not
+    /// perform I/O. The manager deletes the file
+    /// during the next `cleanup_orphans()` call.
+    fn drop(&mut self);
+}
+
+/// **Thread affinity: Main thread.**
+#[derive(Codegen)]
 pub struct TempFileManager {
     root: CanonicalPath,
     max_bytes: u64,
     total_bytes: u64,
+    cleanup_list: Vec<CanonicalPath>,
 }
 
 impl TempFileManager {
-    pub async fn init(
+    /// Queues init I/O via platform backend.
+    pub fn init(
         root: CanonicalPath, max_bytes: u64,
-        reactor: &Tokio runtime,
     ) -> Result<Self, TempError>;
 
     pub fn allocate(
         &mut self, name: &str,
     ) -> Result<TempFileHandle, TempError>;
 
-    pub async fn cleanup_orphans(
-        &mut self, reactor: &Tokio runtime,
+    /// Processes the cleanup list and deletes
+    /// orphaned temp files via platform I/O
+    /// (io_uring / IOCP / GCD).
+    pub fn cleanup_orphans(
+        &mut self,
     ) -> Result<u32, TempError>;
 }
 ```
@@ -1947,7 +2103,7 @@ impl TempFileManager {
 #### Platform Paths
 
 ```rust
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct PlatformPaths;
 
 impl PlatformPaths {
@@ -1977,7 +2133,7 @@ impl PlatformPaths {
 #### Purchase and Receipt Validation (F-14.8 / R-14.8)
 
 ```rust
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct PlatformReceipt {
     pub transaction_id: TransactionId,
     pub product_id: ProductId,
@@ -1987,7 +2143,7 @@ pub struct PlatformReceipt {
     pub signature: Option<Vec<u8>>,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct ValidationResult {
     pub valid: bool,
     pub transaction_id: TransactionId,
@@ -1996,25 +2152,30 @@ pub struct ValidationResult {
     pub entitlement_granted: bool,
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct ReceiptValidator;
 
+/// Validation runs server-side. Client queues
+/// the request; platform I/O executes it.
+/// **Thread affinity: Main thread.**
 impl ReceiptValidator {
-    pub async fn validate(
-        &self, receipt: &PlatformReceipt,
-    ) -> Result<ValidationResult, ValidationError>;
+    /// Queues a validation request.
+    pub fn validate(
+        &mut self, receipt: &PlatformReceipt,
+    ) -> Result<(), ValidationError>;
 
-    pub async fn validate_with_retry(
-        &self, receipt: &PlatformReceipt,
+    /// Queues a validation with retry policy.
+    pub fn validate_with_retry(
+        &mut self, receipt: &PlatformReceipt,
         max_retries: u32,
-    ) -> Result<ValidationResult, ValidationError>;
+    ) -> Result<(), ValidationError>;
 }
 ```
 
 #### Subscription Management
 
 ```rust
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
 pub enum SubState {
     Active,
     GracePeriod,
@@ -2025,7 +2186,7 @@ pub enum SubState {
     Paused,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct SubStatus {
     pub active: bool,
     pub product_id: ProductId,
@@ -2036,7 +2197,7 @@ pub struct SubStatus {
     pub last_verified_at: u64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Codegen)]
 pub enum RenewalAction {
     EnableAutoRenew,
     DisableAutoRenew,
@@ -2048,7 +2209,7 @@ pub enum RenewalAction {
 #### Cross-Platform Account Linking
 
 ```rust
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct LinkedAccount {
     pub engine_account_id: AccountId,
     pub platform: PlatformKind,
@@ -2056,38 +2217,44 @@ pub struct LinkedAccount {
     pub linked_at: u64,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, Codegen)]
 pub struct EntitlementSet {
     pub purchases: Vec<ProductId>,
     pub subscriptions: Vec<SubStatus>,
     pub achievements: Vec<AchievementId>,
 }
 
-#[derive(Reflect)]
+#[derive(Codegen)]
 pub struct AccountLinker;
 
+/// All methods queue requests. Platform I/O
+/// (io_uring / IOCP / GCD) executes them.
+/// **Thread affinity: Main thread.**
 impl AccountLinker {
-    pub async fn link(
-        &self, engine_id: AccountId,
+    /// Queues a link request.
+    pub fn link(
+        &mut self, engine_id: AccountId,
         platform: PlatformKind,
         platform_token: &[u8],
-    ) -> Result<LinkedAccount, LinkError>;
+    ) -> Result<(), LinkError>;
 
-    pub async fn unlink(
-        &self, engine_id: AccountId,
+    /// Queues an unlink request.
+    pub fn unlink(
+        &mut self, engine_id: AccountId,
         platform: PlatformKind,
     ) -> Result<(), LinkError>;
 
-    pub async fn merge_entitlements(
-        &self, engine_id: AccountId,
-    ) -> Result<EntitlementSet, LinkError>;
+    /// Queues an entitlement merge.
+    pub fn merge_entitlements(
+        &mut self, engine_id: AccountId,
+    ) -> Result<(), LinkError>;
 }
 ```
 
 ### Error Types
 
 ```rust
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum OsError {
     Unsupported,
     Cancelled,
@@ -2096,7 +2263,7 @@ pub enum OsError {
     MimeRejected { mime_type: String },
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum CrashError {
     HandlerNotFound { path: String },
     HandlerLaunchFailed { code: i32 },
@@ -2106,7 +2273,7 @@ pub enum CrashError {
     Platform { code: i32, message: String },
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum FsError {
     NotFound { path: String },
     PermissionDenied { path: String },
@@ -2119,7 +2286,7 @@ pub enum FsError {
     Platform { code: i32, message: String },
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum PlatformError {
     NotInitialized,
     SdkError { platform: PlatformKind, code: i32 },
@@ -2128,28 +2295,28 @@ pub enum PlatformError {
     Timeout,
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum AchievementError {
     NotFound { id: AchievementId },
     AlreadyUnlocked { id: AchievementId },
     Platform(PlatformError),
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum LeaderboardError {
     NotFound { id: LeaderboardId },
     RateLimited,
     Platform(PlatformError),
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum CloudError {
     QuotaExceeded { used: u64, max: u64 },
     KeyNotFound { key: CloudKey },
     Platform(PlatformError),
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum ValidationError {
     NetworkError,
     InvalidReceipt,
@@ -2158,21 +2325,21 @@ pub enum ValidationError {
     Duplicate { original_txn: TransactionId },
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum CacheError {
     IoError(FsError),
     BudgetExceeded { used: u64, max: u64 },
     NetworkCacheUnavailable,
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum PrefsError {
     IoError(FsError),
     ParseError { line: u32, message: String },
     CloudError(CloudError),
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Codegen)]
 pub enum TempError {
     IoError(FsError),
     BudgetExceeded { used: u64, max: u64 },
@@ -2181,13 +2348,14 @@ pub enum TempError {
 
 ## Data Flow
 
-### Async File Read
+### File Read
 
-1. Caller calls `AsyncFile::read(buf, offset).await`
-2. Submits to `Tokio runtime`; acquires `BufferSlot`, enqueues to platform backend
-3. Future yields; kernel reads asynchronously
-4. Poller thread wakes Future on completion
-5. Worker resumes, returns `Ok(bytes_read)`
+1. Caller calls `AsyncFile::read(buf, offset)`, receives `IoRequestId`
+2. Request submitted to platform I/O backend (io_uring / IOCP / GCD dispatch_io); acquires
+   `BufferSlot`, enqueues to kernel
+3. Kernel reads asynchronously
+4. Completion arrives via crossbeam-channel as a job
+5. Job system delivers result to caller
 
 ### Crash Handler
 
@@ -2204,11 +2372,11 @@ sequenceDiagram
     participant ACH as AchievementService
     participant Q as DeferredQueue
     participant BE as Platform Backend
-    participant IO as Tokio runtime
+    participant IO as Platform I/O
 
     G->>ACH: unlock(achievement_id)
     ACH->>ACH: map internal ID to platform ID
-    ACH->>BE: submit_unlock(platform_id).await
+    ACH->>BE: queue submit_unlock(platform_id)
     alt online
         BE-->>ACH: Ok
         ACH->>ACH: mark unlocked locally
@@ -2217,9 +2385,9 @@ sequenceDiagram
         ACH->>Q: enqueue(platform_id, timestamp)
     end
 
-    Note over IO: next reactor poll
+    Note over IO: next I/O poll
     IO->>Q: drain_pending()
-    Q->>BE: retry_unlock(platform_id).await
+    Q->>BE: retry_unlock(platform_id)
     alt success
         BE-->>Q: Ok
         Q->>ACH: confirm(platform_id)
@@ -2324,12 +2492,12 @@ stateDiagram-v2
 
 | Feature   | Windows             | macOS              | Linux              |
 |-----------|---------------------|--------------------|--------------------|
-| File open | `CreateFileW` Tokio | `tokio::fs::open`  | `tokio::fs::open`  |
-| File I/O  | Tokio (IOCP)        | Tokio (kqueue)     | Tokio (epoll)      |
-| Create/del| `CreateDirectoryW`  | `tokio::fs`        | `tokio::fs`        |
-| Stat      | `GetFileInfoByHdlEx`| `tokio::fs`        | `tokio::fs`        |
-| Dir enum  | `FindFirstFileExW`  | `tokio::fs`        | `tokio::fs`        |
-| Watching  | `ReadDirChangesExW` | FSEvents/VNODE     | inotify + uring    |
+| File open | `CreateFileW` IOCP  | GCD `dispatch_io`  | io_uring           |
+| File I/O  | IOCP overlapped     | GCD `dispatch_io`  | io_uring           |
+| Create/del| `CreateDirectoryW`  | GCD `dispatch_io`  | io_uring           |
+| Stat      | `GetFileInfoByHdlEx`| GCD `dispatch_io`  | io_uring STATX     |
+| Dir enum  | `FindFirstFileExW`  | GCD `dispatch_io`  | io_uring           |
+| Watching  | `ReadDirChangesExW` | FSEvents/VNODE     | inotify + io_uring |
 | Path      | `GetFinalPathByHdlW`| `fcntl(F_GETPATH)` | `realpath`         |
 
 ### Platform SDK APIs
@@ -2400,21 +2568,21 @@ WebSocket output relay.
 
 ### FFI Bridge Pattern
 
-Apple uses swift-bridge for StoreKit 2 and GameCenter. Windows/Xbox uses `windows-rs` with COM
-bindings. See [constraints.md](../constraints.md).
+Apple uses `objc2` for StoreKit 2 and GameCenter. Windows/Xbox uses `windows-rs` with COM bindings.
+See [constraints.md](../constraints.md).
 
 ### Proposed Dependencies
 
-| Crate          | Purpose                        |
-|----------------|--------------------------------|
-| `blake3`       | Content hashing (R-14.6.6)     |
-| `windows-rs`   | Win32/COM/WinRT APIs           |
-| `libc`         | POSIX/macOS/Linux syscalls     |
-| `io-uring`     | Linux async file ops           |
-| `xkbcommon`    | Linux keyboard layouts         |
-| `steamworks`   | Steamworks SDK Rust bindings   |
-| `swift-bridge` | Apple platform SDK bindings    |
-| `toml`         | Preferences serialization      |
+| Crate          | Purpose                          |
+|----------------|----------------------------------|
+| `blake3`       | Content hashing (R-14.6.6)       |
+| `dispatch2`    | GCD dispatch_io (macOS I/O)      |
+| `objc2`        | Apple platform SDK bindings      |
+| `rustix`       | io_uring (Linux async I/O)       |
+| `steamworks`   | Steamworks SDK Rust bindings     |
+| `toml`         | Preferences serialization        |
+| `windows-rs`   | Win32/COM/IOCP/DirectStorage     |
+| `xkbcommon`    | Linux keyboard layouts           |
 
 ## Test Plan
 
@@ -2482,8 +2650,9 @@ preference conflicts instead of timestamps. Persist deferred queue to disk.
 **Q4. Gaps?** Intra-app DnD for editor. Background PSO pre-compilation. Preferences schema
 migration. Unified platform event normalization for overlay/guide events.
 
-**Q5. Cohesion?** All I/O uses `Tokio runtime`. All FFI via C ABI bridges. BLAKE3 shared across file
-watching and dev cache. PSO cache integrates with rendering pipeline.
+**Q5. Cohesion?** All I/O uses platform-native backends (io_uring / IOCP / GCD). All FFI via C ABI
+bridges. BLAKE3 shared across file watching and dev cache. PSO cache integrates with rendering
+pipeline.
 
 ## Open Questions
 
@@ -2495,3 +2664,98 @@ watching and dev cache. PSO cache integrates with rendering pipeline.
 6. **PSO cache distribution** -- all GPU vendors or reference hardware only?
 7. **Save data quotas** -- common denominator or per-platform limits?
 8. **EOS as fallback** -- use for all platforms lacking native equivalents?
+
+## Review feedback
+
+### Architecture changes
+
+#### All user-facing APIs are synchronous
+
+Per the updated design constraints, users write purely synchronous ECS system code. Async is an
+invisible implementation detail. This changes most APIs in this design:
+
+| Current API | Change to |
+|-------------|-----------|
+| `async fn Clipboard::read()` | `Res<ClipboardState>` (cached) |
+| `async fn Clipboard::write(s)` | `clipboard.set_text(s)` (queued) |
+| `async fn FileDialog::open()` | `dialogs.request_open()` → `Handle` |
+| `async fn PsoCacheStore::get()` | Sync HashMap lookup (preloaded) |
+| `async fn AchievementService::unlock()` | `achievements.unlock(id)` (queued) |
+| `async fn LeaderboardService::submit()` | `leaderboards.submit()` (queued) |
+| `async fn Logger::emit()` | Sync ring buffer write |
+| All `reactor: &Tokio runtime` params | Removed everywhere |
+
+#### Replace Tokio with platform-native I/O
+
+All ~40 references to "Tokio runtime" must be replaced with platform-native I/O. The main thread
+polls I/O completions each frame using rustix (Linux), windows-rs (Windows), or dispatch2/objc2
+(Apple). See updated `constraints.md`.
+
+#### Main-thread-only OS calls cached as ECS resources
+
+OS state that requires main thread access is cached automatically and exposed as read-only ECS
+resources:
+
+| OS data | ECS resource |
+|---------|-------------|
+| Clipboard contents | `Res<ClipboardState>` |
+| System locale | `Res<LocaleInfo>` |
+| Battery/power | `Res<PowerState>` |
+| Display info | `Res<DisplayInfo>` |
+| IME state | `Res<ImeState>` |
+
+The main thread updates these each frame or on OS notification. The game loop reads them as plain
+data.
+
+#### Thread affinity annotations required
+
+Every API must document which thread it lives on. For main-thread-only APIs (`Clipboard`,
+`FileDialog`, `Notifications`, `DragDrop`, `IME`, `CrashHandler`), the game loop sends requests via
+channel and the main thread executes them.
+
+#### Replace `dyn LogSink` with enum dispatch
+
+Logging is a hot path (< 1 us per emit). Use enum dispatch or generics instead of `dyn LogSink` to
+satisfy the static dispatch constraint.
+
+#### `TempFileHandle::drop()` strategy
+
+Register path in a cleanup list rather than deleting in `Drop`. `TempFileManager::cleanup_orphans()`
+processes the list via platform-native I/O on the main thread.
+
+#### `PsoCacheStore::get()` must be synchronous
+
+Require `load_all()` to preload PSO blobs into a HashMap. `get()` is then a pure HashMap lookup,
+trivially meeting the < 1 ms requirement (R-14.5.11).
+
+### Other accepted recommendations
+
+- Remove `io-uring` and `libc` from dependencies — rustix handles `io_uring` on Linux
+- Add voice/party API pseudocode for F-14.5.4
+- Fix `ContentHasher` borrow conflict — `cache_hash(&mut)` vs `hash_file(&self)` on shared instance
+
+### Open items
+
+1. Create companion `platform-services-test-cases.md` — 153 test cases claimed in test plan but file
+   does not exist
+2. `FileDialog` blocks the OS event loop when modal — document whether it spawns a child message
+   loop or pauses the main thread event processing
+3. `CanonicalPath::resolve()` calls `realpath` synchronously — justified as cold-path startup only
+   (called once per path at load time, never on the hot game-loop path); no async needed
+
+### RF-NEW [APPLIED]: Platform-native I/O replaces compio
+
+All references to compio in platform services must be updated. Replace with:
+
+- Linux: io_uring for all async file/network operations
+- Windows: IOCP for async I/O, DirectStorage for GPU assets
+- Apple: GCD dispatch_io for files, Networking.framework for network, Metal I/O for GPU assets
+
+Platform services that perform I/O (FileSystem, Clipboard, PowerState, NetworkInfo) use the platform
+I/O layer. Main-thread-only OS calls remain cached as ECS resources.
+
+### RF-NEW [APPLIED]: No blocking operations anywhere
+
+All platform service APIs must be non-blocking. DNS, file metadata, directory listing, and other
+traditionally blocking operations use platform-native async alternatives (io_uring STATX, GCD, IOCP
+overlapped). No blocking thread pool.

@@ -79,10 +79,10 @@
 
 ## Overview
 
-The physics foundation is ECS-primary (~90%)-based. There is no separate physics world, no PhysX-style scene,
-and no parallel data store. All physics state lives as ECS components. All simulation logic runs as
-ECS systems. The shared BVH spatial index serves as the broadphase -- physics does not maintain its
-own acceleration structure.
+The physics foundation is ECS-primary (~90%)-based. There is no separate physics world, no
+PhysX-style scene, and no parallel data store. All physics state lives as ECS components. All
+simulation logic runs as ECS systems. The shared BVH spatial index serves as the broadphase --
+physics does not maintain its own acceleration structure.
 
 The simulation runs on a fixed timestep with an accumulator that decouples physics tick rate from
 render frame rate. Each tick executes a configurable number of substeps, each of which runs the full
@@ -2184,10 +2184,10 @@ pool.scope(|scope| {
 
 ## Frame Budget Integration
 
-The physics foundation uses [`FrameBudget`](../core-runtime/shared-primitives.md#7-framebudget) from
-shared primitives to enforce per-frame time caps on the substep loop. The game loop allocates a
-physics budget each frame; the substep loop checks the budget at each substep boundary and
-gracefully degrades when time is exhausted.
+The physics foundation uses [`FrameBudget`](../core-runtime/algorithms.md#7-framebudget) from core
+algorithms to enforce per-frame time caps on the substep loop. The game loop allocates a physics
+budget each frame; the substep loop checks the budget at each substep boundary and gracefully
+degrades when time is exhausted.
 
 **Check location.** The budget is checked at the substep loop boundary -- after each complete
 substep finishes (integration through CCD) and before the next substep begins. This preserves
@@ -2607,5 +2607,479 @@ casts.
    design.
 
 8. **Compound collider broadphase strategy** -- Whether compound shapes use a single encompassing
-   AABB in the shared BVH (simpler, more false positives) or insert each child shape separately
+   AABB in the physics BVH (simpler, more false positives) or insert each child shape separately
    (more BVH nodes, fewer false positives).
+
+## Review Feedback
+
+### RF-1: Physics owns its own BVH — no shared BVH
+
+Physics must use its own private BVH for broadphase. The shared BVH is for AI/gameplay/audio only.
+Physics considers collision shapes, not render bounds — different data, different update cadence
+(fixed timestep).
+
+Update throughout the design:
+
+- F-4.2.1: "Broadphase via physics-private BVH" (not shared)
+- BroadphaseQuerySystem: queries the physics BVH
+- CcdSystem: queries the physics BVH
+- TriggerVolumeSystem: queries the physics BVH
+- CharacterControllerSystem: queries the physics BVH
+- Open question #5: rename "shared BVH" to "physics BVH"
+- Open question #8: "physics BVH" not "shared BVH"
+
+The physics BVH is built from collider AABBs, updated at fixed timestep, and only contains entities
+with collision shapes.
+
+### RF-2: Remove reflect(Replicate)
+
+Replace `#[reflect(Replicate)]` (line 2512) with a codegen- compatible derive. Zero reflection
+constraint. Use `#[derive(Replicate)]` that generates static serialization code via the codegen
+pipeline.
+
+### RF-3: Resolve CollisionFilter dispatch
+
+Replace `dyn CollisionFilter` trait with the already-declared `CollisionFilterFn` function pointer
+(line 612). Wire it through the broadphase and narrowphase APIs. No trait objects needed.
+
+### RF-4: Add public scene query API
+
+Add `PhysicsQueries` as an ECS resource:
+
+```rust
+pub struct PhysicsQueries { /* physics BVH ref */ }
+
+impl PhysicsQueries {
+    pub fn ray_cast(
+        &self, origin: Vec3, dir: Vec3,
+        max_dist: f32, filter: CollisionFilterFn,
+    ) -> Option<RayHit>;
+
+    pub fn shape_cast(
+        &self, shape: &ColliderShape,
+        origin: Vec3, dir: Vec3, max_dist: f32,
+        filter: CollisionFilterFn,
+    ) -> Option<ShapeCastHit>;
+
+    pub fn point_overlap(
+        &self, point: Vec3,
+        filter: CollisionFilterFn,
+    ) -> SmallVec<[Entity; 8]>;
+
+    pub fn aabb_overlap(
+        &self, aabb: Aabb,
+        filter: CollisionFilterFn,
+    ) -> SmallVec<[Entity; 16]>;
+}
+```
+
+All queries use the physics-private BVH. Available to all gameplay systems via
+`Res<PhysicsQueries>`.
+
+### RF-5: Deterministic containers
+
+Replace `HashSet<(Entity, Entity)>` in `ActiveCollisions` with `BTreeSet` or sorted `Vec` for
+cross-platform determinism per R-4.1.NF3.
+
+### RF-6: Asset handles for mesh/heightfield data
+
+`TriMeshData` and `HeightfieldData` should reference rkyv-compatible asset data via
+`Handle<TriMeshAsset>` instead of owned `Vec`s. This enables zero-copy mmap loading per the
+serialization constraints.
+
+### RF-7: Expanded character controller
+
+The character controller needs additional features beyond basic ground/slope/step detection:
+
+**Moving platforms:**
+
+- Detect platform via ground contact entity
+- Inherit platform velocity (linear + angular) each frame
+- When platform disappears (destroyed/moved), fall naturally
+- Platform attachment via `MovingPlatform` component on the platform entity — controller queries
+  this on ground contact
+
+**Rigid body interaction:**
+
+- Controller pushes dynamic rigid bodies on contact
+- Apply force proportional to controller mass and velocity
+- Configurable push strength per controller
+- Two-way: heavy bodies can block or slow the controller
+
+**Wall sliding:**
+
+- When contacting a wall at an angle, decompose velocity into wall-parallel and wall-normal
+  components
+- Slide along wall-parallel direction
+- Configurable wall friction (0 = ice wall, 1 = sticky)
+- Wall angle threshold: steep slopes become walls
+- Corner handling: slide along the sharper of two walls
+
+**Customizable movement parameters:**
+
+```rust
+pub struct CharacterMovement {
+    pub max_speed: f32,
+    pub acceleration: f32,
+    pub deceleration: f32,
+    pub air_control: f32,       // 0-1, how much
+                                // control in air
+    pub gravity_scale: f32,
+    pub jump_height: f32,
+    pub coyote_time: f32,       // seconds after
+                                // leaving edge
+    pub jump_buffer: f32,       // pre-land buffer
+    pub max_slope_angle: f32,   // walkable slope
+    pub wall_slide_friction: f32,
+    pub push_force: f32,        // force on bodies
+    pub step_height: f32,
+    pub snap_to_ground: f32,    // distance to snap
+                                // down slopes
+}
+```
+
+All parameters exposed in the visual editor for gameplay feel tuning. Designers adjust movement
+without code.
+
+**Additional character controller features:**
+
+```rust
+pub struct CharacterMovementExtended {
+    // Jumping
+    pub max_jumps: u8,          // 1=single, 2=double, 3=triple
+    pub current_jumps: u8,      // resets on ground contact
+    pub wall_jump_force: Vec2,  // (horizontal, vertical)
+    pub wall_jump_angle: f32,   // angle away from wall
+
+    // Crouching
+    pub crouch_height_scale: f32, // 0.5 = half height
+    pub crouch_speed_scale: f32,  // slower while crouched
+    pub crouch_transition_speed: f32,
+
+    // Foot grounding
+    pub ground_snap_distance: f32,  // raycast down distance
+    pub slope_align_speed: f32,     // align to surface normal
+    pub prevent_slide_angle: f32,   // max slope before sliding
+}
+```
+
+**Wall jump:**
+
+- Detect wall contact via physics BVH shape cast
+- Track wall normal and contact time
+- Allow jump within a wall-cling window (configurable)
+- Apply force away from wall + upward
+- Reset jump counter on wall contact (configurable)
+
+**Multi-jump:**
+
+- `max_jumps` controls total jumps before grounding
+- Each jump can have different height (decreasing)
+- Coyote time applies only to the first jump
+- Jump buffer applies to all jumps
+
+**Crouching:**
+
+- Shrink collider height by `crouch_height_scale`
+- Check ceiling clearance before uncrouching (prevent standing inside geometry)
+- Speed reduction while crouched
+- Smooth transition between standing and crouching
+
+**Foot grounding and anti-slide:**
+
+- Raycast down from each foot to find ground surface
+- Snap character to ground on slopes to prevent floating
+- Apply counter-force on slopes below `prevent_slide_angle` to prevent unwanted sliding on walkable
+  slopes
+- Smooth slope alignment via `slope_align_speed`
+
+**Motion matching integration:**
+
+- Character controller outputs `MovementState` each frame: speed, direction, grounded, slope angle,
+  wall contact
+- Animation system (Design #24-26) reads `MovementState` to select motion matching poses
+- Controller does NOT drive animation directly — it provides the state, animation system matches to
+  it
+
+**IK integration:**
+
+- Foot IK targets computed from ground raycasts (foot positions on uneven terrain)
+- Hand IK targets from wall contact points (wall slide, ledge grab)
+- IK solver lives in animation design (Design #26, procedural animation)
+- Controller provides `IkTargets` component with foot/hand world positions; animation reads it
+
+### RF-8: Create companion test cases file
+
+Verify `foundation-test-cases.md` exists and has TC-X.Y.Z.N IDs with explicit inputs and expected
+outputs. If missing, create it.
+
+### RF-9: Collision layers with interaction matrix
+
+Add a bitmask-based collision layer system with a configurable interaction matrix. Controls which
+layers collide, overlap, or ignore each other.
+
+```rust
+/// 32 collision layers, independent from render layers.
+#[derive(Component, Clone, Copy)]
+pub struct CollisionLayers {
+    /// Which layers this body belongs to.
+    pub membership: u32,
+    /// Which layers this body collides with.
+    pub filter: u32,
+}
+
+impl CollisionLayers {
+    pub const DEFAULT: Self = Self {
+        membership: 1, filter: u32::MAX,
+    };
+
+    pub fn collides_with(self, other: Self) -> bool {
+        (self.membership & other.filter != 0)
+            && (other.membership & self.filter != 0)
+    }
+}
+```
+
+Two bodies collide only if each body's membership overlaps the other's filter — bidirectional check.
+
+**Interaction matrix (editor-configured):**
+
+The visual editor exposes a 32x32 matrix where designers toggle which layer pairs interact. The
+matrix generates the `filter` bitmasks at build time.
+
+**Standard layer assignments:**
+
+| Layer | Name | Use case |
+|-------|------|----------|
+| 0 | Default | Standard world geometry |
+| 1 | Player | Player character body |
+| 2 | Enemy | Enemy character bodies |
+| 3 | Projectile | Bullets, arrows, spells |
+| 4 | Trigger | Trigger volumes (no physics response) |
+| 5 | Hitbox | Damage hitboxes (no physics response) |
+| 6 | Hurtbox | Damageable regions |
+| 7 | Terrain | Ground, walls |
+| 8 | Ragdoll | Ragdoll limbs |
+| 9-31 | User | Game-specific |
+
+**Use cases:**
+
+- Hitbox on layer 5, hurtbox on layer 6: hitbox filter includes layer 6, hurtbox filter includes
+  layer 5. They detect overlap but don't generate physics response — events only.
+- Trigger volume on layer 4: filter includes player (1) and enemy (2). Generates overlap events, no
+  collision response.
+- Projectile on layer 3: filter includes enemy (2) and terrain (7) but NOT player (1) — friendly
+  fire disabled.
+- Ragdoll on layer 8: collides with terrain (7) and default (0) but not other ragdolls (avoids
+  ragdoll-on-ragdoll chaos).
+
+**Integration with broadphase:**
+
+The physics BVH stores `CollisionLayers.membership` per entry. Broadphase pair filtering checks
+`collides_with` before generating narrowphase pairs — eliminates non-interacting pairs at the
+cheapest possible stage.
+
+**Separate from render layers:**
+
+Collision layers (`CollisionLayers`) are independent from render layers (`RenderLayers`). An entity
+can be on render layer 0 (visible to main camera) and collision layer 5 (hitbox). The two systems do
+not interact.
+
+### RF-10: Voxel terrain collision
+
+Per-chunk triangle mesh colliders for voxel terrain. Each voxel chunk generates a surface mesh
+(marching cubes / surface nets) which becomes a `TriMesh` collider. When a player modifies voxels,
+only the affected chunk's collider is rebuilt.
+
+**Per-terrain-type collider strategy:**
+
+| Terrain Type | Collider | Update Cost |
+|-------------|----------|-------------|
+| Heightfield | `Heightfield` | O(modified cells) |
+| Voxel | `TriMesh` per chunk | O(chunk verts) |
+| CSG | `ConvexHull` decomposition | O(affected volume) |
+
+**Real-time update flow:**
+
+1. Player modifies voxel (dig/place)
+2. Chunk surface mesh regenerated (world-geometry system)
+3. Chunk `TriMesh` collider rebuilt from new surface
+4. Old collider removed from physics BVH
+5. New collider inserted into physics BVH
+6. Physics sees updated collision in next FixedUpdate
+
+**Optimizations:**
+
+- Only rebuild the modified chunk (16x16x16 or 32x32x32)
+- Double-buffer chunk colliders: build new mesh on a job system worker while physics uses the old
+  one, swap at next FixedUpdate
+- Heightfield supports in-place height patching without full rebuild
+- Budget N chunk rebuilds per frame if many chunks change
+
+Cross-references world-geometry design (Design #22) for terrain mesh generation.
+
+### RF-11: Convex hull decomposition and generation
+
+**Offline (asset processing):**
+
+Non-convex meshes are automatically decomposed into multiple convex hulls at import time via V-HACD
+(Volumetric Hierarchical Approximate Convex Decomposition). Stored as a `CompoundCollider`:
+
+```text
+Source mesh (glTF)
+  → Asset processor: V-HACD decomposition
+  → N convex hulls → CompoundCollider
+  → Baked to rkyv → loaded at runtime
+```
+
+Typical settings: 8-16 hulls per mesh, 32-64 vertices per hull. Zero runtime cost — all
+decomposition is offline.
+
+Use the `vhacd` Rust crate (wraps the C++ V-HACD library). Request dependency approval.
+
+**Editor support:**
+
+Designers can also manually place simple shapes (boxes, capsules, spheres) in the visual editor to
+approximate the mesh. Manual shapes override automatic decomposition when present.
+
+**Runtime (dynamic geometry):**
+
+For destructible objects, procedural geometry, and voxel chunks, use **quickhull** (O(n log n)) at
+runtime to generate a single convex hull from a vertex set. Faster than V-HACD but produces one
+hull, not a decomposition — suitable for convex fragments.
+
+Cross-references asset processing design (Design #13) for the offline V-HACD pipeline.
+
+### RF-12: Missing rigid body dynamics features
+
+Add these features to the rigid body simulation:
+
+**Gyroscopic forces:**
+
+Spinning objects (tops, wheels, projectiles) must precess correctly. Apply gyroscopic torque:
+`τ = ω × (I · ω)` where `ω` is angular velocity and `I` is the inertia tensor. Without this,
+spinning objects behave incorrectly under external torques.
+
+Add to the integration step, gated by a per-body flag (`gyroscopic: bool` on `RigidBody`) since it
+adds cost.
+
+**Rolling friction:**
+
+Without rolling friction, spheres and wheels roll forever on flat surfaces. Add a rolling friction
+coefficient to `PhysicsMaterial`:
+
+```rust
+pub struct PhysicsMaterial {
+    pub static_friction: f32,
+    pub dynamic_friction: f32,
+    pub rolling_friction: f32,  // new
+    pub restitution: f32,
+    pub friction_combine: CombineMode,
+    pub restitution_combine: CombineMode,
+}
+```
+
+Applied as a torque opposing angular velocity, proportional to normal force and rolling friction
+coefficient.
+
+**Anisotropic friction:**
+
+Enable directional friction for ice surfaces, conveyor belts, and rails. Add an optional
+`friction_direction: Option<Vec3>` to `PhysicsMaterial`. When set, static/dynamic friction applies
+only along that axis — perpendicular direction uses a separate `lateral_friction` coefficient.
+
+### RF-13: Add rotation to spatial queries
+
+`PhysicsQueries::shape_cast()` and `point_overlap()` take position but no rotation. Oriented shapes
+(capsule, box) need a rotation parameter:
+
+```rust
+pub fn shape_cast(
+    &self,
+    shape: &ColliderShape,
+    origin: Vec3,
+    rotation: Quat,  // added
+    dir: Vec3,
+    max_dist: f32,
+    filter: CollisionFilterFn,
+) -> Option<ShapeCastHit>;
+```
+
+### RF-14: Collision detection algorithm references
+
+| Algorithm | Reference |
+|-----------|-----------|
+| GJK distance | [van den Bergen (2003)](http://www.dtecta.com/papers/jgt98convex.pdf) |
+| EPA penetration | [van den Bergen (2001)](http://www.dtecta.com/papers/jgt01exhaust.pdf) |
+| SAT | [Ericson, "Real-Time Collision Detection"](https://realtimecollisiondetection.net/) |
+| Broadphase BVH | [Karras (HPG 2012)](https://research.nvidia.com/publication/2013-07_megakernels-considered-harmful-wavefront-path-tracing-gpus) |
+| CCD sweep | [Catto, "Continuous Collision" (GDC 2013)](https://box2d.org/files/ErinCatto_ContinuousCollision_GDC2013.pdf) |
+| V-HACD | [Mamou, "Volumetric Decomposition"](https://github.com/kmammou/v-hacd) |
+| Quickhull | [Barber et al. (1996)](http://www.qhull.org/) |
+
+### RF-15: Multi-planet physics and gravity
+
+Support multiple planets with per-planet physics simulation. Each planet is a separate ECS World
+(F-1.1.34) with its own physics BVH and gravity model.
+
+**Per-planet gravity:**
+
+```rust
+#[derive(Component)]
+pub enum GravityMode {
+    /// Flat world: constant direction.
+    Uniform(Vec3),
+    /// Planet: gravity toward world origin.
+    /// g = gravitational acceleration (m/s²).
+    Radial { g: f32 },
+    /// User-defined gravity function.
+    Custom(fn(Vec3) -> Vec3),
+}
+```
+
+The integration system reads `Res<GravityMode>` and computes per-body gravity:
+
+- `Uniform(v)` → `gravity = v` (standard flat world)
+- `Radial { g }` → `gravity = -normalize(pos) * g` (planet)
+- `Custom(f)` → `gravity = f(pos)` (user-defined)
+
+**Physics runs in planet-local Cartesian:**
+
+All collision detection, constraint solving, and rigid body simulation run in flat planet-local
+space. No curved-space physics math. The visual curvature is a vertex shader concern (see
+world-geometry RF-10).
+
+**Inter-planetary entity migration:**
+
+When an entity moves between planets:
+
+1. Physics state serialized (velocity, forces, constraints)
+2. Entity migrated from Planet A World to Planet B World (F-1.1.35)
+3. Position/velocity transformed: Planet A local → universe Euclidean → Planet B local
+4. Physics state deserialized in new World
+5. One-time transform, not per-frame
+
+Joints/constraints referencing the migrated entity are broken (emit `JointBroken` event) unless both
+connected bodies migrate together.
+
+**Per-planet physics BVH:**
+
+Each planet World owns its own physics BVH. No cross-planet collision detection. Entities near a
+planet boundary (space stations, orbital objects) live in the universe World with uniform gravity.
+
+### RF-16: 2D physics mode
+
+Add 2D rigid body simulation for 2D/2.5D games. Same PGS solver, specialized for 2D:
+
+- 2D collision shapes: Circle, Rectangle, Capsule2D, ConvexPolygon, Edge/Chain
+- 2D physics BVH (separate from the 3D physics BVH)
+- 2D collision layers (same u32 bitmask system)
+- 2D rigid body: mass, moment of inertia (scalar, not tensor), linear + angular velocity
+- 2D contact solver: 2D contact points, 2D friction
+- 2D raycasts and shape casts via PhysicsQueries2D resource
+
+The 2D solver reuses the same island/sleeping/CCD infrastructure. The constraint solver operates on
+2D constraint rows (2 linear + 1 angular DOF instead of 3+3).
+
+2D and 3D physics can coexist in the same World for 2.5D games (e.g., 2D gameplay physics + 3D
+particle debris).

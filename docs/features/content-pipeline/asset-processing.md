@@ -97,7 +97,7 @@
    bytecode. DXC (Direct3D Shader Compiler) compiles HLSL to DXIL for D3D12 and HLSL to SPIR-V for
    Vulkan. Metal Shader Converter translates DXIL to MSL for Metal. Both DXC and Metal Shader
    Converter are accessed via Rust FFI bindings (DXC via windows-rs on Windows, libloading on Linux;
-   Metal Shader Converter via swift-bridge on macOS). DXC performs validation, optimization passes
+   Metal Shader Converter via CLI subprocess on macOS). DXC performs validation, optimization passes
    (dead code elimination, constant folding), and reflection (extracting binding layouts, push
    constant ranges, workgroup sizes). Compiled bytecode is cached in the shared build cache
    (F-15.11.2) keyed by the HLSL source hash. Compilation errors report the original HLSL line

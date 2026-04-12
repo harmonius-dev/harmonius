@@ -97,16 +97,18 @@ All queries go through the shared BVH spatial index (F-1.9.1). No separate spati
 
 ### Design Principles
 
-1. **ECS-primary (~90%)-based.** All state lives in components. All logic runs as systems. No parallel data
-   stores.
+1. **ECS-primary (~90%)-based.** All state lives in components. All logic runs as systems. No
+   parallel data stores.
 2. **Data-driven and no-code.** Sense definitions, scoring functions, thresholds, and decay rules
    are authored in the visual editor.
 3. **No genre assumptions.** The same system drives stealth AI, target selection, fog of war vision,
    and interaction proximity. Configuration alone determines behavior.
-4. **Shared spatial index.** All range queries and line-of-sight checks use the shared BVH
-   (F-1.9.1). No per-system spatial acceleration.
-5. **Static dispatch.** All systems are monomorphic. No trait objects on the hot path.
-6. **Immutable definitions.** `SenseDefinition`, `ScoringFunction`, and `AwarenessTransition` are
+4. **Shared spatial index.** All range queries and line-of-sight checks use the shared BVH (F-1.9.1)
+   in 3D or the 2D BVH for 2D entities. No per-system spatial acceleration.
+5. **First-class 2D.** 3D (`SenseShape`) and 2D (`SenseShape2D` via `SenseShape::Circle2D`,
+   `Cone2D`, `Rect2D`) variants work identically. `Transform2D` entities use the 2D BVH.
+6. **Static dispatch.** All systems are monomorphic. No trait objects on the hot path.
+7. **Immutable definitions.** `SenseDefinition`, `ScoringFunction`, and `AwarenessTransition` are
    immutable data. Mutable runtime state is isolated to `AwarenessState`.
 
 ### Performance Targets
@@ -120,6 +122,24 @@ All queries go through the shared BVH spatial index (F-1.9.1). No separate spati
 | Single sense eval (4 factors)  | < 10 us              |
 
 ## Architecture
+
+### Cross-Subsystem Integration
+
+| Subsystem      | Direction    | Data                    | Mechanism                         |
+|----------------|--------------|-------------------------|-----------------------------------|
+| AI behavior    | consumes     | `AwarenessState`        | ECS query in Update               |
+| AI navigation  | consumes     | threat positions        | ECS query on `AwarenessEntry`     |
+| Physics        | consumed by  | LOS occlusion raycasts  | physics raycast API               |
+| Shared BVH     | consumed by  | proximity queries       | `SpatialIndex` API                |
+| Grids          | consumed by  | scent / influence maps  | `UniformGrid` read                |
+| Audio          | consumes     | spatial occlusion       | shared BVH query                  |
+| Networking     | produces/    | awareness replication   | relevancy grid + delta snapshot   |
+|                | consumes     |                         |                                   |
+| UI             | consumes     | threat indicators       | `AwarenessTransitionEvent`        |
+| Rendering      | consumes     | debug sense volumes     | render layer bitmask filter       |
+| VFX            | consumes     | detection-state VFX     | `AwarenessTransitionEvent`        |
+| Game framework | consumes     | stealth / alert logic   | ECS query on `AwarenessState`     |
+| Editor         | consumes     | sense volume gizmos     | debug overlay system              |
 
 ### Module Boundaries
 
@@ -183,30 +203,38 @@ harmonius_game/
 │   ├── query.rs            # query_sense(),
 │   │                       # execute_selection()
 │   ├── update.rs           # update_awareness()
-│   ├── systems/
-│   │   ├── sense_eval.rs   # SenseEvaluatorSystem
-│   │   ├── transition.rs   # AwarenessTransitionSys
-│   │   ├── decay.rs        # AwarenessDecaySystem
-│   │   └── selection.rs    # SelectionSystem
-│   └── plugin.rs           # SpatialAwarenessPlugin
+│   └── systems/
+│       ├── sense_eval.rs   # SenseEvaluatorSystem
+│       ├── transition.rs   # AwarenessTransitionSys
+│       ├── decay.rs        # AwarenessDecaySystem
+│       └── selection.rs    # SelectionSystem
+│   # No plugin.rs — system registration is
+│   # codegen'd into the middleman .dylib.
 ```
 
 ### System Execution Order
 
+Sense evaluation and awareness updates run in `FixedUpdate` for determinism (matching physics tick
+rate). Selection queries run in `Update` for immediate responsiveness to player input.
+
 ```mermaid
 flowchart LR
-    subgraph phase1[Sense Evaluation]
-        EVAL[SenseEvaluator]
+    subgraph FU[FixedUpdate]
+        subgraph phase1[Sense Evaluation]
+            EVAL[SenseEvaluator]
+        end
+        subgraph phase2[Awareness Update]
+            TRANS[AwarenessTransition]
+            DECAY[AwarenessDecay]
+        end
+        phase1 --> phase2
     end
-    subgraph phase2[Awareness Update]
-        TRANS[AwarenessTransition]
-        DECAY[AwarenessDecay]
+    subgraph U[Update]
+        subgraph phase3[Selection]
+            SEL[SelectionSystem]
+        end
     end
-    subgraph phase3[Selection]
-        SEL[SelectionSystem]
-    end
-    phase1 --> phase2
-    phase2 --> phase3
+    FU --> U
 ```
 
 ### Awareness State Machine
@@ -239,6 +267,9 @@ classDiagram
         Cone
         Box
         Cylinder
+        Circle2D
+        Cone2D
+        Rect2D
     }
 
     class FalloffCurve {
@@ -358,12 +389,15 @@ classDiagram
 /// Unique identifier for a sense type.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    Reflect,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
 pub struct SenseDefinitionId(pub u32);
 
 /// Geometric shape of a sense's detection volume.
-#[derive(Clone, Debug, PartialEq, Reflect)]
+#[derive(
+    Clone, Debug, PartialEq,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub enum SenseShape {
     /// Omnidirectional detection (hearing, smell).
     Sphere { radius: f32 },
@@ -373,11 +407,19 @@ pub enum SenseShape {
     Box { half_extents: Vec3 },
     /// Vertical cylinder (proximity detection).
     Cylinder { radius: f32, height: f32 },
+    // 2D variants — used when the entity has a
+    // Transform2D component.
+    Circle2D { radius: f32 },
+    Cone2D { radius: f32, half_angle: f32 },
+    Rect2D { half_extents: Vec2 },
 }
 
 /// Falloff curve controlling how score attenuates
 /// with distance from the sense origin.
-#[derive(Clone, Debug, PartialEq, Reflect)]
+#[derive(
+    Clone, Debug, PartialEq,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub enum FalloffCurve {
     /// Score decreases linearly with distance.
     Linear,
@@ -391,6 +433,12 @@ pub enum FalloffCurve {
     /// Designer-authored curve asset.
     Custom(AssetId),
 }
+
+// Custom sense shapes, falloff curves, and scoring
+// functions created in the visual editor are
+// codegen'd into the middleman .dylib. Engine
+// registers codegen'd variants at startup; no
+// runtime reflection or dynamic dispatch.
 ```
 
 ### Scoring Function
@@ -398,7 +446,10 @@ pub enum FalloffCurve {
 ```rust
 /// Weights and penalties for computing a sense's
 /// final score from raw spatial data.
-#[derive(Clone, Debug, Reflect)]
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct ScoringFunction {
     /// Weight applied to distance factor (0..1).
     /// Higher values make distance more important.
@@ -421,8 +472,12 @@ pub struct ScoringFunction {
 ```rust
 /// Definition of a single sense. Immutable data
 /// asset authored in the visual editor. Loaded
-/// from data tables at startup.
-#[derive(Clone, Debug, Reflect)]
+/// from data tables at startup via zero-copy mmap
+/// (rkyv). Editor metadata generated by codegen.
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct SenseDefinition {
     /// Unique identifier for this sense type.
     pub id: SenseDefinitionId,
@@ -454,7 +509,7 @@ pub struct SenseDefinition {
 /// Result of evaluating a single sense against a
 /// single candidate entity. Produced by
 /// `query_sense`, consumed by `update_awareness`.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct SenseResult {
     /// The detected entity.
     pub entity: Entity,
@@ -482,7 +537,7 @@ pub struct SenseResult {
 /// Ordered from lowest to highest alertness.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
-    PartialOrd, Ord, Reflect,
+    PartialOrd, Ord,
 )]
 pub enum AwarenessLevel {
     /// No knowledge of the target.
@@ -499,7 +554,7 @@ pub enum AwarenessLevel {
 
 /// A single entry tracking awareness of one
 /// target entity. Stored inside AwarenessState.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct AwarenessEntry {
     /// The entity being tracked.
     pub target: Entity,
@@ -518,7 +573,7 @@ pub struct AwarenessEntry {
 /// tracking detection levels toward multiple
 /// targets. Attached to entities that need
 /// spatial awareness (NPCs, cameras, turrets).
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Debug)]
 pub struct AwarenessState {
     /// Active awareness entries, one per tracked
     /// target. Inline storage for 8 entries.
@@ -561,8 +616,11 @@ impl AwarenessState {
 ```rust
 /// Thresholds and rates governing awareness level
 /// transitions. Immutable data authored in the
-/// visual editor.
-#[derive(Clone, Debug, Reflect)]
+/// visual editor. Loaded via rkyv zero-copy mmap.
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct AwarenessTransition {
     /// Score threshold to enter Suspicious.
     pub suspicious_threshold: f32,
@@ -579,8 +637,11 @@ pub struct AwarenessTransition {
 }
 
 /// Resource: global configuration for the spatial
-/// awareness system.
-#[derive(Clone, Debug, Reflect)]
+/// awareness system. Loaded via rkyv zero-copy mmap.
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+)]
 pub struct AwarenessConfig {
     /// How often awareness updates run (ticks per
     /// second). Decoupled from frame rate.
@@ -600,7 +661,7 @@ pub struct AwarenessConfig {
 /// Event fired when an awareness level changes.
 /// Consumed by behavior trees, alert animations,
 /// UI indicators, and fog of war updates.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct AwarenessTransitionEvent {
     /// The perceiving entity.
     pub source: Entity,
@@ -623,14 +684,27 @@ pub struct AwarenessTransitionEvent {
 /// the shared spatial index. Returns scored
 /// results sorted by final_score descending.
 ///
+/// When the source entity has a `Transform2D`
+/// component, `origin_2d` and `forward_2d` are
+/// used instead, and the 2D BVH is queried.
+/// 3D `SenseShape` variants require `Vec3` origin;
+/// 2D variants (`Circle2D`, `Cone2D`, `Rect2D`)
+/// require `Vec2` origin via `SenseOrigin`.
+///
 /// Pure function: no side effects, no mutation.
 pub fn query_sense(
     sense: &SenseDefinition,
-    origin: Vec3,
-    forward: Vec3,
+    origin: SenseOrigin,
     spatial_index: &SpatialIndex,
     world: &World,
-) -> Vec<SenseResult>;
+) -> SmallVec<[SenseResult; 16]>;
+
+/// Origin for a sense evaluation — 3D or 2D
+/// depending on the entity's transform type.
+pub enum SenseOrigin {
+    World3D { position: Vec3, forward: Vec3 },
+    World2D { position: Vec2, forward: Vec2 },
+}
 
 /// Update an entity's awareness state with new
 /// sense results. Applies scoring, transitions
@@ -650,7 +724,7 @@ pub fn update_awareness(
 /// Player-facing spatial query for entity picking
 /// and selection. Simplified interface on top of
 /// the shared spatial index.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub enum SelectionQuery {
     /// Single ray from camera through screen
     /// coordinates. Returns nearest hit.
@@ -676,11 +750,22 @@ pub enum SelectionQuery {
         radius: f32,
         count: u32,
     },
+    /// 2D marquee box select in screen/world space.
+    /// Used for top-down RTS and 2D games.
+    BoxSelect2D {
+        min: Vec2,
+        max: Vec2,
+    },
+    /// 2D circle select for radial area effects.
+    CircleSelect2D {
+        center: Vec2,
+        radius: f32,
+    },
 }
 
 /// Result of a selection query. One entry per
 /// selected entity, sorted by distance.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug)]
 pub struct SelectionResult {
     /// The selected entity.
     pub entity: Entity,
@@ -776,6 +861,19 @@ sequenceDiagram
    reads scores for visibility indicators. Fog of war reads awareness levels for faction vision.
 6. **Selection:** `SelectionSystem` processes `SelectionQuery` events from the input system for
    player-facing entity picking. Results written as `SelectionResult` events.
+
+### Frame-Boundary Handoff
+
+`AwarenessState` is written exclusively in `FixedUpdate` and read in `Update` (AI, UI, VFX). No lock
+is needed because ECS guarantees exclusive write access inside a phase.
+
+- `AwarenessTransitionEvent` objects are buffered in a crossbeam-channel and drained at the
+  `FixedUpdate`→`Update` phase boundary. Consumers in `Update` see all events from the most recent
+  fixed tick.
+- `SelectionResult` events are produced and consumed within the same `Update` frame. No cross-phase
+  latency.
+- If `FixedUpdate` runs multiple sub-steps in one render frame, only the final `AwarenessState`
+  snapshot is visible to `Update` consumers.
 
 ## Platform Considerations
 
@@ -954,3 +1052,165 @@ Full test cases are in the companion file
 5. **Network replication of awareness.** Awareness states may need replication for
    server-authoritative AI. The replication strategy (snapshot vs. delta) depends on the networking
    design (F-8) being finalized.
+
+## Review feedback
+
+### RF-1: Remove all Reflect derives
+
+Remove `Reflect` derives from all 14 types. Replace with rkyv `Archive`/`Serialize`/`Deserialize`
+for asset types. Editor metadata via codegen in the middleman .dylib.
+
+### RF-2: rkyv serialization for asset types
+
+Specify rkyv as the binary format. `SenseDefinition`, `AwarenessConfig`, `AwarenessTransition`,
+`FalloffCurve`, `ScoringFunction` derive rkyv traits for zero-copy mmap loading.
+
+### RF-3: Codegen for custom sense types
+
+Custom sense shapes, falloff curves, scoring functions, and plugin-extended enums are codegen'd into
+the middleman .dylib. Remove `SpatialAwarenessPlugin` if it implies bevy-style runtime registration.
+
+### RF-4: 2D sense shapes and Transform2D support
+
+The design is 3D-only. Add:
+
+1. `SenseShape2D` enum: `Circle2D { radius }`, `Cone2D { radius, half_angle }`,
+   `Rect2D { half_extents }`
+2. All position types accept `Vec2` for 2D or `Vec3` for 3D
+3. 2D BVH queries for top-down stealth, RTS vision, 2D platformer enemy detection
+4. `SelectionQuery` 2D variants (box select in screen space, circle select)
+5. Test cases for 2D sense evaluation
+
+### RF-5: Create companion test cases file
+
+Create `spatial-awareness-test-cases.md` with TC-IDs in `TC-X.Y.Z.N` format.
+
+### RF-6: Game loop phase assignment
+
+Sense evaluation and awareness updates run in `FixedUpdate` (deterministic, matching physics).
+Selection queries run in `Update` (responsive to player input). Document in the system execution
+diagram.
+
+### RF-7: Frame-boundary handoff
+
+Document: `AwarenessState` written in FixedUpdate, read by AI/UI in Update. Events buffered in
+crossbeam-channel, drained at phase transitions. Selection results available same frame.
+
+### RF-8: Cross-subsystem integration table
+
+| Subsystem | Direction | Data | Mechanism |
+|-----------|-----------|------|-----------|
+| AI behavior | consumes | AwarenessState | ECS query |
+| AI navigation | consumes | threat positions | ECS query |
+| Physics | consumed by | raycast for LOS occlusion | physics raycast API |
+| Shared BVH | consumed by | proximity queries | SpatialIndex API |
+| Grids | consumed by | scent/influence maps | UniformGrid read |
+| Audio | consumes | spatial occlusion | shared BVH query |
+| Networking | produces/consumes | awareness replication | relevancy grid + delta |
+| UI | consumes | threat indicators | AwarenessTransitionEvent |
+| Rendering | consumes | debug sense viz | render layer filtered |
+| VFX | consumes | detection state VFX | AwarenessTransitionEvent |
+| Game framework | consumes | stealth/alert gameplay | ECS query on AwarenessState |
+| Editor | consumes | sense volume gizmos | debug overlay system |
+
+### RF-9: Per-thread arenas for query results
+
+`query_sense` and `execute_selection` return heap-allocated `Vec`. Use per-thread arena-allocated
+slices or `SmallVec<[SenseResult; 16]>`. Arenas reset at frame boundaries.
+
+### RF-10: Algorithm reference URLs
+
+Add URLs for: perception scoring models (GDC talks on AI perception), BVH query algorithms,
+awareness state machine patterns, falloff curve mathematics.
+
+### RF-11: Tie tick-based logic to FixedUpdate
+
+`tick_rate`, `lost_timeout_ticks`, `decay_rate` must correspond to FixedUpdate steps. State
+explicitly for determinism.
+
+### RF-12: Deterministic sort tiebreaker
+
+All result sorting uses `Entity` ID as tiebreaker for equal scores. State explicitly that no HashMap
+is used in any hot-path structure.
+
+### RF-13: Networking relevancy grid integration
+
+Describe how awareness states interact with the networking relevancy grid. Server determines which
+clients receive awareness updates based on grid cell proximity.
+
+### RF-14: GPU visibility boundary
+
+Add: "Rendering visibility is handled by GPU-driven culling and is outside the scope of this system.
+This system handles gameplay/AI/audio spatial queries only."
+
+### RF-15: Parallelism via custom job system
+
+Sense evaluations distributed across workers via `par_iter` over (source, sense) pairs. Each
+evaluation is independent with thread-local results merged after completion. Per-thread arenas for
+temporaries.
+
+### RF-16: Render layer filtering for debug viz
+
+Debug sense volume rendering and threat indicators use the render layer u32 bitmask — only visible
+on the correct cameras (editor debug, HUD, minimap).
+
+### RF-17: Expand platform considerations
+
+Name all platforms (Windows, macOS, Linux, iOS, Android, Switch, VR). VR-specific: head-tracked
+sense forward vector, 360-degree awareness for spatial audio occlusion, hand-tracked interaction for
+selection queries.
+
+### RF-18: Replace ASCII file layout with table
+
+Convert the file layout `text` block to a Mermaid diagram or flat table.
+
+### RF-19: GPU-accelerated spatial awareness for ultra-scale AI
+
+The CPU design supports ~100 sources x 1000 targets in < 2 ms. For ultra-scale scenarios (millions
+of entities in the world, thousands actively evaluating senses), the CPU path is insufficient. Add a
+GPU compute pipeline for spatial awareness:
+
+1. **GPU sense evaluation** — upload source positions, sense shapes, and target positions to GPU
+   structured buffers. A compute shader performs range/cone/box tests for all (source, target) pairs
+   in parallel. Output: per-source list of candidates with raw distance and angle scores. This is a
+   massive parallel workload ideal for GPU — millions of pair tests per dispatch.
+2. **GPU scoring** — a second compute pass applies falloff curves and scoring functions to the
+   candidate list. Output: per-source sorted result buffer with final scores. Scoring functions are
+   HLSL compute kernels compiled via DXC + MSC.
+3. **GPU→CPU readback** — only the top-N results per source are read back to the CPU (typically 8-32
+   per source). The full candidate list stays GPU-side. Readback uses a ring-buffered staging buffer
+   with one-frame latency.
+4. **CPU awareness update** — the CPU-side awareness state machine (`AwarenessState`) consumes the
+   GPU results identically to CPU results. The awareness update remains CPU-side (small per-source
+   state, branch-heavy logic).
+5. **Hybrid CPU/GPU selection** — small entity counts (< 500 targets) use the CPU path for
+   zero-latency results. Large counts (> 500) use the GPU path with one-frame latency. The threshold
+   is configurable per sense definition.
+6. **Scale targets**:
+   - 1M dormant entities in GPU buffers (position + faction only)
+   - 10K active entities with full sense evaluation per frame
+   - 1K sources with awareness state machines
+   - Budget: < 1 ms GPU compute + < 0.5 ms CPU readback + state
+7. **Render graph integration** — `GpuSenseEvalPass` and `GpuScoringPass` are compute render graph
+   nodes. They run before the CPU awareness update phase. The readback buffer is a render graph
+   resource with a read dependency from the awareness system.
+8. **Applicability** — this enables: massive RTS battles (thousands of units with vision),
+   open-world games (millions of NPCs with dormant awareness), battle royale (100 players each
+   evaluating awareness against all others), MMO servers (thousands of NPCs with perception).
+
+### RF-20: Awareness-driven 3D gameplay indicators
+
+Awareness state drives 3D visual indicators: detection state icons above NPCs
+(unaware/suspicious/alert/tracking), threat direction indicators on the player HUD, stealth
+visibility meters, and enemy highlight outlines. These are split across world-space UI
+(WorldSpaceAnchor for icons, see ui-framework.md F-10.1.10) and VFX (alert VFX burst on awareness
+transition, see vfx/effects.md RF-26). The spatial awareness system owns the spawn/despawn logic:
+`AwarenessTransitionEvent` triggers indicator updates. Indicators are filtered by render layer
+bitmask (debug cameras show sense cone volumes, gameplay cameras show alert icons only).
+
+### RF-21: Debug visualization in viewport
+
+Sense volumes (vision cones, hearing spheres) and awareness state icons are rendered as debug gizmos
+in the editor viewport (level-world.md RF-28 item 4). The spatial awareness design must expose:
+per-source sense shape geometry for gizmo rendering, and per-target awareness level for icon
+display. Debug viz is filtered by render layer bitmask (only on debug cameras).

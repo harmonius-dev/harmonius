@@ -38,8 +38,9 @@ no separate physics world.
 
 Key principles:
 
-1. **ECS-primary (~90%)-based.** Joint entities carry `Joint`, `JointType`, and optional `JointMotor`,
-   `JointLimits`, `BreakForce`, and `WarmStartData` components. The solver queries these directly.
+1. **ECS-primary (~90%)-based.** Joint entities carry `Joint`, `JointType`, and optional
+   `JointMotor`, `JointLimits`, `BreakForce`, and `WarmStartData` components. The solver queries
+   these directly.
 2. **Island-parallel solving.** The `IslandBuilder` partitions the constraint graph into independent
    islands. Each island is solved on a separate worker thread via the task graph.
 3. **Warm starting.** Accumulated impulses from the previous substep are cached in `WarmStartData`
@@ -548,8 +549,8 @@ pub struct JointLimits {
 ```
 
 Joint angular limits share the canonical `JointLimit` type defined in
-[shared-primitives.md](../core-runtime/shared-primitives.md). Both physics constraints and animation
-IK reference this shared type.
+[algorithms.md](../core-runtime/algorithms.md). Both physics constraints and animation IK reference
+this shared type.
 
 ### Breakable Joints
 
@@ -1825,3 +1826,118 @@ resolution.
 7. **Determinism across solver types.** SI and TGS produce different results. If a game switches
    solver type mid-session (e.g., quality setting change), constraint states will diverge. Should
    this be blocked, or should warm start data be flushed on solver change?
+
+## Review Feedback
+
+### RF-1: Remove all Reflect derives
+
+Remove `#[derive(Reflect)]` from all 15+ types. Use codegen-generated static metadata. Same
+resolution as physics foundation RF-2.
+
+### RF-2: Replace "shared BVH" with "physics BVH"
+
+Update architecture diagram and data flow references. Physics uses its own private BVH per
+foundation RF-1.
+
+### RF-3: Remove IslandBuilder → BVH arrow
+
+IslandBuilder uses union-find on Joint components, not BVH. Incorrect dependency in the architecture
+diagram.
+
+### RF-4: Show pool.scope() for island dispatch
+
+Demonstrate scoped island dispatch matching the foundation pattern. No Arc, no 'static bounds.
+
+### RF-5: Add PhysicsLayers to ragdoll body spawn
+
+Ragdoll bodies need `PhysicsLayers` component on spawn. Add a `physics_layer: PhysicsLayers` field
+to `RagdollJointDef`.
+
+### RF-6: Spawn WarmStartData on all new joints
+
+Spawn `WarmStartData::default()` on ragdoll and chain joint entities to ensure BreakDetectionSystem
+queries include them.
+
+### RF-7: Constraint support for vehicles, destruction, soft bodies
+
+This design defines the core constraint primitives. Document how they support the advanced physics
+features in Design #21:
+
+**Vehicles (F-4.5.x):**
+
+- Wheel suspension → prismatic joint + spring constraint along suspension axis
+- Steering → revolute joint with motor (target angle from input)
+- Drivetrain → angular velocity motor on wheel revolute joints
+- Anti-roll bar → custom bilateral constraint between left/right suspension travel
+
+**Destruction (F-4.6.x):**
+
+- Pre-fractured meshes held together by breakable fixed joints
+- Each fracture boundary is a joint with `BreakForce` threshold
+- Impact force exceeds threshold → joint breaks → fragments separate
+- Cascade breaking: when a joint breaks, neighboring joints receive transferred impulse → chain
+  reaction
+- Runtime fracture: spawn new joints on Voronoi cell boundaries
+
+**Soft bodies (F-4.7.x):**
+
+- Distance constraints between mesh vertices (spring network)
+- Volume preservation constraint (pressure model)
+- Bending constraints for cloth (dihedral angle between triangles)
+- Attachment constraints pinning soft body vertices to rigid bodies
+
+Each of these is a composition of the primitive constraint types defined here. Design #21 documents
+the specific compositions.
+
+### RF-8: Algorithm references
+
+**Constraint solvers:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Sequential Impulses (SI) | [Catto, "Iterative Dynamics" (GDC 2005)](https://box2d.org/files/ErinCatto_IterativeDynamics_GDC2005.pdf) |
+| Temporal Gauss-Seidel (TGS) | [Macklin et al., "Small Steps" (SIGGRAPH 2019)](https://matthias-research.github.io/pages/publications/smallsteps.pdf) |
+| Warm starting | [Catto, "Warm Starting" (GDC 2009)](https://box2d.org/files/ErinCatto_WarmStarting_GDC2009.pdf) |
+| PGS solver | [Erin Catto, Box2D solver](https://box2d.org/publications/) |
+
+**Joint/constraint types:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Revolute/prismatic | [Catto, "Soft Constraints" (GDC 2011)](https://box2d.org/files/ErinCatto_SoftConstraints_GDC2011.pdf) |
+| Cone-twist limits | [Coumans, Bullet Physics](https://github.com/bulletphysics/bullet3) |
+| Spring damper | [Erleben, "Stable Rigid Body Physics" (2005)](https://dl.acm.org/doi/10.5555/1198555.1198664) |
+| 6DOF joint | [Coumans, "6DOF Constraint" (Bullet)](https://pybullet.org/Bullet/phpBB3/) |
+
+**Ragdoll:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Ragdoll setup | [Jakobsen, "Advanced Character Physics" (GDC 2001)](https://www.cs.cmu.edu/afs/cs/academic/class/15462-s13/www/lec_slides/Jakobsen.pdf) |
+| Joint limits | [Hadap, "Oriented Particles for Ragdolls" (2006)](https://matthias-research.github.io/pages/publications/FTLHairFur.pdf) |
+
+**Destruction:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Voronoi fracture | [Müller et al., "Real-Time Fracture" (2013)](https://matthias-research.github.io/pages/publications/fracture.pdf) |
+| Breakable constraints | [Parker & O'Brien (2009)](https://dl.acm.org/doi/10.1145/1576246.1531346) |
+
+**Soft body / cloth:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| XPBD | [Macklin et al., "XPBD" (2016)](https://matthias-research.github.io/pages/publications/XPBD.pdf) |
+| PBD | [Müller et al., "Position Based Dynamics" (2007)](https://matthias-research.github.io/pages/publications/posBasedDyn.pdf) |
+| Bending constraints | [Bergou et al. (2006)](https://www.cs.columbia.edu/cg/quadratic/) |
+
+**Vehicle:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Pacejka tire model | [Pacejka, "Tire and Vehicle Dynamics" (3rd ed.)](https://www.elsevier.com/books/tire-and-vehicle-dynamics/pacejka/978-0-08-097016-5) |
+| Suspension spring | Standard spring-damper (Hooke's law + viscous damping) |
+
+### RF-9: Create companion test cases file
+
+Verify `constraints-test-cases.md` exists with TC-X.Y.Z.N IDs.

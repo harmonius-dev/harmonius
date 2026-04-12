@@ -10,8 +10,7 @@ Consolidates test cases from the following former files:
 - launcher-test-cases.md
 - asset-store-test-cases.md
 
-See those files for the full test case definitions until
-migration is complete.
+See those files for the full test case definitions until migration is complete.
 
 ## Unit Tests
 
@@ -44,7 +43,7 @@ migration is complete.
 | TC-15.17.2.1 | R-15.17.2 | Dependency resolution |
 | TC-15.17.3.1 | R-15.17.3 | Review CRUD |
 | TC-15.17.5.1 | R-15.17.5 | Compat test trigger |
-| TC-15.18.1.1 | R-15.18.1 | CDK stack synthesis |
+| TC-15.18.1.1 | R-15.18.1 | Deployment stack synthesis |
 
 ## Integration Tests
 
@@ -58,7 +57,7 @@ migration is complete.
 | TC-15.15.I.1 | R-15.15.1--R-15.15.6 | Launcher version install |
 | TC-15.15.I.2 | R-15.15.2 | Project migration chain |
 | TC-15.17.I.1 | R-15.17.1--R-15.17.8 | Store purchase flow |
-| TC-15.18.I.1 | R-15.18.1 | CDK deploy free-tier |
+| TC-15.18.I.1 | R-15.18.1 | Deploy free-tier stack |
 
 ## Benchmarks
 

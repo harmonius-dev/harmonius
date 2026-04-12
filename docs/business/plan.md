@@ -5,8 +5,8 @@ Work plan for the Harmonius game engine. Maps every feature-group from the
 implementation status. Organized by wave to show what can proceed in parallel at each stage.
 
 **Current state:** Requirements and features are fully specified (1,501 requirements, 1,204 features
-across 15 domains). Build system is configured (Rust stable, SwiftPM for Swift, Metal/Vulkan/D3D12
-backend selection). No source code exists. No designs exist.
+across 15 domains). Build system is configured (Rust stable, XcodeGen for macOS/iOS,
+Metal/Vulkan/D3D12 backend selection). No source code exists. No designs exist.
 
 ---
 
@@ -482,31 +482,28 @@ Requires specific Wave 5 nodes. 18 feature-groups can proceed concurrently.
      [localization-editor](../features/tools-editor/localization-editor.md),
      [mod-support](../features/tools-editor/mod-support.md)
    - **Prereqs:** ToolsEditor.EditorFramework, Networking.Replication
-4. **73** — [dcc-plugins](../requirements/content-pipeline/dcc-plugins.md)
-   - **Features:** [dcc-plugins](../features/content-pipeline/dcc-plugins.md)
-   - **Prereqs:** ContentPipeline.AssetImport, ContentPipeline.AssetProcessing
-5. **74** — [cloth-hair](../requirements/animation/cloth-hair.md)
+4. **73** — [cloth-hair](../requirements/animation/cloth-hair.md)
    - **Features:** [cloth-hair](../features/animation/cloth-hair.md)
    - **Prereqs:** Physics.SoftBodyCloth, Audio.VoiceSpeech, Rendering.AdvancedRendering
-6. **75** — [first-person](../requirements/animation/first-person.md)
+5. **75** — [first-person](../requirements/animation/first-person.md)
    - **Features:** [first-person](../features/animation/first-person.md)
    - **Prereqs:** Animation.Skeletal, GameFramework.WeaponSystem
-7. **76** — [destruction](../requirements/vfx/destruction.md)
+6. **76** — [destruction](../requirements/vfx/destruction.md)
    - **Features:** [destruction](../features/vfx/destruction.md)
    - **Prereqs:** Physics.Destruction, VFX.Particles
-8. **77** — [npc-simulation](../requirements/game-framework/npc-simulation.md)
+7. **77** — [npc-simulation](../requirements/game-framework/npc-simulation.md)
    - **Features:** [npc-simulation](../features/game-framework/npc-simulation.md)
    - **Prereqs:** AI.BehaviorDecision, GameFramework.GameplayPrimitives
-9. **78** — [social](../requirements/game-framework/social.md)
+8. **78** — [social](../requirements/game-framework/social.md)
    - **Features:** [social](../features/game-framework/social.md)
    - **Prereqs:** Networking.Session, GameFramework.GameplayPrimitives
-10. **79** — [game-modes-misc](../requirements/game-framework/game-modes-misc.md)
-    - **Features:** [game-modes-misc](../features/game-framework/game-modes-misc.md)
-    - **Prereqs:** Networking.Session, GameFramework.GameplayPrimitives
-11. **80** — [stealth-cover](../requirements/game-framework/stealth-cover.md)
+9. **79** — [game-modes-misc](../requirements/game-framework/game-modes-misc.md)
+   - **Features:** [game-modes-misc](../features/game-framework/game-modes-misc.md)
+   - **Prereqs:** Networking.Session, GameFramework.GameplayPrimitives
+10. **80** — [stealth-cover](../requirements/game-framework/stealth-cover.md)
     - **Features:** [stealth-cover](../features/game-framework/stealth-cover.md)
     - **Prereqs:** AI.Perception, GameFramework.GameplayPrimitives
-12. **81** — [building-survival](../requirements/game-framework/building-survival.md),
+11. **81** — [building-survival](../requirements/game-framework/building-survival.md),
     [racing](../requirements/game-framework/racing.md),
     [turn-based](../requirements/game-framework/turn-based.md),
     [fog-of-war](../requirements/game-framework/fog-of-war.md),
@@ -526,22 +523,28 @@ Requires specific Wave 5 nodes. 18 feature-groups can proceed concurrently.
       [selection-system](../features/game-framework/selection-system.md)
     - **Prereqs:** GameFramework.GameplayPrimitives, GameFramework.Abilities, Physics.RigidBody,
       AI.Navigation
-13. **82** — [terrain](../requirements/geometry-world/terrain.md) (voxel section)
+12. **82** — [terrain](../requirements/geometry-world/terrain.md) (voxel section)
     - **Features:** [terrain](../features/geometry-world/terrain.md) (voxel section)
     - **Prereqs:** GeometryWorld.Terrain, Physics.Destruction
-14. **83** — [procedural-generation](../requirements/geometry-world/procedural-generation.md)
-    - **Features:** [procedural-generation](../features/geometry-world/procedural-generation.md)
+13. **83** —
+    [procedural-generation](../requirements/geometry-world/procedural-generation.md)
+    - **Features:**
+      [procedural-generation](../features/geometry-world/procedural-generation.md)
     - **Prereqs:** GeometryWorld.Terrain, Rendering.AdvancedRendering, ContentPipeline.Streaming
-15. **84** — [fluid-simulation](../requirements/physics/fluid-simulation.md)
-    - **Features:** [fluid-simulation](../features/physics/fluid-simulation.md)
+14. **84** —
+    [fluid-simulation](../requirements/physics/fluid-simulation.md)
+    - **Features:**
+      [fluid-simulation](../features/physics/fluid-simulation.md)
     - **Prereqs:** Physics.RigidBody, GeometryWorld.Water
-16. **85** — [mmo-infrastructure](../requirements/networking/mmo-infrastructure.md)
-    - **Features:** [mmo-infrastructure](../features/networking/mmo-infrastructure.md)
+15. **85** —
+    [mmo-infrastructure](../requirements/networking/mmo-infrastructure.md)
+    - **Features:**
+      [mmo-infrastructure](../features/networking/mmo-infrastructure.md)
     - **Prereqs:** Networking.Replication, GameFramework.WorldManagement, GameFramework.SaveSystem
-17. **86** — [accessibility](../requirements/ui-2d/accessibility.md)
+16. **86** — [accessibility](../requirements/ui-2d/accessibility.md)
     - **Features:** [accessibility](../features/ui-2d/accessibility.md)
     - **Prereqs:** UI2D.WidgetFramework, Audio.Engine, Input.ActionsMapping
-18. **87** — [vr-input](../requirements/input/vr-input.md)
+17. **87** — [vr-input](../requirements/input/vr-input.md)
     - **Features:** [vr-input](../features/input/vr-input.md)
     - **Prereqs:** Input.DeviceAbstraction, Rendering.AdvancedRendering
 

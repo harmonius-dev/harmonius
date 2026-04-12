@@ -78,8 +78,8 @@ time-slicing across frames, and a common **AiDebugReporter** for trace logging a
 visualization. Designers author all AI via visual editors. Users never write code.
 
 Time-sliced execution uses the shared `FrameBudget` primitive (see
-[shared-primitives.md](../core-runtime/shared-primitives.md)). The `Blackboard` typed key-value
-store is a general engine pattern shared with perception, NPC simulation, and quest systems.
+[algorithms.md](../core-runtime/algorithms.md)). The `Blackboard` typed key-value store is a general
+engine pattern shared with perception, NPC simulation, and quest systems.
 
 Key design principles:
 
@@ -2712,3 +2712,337 @@ defined and could conflict with the Tokio async I/O model if file watching uses 
    Consider using an `IndexMap` or a proper LRU cache with a doubly linked list.
 7. **Determinism** -- Weighted random selection uses `fastrand`. For replay determinism, the PRNG
    seed must be part of the serialized agent state. Define seeding strategy.
+
+## Review Feedback
+
+### RF-1: Add AI state machines
+
+AI needs its own state machine system for NPC lifecycle — distinct from animation state machines. AI
+states drive high-level behavior; animation states drive poses.
+
+```rust
+#[derive(Component)]
+pub struct AiStateMachine {
+    pub current: AiStateId,
+    pub graph: Handle<AiStateGraphDef>,
+}
+
+// Example NPC lifecycle:
+// Idle → Alert → Combat → Flee → Dead
+// Each state selects which BT/Utility/GOAP runs
+```
+
+**AI state determines which decision system runs:**
+
+| AI State | Decision System | Behavior |
+|----------|----------------|----------|
+| Idle | Simple BT (patrol loop) | Wander waypoints |
+| Alert | Utility AI (investigate vs ignore) | Check disturbance |
+| Combat | BT + GOAP (plan attack) | Engage target |
+| Flee | GOAP (plan escape route) | Find cover + run |
+| Dead | None | Trigger ragdoll |
+
+**Transitions:** condition-based, same model as animation state machine (Condition expression tree
+over blackboard values). AI state transitions fire ECS events that gameplay systems observe.
+
+AI state machines are authored in the visual editor and compiled via codegen to static Rust in the
+middleman .dylib.
+
+### RF-2: Deep cross-system integration
+
+BT, Utility, GOAP, and state machines compose as a unified AI stack, not siloed systems:
+
+```text
+AI State Machine (lifecycle)
+  └── selects active decision system per state
+      ├── BT (structure + sequencing)
+      │   ├── Utility (leaf: score-based selection)
+      │   ├── GOAP (leaf: plan a sequence)
+      │   └── Action (leaf: execute one action)
+      └── Direct Utility (no BT, pure scoring)
+```
+
+**Composition patterns:**
+
+1. **BT → Utility at leaf:** BT provides structure (patrol loop, combat sequence). At decision
+   points, a Utility leaf scores options (which target? which cover?) and selects the best.
+
+2. **BT → GOAP at leaf:** BT detects "need ammo" condition. GOAP leaf plans: go to crate → open →
+   take ammo → return. BT resumes after GOAP plan completes.
+
+3. **State Machine → BT:** Each AI state has a BT asset. On state transition, the old BT is
+   deactivated and the new one starts from root.
+
+4. **Utility → State transition:** Utility scoring can trigger AI state changes. If "flee score"
+   exceeds threshold for N frames, transition Combat → Flee.
+
+### RF-3: Add navigation integration
+
+Define BT leaf nodes and GOAP actions for movement:
+
+```rust
+// BT leaf nodes:
+pub enum NavigationLeaf {
+    MoveTo { target: BlackboardKey },
+    FollowPath { path: BlackboardKey },
+    FleeFrom { threat: BlackboardKey, distance: f32 },
+    FindCover { threat: BlackboardKey },
+    Patrol { waypoints: BlackboardKey },
+}
+```
+
+Each navigation leaf writes `AnimationParams` (speed, direction) and reads NavMeshAgent state
+(arrived, stuck, replanning).
+
+Cross-references Design #28 (navigation) for NavMeshAgent, pathfinding, and steering.
+
+### RF-4: Add animation integration
+
+AI systems write AnimationParams; animation reads them:
+
+```rust
+// In BT/GOAP action execution:
+fn execute_attack(ctx: &mut LeafContext) {
+    ctx.animation_params.triggers.push("attack");
+}
+
+fn execute_move(ctx: &mut LeafContext, speed: f32, dir: Vec3) {
+    ctx.animation_params.speed = speed;
+    ctx.animation_params.direction = dir.y.atan2(dir.x);
+}
+
+// AI reads animation state for conditions:
+fn is_attack_finished(ctx: &LeafContext) -> bool {
+    ctx.animation_query.state_remaining < 0.1
+}
+```
+
+### RF-5: Add perception system
+
+AI perception queries the shared BVH for sight and the audio propagation system for hearing:
+
+```rust
+#[derive(Component)]
+pub struct AiPerception {
+    pub sight_range: f32,
+    pub sight_angle: f32,      // half-angle of cone
+    pub hearing_range: f32,
+    pub memory_duration: f32,  // seconds to remember
+    pub known_entities: SmallVec<[PerceivedEntity; 16]>,
+}
+
+pub struct PerceivedEntity {
+    pub entity: Entity,
+    pub last_seen_pos: Vec3,
+    pub last_seen_time: f32,
+    pub sense: PerceptionSense,  // Sight, Hearing, Damage
+}
+```
+
+**Sight:** Cone query against shared BVH. Raycast (PhysicsQueries) for line-of-sight occlusion
+check. Respects collision layers.
+
+**Hearing:** Query audio propagation system. If a sound event's propagated intensity at the AI's
+position exceeds the hearing threshold, the AI "hears" it. Sound through walls is attenuated by
+acoustic materials — AI behind a thick wall doesn't hear quiet sounds.
+
+**2D:** Sight uses 2D cone (wedge) against 2D BVH. Hearing uses 2D audio propagation. Same
+AiPerception component, Transform2D instead of Transform.
+
+### RF-6: Add 2D support
+
+- Add Vec2 to BlackboardValue enum
+- Document that all BT/Utility/GOAP work identically in 2D
+- Navigation leafs use 2D navmesh (tile-based pathfinding)
+- Perception uses 2D BVH and 2D sight cones
+- AI state machines work identically in 2D and 3D
+
+### RF-7: Fix constraint violations
+
+- Remove Tokio reference (line 2689)
+- Replace `&World` in LeafNodeFn with scoped `LeafContext`
+- Fix abort_running() to reset descendant subtree
+- Replace PlanCache HashMap with IndexMap or proper LRU
+
+### RF-8: Add codegen for no-code visual editors
+
+Visual BT/Utility/GOAP/AI State Machine editors compile to static Rust via the middleman .dylib:
+
+1. Designer authors AI visually (drag nodes, connect edges)
+2. Codegen generates Rust evaluation function
+3. Compiled into middleman .dylib
+4. Hot-reloaded into editor
+5. Shipping build: bytecode-obfuscated
+
+The canonical leaf node library (Open Question 4) is the set of built-in actions available in the
+visual editor. Plugins can add new leaf nodes via codegen.
+
+### RF-9: Blackboard as central AI data hub
+
+The existing blackboard must be the central data hub connecting ALL AI subsystems. Every system
+reads and writes through it:
+
+| System | Writes to Blackboard | Reads from Blackboard |
+|--------|---------------------|----------------------|
+| Perception | target_entity, last_seen_pos, threat_level | — |
+| Navigation | path_status, distance_remaining | destination, flee_target |
+| Animation | — | speed, direction, triggers |
+| BT | action results, timers | all keys (conditions) |
+| Utility | selected_action, scores | all keys (inputs) |
+| GOAP | plan, plan_step, world_state | goal, preconditions |
+| State Machine | current_state | transition conditions |
+| Gameplay | health, ammo, team_id | — |
+
+**Blackboard drives everything.** The AI state machine reads blackboard keys for transition
+conditions. BT decorators read keys for abort conditions. Utility considerations read keys for
+scoring. GOAP reads keys for world state.
+
+**Standard blackboard keys:**
+
+```rust
+// Perception
+pub const BB_TARGET: BlackboardKey = key("target");
+pub const BB_THREAT_LEVEL: BlackboardKey = key("threat");
+pub const BB_LAST_SEEN_POS: BlackboardKey = key("last_seen");
+
+// Navigation
+pub const BB_DESTINATION: BlackboardKey = key("destination");
+pub const BB_PATH_STATUS: BlackboardKey = key("path_status");
+
+// Combat
+pub const BB_HEALTH: BlackboardKey = key("health");
+pub const BB_AMMO: BlackboardKey = key("ammo");
+pub const BB_IN_COVER: BlackboardKey = key("in_cover");
+
+// State
+pub const BB_AI_STATE: BlackboardKey = key("ai_state");
+pub const BB_ALERT_LEVEL: BlackboardKey = key("alert_level");
+```
+
+**Group blackboard** enables squad coordination:
+
+- Squad leader writes rally point → all members read it
+- Member writes "I'm flanking" → leader reads, assigns others to suppress
+- Shared threat list → all members know enemy positions
+
+**Observer notifications** trigger re-evaluation: when a blackboard key changes, subscribed BT
+decorators and Utility considerations are marked dirty for immediate re-evaluation.
+
+### RF-10: Editor tooling for AI
+
+The no-code editor needs these AI tools:
+
+**Behavior Tree editor:**
+
+- Visual node graph with drag-drop composite/decorator/leaf
+- Inline blackboard key picker for conditions
+- Live debugging: highlight currently running node in green, failed in red, idle in gray
+- Breakpoints on nodes — pause AI evaluation
+- Blackboard inspector — see all keys and values live
+
+**Utility AI editor:**
+
+- Response curve editor with visual curve preview
+- Score breakdown display — see each consideration's contribution
+- Action selection visualization — why was this action chosen?
+
+**GOAP editor:**
+
+- Action precondition/effect table editor
+- Plan visualizer — see planned action sequence
+- World state debugger — see current vs goal state
+
+**AI State Machine editor:**
+
+- Same visual graph editor as animation state machine
+- State → BT/Utility/GOAP assignment via dropdown
+- Transition condition builder with blackboard key picker
+
+**Perception debugger:**
+
+- Sight cone visualization in viewport (wireframe cone)
+- Hearing radius circle/sphere
+- Known entity markers with memory decay visualization
+- Line-of-sight rays (green = visible, red = occluded)
+
+All tools run in the editor viewport with live AI entities. Designers can pause, step, inspect, and
+modify AI behavior at runtime without writing code.
+
+### RF-11: ECS integration
+
+All AI state is ECS components. No hidden state outside the ECS.
+
+**Components per AI entity:**
+
+| Component | Purpose |
+|-----------|---------|
+| `AiStateMachine` | Lifecycle state (Idle/Alert/Combat/etc.) |
+| `Blackboard` | Per-agent knowledge store |
+| `BehaviorTreeInstance` | Active BT state (current node) |
+| `UtilityBrain` | Active utility scores + selection |
+| `GoapAgent` | Active plan + world state snapshot |
+| `AiPerception` | Known entities, sight/hearing results |
+| `AnimationParams` | Written by AI, read by animation |
+| `NavMeshAgent` | Written by AI, read by navigation |
+
+Not every AI entity needs all components. A simple patrol NPC has `AiStateMachine` +
+`BehaviorTreeInstance` + `Blackboard`. A complex boss has all components.
+
+**System ordering in AI phase (Phase 4):**
+
+```text
+1. PerceptionUpdateSystem
+   (BVH sight queries, audio hearing, update Blackboard)
+2. AiStateMachineSystem
+   (evaluate state transitions, select active system)
+3. BehaviorTreeSystem / UtilitySystem / GoapPlannerSystem
+   (parallel: evaluate active decision system per entity)
+4. ActionExecutionSystem
+   (execute selected action: write AnimationParams,
+    write NavMeshAgent destination, fire events)
+```
+
+Systems 2-3 run via `job_system::par_for_each` — each entity's AI is independent. Blackboard writes
+within a single entity are sequential; cross-entity reads use group blackboard (ECS resource).
+
+**ECS queries for AI leaf nodes:**
+
+Leaf nodes access the world through a scoped `LeafContext`, NOT raw `&World`:
+
+```rust
+pub struct LeafContext<'w> {
+    pub blackboard: &'w mut Blackboard,
+    pub perception: &'w AiPerception,
+    pub animation_params: &'w mut AnimationParams,
+    pub animation_query: &'w AnimationQuery,
+    pub nav_agent: &'w mut NavMeshAgent,
+    pub physics_queries: &'w PhysicsQueries,
+    pub spatial_index: &'w SpatialIndex,
+    pub transform: &'w Transform,
+    pub entity: Entity,
+}
+```
+
+This gives leaf nodes exactly the data they need — no more. Safe for parallel evaluation because
+each entity gets its own mutable components, and shared resources (PhysicsQueries, SpatialIndex) are
+read-only.
+
+**Entity events from AI:**
+
+AI systems fire events through the ECS observer system:
+
+```rust
+pub enum AiEvent {
+    StateChanged(AiStateId, AiStateId),
+    TargetAcquired(Entity),
+    TargetLost(Entity),
+    PlanStarted(GoapGoalId),
+    PlanCompleted(GoapGoalId),
+    PlanFailed(GoapGoalId),
+    ActionStarted(ActionId),
+    ActionCompleted(ActionId),
+}
+```
+
+Gameplay systems observe these to trigger effects: alert sound on TargetAcquired, UI indicator on
+StateChanged, quest progression on ActionCompleted.

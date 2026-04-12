@@ -30,12 +30,11 @@
 
 ## Platform Backends
 
-4. **R-2.1.4** — The engine **SHALL** implement the Metal backend as a Swift library with
-   swift-bridge FFI, with no Objective-C or C++ in the FFI boundary.
-   - **Rationale:** Swift provides first-class Metal API access; swift-bridge produces a stable C
-     ABI consumable by Rust directly.
-   - **Verification:** Build the Metal backend on macOS and iOS. Verify the FFI boundary contains
-     only C-compatible signatures. Run the GPU conformance suite.
+4. **R-2.1.4** — The engine **SHALL** implement the Metal backend in Rust using the `objc2-metal`
+   crate, with no C++ or Swift in the FFI boundary.
+   - **Rationale:** `objc2-metal` provides safe Rust bindings to the Metal API via the Objective-C
+     runtime, keeping the entire backend in Rust.
+   - **Verification:** Build the Metal backend on macOS and iOS. Run the GPU conformance suite.
 
 5. **R-2.1.5** — The engine **SHALL** implement the D3D12 backend in pure Rust using COM bindings
    with safe wrappers managing reference counting, with no C++ dependency.

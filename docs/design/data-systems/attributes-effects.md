@@ -40,8 +40,7 @@
 | ECS world/queries  | F-1.1.1  | `Query`, `Entity`   |
 | Event channels     | F-1.5.1  | `EventWriter`       |
 | Change detection   | F-1.1.22 | `Changed<T>`        |
-| Type registry      | F-1.3.1  | `Reflect` derive    |
-| Serialization      | F-1.4.1  | Binary/RON codecs   |
+| Serialization      | F-1.4.1  | `rkyv` zero-copy    |
 | Gameplay databases | F-13.7   | `DataTable`,`RowRef`|
 | Gameplay tags      | F-13.10  | `GameplayTagSet`    |
 | StatModifier       | shared   | `StatAggregator`    |
@@ -99,7 +98,6 @@ graph TD
         ECS[ECS World]
         EV[Event Channels]
         CD[Change Detection]
-        TR[TypeRegistry]
     end
 
     ME --> SM
@@ -126,6 +124,20 @@ graph TD
     AT --> CD
     CO --> ECS
 ```
+
+### Codegen Integration
+
+User-defined types flow through the codegen pipeline into the middleman `.dylib`:
+
+1. `AttributeSchema`, `MeterDefinition`, and `EffectDefinition` authored in the visual editor are
+   codegen'd as Rust structs into the middleman `.dylib`. The engine binary loads them via
+   `libloading` at startup and on hot-reload.
+2. `ConditionRegistry` is populated at load time with codegen'd condition functions. Each condition
+   in a logic graph compiles to a `fn(&ConditionContext) -> bool` pointer in the middleman.
+3. Hot-reload recompiles the middleman when definitions or conditions change. The engine binary
+   stays stable.
+4. Custom `ModOp` variants or stacking policies authored by users are codegen'd enum variants in the
+   middleman `.dylib`.
 
 ### Class Diagram
 
@@ -239,7 +251,7 @@ classDiagram
         +i32 priority
     }
     class StatAggregator {
-        -Vec~StatModifier~ modifiers
+        -SmallVec~StatModifier 8~ modifiers
         +add(StatModifier)
         +remove_by_source(Entity)
         +evaluate(f32, f32, f32) f32
@@ -254,6 +266,8 @@ classDiagram
         +Vec~EffectModifier~ modifiers
         +GameplayTagSet tags
         +Option~ConditionExpr~ condition
+        +Option~Handle~EffectGraphAsset~~ vfx_indicator
+        +Option~RowRef~ data_table_row
     }
     class EffectType {
         Instant
@@ -315,8 +329,11 @@ classDiagram
         +World world
         +Entity entity
     }
+    class ConditionCheckFn {
+        fn(ConditionContext) bool
+    }
     class ConditionRegistry {
-        -HandleMap~ConditionCheckFn~ checks
+        -Vec~Option~ConditionCheckFn~~ checks
         +register(ConditionId, ConditionCheckFn)
         +get(ConditionId) Option~ConditionCheckFn~
     }
@@ -386,16 +403,17 @@ classDiagram
 
 ## API Design
 
-All types derive `Reflect`. Definitions are immutable database rows. Components are mutable
-per-entity state. `ModOp`, `StatModifier`, `StatAggregator`, `ConditionExpr`, and
-`ConditionRegistry` are from `harmonius_core::shared` (see shared-primitives.md).
+All type metadata is generated statically by the codegen pipeline — no `Reflect` derive, no runtime
+type registry. Definitions are immutable database rows. Components are mutable per-entity state.
+`ModOp`, `StatModifier`, `StatAggregator`, `ConditionExpr`, and `ConditionRegistry` are from
+`harmonius_core::shared` (see algorithms.md).
 
 ### Meters
 
 ```rust
 pub struct MeterDefinitionId(pub u32);
 
-/// Immutable database row.
+/// Immutable database row. Derives `rkyv::Archive` for zero-copy mmap loading.
 pub struct MeterDefinition {
     pub id: MeterDefinitionId,
     pub display_name: SmolStr,
@@ -467,7 +485,7 @@ impl MeterSet {
 pub struct AttributeSchemaId(pub u32);
 pub struct AttributeDefId(pub u32);
 
-/// Immutable database row.
+/// Immutable database row. Derives `rkyv::Archive` for zero-copy mmap loading.
 pub struct AttributeDefinition {
     pub id: AttributeDefId,
     pub name: SmolStr,
@@ -520,7 +538,25 @@ impl AttributeSet {
 ### Effects
 
 ```rust
-/// Immutable database row.
+/// Context passed to every condition check.
+///
+/// `world` provides read access to any component or resource. Codegen'd condition
+/// functions declare their exact queries statically — the codegen pipeline validates
+/// that only read-only ECS access is performed. No write access is permitted inside
+/// a `ConditionCheckFn`. This justifies passing `World` rather than a narrow query
+/// result: conditions authored in the visual editor may query arbitrary components
+/// (e.g., checking faction tags, environment state, equipment slots).
+pub struct ConditionContext<'w> {
+    pub world: &'w World,
+    pub entity: Entity,
+}
+
+/// Codegen'd function pointer type for condition evaluation.
+/// Conditions are compiled into the middleman .dylib and loaded as fn pointers.
+pub type ConditionCheckFn = fn(&ConditionContext<'_>) -> bool;
+
+/// Immutable database row. Derives `rkyv::Archive` for zero-copy mmap loading.
+/// Loadable from a data table row (F-13.7.2) via the ECS binding system.
 pub struct EffectDefinition {
     pub effect_type: EffectType,
     pub magnitude: f32,
@@ -530,6 +566,11 @@ pub struct EffectDefinition {
     pub modifiers: Vec<EffectModifier>,
     pub tags: GameplayTagSet,
     pub condition: Option<ConditionExpr>,
+    /// Optional VFX indicator template. Spawned on apply, despawned on expiry.
+    /// VFX graph instance is owned by the VFX system; spawn/despawn is owned here.
+    pub vfx_indicator: Option<Handle<EffectGraphAsset>>,
+    /// Row in the data table that was the source of this definition, if any.
+    pub data_table_row: Option<RowRef>,
 }
 pub enum EffectType {
     Instant, Duration, Periodic, Infinite,
@@ -704,12 +745,26 @@ sequenceDiagram
 
 ### System Execution Order
 
+All six systems run in the **FixedUpdate** phase. One game tick equals one fixed-update step.
+`meter_tick_system` receives `dt: f32` as the fixed delta time (e.g., 1/60 s), not variable frame
+time. Drain and fill rates are expressed in units per second and scaled by `dt`.
+
 1. `effect_tick_system`
 2. `threshold_effect_handler_system`
 3. `meter_tick_system`
 4. `meter_modifier_cleanup_system`
 5. `attribute_eval_system`
 6. `attribute_modifier_cleanup_system`
+
+### Frame-Boundary Handoff
+
+- **Events** emitted in one system are readable by all subsequent systems in the same FixedUpdate
+  phase. Events are flushed at the end of each FixedUpdate stage.
+- **Component writes** (e.g., `MeterSet`, `AttributeSet`) are immediately visible to all systems
+  scheduled after the writer within the same phase.
+- **UI and rendering** read attribute and meter values from the last committed FixedUpdate state.
+  The render thread snapshots the relevant components at the FixedUpdate→Render handoff point (end
+  of FixedUpdate, before the render graph runs).
 
 ---
 
@@ -728,13 +783,31 @@ sequenceDiagram
 
 ### Serialization and Replication
 
-- **Meters:** serialize `definition_id` + `current_value`. Definition from database.
-- **Attributes:** serialize `schema_id` + base values. Modifiers recomputed on load.
-- **Effects:** serialize `definition` + `source` + `remaining_ticks` + `stack_count`.
+- **Definitions:** `MeterDefinition`, `AttributeSchema`, and `EffectDefinition` are baked to rkyv
+  archives by the asset pipeline and loaded via zero-copy mmap. No text serialization at runtime.
+- **Meters:** save file stores `definition_id` + `current_value`. Definition re-resolved from
+  database on load.
+- **Attributes:** save file stores `schema_id` + base values. Modifiers recomputed on load.
+- **Effects:** save file stores `definition` + `source` + `remaining_ticks` + `stack_count`.
 - **Replication:** only `replicate = true` fields sent. Delta-compressed updates.
 
-All evaluation is CPU-bound. Uses `parallel_for` for batch processing across worker threads. SIMD
-for bulk attribute evaluation.
+### Platform Agnosticism
+
+This system is pure Rust with no platform-specific code. It works identically across all target
+platforms: Windows, macOS, Linux, iOS, Android, Switch, and VR. Parallelism delegates to the custom
+job system (`par_iter` / `scope()` via crossbeam-deque). The system is dimension-agnostic and works
+identically for 2D, 2.5D, and 3D games.
+
+Temporary collections produced during evaluation (e.g., `SmallVec` returns from `tick()`,
+intermediate modifier lists in `StatAggregator`) use per-thread arena allocators when they exceed
+inline capacity. Arenas reset at frame boundaries.
+
+### Algorithm References
+
+- **Modifier stack evaluation order** — layered flat/percent/override pipeline described in Unreal
+  Engine GAS documentation: <https://github.com/tranek/GASDocumentation#concepts-ge-mods>
+- **Stacking policies** (Additive, Multiplicative, HighestWins) — GDC 2019 "Gameplay Ability System"
+  talk by Michael Noland (Epic Games): <https://www.youtube.com/watch?v=YvXvWa6vbAA>
 
 ---
 
@@ -803,3 +876,117 @@ Detailed test cases in companion file
    prediction/rollback (F-8.2.1).
 4. Currently populated at plugin init. Dynamic registration compiles logic graph conditions into
    functions at load time.
+
+## Review feedback
+
+### RF-1: Remove Reflect derives and TypeRegistry
+
+Remove all `Reflect` derives. Remove the `TR[TypeRegistry]` node from the architecture diagram.
+Remove `Type registry | F-1.3.1` from the cross-cutting dependencies table. Replace "All types
+derive `Reflect`" with a statement that all type metadata is generated statically by the codegen
+pipeline.
+
+### RF-2: Codegen pipeline for user-defined types
+
+Zero mention of codegen or middleman .dylib. Add a "Codegen integration" subsection:
+
+1. User-defined `AttributeSchema`, `MeterDefinition`, and `EffectDefinition` types are codegen'd
+   into the middleman .dylib
+2. `ConditionRegistry` is populated by codegen'd condition functions at load time — conditions
+   compile to Rust via the "everything is Rust" pipeline
+3. Hot-reload recompiles the middleman when definitions change
+4. Custom `ModOp` variants or stacking policies added by users are codegen'd enum variants in the
+   middleman
+
+### RF-3: Replace RON with rkyv
+
+Replace `Binary/RON codecs` in the cross-cutting dependencies with `rkyv`. Definitions are authored
+in the visual editor and baked to rkyv archives — no text serialization format needed at the API
+level. All `*Definition` and `*Schema` types derive `rkyv::Archive` for zero-copy mmap loading.
+Mutable runtime state (Meter, AttributeValue, ActiveEffect) uses standard serialization for save
+files.
+
+### RF-4: Define ConditionCheckFn as codegen'd function pointers
+
+`ConditionCheckFn` is never defined. Define it as `fn(&ConditionContext) -> bool` (function pointer,
+not `dyn Fn`). Conditions are codegen'd Rust functions compiled into the middleman .dylib, loaded as
+function pointers. Replace `HandleMap` in `ConditionRegistry` with
+`Vec<Option<fn(&ConditionContext) -> bool>>` indexed by `ConditionId(u32)` for deterministic O(1)
+lookup.
+
+### RF-5: Create companion test cases file
+
+Create `attributes-effects-test-cases.md` with TC-IDs in `TC-X.Y.Z.N` format, explicit
+inputs/outputs, and links to R-X.Y.Z for every test.
+
+### RF-6: Identify game loop phase
+
+State explicitly which game loop phase the six attribute/effect systems run in (likely FixedUpdate
+or PostUpdate). Document the tick rate relationship (e.g., 1 tick = 1 fixed update step). If meter
+drain/fill uses `dt: f32`, clarify whether that is fixed or variable delta time.
+
+### RF-7: Frame-boundary handoff points
+
+Document: (a) events are flushed between system stages; (b) component writes are visible to
+subsequent systems in the same phase; (c) UI/rendering reads attribute values from the previous
+frame's committed state (or specify the actual handoff mechanism).
+
+### RF-8: Use custom job system terminology
+
+Replace `parallel_for` with a reference to the engine's custom job system: "Uses the custom job
+system (`par_iter` / `scope()` via crossbeam-deque) for batch processing across worker threads."
+
+### RF-9: Per-thread arenas for hot-path allocations
+
+Note that temporary collections produced during evaluation (SmallVec returns from `tick()`,
+intermediate modifier lists in `StatAggregator`) use per-thread arena allocators when they exceed
+inline capacity. Arenas reset at frame boundaries.
+
+### RF-10: Algorithm reference URLs
+
+Add citations for: modifier stack evaluation order (Unreal GAS documentation or GDC talks), stacking
+policies (Additive, Multiplicative, HighestWins).
+
+### RF-11: Expand platform considerations
+
+Add a statement confirming the system is pure Rust with no platform-specific code, works identically
+across all target platforms (Windows, macOS, Linux, iOS, Android, Switch, VR), and relies on the job
+system for parallelism.
+
+### RF-12: Narrow ConditionContext or justify World access
+
+`ConditionContext` holds a `World` reference. Passing the entire `World` to condition evaluation is
+a broad API surface. Either: (a) document why `World` access is needed and confirm condition
+functions are codegen'd with validated access, or (b) narrow the context to specific query results.
+
+### RF-13: Specify HandleMap backing for determinism
+
+Define `HandleMap` explicitly or replace with `Vec<Option<T>>` indexed by ID for deterministic O(1)
+lookup. Condition evaluation during effect ticking is a hot path — HashMap backing would violate the
+determinism constraint.
+
+### RF-14: SmallVec for StatAggregator modifiers
+
+Change `Vec<StatModifier>` to `SmallVec<[StatModifier; 8]>` in `StatAggregator`. Most entities have
+fewer than 8 active modifiers.
+
+### RF-15: Note 2D/2.5D/3D agnosticism
+
+Add a one-line note confirming the attribute/effect system is dimension-agnostic and works
+identically for 2D, 2.5D, and 3D games.
+
+### RF-16: Status effect VFX indicators
+
+Active effects should drive persistent 3D visual indicators on affected entities (poison cloud, fire
+aura, frost overlay, shield bubble). These are VFX effect graph instances (see vfx/effects.md RF-26)
+spawned when an effect is applied and despawned when it expires. The attribute/effect system owns
+the spawn/despawn logic; the VFX system owns the visual. Effect definitions should reference an
+optional `Handle<EffectGraphAsset>` for the visual indicator template.
+
+### RF-17: Data table integration
+
+The design doesn't explain how effect definitions connect to data tables. Effect templates should be
+storable as data table rows (F-13.7.2) with typed columns for duration, modifier values, stacking
+policy, and condition references. The `EffectDefinition` asset should be loadable from a data table
+row via the ECS binding system. This enables designers to author all effect balance data in the
+table editor.

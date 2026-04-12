@@ -18,11 +18,11 @@ the domain, Y is the group, and Z is the feature number.
 | 9 | Animation | 7 | 57 |
 | 10 | UI & 2D | 6 | 75 |
 | 11 | VFX | 6 | 42 |
-| 12 | Content Pipeline | 8 | 81 |
+| 12 | Content Pipeline | 7 | 55 |
 | 13 | Game Framework | 27 | 360 |
 | 14 | Platform | 7 | 115 |
 | 15 | Tools & Editor | 24 | 238 |
-| | **Total** | **148** | **1,597** |
+| | **Total** | **147** | **1,571** |
 
 ## 1. Core Runtime
 
@@ -165,7 +165,6 @@ the domain, Y is the group, and Z is the feature number.
 
 | File | Features |
 |------|--------:|
-| [dcc-plugins.md](content-pipeline/dcc-plugins.md) | 26 |
 | [asset-database.md](content-pipeline/asset-database.md) | 10 |
 | [streaming-io.md](content-pipeline/streaming-io.md) | 10 |
 | [asset-processing.md](content-pipeline/asset-processing.md) | 9 |

@@ -58,9 +58,9 @@
    load time on mobile, **so that** shader variant hitches do not occur during gameplay on
    tile-based GPUs.
 
-7. **US-2.1.4.1** — **As a** engine developer (P-26), **I want** a Metal backend implemented in
-   Swift with swift-bridge FFI, **so that** I get first-class Metal API access without Objective-C
-   in the boundary.
+7. **US-2.1.4.1** — **As a** engine developer (P-26), **I want** a Metal backend implemented in Rust
+   via `objc2-metal`, **so that** I get first-class Metal API access with the entire backend in
+   Rust.
 
 8. **US-2.1.4.2** — **As a** engine developer (P-26), **I want** the Metal backend compiled only on
    macOS and iOS targets, **so that** Windows and Linux builds exclude platform-irrelevant code.

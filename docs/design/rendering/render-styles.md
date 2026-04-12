@@ -816,3 +816,240 @@ See companion file [render-styles-test-cases.md](render-styles-test-cases.md).
    throughput.
 6. **Weather-driven material wetness** -- How wetness parameter propagates to material graphs
    (puddles, surface darkening).
+
+## Review Feedback
+
+### RF-1: Add API Design and Data Flow sections
+
+Required by the design template. Add Rust pseudocode for key APIs: MaterialGraph,
+ShaderPermutationCache, ToonMaterial system, DecalProjector system. Add data flow diagrams showing
+ECS components → render graph passes → GPU.
+
+### RF-2: Add render layer integration
+
+Document how each subsystem interacts with `RenderLayers(u32)`:
+
+- Decals: visible only if decal layer intersects camera layer
+- Outlines: filter by layer (UI objects don't get world outlines)
+- Volumetric fog: can scope to specific layers
+- Toon shading: per-layer shading model override possible
+- Camera layer masking controls which styles apply
+
+### RF-3: Fix architecture diagram
+
+Show explicit edges from `RG[Render Graph]` to all pass nodes (VOL, CLD, GOD, TAA, FXAA, SMAA, TSR,
+DEC, STR, SKN, TE, etc.). Current diagram only connects RG → G-Buffer.
+
+### RF-4: Trace untraced features
+
+- PainterlyStyle and PixelArtStyle need F-IDs and R-IDs
+- SMAA needs its own F-ID (distinct from FXAA)
+- Add F-2.12.2 (ocean reflection/refraction) to trace table
+
+### RF-5: Fix SMAA test trace
+
+`test_smaa_edge_detection` maps to R-2.6.3 which is FXAA. Give SMAA its own requirement ID.
+
+### RF-6: Define Custom shading model
+
+All shading models live in a single enum inside the **middleman .dylib** (see constraints.md
+"Codegen and Hot-Reload Architecture"). The middleman is the single source of truth for all
+codegen'd types.
+
+```rust
+// Generated into the middleman .dylib by codegen.
+// Contains ALL shading models — built-in + plugin.
+// One enum, one source of truth, exhaustive match.
+pub enum ShadingModelId {
+    // Engine built-in (always present)
+    DefaultLit,
+    Subsurface,
+    ClearCoat,
+    Cloth,
+    Hair,
+    Eye,
+    Toon,
+    Terrain,
+    Unlit,
+    // Plugin-defined (added by codegen, sorted
+    // alphabetically by plugin + model name)
+    WaterSurface,  // ocean_plugin
+    Hologram,      // scifi_plugin
+}
+```
+
+The entire enum is codegen'd into the middleman .dylib and regenerated whenever plugins change. Both
+the engine binary and plugin .dylibs load the middleman, so all code sees the same enum. Exhaustive
+match everywhere. No numeric IDs. No collisions.
+
+When a user adds a new shading model:
+
+1. Codegen adds the variant to `ShadingModelId`
+2. Middleman .dylib recompiled (sub-3 seconds)
+3. Engine hot-reloads middleman via libloading
+4. Plugin .dylibs recompiled against updated middleman
+5. All code has the new variant with full static dispatch
+
+The G-buffer stores the enum discriminant. The lighting pass matches on `ShadingModelId` with
+exhaustive match — static dispatch for all models, built-in and plugin alike.
+
+This pattern applies to ALL codegen'd enums and static dispatch types, not just shading models.
+Components, events, systems, and type descriptors follow the same middleman architecture.
+
+G-buffer constraints for all models (built-in and plugin):
+
+- Must write standard channels (albedo, normal, roughness, metallic, AO)
+- Can write up to 2 custom channels per model
+- Must be compatible with tiled/clustered lighting pipeline
+
+### RF-7: Add Terrain shading model
+
+`Terrain` is a built-in enum variant. Terrain uses multi-layer splatmap blending with:
+
+- Height-based layer transitions (not just alpha blend)
+- Triplanar projection for cliff faces
+- Virtual texturing for large terrain areas
+- Per-layer PBR parameters (albedo, normal, roughness, AO)
+- Painted layer weights from world-geometry design (Design #22)
+
+The terrain shading model is defined here. The terrain geometry, splatmap painting, and layer
+management are in world-geometry.md.
+
+### RF-8: Define MetalCoating and MaterialLayerDesc
+
+These are referenced by SmallVec fields in the class diagram but never defined. Add struct
+definitions.
+
+### RF-9: Expand hatching parameters
+
+Add hatching density, scale, direction, and line weight to `ToonMaterial`. Currently only a texture
+field exists.
+
+### RF-10: Create companion test cases file
+
+Create `render-styles-test-cases.md` with TC-X.Y.Z.N IDs. Move inline test tables there. Add tests
+for PainterlyStyle, PixelArtStyle, SMAA, terrain shading, render layer filtering.
+
+### RF-11: Scope clarification
+
+This design owns materials, shading models, volumetric environment rendering, decals, and
+NPR/stylized styles. It does NOT own:
+
+| Owned elsewhere | Design |
+|----------------|--------|
+| God rays, bloom, DOF, eye adaptation | render-effects (#17) |
+| Terrain geometry, splatmaps, LOD | world-geometry (#22) |
+| Post-process pipeline ordering | render-effects (#17) |
+| GPU abstraction, render graph | render-pipeline (#15) |
+| Primary visibility, lighting eval | rendering-core (#16) |
+
+### RF-12: Add Water shading model
+
+Add `Water` as a built-in `ShadingModelId` variant. Water needs specialized render graph passes no
+other model requires:
+
+- Planar reflection capture (below-surface camera render pass)
+- Refraction via distorted scene color behind the surface
+- Gerstner wave vertex displacement in mesh/vertex shader
+- Depth-based subsurface scattering (light absorption by depth)
+- Foam generation at shoreline (depth-tested against terrain)
+- Caustics projection onto underwater surfaces
+- Flow map animation for directional currents
+
+The water shading model registers its own render graph passes (reflection plane, refraction grab,
+underwater fog). The material graph exposes water-specific parameters: wave amplitude/frequency,
+foam threshold, absorption color, flow speed.
+
+### RF-13: Transparency strategy
+
+Support three transparency modes with clear render graph ordering:
+
+**1. Alpha cutoff with opacity micromasks (cheapest):**
+
+For foliage, fences, hair cards, and GPU-driven meshlet rendering (which cannot depth-sort). Use
+blue noise dithered threshold:
+
+```hlsl
+// Pixel shader:
+float threshold = blue_noise(screen_pos, frame_index);
+if (alpha < threshold) discard;
+// TAA accumulates over frames → smooth result
+```
+
+This is how Nanite handles foliage — meshlet rendering can't do alpha blend, so dithered cutoff +
+TAA is the only option for GPU-driven transparency. Micromask patterns:
+
+- Blue noise (best quality, per-frame jitter)
+- Bayer matrix 4x4 (cheapest, fixed pattern)
+- Interleaved gradient noise (good TAA integration)
+
+**2. Alpha blend (sorted, medium cost):**
+
+For glass, water surface, simple particle billboards. Requires back-to-front depth sorting. Rendered
+after opaque pass. Does not work with meshlet pipeline — uses traditional draw path.
+
+**Render graph pass ordering:**
+
+1. Opaque (meshlet indirect draw)
+2. Alpha cutoff / opacity micromask (meshlet indirect draw)
+3. Sorted alpha blend (traditional draw, back-to-front)
+4. Post-process (TAA resolves micromask dithering)
+
+**References:**
+
+### RF-14: Algorithm references
+
+**Transparency:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Opacity micromasks | [Nanite (SIGGRAPH 2021)](https://advances.realtimerendering.com/s2021/Karis_Nanite_SIGGRAPH_Advances_2021_final.pdf) |
+| IGN dithering | [Jimenez (2014)](http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare) |
+
+**NPR / Stylized:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Toon ramp shading | [Lake et al. (GDC 2000)](https://developer.valvesoftware.com/wiki/Cel_Shading) |
+| JFA outlines | [Rong & Tan, "Jump Flooding" (2006)](https://ieeexplore.ieee.org/document/4276119) |
+| Sobel edge detect | Standard image processing |
+| Hatching | [Praun et al. (SIGGRAPH 2001)](https://hhoppe.com/hatching.pdf) |
+
+**Skin / Character:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| SSS diffusion | [Jimenez et al. (2015)](http://www.iryoku.com/separable-sss/) |
+| Pre-integrated skin | [Penner (GPU Pro 2, 2011)](https://advances.realtimerendering.com/s2011/) |
+| Marschner hair | [Marschner et al. (SIGGRAPH 2003)](https://www.cs.cornell.edu/~srm/publications/SG03-hair.html) |
+| Dual scattering hair | [Zinke et al. (2008)](https://dl.acm.org/doi/10.1111/j.1467-8659.2008.01182.x) |
+
+**Materials:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Clear coat | [Karis, PBR (SIGGRAPH 2013)](https://blog.selfshadow.com/publications/s2013-shading-course/) |
+| Cloth (Ashikhmin) | [Ashikhmin & Premoze (2007)](https://dl.acm.org/doi/10.5555/2383847.2383874) |
+| Eye rendering | [Jimenez et al. (2012)](http://www.iryoku.com/downloads/Next-Generation-Character-Rendering-v6.pptx) |
+| LTC area lights | [Heitz et al. (SIGGRAPH 2016)](https://eheitzresearch.wordpress.com/415-2/) |
+
+**Water:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Gerstner waves | [Tessendorf (SIGGRAPH 2001)](https://people.computing.clemson.edu/~jtessen/reports/papers_files/coursenotes2004.pdf) |
+| Planar reflections | [Lengyel, "Rendering Water" (2007)](https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-19-generic-refraction-simulation) |
+| Flow maps | [Vlachos (SIGGRAPH 2010)](https://advances.realtimerendering.com/s2010/) |
+
+**Volumetrics:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Froxel fog | [Hillaire (2016)](https://www.ea.com/frostbite/news/physically-based-unified-volumetric-rendering-in-frostbite) |
+| Cloud rendering | [Schneider (SIGGRAPH 2015)](https://advances.realtimerendering.com/s2015/The%20Real-time%20Volumetric%20Cloudscapes%20of%20Horizon%20-%20Zero%20Dawn%20-%20ARTR.pdf) |
+
+**Decals:**
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Deferred decals | [Persson (2011)](http://www.humus.name/index.php?page=3D&&start=56) |

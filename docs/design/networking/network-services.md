@@ -1130,3 +1130,337 @@ Test cases are in the companion file
 10. **Chat bubbles in VR.** Maximum simultaneous before culling distant ones (propose: 8 nearest)?
 11. **Cross-shard channels.** Communication framework handles fan-out directly vs delegate to
     inter-server bus?
+
+## Review Feedback
+
+### RF-1: Replace all Tokio/async with platform-native I/O
+
+"All I/O is Tokio async I/O" must be replaced. Use platform- native I/O per constraints. Replace
+Future return types on TextClient, VoiceClient, DmClient with synchronous request/handle pattern.
+Update replay I/O table. Use QUIC (Design #30 RF-12) for all service communication.
+
+### RF-2: Remove all Reflect derives
+
+Use codegen-generated metadata via middleman .dylib.
+
+### RF-3: Create companion test cases file
+
+Create `network-services-test-cases.md` with 84 claimed tests (40 unit + 28 integration + 16
+benchmarks).
+
+### RF-4: Add missing standard services
+
+**Leaderboards:**
+
+```rust
+pub struct LeaderboardEntry {
+    pub player_id: PlayerId,
+    pub score: i64,
+    pub rank: u32,
+    pub metadata: SmallVec<[u8; 64]>,
+    pub timestamp: u64,
+}
+
+pub struct LeaderboardService { /* ... */ }
+
+impl LeaderboardService {
+    pub fn submit_score(
+        &self, board_id: LeaderboardId,
+        score: i64,
+    ) -> IoRequestId;
+    pub fn query_range(
+        &self, board_id: LeaderboardId,
+        offset: u32, count: u32,
+    ) -> IoRequestId;
+    pub fn query_around_player(
+        &self, board_id: LeaderboardId,
+        count: u32,
+    ) -> IoRequestId;
+}
+```
+
+- Multiple boards per game (daily, weekly, all-time)
+- Per-board reset schedule
+- Friend-filtered leaderboards
+- Anti-cheat: server validates scores before submission
+
+**Achievements:**
+
+```rust
+pub struct Achievement {
+    pub id: AchievementId,
+    pub progress: f32,       // 0.0-1.0
+    pub unlocked: bool,
+    pub unlock_time: Option<u64>,
+}
+
+pub struct AchievementService { /* ... */ }
+
+impl AchievementService {
+    pub fn increment(
+        &self, id: AchievementId, delta: f32,
+    ) -> IoRequestId;
+    pub fn unlock(
+        &self, id: AchievementId,
+    ) -> IoRequestId;
+    pub fn query_all(&self) -> IoRequestId;
+}
+```
+
+- Progress-based (kill 100 enemies: 0.45 → 0.46)
+- Boolean (find hidden area: unlock)
+- Sync with platform SDK achievements (Steam, PSN, Xbox)
+
+**Cloud saves:**
+
+```rust
+pub struct CloudSaveService { /* ... */ }
+
+impl CloudSaveService {
+    pub fn save(
+        &self, slot: u8, data: &[u8],
+    ) -> IoRequestId;
+    pub fn load(&self, slot: u8) -> IoRequestId;
+    pub fn list_slots(&self) -> IoRequestId;
+    pub fn delete(&self, slot: u8) -> IoRequestId;
+}
+```
+
+- Per-player storage (MinIO backend, S3-compatible)
+- Conflict resolution: last-write-wins or merge callback
+- rkyv serialization for save data
+- Quota per player (configurable, default 100 MB)
+
+**Analytics / telemetry:**
+
+```rust
+pub struct TelemetryEvent {
+    pub name: StringId,
+    pub properties: SmallVec<[(StringId, TelemetryValue); 8]>,
+    pub timestamp: u64,
+}
+
+pub struct TelemetryService { /* ... */ }
+
+impl TelemetryService {
+    pub fn track(&self, event: TelemetryEvent);
+    pub fn flush(&self) -> IoRequestId;
+}
+```
+
+- Fire-and-forget event submission (buffered, batched)
+- Player session tracking (login, playtime, progression)
+- Server-side aggregation pipeline (Kinesis → S3 → Athena)
+- GDPR: opt-out flag, data deletion API
+
+### RF-5: Matchmaking backfill
+
+When a player leaves mid-match, backfill with a replacement:
+
+```rust
+pub struct BackfillRequest {
+    pub match_id: MatchId,
+    pub slot: PartySlot,
+    pub min_skill: f32,
+    pub max_skill: f32,
+    pub max_wait_secs: u16,
+}
+```
+
+- Matchmaker searches queue for players within skill range
+- Backfill candidates see "join in progress" prompt
+- Backfilled player joins with current match state
+- Skill adjustment: backfill players get reduced rating change (they joined late)
+- Timeout: if no backfill found within max_wait, slot stays empty (or AI fills if configured)
+
+### RF-6: Abandoned match handling
+
+Detect and penalize match abandonment:
+
+```rust
+pub enum AbandonPenalty {
+    None,
+    CooldownMinutes(u16),
+    RatingPenalty(f32),
+    TempBan { hours: u16 },
+}
+
+pub struct AbandonPolicy {
+    pub grace_period_secs: u16,    // disconnect time before abandon
+    pub reconnect_window_secs: u16, // can rejoin within this
+    pub penalty_escalation: Vec<AbandonPenalty>, // 1st, 2nd, 3rd...
+}
+```
+
+- Grace period: brief disconnects (< 30s) allow reconnect without penalty
+- Reconnect window: longer disconnects (< 5 min) allow rejoin but count as abandon if not taken
+- Escalating penalties: warning → 15 min cooldown → 1 hour → rating penalty → temp ban
+- Tracked per player per rolling window (e.g., 20 games)
+- Team vote: team can vote to not penalize (emergency disconnect)
+
+### RF-7: Skill rating system
+
+Expand Glicko-2 with detailed tracking:
+
+```rust
+pub struct PlayerRating {
+    pub rating: f64,          // Glicko-2 rating (μ)
+    pub deviation: f64,       // rating deviation (φ)
+    pub volatility: f64,      // rating volatility (σ)
+    pub matches_played: u32,
+    pub wins: u32,
+    pub losses: u32,
+    pub last_match_time: u64,
+}
+```
+
+- Rating decay: deviation increases over time when not playing (Glicko-2 handles this natively)
+- Placement matches: first N matches (e.g., 10) use wider deviation for faster convergence
+- Per-mode ratings: separate rating per game mode (ranked, casual, team, solo)
+- Season resets: soft reset (compress toward mean) not hard reset (preserves relative ordering)
+- Anti-smurf: new accounts start with high deviation, converge quickly toward true skill
+- Display rank: map rating ranges to named tiers (Bronze, Silver, Gold, Platinum, Diamond, etc.)
+
+Reference: [Glickman, "Glicko-2" (2012)](http://www.glicko.net/glicko/glicko2.pdf)
+
+### RF-8: Platform SDK integration
+
+Expand beyond the Platform enum:
+
+| Platform | Auth | Achievements | Friends | Voice | Store |
+|----------|------|-------------|---------|-------|-------|
+| Steam | Steamworks | Steam achievements | Steam friends | Steam voice | Steam Store |
+| PlayStation | PSN | PSN trophies | PSN friends | PSN party chat | PS Store |
+| Xbox | Xbox Live | Xbox achievements | Xbox friends | Xbox party chat | MS Store |
+| Nintendo | Nintendo Account | N/A | Nintendo friends | N/A | eShop |
+| Epic | EOS | EOS achievements | EOS friends | EOS voice | Epic Store |
+| Apple | Game Center | GC achievements | GC friends | N/A | App Store |
+
+Each platform has a `PlatformAdapter` trait (cfg-gated per platform, static dispatch) that bridges
+engine services to platform SDK APIs. Cross-play requires mapping platform friend IDs to engine
+player IDs.
+
+### RF-9: Use QUIC for all service communication
+
+All service APIs (auth, matchmaking, leaderboards, achievements, cloud saves, telemetry) communicate
+via HTTP/3 over QUIC (Design #30 RF-12). Voice uses QUIC unreliable datagrams. No separate TCP stack
+needed.
+
+### RF-10: Algorithm references
+
+| Algorithm | Reference |
+|-----------|-----------|
+| Glicko-2 | [Glickman (2012)](http://www.glicko.net/glicko/glicko2.pdf) |
+| OAuth 2.0 | [RFC 6749](https://www.rfc-editor.org/rfc/rfc6749) |
+| JWT | [RFC 7519](https://www.rfc-editor.org/rfc/rfc7519) |
+| Opus codec | [RFC 6716](https://www.rfc-editor.org/rfc/rfc6716) |
+| AEC | [Haykin, "Adaptive Filter Theory"](https://www.pearson.com/en-us/subject-catalog/p/adaptive-filter-theory/P200000003521) |
+
+### RF-11: Queue types and leaver queue
+
+Support multiple matchmaking queue types:
+
+```rust
+pub enum QueueType {
+    Casual,           // relaxed skill matching
+    Competitive,      // strict skill, ranked
+    Raid {             // PvE, role-based
+        min_tanks: u8,
+        min_healers: u8,
+        min_dps: u8,
+    },
+    Custom {           // user-defined rules
+        rule_id: QueueRuleId,
+    },
+}
+```
+
+**Competitive queue:**
+
+- Strict skill range (narrows over time)
+- Map/mode veto system
+- Mandatory accept phase (decline = short cooldown)
+- Per-season rating reset (soft reset)
+- Placement matches for unranked players
+
+**Raid queue (PvE role-based):**
+
+- Role-based filling: tanks → healers → DPS
+- Estimated wait time per role displayed
+- Cross-server raid finder
+- Minimum item level / gear score gate
+- Boss-specific queues (raid wing selection)
+
+**Leaver queue (penalty pool):**
+
+Players with high abandon rate are matched with other leavers instead of the general population:
+
+```rust
+pub struct LeaverStatus {
+    pub in_leaver_queue: bool,
+    pub abandon_count: u8,     // rolling 20 games
+    pub games_to_exit: u8,     // complete N to leave
+}
+```
+
+- Enter leaver queue after 2+ abandons in 20 games
+- Must complete N games (without abandoning) to return to normal queue
+- Leaver queue has longer wait times (smaller pool)
+- Resets on season boundary
+- Separate from temp bans (RF-6) — leaver queue is matchmaking-level, bans are account-level
+
+### RF-12: Store and overlay integration
+
+**Platform store integration:**
+
+| Platform | Store API | Overlay | Reference |
+|----------|----------|---------|-----------|
+| Steam | Steamworks ISteamMicroTransactions | Steam Overlay | [Steamworks SDK](https://partner.steamgames.com/doc/sdk) |
+| Epic | Epic Online Services (EOS) | EOS Overlay | [EOS SDK](https://dev.epicgames.com/docs/epic-online-services) |
+| Windows | Windows.Services.Store | Xbox Game Bar | [MS Store API](https://learn.microsoft.com/en-us/windows/uwp/monetize/) |
+| PlayStation | PlayStation Store API | PS overlay | Sony Partner docs |
+| Xbox | Microsoft Store API | Xbox Guide | MS Partner docs |
+| Apple | StoreKit 2 | N/A (no overlay) | [StoreKit](https://developer.apple.com/storekit/) |
+| Google | Google Play Billing | N/A | [Play Billing](https://developer.android.com/google/play/billing) |
+
+**Engine integration:**
+
+```rust
+pub struct StoreService { /* platform-specific */ }
+
+impl StoreService {
+    pub fn query_products(
+        &self, ids: &[ProductId],
+    ) -> IoRequestId;
+    pub fn purchase(
+        &self, id: ProductId,
+    ) -> IoRequestId;
+    pub fn restore_purchases(&self) -> IoRequestId;
+    pub fn check_entitlement(
+        &self, id: ProductId,
+    ) -> bool;  // cached
+}
+```
+
+**Overlay support:**
+
+Platform overlays (Steam Overlay, EOS Overlay, Xbox Game Bar) render on top of the game. The engine
+must:
+
+- Detect overlay activation (input focus changes)
+- Pause game input when overlay is active
+- Continue rendering (overlay composites on top)
+- Resume input when overlay dismissed
+- Provide hooks: `on_overlay_activated`, `on_overlay_deactivated`
+
+Overlay detection per platform:
+
+| Platform | Detection API |
+|----------|--------------|
+| Steam | `ISteamFriends::SetOverlayNotifyCallback` |
+| Epic | `EOS_UI_AddNotifyDisplaySettingsUpdated` |
+| Windows | `GameBar` events |
+| Console | Platform SDK callbacks |
+
+The engine's input system (Design #14) mutes input events when the overlay is active. The game loop
+continues rendering so the overlay can composite.

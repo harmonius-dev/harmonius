@@ -21,11 +21,11 @@ See [personas.md](personas.md) for the complete persona catalog.
 | 9 | Animation | 7 | 104 |
 | 10 | UI & 2D | 6 | 76 |
 | 11 | VFX | 6 | 119 |
-| 12 | Content Pipeline | 8 | 138 |
+| 12 | Content Pipeline | 7 | 109 |
 | 13 | Game Framework | 27 | 664 |
 | 14 | Platform | 7 | 175 |
 | 15 | Tools & Editor | 24 | 411 |
-| | **Total** | **149** | **3,104** |
+| | **Total** | **148** | **3,075** |
 
 ## 1. Core Runtime
 
@@ -169,7 +169,6 @@ See [personas.md](personas.md) for the complete persona catalog.
 
 | File | Stories |
 |------|-------:|
-| [dcc-plugins.md](content-pipeline/dcc-plugins.md) | 29 |
 | [content-plugins.md](content-pipeline/content-plugins.md) | 27 |
 | [asset-processing.md](content-pipeline/asset-processing.md) | 17 |
 | [asset-database.md](content-pipeline/asset-database.md) | 15 |

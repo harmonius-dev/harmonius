@@ -32,14 +32,19 @@
 | Dependency | Source | Consumed API |
 |------------|--------|-------------|
 | Entity lifecycle | F-1.1.11 | Generational `Entity` handles |
-| ChildOf relationship | F-1.1.14, F-1.1.16 | Built-in parent-child hierarchy |
 | Command buffers | F-1.1.32 | Deferred structural changes |
 | Change detection | F-1.1.22 | Tick-based `Changed<T>` queries |
 | Parallel iteration | F-1.1.20 | Chunk-level parallel query |
 | System scheduling | F-1.1.25, F-1.1.26 | `PostUpdate` phase ordering |
 | Shared spatial index | F-1.9.1, F-1.9.4 | BVH registration and query API |
-| Reflection | F-1.3.1 | `Reflect` derive for serialization |
-| Thread pool | F-14.3.1 | Scoped parallel task execution |
+| Job system | F-14.3.1 | Scoped parallel task execution |
+
+> **Canonical content.** This design is the canonical owner of: ChildOf relationship,
+> Parent/Children derived components, hierarchy operations (set_parent, remove_parent, ancestors,
+> descendants), HierarchyEvent, OrphanPolicy, HierarchyCommands, traversal iterators (DepthFirst,
+> BreadthFirst), Transform, GlobalTransform, PreviousGlobalTransform, propagation system, dirty
+> tracking, Scene, SceneSpawner, and EntityMap. The ECS design (ecs.md) cross-references this
+> document for all hierarchy and scene content.
 
 ## Overview
 
@@ -55,7 +60,8 @@ The design follows three principles:
 2. **Transform propagation is parallel and incremental.** Independent root subtrees are processed
    concurrently. Dirty tracking skips static geometry entirely.
 3. **Scenes are serializable entity collections.** A scene is a tagged set of entities with their
-   components and hierarchy, serialized through the reflection system.
+   components and hierarchy, serialized through static codegen (generated rkyv archives and
+   `remap_entities()` methods).
 
 ### Key Abstractions
 
@@ -63,6 +69,8 @@ The design follows three principles:
   Vec3 translation, Quat rotation, and Vec3 scale.
 - **GlobalTransform** -- world-space 4x4 matrix derived by composing the entire ancestor chain. Read
   by rendering, physics, audio, and AI.
+- **Transform2D** -- local 2D position, rotation, and scale for 2D/2.5D entities. Uses Vec2
+  position, f32 rotation, and Vec2 scale. Propagates as Mat3 through the hierarchy.
 - **Hierarchy** -- parent-child relationships use the ECS `ChildOf` relationship (F-1.1.16), not a
   separate tree data structure. `Parent` and `Children` are derived components maintained
   automatically.
@@ -90,14 +98,17 @@ The design follows three principles:
 graph TD
     subgraph "harmonius_core::scene"
         T[Transform]
+        T2D[Transform2D]
         GT[GlobalTransform]
+        GT2D[GlobalTransform2D]
+        PGT[PreviousGlobalTransform]
+        PGT2D[PreviousGlobalTransform2D]
         P[Parent]
         CH[Children]
         HP[HierarchyPlugin]
         TP[TransformPlugin]
         TI[TraversalIterator]
         SC[SceneBundle]
-        SS[SceneSerializer]
     end
 
     subgraph "harmonius_core::ecs"
@@ -121,6 +132,9 @@ graph TD
     end
 
     T --> GT
+    T2D --> GT2D
+    GT --> PGT
+    GT2D --> PGT2D
     P --> CH
     HP --> REL
     HP --> CB
@@ -129,10 +143,10 @@ graph TD
     TP --> SYS
     TI --> P
     TI --> CH
-    SC --> SS
-    SS --> W
+    SC --> W
 
     GT --> SI
+    GT2D --> SI
     GT --> REN
     GT --> PHY
     GT --> ANI
@@ -146,6 +160,7 @@ harmonius_core/
 ├── scene/
 │   ├── mod.rs             # Re-exports
 │   ├── transform.rs       # Transform, GlobalTransform
+│   ├── transform2d.rs     # Transform2D, GlobalTransform2D
 │   ├── hierarchy.rs       # Parent, Children,
 │   │                      # HierarchyEvent, commands
 │   ├── propagation.rs     # propagate_transforms system
@@ -174,6 +189,15 @@ classDiagram
         +up() Vec3
     }
 
+    class Transform2D {
+        +Vec2 position
+        +f32 rotation
+        +Vec2 scale
+        +from_position(Vec2) Transform2D
+        +from_rotation(f32) Transform2D
+        +local_matrix() Mat3
+    }
+
     class GlobalTransform {
         +Mat4 matrix
         +from_matrix(Mat4) GlobalTransform
@@ -184,31 +208,52 @@ classDiagram
         +inverse() GlobalTransform
     }
 
+    class GlobalTransform2D {
+        +Mat3 matrix
+        +from_matrix(Mat3) GlobalTransform2D
+        +translation() Vec2
+        +rotation() f32
+        +scale() Vec2
+        +transform_point(Vec2) Vec2
+        +inverse() GlobalTransform2D
+    }
+
+    class PreviousGlobalTransform {
+        +Mat4 matrix
+    }
+
+    class PreviousGlobalTransform2D {
+        +Mat3 matrix
+    }
+
     class Parent {
         +Entity entity
     }
 
     class Children {
-        +SmallVec entities
+        +SmallVec~[Entity; 8]~ entities
         +len() usize
         +iter() Iter
         +contains(Entity) bool
     }
 
     class HierarchyEvent {
-        &lt;&lt;enumeration&gt;&gt;
+        <<enumeration>>
         ChildAdded
         ChildRemoved
         ChildMoved
     }
 
     class OrphanPolicy {
-        &lt;&lt;enumeration&gt;&gt;
+        <<enumeration>>
         Cascade
         Reparent
     }
 
     Transform --> GlobalTransform : propagates to
+    Transform2D --> GlobalTransform2D : propagates to
+    GlobalTransform --> PreviousGlobalTransform : copied before update
+    GlobalTransform2D --> PreviousGlobalTransform2D : copied before update
     Parent --> Children : inverse of
     Parent ..> HierarchyEvent : triggers
     Children ..> HierarchyEvent : triggers
@@ -251,9 +296,22 @@ The algorithm:
 
 1. Query all root entities (entities with `Transform` but no `Parent`).
 2. Filter to roots whose subtree contains at least one dirty `Transform` (via change detection).
-3. Fan out: assign each dirty root subtree to a scoped task on the thread pool.
+3. Fan out: assign each dirty root subtree to a scoped task via `job_system::scope()`.
 4. Within each subtree, propagate top-down iteratively using an explicit stack (no recursion).
 5. Skip clean sub-branches where no ancestor is dirty.
+
+#### Parallel Safety (Disjoint Subtree Invariant)
+
+Multiple scoped tasks share a query containing `&mut GlobalTransform` and
+`&mut PreviousGlobalTransform`. Disjoint access is guaranteed by the hierarchy invariant:
+
+1. Each root subtree is processed by exactly one task.
+2. Subtrees are disjoint -- no entity appears in two subtrees because each entity has exactly one
+   parent (enforced by `ChildOf`'s `Exclusive` property).
+3. The hierarchy is acyclic (enforced by `ChildOf`'s `Acyclic` property).
+4. Therefore no two tasks access the same `GlobalTransform` or `PreviousGlobalTransform`.
+
+A future `par_iter_disjoint` job system primitive could encode this invariant at the API level.
 
 ## API Design
 
@@ -268,7 +326,6 @@ The algorithm:
 /// GlobalTransform recomputation.
 #[derive(
     Component, Clone, Copy, Debug, PartialEq,
-    Reflect,
 )]
 pub struct Transform {
     /// Position relative to parent.
@@ -403,6 +460,76 @@ impl Default for Transform {
 }
 ```
 
+### Transform2D Component
+
+```rust
+/// Local-space 2D transform relative to the
+/// parent entity (or world origin if no parent).
+///
+/// Used for 2D and 2.5D games. The hierarchy
+/// system (ChildOf) works identically to 3D —
+/// propagation multiplies Mat3 instead of Mat4.
+/// 2D and 3D entities can coexist in the same
+/// World; a 2.5D game might use Transform2D for
+/// gameplay entities and Transform for 3D
+/// decorative elements.
+#[derive(
+    Component, Clone, Copy, Debug, PartialEq,
+)]
+pub struct Transform2D {
+    /// Position relative to parent.
+    pub position: Vec2,
+    /// Rotation in radians relative to parent.
+    pub rotation: f32,
+    /// Scale relative to parent.
+    pub scale: Vec2,
+}
+
+impl Transform2D {
+    pub const IDENTITY: Self = Self {
+        position: Vec2::ZERO,
+        rotation: 0.0,
+        scale: Vec2::ONE,
+    };
+
+    pub fn from_position(p: Vec2) -> Self {
+        Self { position: p, ..Self::IDENTITY }
+    }
+
+    pub fn from_rotation(r: f32) -> Self {
+        Self { rotation: r, ..Self::IDENTITY }
+    }
+
+    /// Compute the 3x3 affine matrix for this
+    /// local 2D transform: T * R * S.
+    pub fn local_matrix(&self) -> Mat3 {
+        Mat3::from_scale_angle_translation(
+            self.scale,
+            self.rotation,
+            self.position,
+        )
+    }
+
+    /// Compose with a parent's GlobalTransform2D
+    /// to produce this entity's GlobalTransform2D.
+    pub fn compose(
+        &self,
+        parent_global: &GlobalTransform2D,
+    ) -> GlobalTransform2D {
+        GlobalTransform2D {
+            matrix: parent_global.matrix
+                * self.local_matrix(),
+        }
+    }
+}
+
+impl Default for Transform2D {
+    fn default() -> Self {
+        Self::IDENTITY
+    }
+}
+```
+
 ### GlobalTransform Component
 
 ```rust
@@ -417,7 +544,6 @@ impl Default for Transform {
 /// methods.
 #[derive(
     Component, Clone, Copy, Debug, PartialEq,
-    Reflect,
 )]
 pub struct GlobalTransform {
     /// World-space affine transformation matrix.
@@ -492,6 +618,135 @@ impl Default for GlobalTransform {
 }
 ```
 
+### GlobalTransform2D Component
+
+```rust
+/// World-space 2D transform computed by the
+/// propagation system. Read-only for gameplay
+/// systems — only the propagation system writes
+/// this component.
+#[derive(
+    Component, Clone, Copy, Debug, PartialEq,
+)]
+pub struct GlobalTransform2D {
+    /// World-space 2D affine transformation matrix.
+    pub matrix: Mat3,
+}
+
+impl GlobalTransform2D {
+    pub const IDENTITY: Self = Self {
+        matrix: Mat3::IDENTITY,
+    };
+
+    pub fn from_matrix(m: Mat3) -> Self {
+        Self { matrix: m }
+    }
+
+    /// Extract world-space translation.
+    pub fn translation(&self) -> Vec2 {
+        Vec2::new(
+            self.matrix.z_axis.x,
+            self.matrix.z_axis.y,
+        )
+    }
+
+    /// Extract world-space rotation (radians).
+    pub fn rotation(&self) -> f32 {
+        self.matrix.x_axis.y.atan2(
+            self.matrix.x_axis.x,
+        )
+    }
+
+    /// Extract world-space scale.
+    pub fn scale(&self) -> Vec2 {
+        Vec2::new(
+            self.matrix.x_axis.length(),
+            self.matrix.y_axis.length(),
+        )
+    }
+
+    /// Transform a point from local to
+    /// world space.
+    pub fn transform_point(
+        &self,
+        point: Vec2,
+    ) -> Vec2 {
+        (self.matrix
+            * Vec3::new(point.x, point.y, 1.0))
+        .truncate()
+    }
+
+    /// Compute the inverse world transform.
+    pub fn inverse(&self) -> Self {
+        Self {
+            matrix: self.matrix.inverse(),
+        }
+    }
+}
+
+impl Default for GlobalTransform2D {
+    fn default() -> Self {
+        Self::IDENTITY
+    }
+}
+```
+
+### PreviousGlobalTransform Component
+
+```rust
+/// Stores the previous frame's world-space
+/// transform for render interpolation between
+/// fixed-timestep physics positions.
+///
+/// The propagation system copies the current
+/// GlobalTransform into PreviousGlobalTransform
+/// before computing the new value each frame.
+/// Rendering interpolates between previous and
+/// current: lerp(previous, current, alpha) where
+/// alpha = accumulator / fixed_dt.
+#[derive(
+    Component, Clone, Copy, Debug, PartialEq,
+)]
+pub struct PreviousGlobalTransform {
+    /// Previous frame's world-space matrix.
+    pub matrix: Mat4,
+}
+
+impl PreviousGlobalTransform {
+    pub const IDENTITY: Self = Self {
+        matrix: Mat4::IDENTITY,
+    };
+}
+
+impl Default for PreviousGlobalTransform {
+    fn default() -> Self {
+        Self::IDENTITY
+    }
+}
+
+/// Stores the previous frame's 2D world-space
+/// transform for render interpolation.
+#[derive(
+    Component, Clone, Copy, Debug, PartialEq,
+)]
+pub struct PreviousGlobalTransform2D {
+    /// Previous frame's world-space 2D matrix.
+    pub matrix: Mat3,
+}
+
+impl PreviousGlobalTransform2D {
+    pub const IDENTITY: Self = Self {
+        matrix: Mat3::IDENTITY,
+    };
+}
+
+impl Default for PreviousGlobalTransform2D {
+    fn default() -> Self {
+        Self::IDENTITY
+    }
+}
+```
+
 ### GlobalTransform Size (Performance -- High)
 
 `GlobalTransform` stores a full `Mat4` (64 bytes). For entities with uniform scale (the common
@@ -511,7 +766,6 @@ propagation. Consider a `CompactGlobalTransform` variant with `Mat4` fallback fo
 /// by the Exclusive property on ChildOf).
 #[derive(
     Component, Clone, Copy, Debug, PartialEq,
-    Reflect,
 )]
 pub struct Parent {
     pub entity: Entity,
@@ -519,10 +773,9 @@ pub struct Parent {
 
 /// Ordered list of child entities. Maintained
 /// automatically as the inverse of Parent.
-/// Stored inline for small hierarchies (up to 8
-/// children) via SmallVec.
+/// Stored as a SmallVec of child entity handles.
 #[derive(
-    Component, Clone, Debug, PartialEq, Reflect,
+    Component, Clone, Debug, PartialEq,
 )]
 pub struct Children {
     pub entities: SmallVec<[Entity; 8]>,
@@ -549,7 +802,7 @@ impl Children {
 }
 
 /// Events emitted when hierarchy changes occur.
-#[derive(Clone, Debug, PartialEq, Reflect)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum HierarchyEvent {
     /// A child was added to a parent.
     ChildAdded {
@@ -573,7 +826,7 @@ pub enum HierarchyEvent {
 /// Controls what happens to children when their
 /// parent is despawned.
 #[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Reflect,
+    Clone, Copy, Debug, PartialEq, Eq,
 )]
 pub enum OrphanPolicy {
     /// Recursively despawn all descendants.
@@ -679,9 +932,7 @@ const DEPTH_WARNING_THRESHOLD: usize = 128;
 /// up to MAX_STACK_DEPTH levels.
 pub struct DepthFirstIterator<'w> {
     /// Inline stack for allocation-free traversal.
-    stack: SmallVec<
-        [(Entity, u32); MAX_STACK_DEPTH]
-    >,
+    stack: SmallVec<[(Entity, u32); 256]>,
     /// Read-only query handle for Children.
     children_query: &'w Query<&Children>,
     /// Whether to include the starting entity
@@ -713,9 +964,7 @@ impl<'w> Iterator for DepthFirstIterator<'w> {
 
 /// Breadth-first traversal iterator.
 pub struct BreadthFirstIterator<'w> {
-    queue: SmallVec<
-        [(Entity, u32); MAX_STACK_DEPTH]
-    >,
+    queue: SmallVec<[(Entity, u32); 256]>,
     children_query: &'w Query<&Children>,
     include_root: bool,
     max_depth_seen: u32,
@@ -764,24 +1013,26 @@ pub struct HierarchyNode {
 ///                              |
 ///                       PreRender
 pub fn propagate_transforms(
-    pool: Res<ThreadPool>,
     // Root entities: have Transform + GlobalTransform
     // but no Parent.
     root_query: Query<
-        (Entity, &Transform, &mut GlobalTransform),
+        (Entity, &Transform, &mut GlobalTransform,
+         &mut PreviousGlobalTransform),
         (Without<Parent>, Changed<Transform>),
     >,
     // All root entities including unchanged
     // (needed to propagate to dirty children).
     all_roots: Query<
-        (Entity, &Transform, &mut GlobalTransform),
+        (Entity, &Transform, &mut GlobalTransform,
+         &mut PreviousGlobalTransform),
         Without<Parent>,
     >,
     // Hierarchy queries.
     children_query: Query<&Children>,
     // Child entities with transforms.
     child_query: Query<
-        (&Transform, &mut GlobalTransform, &Parent),
+        (&Transform, &mut GlobalTransform,
+         &mut PreviousGlobalTransform, &Parent),
     >,
     // Change detection ticks.
     change_tick: Res<ChangeTick>,
@@ -789,9 +1040,11 @@ pub fn propagate_transforms(
     // Phase 1: Update root entities whose
     // Transform changed. Roots have no parent,
     // so GlobalTransform = local Transform.
-    for (entity, transform, mut global) in
-        root_query.iter_mut()
+    // Copy current to previous before overwriting.
+    for (entity, transform, mut global,
+         mut previous) in root_query.iter_mut()
     {
+        previous.matrix = global.matrix;
         global.matrix = transform.local_matrix();
     }
 
@@ -802,7 +1055,7 @@ pub fn propagate_transforms(
     // changed.
     let dirty_roots: Vec<Entity> = all_roots
         .iter()
-        .filter(|(e, _, _)| {
+        .filter(|(e, _, _, _)| {
             subtree_has_dirty_transform(
                 *e,
                 &children_query,
@@ -810,12 +1063,14 @@ pub fn propagate_transforms(
                 &change_tick,
             )
         })
-        .map(|(e, _, _)| e)
+        .map(|(e, _, _, _)| e)
         .collect();
 
     // Phase 3: Parallel propagation of
     // independent subtrees using scoped tasks.
-    pool.scope(|scope| {
+    // Safety: see "Parallel Safety (Disjoint
+    // Subtree Invariant)" above.
+    job_system::scope(|scope| {
         for root in &dirty_roots {
             let root_global = all_roots
                 .get(*root)
@@ -841,15 +1096,20 @@ pub fn propagate_transforms(
 /// avoid recursion and support arbitrary depth
 /// without stack overflow (R-1.2.4).
 ///
+/// For each entity, copies current
+/// GlobalTransform to PreviousGlobalTransform
+/// before computing the new value.
+///
 /// Implementation uses iterative top-down
-/// traversal with SmallVec stack to avoid
+/// traversal with Vec stack to avoid
 /// recursion.
 fn propagate_subtree_iterative(
     root: Entity,
     root_global: Mat4,
     children_query: &Query<&Children>,
     child_query: &Query<
-        (&Transform, &mut GlobalTransform, &Parent),
+        (&Transform, &mut GlobalTransform,
+         &mut PreviousGlobalTransform, &Parent),
     >,
     change_tick: &ChangeTick,
 ) {
@@ -861,12 +1121,13 @@ fn propagate_subtree_iterative(
 /// that are fully static.
 ///
 /// Implementation uses iterative BFS with
-/// SmallVec queue to avoid recursion.
+/// Vec queue to avoid recursion.
 fn subtree_has_dirty_transform(
     root: Entity,
     children_query: &Query<&Children>,
     child_query: &Query<
-        (&Transform, &mut GlobalTransform, &Parent),
+        (&Transform, &mut GlobalTransform,
+         &mut PreviousGlobalTransform, &Parent),
     >,
     change_tick: &ChangeTick,
 ) -> bool {
@@ -878,24 +1139,32 @@ fn subtree_has_dirty_transform(
 
 ```rust
 /// Standard bundle for any entity that needs
-/// spatial positioning. Adding Transform
-/// automatically includes GlobalTransform
-/// (via required components, F-1.1.10).
+/// 3D spatial positioning. Adding Transform
+/// automatically includes GlobalTransform and
+/// PreviousGlobalTransform (via required
+/// components, F-1.1.10).
 #[derive(Bundle, Default)]
 pub struct TransformBundle {
     pub transform: Transform,
     pub global_transform: GlobalTransform,
+    pub previous_global_transform:
+        PreviousGlobalTransform,
 }
 
-/// Bundle for a spatial entity with hierarchy
-/// support. Used when spawning entities that
-/// will be children of other entities.
+/// Standard bundle for any entity that needs
+/// 2D spatial positioning.
 #[derive(Bundle, Default)]
-pub struct SpatialBundle {
-    pub transform: Transform,
-    pub global_transform: GlobalTransform,
+pub struct TransformBundle2D {
+    pub transform: Transform2D,
+    pub global_transform: GlobalTransform2D,
+    pub previous_global_transform:
+        PreviousGlobalTransform2D,
 }
 ```
+
+> **Note:** `SpatialBundle` has been removed. It was identical to `TransformBundle` and provided no
+> additional differentiation. Use `TransformBundle` for 3D entities and `TransformBundle2D` for 2D
+> entities. Add `Visibility` or other spatial components explicitly when needed.
 
 ### Scene Types
 
@@ -919,7 +1188,7 @@ impl Scene {
 
 /// Handle to a loaded scene asset.
 #[derive(
-    Clone, Debug, PartialEq, Eq, Hash, Reflect,
+    Clone, Debug, PartialEq, Eq, Hash,
 )]
 pub struct SceneHandle {
     pub id: AssetId,
@@ -992,55 +1261,19 @@ pub struct SceneInstanceId(u64);
 
 ### Scene Serialization
 
-```rust
-/// Serialize a set of entities and their
-/// components into a Scene. Uses the Reflect
-/// trait (F-1.3.1) for component serialization.
-pub fn serialize_scene(
-    world: &World,
-    entities: &[Entity],
-    type_registry: &TypeRegistry,
-) -> Result<Scene, SceneError>;
-
-/// Deserialize a Scene from a textual format
-/// (RON). Binary companion files are loaded
-/// separately for large data (meshes, textures).
-pub fn deserialize_scene(
-    data: &[u8],
-    type_registry: &TypeRegistry,
-) -> Result<Scene, SceneError>;
-
-/// Errors during scene serialization or
-/// deserialization.
-#[derive(Debug)]
-pub enum SceneError {
-    /// A component type was not found in the
-    /// type registry.
-    UnknownComponent {
-        type_name: String,
-    },
-    /// Entity reference in a component points
-    /// to an entity not in the scene.
-    DanglingEntityRef {
-        entity: Entity,
-        component: String,
-    },
-    /// Serialization format error.
-    FormatError {
-        message: String,
-    },
-    /// Cyclic hierarchy detected.
-    CyclicHierarchy {
-        entities: Vec<Entity>,
-    },
-}
-```
+> Scene serialization and deserialization APIs are defined in the serialization design (Design #8,
+> reflection-serialization). This design defines the format-agnostic types (`Scene`, `SceneSpawner`,
+> `EntityMap`) above. Entity remap uses generated `remap_entities(&mut self, map: &EntityMap)`
+> methods on each component (static codegen, no reflection). Binary persistence uses rkyv for
+> zero-copy mmap access.
 
 ### Plugin Registration
 
 ```rust
-/// Registers Transform, GlobalTransform, Parent,
-/// Children components. Adds the
+/// Registers Transform, GlobalTransform,
+/// PreviousGlobalTransform, Transform2D,
+/// GlobalTransform2D, PreviousGlobalTransform2D,
+/// Parent, and Children components. Adds the
 /// propagate_transforms system to PostUpdate.
 pub struct TransformPlugin;
 
@@ -1048,14 +1281,41 @@ impl Plugin for TransformPlugin {
     fn build(&self, app: &mut App) {
         app.register_component::<Transform>();
         app.register_component::<GlobalTransform>();
+        app.register_component::<
+            PreviousGlobalTransform
+        >();
+        app.register_component::<Transform2D>();
+        app.register_component::<
+            GlobalTransform2D
+        >();
+        app.register_component::<
+            PreviousGlobalTransform2D
+        >();
         app.register_component::<Parent>();
         app.register_component::<Children>();
 
-        // Required component: Transform requires
-        // GlobalTransform.
+        // Required components: Transform requires
+        // GlobalTransform and
+        // PreviousGlobalTransform.
         app.register_required_component::<
             Transform,
             GlobalTransform,
+        >();
+        app.register_required_component::<
+            Transform,
+            PreviousGlobalTransform,
+        >();
+
+        // Required components: Transform2D
+        // requires GlobalTransform2D and
+        // PreviousGlobalTransform2D.
+        app.register_required_component::<
+            Transform2D,
+            GlobalTransform2D,
+        >();
+        app.register_required_component::<
+            Transform2D,
+            PreviousGlobalTransform2D,
         >();
 
         app.add_event::<HierarchyEvent>();
@@ -1109,7 +1369,7 @@ sequenceDiagram
     participant ECS as ECS World
     participant CD as Change Detection
     participant PROP as PropagateTransforms
-    participant TP as ThreadPool
+    participant JS as Job System
     participant SI as Spatial Index
 
     Note over SYS: Frame N begins
@@ -1121,11 +1381,12 @@ sequenceDiagram
     CD-->>PROP: dirty root entities
 
     PROP->>PROP: collect independent subtrees
-    PROP->>TP: fan-out subtree tasks
-    TP->>TP: parallel propagation per subtree
-    Note over TP: local * parent.global = global
+    PROP->>PROP: copy GlobalTransform to Previous
+    PROP->>JS: fan-out subtree tasks
+    JS->>JS: parallel propagation per subtree
+    Note over JS: local * parent.global = global
 
-    TP-->>PROP: all subtrees complete
+    JS-->>PROP: all subtrees complete
     PROP->>ECS: write GlobalTransform components
     ECS->>SI: incremental spatial index update
     Note over SI: only moved entities re-indexed
@@ -1152,8 +1413,8 @@ flowchart LR
         W[World] --> Q1[Query entities with SceneTag]
         Q1 --> COL[Collect entity + components]
         COL --> TOPO[Topological sort by hierarchy]
-        TOPO --> SER[Serialize via Reflect]
-        SER --> FILE[Scene file RON/binary]
+        TOPO --> SER[Serialize via static codegen]
+        SER --> FILE[Scene file BSN/rkyv binary]
     end
 
     subgraph Deserialize
@@ -1171,8 +1432,8 @@ When a scene is spawned into a world, entity references must be remapped:
 
 1. Spawn each entity from the scene's staging world into the target world, recording the mapping
    (old ID -> new ID) in `EntityMap`.
-2. Walk all spawned entities' components. For each component field of type `Entity`, look up the
-   remapped ID and patch it.
+2. Call each component's generated `remap_entities(&mut self, map: &EntityMap)` method to patch
+   entity references (static codegen, no reflection).
 3. Rebuild `Parent`/`Children` from the remapped `ChildOf` relationships.
 4. Mark all spawned `Transform` components as dirty to trigger propagation in the next `PostUpdate`.
 
@@ -1200,7 +1461,7 @@ entities move per frame, this reduces propagation cost by 99%+.
 
 Transform propagation is platform-agnostic. SIMD acceleration of matrix multiplication is delegated
 to the math library (`glam`). Non-send resources (e.g., Metal main-thread constraints) are handled
-by the ECS scheduler, not transforms. Platform dependencies are indirect, through the thread pool.
+by the ECS scheduler, not transforms. Platform dependencies are indirect, through the job system.
 
 ### Parallel Propagation Scaling
 
@@ -1219,12 +1480,16 @@ by the ECS scheduler, not transforms. Platform dependencies are indirect, throug
 
 ### Memory Layout
 
-| Component | Size | Alignment | Notes |
-|-----------|------|-----------|-------|
-| `Transform` | 40 bytes | 16 | Vec3 + Quat + Vec3 (with padding) |
-| `GlobalTransform` | 64 bytes | 16 | Mat4 (4x4 f32) |
-| `Parent` | 8 bytes | 4 | Single Entity (u32 index + u32 gen) |
-| `Children` | 72 bytes | 8 | SmallVec inline (8 entities) |
+| Component | Size | Align | Notes |
+|-----------|------|-------|-------|
+| `Transform` | 40 B | 16 | Vec3 + Quat + Vec3 (padded) |
+| `Transform2D` | 20 B | 4 | Vec2 + f32 + Vec2 |
+| `GlobalTransform` | 64 B | 16 | Mat4 (4x4 f32) |
+| `GlobalTransform2D` | 36 B | 4 | Mat3 (3x3 f32) |
+| `PreviousGlobalTransform` | 64 B | 16 | Mat4 (4x4 f32) |
+| `PreviousGlobalTransform2D` | 36 B | 4 | Mat3 (3x3 f32) |
+| `Parent` | 8 B | 4 | Entity (u32 index + u32 gen) |
+| `Children` | 72 B | 8 | SmallVec (inline 8 entities) |
 
 The `Transform` and `GlobalTransform` components are stored in archetype tables with SoA layout.
 During propagation, the hot path reads `Transform` and writes `GlobalTransform` in adjacent memory,
@@ -1245,13 +1510,75 @@ No custom SIMD code is needed; `glam` handles this transparently.
 
 ### Proposed Dependencies
 
-| Crate      | Purpose                        |
-|------------|--------------------------------|
-| `smallvec` | Inline-allocated small vectors |
-| `glam`     | Math types (Vec3, Quat, Mat4)  |
+| Crate      | Purpose                       |
+|------------|-------------------------------|
+| `glam`     | Math types (Vec3, Quat, Mat4) |
+| `smallvec` | Inline small collections      |
 
-1. **`smallvec`** — Traversal stacks and child lists without heap allocation
-2. **`glam`** — SIMD-accelerated transform composition on all platforms
+1. **`glam`** — SIMD-accelerated transform composition on all platforms
+2. **`smallvec`** — Inline storage for Children and traversal stacks
+
+## Viewport Editing Integration
+
+The scene/transform system is the primary data surface for viewport editing (level-world.md RF-24).
+
+### Transform Gizmo Write Path
+
+The transform gizmo (translate/rotate/scale) writes directly to the `Transform` component of the
+selected entity via a command buffer. Change detection marks the modified component as dirty;
+`propagate_transforms` runs in `PostUpdate` and recomputes the subtree.
+
+```mermaid
+sequenceDiagram
+    participant GIZ as Transform Gizmo
+    participant CMD as CommandBuffer
+    participant PROP as propagate_transforms
+    participant GT as GlobalTransform
+
+    GIZ->>CMD: set Transform.translation (delta)
+    Note over CMD: deferred write
+    CMD->>CMD: flush at sync point
+    PROP->>GT: recompute GlobalTransform
+    Note over GT: rendering reads updated value
+```
+
+### Surface Snap (Global to Local)
+
+When snapping an entity to a surface hit point, the viewport converts the world-space hit position
+to the entity's parent local space using the parent's inverse `GlobalTransform`:
+
+```rust
+let local_pos = parent_global
+    .inverse()
+    .transform_point(world_hit_pos);
+cmd.insert(child, Transform::from_translation(
+    local_pos,
+));
+```
+
+### 2D Gizmo
+
+The same gizmo system operates on `Transform2D`. The gizmo detects whether the selected entity
+carries `Transform` or `Transform2D` and uses the corresponding component. 2D and 3D entities can
+coexist in the same scene; the viewport renders both gizmo types simultaneously.
+
+### Origin Rebasing (Large Worlds)
+
+For large worlds (coordinate values exceeding floating-point precision near ~10 km from origin), the
+engine rebases the world origin by offsetting all root entity translations:
+
+1. Detect when the camera's world position exceeds the rebase threshold.
+2. Compute an integer-aligned offset vector.
+3. Apply the offset to all root `Transform` components via bulk command.
+4. Change detection triggers a full propagation pass in the next frame.
+5. The camera transform is updated to compensate so the visual result is seamless.
+
+### Non-Destructive Override Stack
+
+The level-world.md RF-38 non-destructive override system layers property overrides on top of
+transform values. Overrides are applied to `Transform` before `propagate_transforms` runs, so the
+propagation system always sees the final effective value. The override stack is resolved in
+`PreUpdate`; `Transform` holds the resolved value by the time `PostUpdate` propagation begins.
 
 ## Test Plan
 
@@ -1289,6 +1616,16 @@ No custom SIMD code is needed; `glam` handles this transparently.
 | `test_scene_entity_remap`            | R-1.2.1  |
 | `test_scene_spawn_as_child`          | R-1.2.1  |
 | `test_scene_cyclic_detection`        | R-1.2.1  |
+| `test_spatial_query_archetype`       | R-1.2.7  |
+| `test_spatial_query_aabb`            | R-1.2.7  |
+| `test_spatial_query_combined`        | R-1.2.7  |
+| `test_dirty_negative_unchanged`      | R-1.2.5  |
+| `test_previous_global_transform`     | R-1.2.4  |
+| `test_transform2d_identity`          | R-1.2.4  |
+| `test_transform2d_compose`           | R-1.2.4  |
+| `test_global_transform2d_decompose`  | R-1.2.4  |
+| `test_2d_propagation_two_levels`     | R-1.2.4  |
+| `test_2d_3d_coexistence`             | R-1.2.4  |
 
 1. **`test_transform_identity`** — `Transform::IDENTITY.local_matrix()` returns `Mat4::IDENTITY`.
 2. **`test_transform_compose_trs`** — Verify T * R * S composition matches reference matrix.
@@ -1335,6 +1672,25 @@ No custom SIMD code is needed; `glam` handles this transparently.
     parent.
 30. **`test_scene_cyclic_detection`** — Attempt to serialize cyclic hierarchy: returns
     `CyclicHierarchy` error.
+31. **`test_spatial_query_archetype`** — Spatial query with archetype filter returns only matching
+    entities (R-1.2.7).
+32. **`test_spatial_query_aabb`** — AABB spatial query returns entities within the search region
+    (R-1.2.7).
+33. **`test_spatial_query_combined`** — Combined spatial + archetype query: verify both filters
+    applied (R-1.2.7).
+34. **`test_dirty_negative_unchanged`** — After propagation, verify unchanged entities'
+    GlobalTransform was NOT recomputed (compare tick, not just value).
+35. **`test_previous_global_transform`** — After propagation, PreviousGlobalTransform holds the
+    prior frame's matrix; GlobalTransform holds the new value.
+36. **`test_transform2d_identity`** — `Transform2D::IDENTITY.local_matrix()` returns
+    `Mat3::IDENTITY`.
+37. **`test_transform2d_compose`** — Verify 2D T * R * S composition matches reference matrix.
+38. **`test_global_transform2d_decompose`** — Round-trip: compose then decompose position, rotation,
+    scale.
+39. **`test_2d_propagation_two_levels`** — 2D parent + child: child's GlobalTransform2D =
+    parent.global2d * child.local2d.
+40. **`test_2d_3d_coexistence`** — World containing both Transform and Transform2D entities:
+    propagation runs correctly for both types independently.
 
 ### Integration Tests
 
@@ -1345,6 +1701,8 @@ No custom SIMD code is needed; `glam` handles this transparently.
 | `test_hierarchy_during_parallel`        | R-1.2.1  |
 | `test_spatial_index_after_propagation`  | R-1.2.6  |
 | `test_scene_with_entity_templates`      | R-1.2.1  |
+| `test_large_single_root_fanout`         | R-1.2.4  |
+| `test_parallel_threshold_boundary`      | R-1.2.4  |
 
 1. **`test_parallel_propagation_correctness`** — 100K entities, mixed depths 1-50: parallel results
    match serial reference.
@@ -1356,6 +1714,10 @@ No custom SIMD code is needed; `glam` handles this transparently.
    correct world positions.
 5. **`test_scene_with_entity_templates`** — Scene containing entity template instances: verify
    hierarchy and overrides preserved.
+6. **`test_large_single_root_fanout`** — Single root with 100K+ descendants: verify parallel
+   propagation produces correct results and does not serialize onto one core.
+7. **`test_parallel_threshold_boundary`** — Subtrees at and below the parallel threshold are
+   processed inline; subtrees above are spawned as separate tasks.
 
 ### Benchmarks
 
@@ -1448,13 +1810,172 @@ ordering ambiguities (R-1.1.28).
    BFS to check if any descendant is dirty. For large static hierarchies this could be expensive. A
    per-root dirty flag (set by an observer on any descendant's Transform change) would be O(1) but
    adds complexity. Need to measure the BFS cost at scale.
-4. **Scene format** — RON is human-readable but verbose. Binary is compact but not diff-friendly.
-   The reflection system supports mixed textual+binary (constraints.md), but the exact scene file
-   format (header structure, entity ordering, companion file layout) needs to be finalized in the
-   serialization design (1.3).
+4. **Scene format** — The codegen serialization pipeline supports mixed textual+binary
+   (constraints.md). The BSN text format and rkyv binary companion file layout needs to be finalized
+   in the serialization design (1.3).
 5. **Hierarchy depth limits** — R-1.2.2a specifies a warning at depth 128 and stack-allocated
    traversal up to depth 256. Are there real-world game scenarios that exceed 256 levels? If not, we
    could hard-error instead of falling back to heap allocation.
-6. **Transform interpolation** — For fixed timestep physics, should GlobalTransform store both the
-   current and previous frame's matrices for rendering interpolation? Or should interpolation be
-   handled by a separate `PreviousGlobalTransform` component?
+6. **Transform interpolation** — Resolved: `PreviousGlobalTransform` component added (see RF-4).
+   Propagation copies current to previous before computing new value. Rendering interpolates with
+   `lerp(previous, current, alpha)` where `alpha = accumulator / fixed_dt`.
+
+## Review Feedback
+
+### RF-1: This design is canonical for hierarchy and scene content [APPLIED]
+
+Move all hierarchy-related content from ecs.md into this design. The ECS design defines core
+primitives (archetypes, queries, systems, scheduling, commands). This design owns:
+
+- ChildOf relationship, Parent/Children derived components
+- Hierarchy operations (set_parent, remove_parent, ancestors, descendants)
+- HierarchyEvent, OrphanPolicy, HierarchyCommands
+- Traversal iterators (DepthFirst, BreadthFirst, ChildIter, AncestorIter)
+- Cascade delete behavior (OnDeleteTarget policy)
+- Transform, GlobalTransform, PreviousGlobalTransform
+- Propagation system and dirty tracking
+- Scene serialization, SceneSpawner, EntityMap
+
+The ECS design (ecs.md) should cross-reference this document for all hierarchy and scene content
+rather than defining it.
+
+### RF-2: Remove all Reflect and TypeRegistry usage [APPLIED]
+
+Remove `#[derive(Reflect)]` from all components. Remove `&TypeRegistry` parameters from
+`serialize_scene` / `deserialize_scene`. The engine uses zero reflection — all component
+serialization is generated at compile time via static codegen (serde derives, generated
+`remap_entities()` methods).
+
+Entity remap logic currently relies on reflection to walk component fields of type Entity. With
+static codegen, each component gets a generated `remap_entities(&mut self, map: &EntityMap)` method
+instead.
+
+### RF-3: Defer scene serialization API [APPLIED]
+
+Remove `serialize_scene` and `deserialize_scene` function signatures from this document. The scene
+format depends on the codegen pipeline (Design #8, reflection-serialization). Keep `Scene`,
+`SceneSpawner`, and `EntityMap` types which are format-agnostic.
+
+### RF-4: Add PreviousGlobalTransform [APPLIED]
+
+Promote Open Question #6 to a required component. Any game with physics needs render interpolation
+between fixed-timestep positions.
+
+```rust
+pub struct PreviousGlobalTransform {
+    pub matrix: Mat4,
+}
+```
+
+Added automatically by `TransformPlugin` alongside `GlobalTransform`. The propagation system copies
+current `GlobalTransform` to `PreviousGlobalTransform` before computing the new value. Rendering
+interpolates: `lerp(previous, current, alpha)` where `alpha = accumulator / fixed_dt`.
+
+### RF-5: Document parallel propagation safety [APPLIED]
+
+Multiple scoped tasks share a query containing `&mut GlobalTransform`. Disjoint access is guaranteed
+by the hierarchy invariant (subtrees are disjoint by definition — an entity has exactly one parent).
+Document this safety contract explicitly:
+
+1. Each root subtree is processed by exactly one task
+2. Subtrees are disjoint (no entity appears in two subtrees)
+3. The hierarchy is acyclic (enforced by ChildOf's Acyclic property)
+4. Therefore no two tasks access the same `GlobalTransform`
+
+Consider providing a `par_iter_disjoint` job system primitive that encodes this invariant at the API
+level.
+
+### RF-6: Fix constraints.md stale references [APPLIED]
+
+constraints.md body text still references compio (lines 51, 83, 99) and Rayon (line 51) while line
+190 says they are removed. Update the threading table and I/O model section to match the removal
+declaration. This causes downstream designs to make inconsistent choices.
+
+### RF-7: Remove or differentiate SpatialBundle [APPLIED]
+
+`SpatialBundle` is identical to `TransformBundle`. Either add additional components (e.g.,
+`Visibility`) to differentiate it, or remove it to avoid confusion.
+
+### RF-8: Add missing tests [APPLIED]
+
+1. R-1.2.7 (spatial scene queries) — no dedicated test cases exist
+2. Large single-root fan-out — verify parallel propagation handles 100K+ descendants under one root
+3. Negative dirty tracking — verify unchanged nodes were NOT recomputed (not just that changed nodes
+   were)
+4. Parallel threshold — verify the inline-vs-spawn decision boundary
+
+### RF-9: Use custom job system, not Rayon [APPLIED]
+
+Replace `Res<ThreadPool>` and `pool.scope()` references with the custom job system API
+(`job_system::scope()`). The job system is built on crossbeam-deque and provides the same scoped
+fork-join semantics.
+
+### RF-10: Spatial index integration for transform-based queries [APPLIED]
+
+The transform propagation system integrates with the shared BVH spatial index. After propagation, a
+dedicated system updates the BVH for entities with changed transforms.
+
+**Update flow:**
+
+1. `propagate_transforms` (PostUpdate) computes `GlobalTransform` for dirty entities
+2. `update_spatial_index` (PostUpdate, after propagation) reads `Changed<GlobalTransform>` and
+   incrementally refits the shared BVH
+3. Downstream systems (AI, gameplay) query the BVH to narrow entity sets
+
+Rendering culling is GPU-driven (compute shader frustum + occlusion culling, Nanite-style cluster
+LOD). The CPU-side BVH is not used for rendering visibility — only for gameplay spatial queries (AI
+perception, AoE, raycasts).
+
+No chunk-level AABBs. Archetype chunks group by component type, not spatial position, so chunk AABBs
+would cover the entire world and provide zero culling benefit.
+
+**Combined spatial + archetype queries:**
+
+```rust
+// Query entities within radius AND matching archetype
+let nearby = spatial_index
+    .query_aabb(&search_region)
+    .with::<Enemy>()
+    .without::<Dead>();
+// Returns only entities passing both spatial
+// and archetype filters
+```
+
+The spatial index design (Design #10, spatial-index.md) defines the BVH data structure and grid for
+networking. This design defines the integration point: when the BVH is updated relative to transform
+propagation.
+
+### RF-11: 2D and 2.5D transform support [APPLIED]
+
+Add `Transform2D` as an alternative to `Transform` for 2D/2.5D games:
+
+```rust
+pub struct Transform2D {
+    pub position: Vec2,
+    pub rotation: f32,  // radians
+    pub scale: Vec2,
+}
+
+pub struct GlobalTransform2D {
+    pub matrix: Mat3,
+}
+
+pub struct PreviousGlobalTransform2D {
+    pub matrix: Mat3,
+}
+```
+
+The hierarchy system (ChildOf) works identically — 2D transform propagation multiplies Mat3 instead
+of Mat4. The propagation system detects which transform type an entity has and propagates
+accordingly.
+
+2D and 3D entities can coexist in the same World. A 2.5D game might use Transform2D for gameplay
+entities and Transform for 3D decorative elements.
+
+### RF-12: Viewport editing integration [APPLIED]
+
+The scene/transform system is the primary data surface for viewport editing (level-world.md RF-24).
+The design must document: how the transform gizmo writes to `LocalTransform` and the system
+propagates to `GlobalTransform`, how surface snap converts hit position from global to local space,
+how 2D entities use `Transform2D` with the same gizmo, how origin rebasing works for large worlds,
+and how the non-destructive override stack (level-world.md RF-38) layers on top of transform values.

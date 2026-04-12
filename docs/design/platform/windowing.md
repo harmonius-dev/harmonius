@@ -29,25 +29,30 @@
 ## Overview
 
 The windowing subsystem manages native window lifecycle, display enumeration, DPI scaling,
-fullscreen mode transitions, VSync/presentation, and HDR output across Windows, macOS, and Linux
-(X11 and Wayland). It provides a unified cross-platform API that isolates all platform-specific
-windowing code behind `cfg`-gated backend modules, ensuring that gameplay, UI, and debug systems
-never branch on platform.
+fullscreen mode transitions, and HDR negotiation across Windows, macOS, and Linux (X11 and Wayland).
+Presentation control (VSync mode, frame pacing, present calls) belongs to the render pipeline. The
+subsystem provides a unified cross-platform API that isolates all platform-specific windowing code
+behind `cfg`-gated backend modules, ensuring that gameplay, UI, and debug systems never branch on
+platform.
 
-The subsystem uses direct platform-native APIs for window creation and event polling on each target:
-Win32 `CreateWindowEx` via `windows-rs` on Windows, `NSWindow` via Swift through swift-bridge on
-macOS, and X11 via `x11rb` / Wayland via `wayland-client` on Linux. This gives us full control over
-HDR metadata negotiation, advanced VSync control, and auxiliary window management without
-third-party abstraction layers. All asynchronous abstractions use `async`/`await` — no callbacks.
-Window events are delivered through a bounded channel that consumers poll or `.await`.
+The subsystem runs on the main thread alongside the OS event loop and platform I/O. The main thread
+is the sole owner of all OS windowing APIs. It polls native events, produces `WindowEvent` and
+`PointerEvent` structs, and sends them to the game loop thread via bounded channels. The game loop
+thread sends cursor and window mutation requests (resize, mode change, cursor capture) back to the
+main thread via a request channel. The game loop thread touches zero OS APIs. Surface events are
+delivered to the render thread via a separate channel. It uses direct platform-native APIs for
+window creation and event polling: Win32 `CreateWindowEx` via `windows-rs` on Windows, `NSWindow`
+via `objc2-app-kit` on macOS, and X11 via `x11rb` / Wayland via `wayland-client` on Linux. This
+gives us full control over HDR metadata negotiation and auxiliary window management without
+third-party abstraction layers.
 
 Key design decisions: (1) borderless fullscreen is the default mode, matching the expectations of
 players who alt-tab frequently; (2) DPI policy is configured per-window, not globally, because
 auxiliary debug windows may use a different scaling strategy than the primary game window; (3) HDR
 negotiation is separated into its own module because it requires distinct platform APIs and color
-space types that would clutter the core window module; (4) the `RawWindowHandle` type is compatible
-with the `raw-window-handle` crate ecosystem so that GPU backends can create swapchains without
-platform-specific branching.
+space types that would clutter the core window module; (4) `SurfaceHandle` implements the
+`raw-window-handle` crate traits (`HasRawWindowHandle`, `HasRawDisplayHandle`) so that GPU backends
+can create swapchains without platform-specific branching.
 
 ## Architecture
 
@@ -59,11 +64,11 @@ graph TD
         WC[WindowConfig]
         W[Window]
         WH[WindowHandle]
+        SH[SurfaceHandle]
+        SE[SurfaceEvent]
         DI[DisplayInfo]
         DE[DisplayEnumerator]
         DPI[DpiDetector]
-        PM[PresentMode]
-        PS[PresentController]
         HDR[HdrConfig]
         HN[HdrNegotiator]
         WE[WindowEvent]
@@ -71,14 +76,13 @@ graph TD
 
     subgraph "platform::windows"
         W32[Win32 CreateWindowEx]
-        DXGI[DXGI Output / Swapchain]
+        DXGI[DXGI Output]
         WDpi[WM_DPICHANGED]
     end
 
     subgraph "platform::macos"
-        NS[NSWindow via swift-bridge]
+        NS[NSWindow via objc2]
         CG[CGDisplayCopyDisplayMode]
-        ML[CAMetalLayer]
     end
 
     subgraph "platform::linux"
@@ -90,24 +94,21 @@ graph TD
     WC --> W
     W --> WH
     W --> WE
+    W --> SH
+    W --> SE
     DE --> DI
     W --> DE
     W --> DPI
-    W --> PS
     W --> HN
-    PS --> PM
     HN --> HDR
 
     W -.->|"cfg(windows)"| W32
     DE -.->|"cfg(windows)"| DXGI
     DPI -.->|"cfg(windows)"| WDpi
     HN -.->|"cfg(windows)"| DXGI
-    PS -.->|"cfg(windows)"| DXGI
 
     W -.->|"cfg(macos)"| NS
     DE -.->|"cfg(macos)"| CG
-    HN -.->|"cfg(macos)"| ML
-    PS -.->|"cfg(macos)"| ML
 
     W -.->|"cfg(linux)"| XCB
     DE -.->|"cfg(linux)"| XR
@@ -121,16 +122,17 @@ harmonius_platform/
 ├── windowing/
 │   ├── mod.rs           # Re-exports public API
 │   ├── window.rs        # Window, WindowConfig, WindowHandle
-│   ├── event.rs         # WindowEvent, EventIterator
+│   ├── event.rs         # WindowEvent, SurfaceEvent
+│   ├── request.rs       # WindowRequest (game loop -> main thread)
 │   ├── display.rs       # DisplayEnumerator, DisplayInfo, DisplayId
 │   ├── dpi.rs           # DpiDetector, DpiPolicy, LogicalSize, PhysicalSize
-│   ├── present.rs       # PresentController, PresentMode, FrameRateCap
+│   ├── surface.rs       # SurfaceHandle
 │   └── hdr.rs           # HdrNegotiator, HdrConfig, ColorSpace
 └── platform/
     ├── windows/
-    │   └── window.rs    # Win32 CreateWindowEx, DXGI swapchain, WM_DPICHANGED
+    │   └── window.rs    # Win32 CreateWindowEx, WM_DPICHANGED
     ├── macos/
-    │   └── window.rs    # NSWindow via swift-bridge, CAMetalLayer, backingScaleFactor
+    │   └── window.rs    # NSWindow via objc2, backingScaleFactor
     └── linux/
         └── window.rs    # x11rb / wayland-client, xrandr, wl_output, wp_fractional_scale_v1
 ```
@@ -139,42 +141,53 @@ harmonius_platform/
 
 ```mermaid
 sequenceDiagram
-    participant App as Application
+    participant GL as Game Loop Thread
+    participant RC as Request Channel
+    participant MT as Main Thread
     participant W as Window
     participant P as Platform Backend
-    participant GPU as GPU Backend
     participant EC as Event Channel
+    participant RT as Render Thread
 
-    App->>W: Window::new(config)
+    MT->>W: Window::new(config)
     W->>P: create_native_window(title, size, mode)
     P-->>W: NativeHandle
-    W->>GPU: create_swapchain(raw_handle)
-    GPU-->>W: Swapchain ready
-    W-->>App: Window
+    W-->>MT: Result~Window~
+    MT->>W: surface_handle()
+    W-->>MT: SurfaceHandle
+    MT->>RT: send SurfaceHandle (one-time)
+    RT->>RT: create_swapchain(surface_handle)
 
-    Note over App,EC: Normal operation — events flow
+    Note over GL,RT: Normal operation — events flow
 
-    App->>W: set_mode(BorderlessFullscreen)
+    GL->>RC: WindowRequest::SetMode(Borderless)
+    RC->>MT: recv request
+    MT->>W: set_mode(BorderlessFullscreen)
     W->>P: set_borderless_fullscreen(monitor)
     P->>P: resize to monitor bounds
-    P-->>EC: WindowEvent::ModeChanged
-    P-->>EC: WindowEvent::Resized
-    W->>GPU: resize_swapchain(new_size)
+    MT->>EC: WindowEvent::ModeChanged
+    MT->>EC: WindowEvent::Resized
+    MT->>RT: SurfaceEvent::Resized
 
-    App->>W: set_mode(ExclusiveFullscreen)
+    GL->>RC: WindowRequest::SetMode(Exclusive)
+    RC->>MT: recv request
+    MT->>W: set_mode(ExclusiveFullscreen)
     W->>P: set_exclusive_fullscreen(monitor, refresh)
-    P-->>EC: WindowEvent::ModeChanged
-    P-->>EC: WindowEvent::Resized
+    MT->>EC: WindowEvent::ModeChanged
+    MT->>EC: WindowEvent::Resized
+    MT->>RT: SurfaceEvent::Resized
 
-    App->>W: set_mode(Windowed)
+    GL->>RC: WindowRequest::SetMode(Windowed)
+    RC->>MT: recv request
+    MT->>W: set_mode(Windowed)
     W->>P: restore_windowed(prev_size, prev_pos)
-    P-->>EC: WindowEvent::ModeChanged
-    P-->>EC: WindowEvent::Resized
+    MT->>EC: WindowEvent::ModeChanged
+    MT->>EC: WindowEvent::Resized
+    MT->>RT: SurfaceEvent::Resized
 
-    App->>W: drop(window)
-    W->>GPU: destroy_swapchain()
+    MT->>W: drop(window)
     W->>P: destroy_native_window()
-    P-->>EC: WindowEvent::Destroyed
+    MT->>EC: WindowEvent::Destroyed
 ```
 
 ### DPI Change on Monitor Drag
@@ -185,8 +198,8 @@ sequenceDiagram
     participant P as Platform Backend
     participant W as Window
     participant EC as Event Channel
-    participant UI as UI System
-    participant R as Renderer
+    participant GL as Game Loop Thread
+    participant RT as Render Thread
 
     Note over OS: User drags window from 96 DPI to 192 DPI monitor
 
@@ -196,16 +209,17 @@ sequenceDiagram
     P->>W: on_dpi_changed(new_dpi, suggested_rect)
     W->>W: update internal scale factor
     W->>P: resize window to suggested rect
-    P-->>EC: WindowEvent::DpiChanged { old: 1.0, new: 2.0 }
-    P-->>EC: WindowEvent::Resized { logical, physical }
+    W->>EC: WindowEvent::DpiChanged { old: 1.0, new: 2.0 }
+    W->>EC: WindowEvent::Resized { logical, physical }
+    W->>RT: SurfaceEvent::ScaleFactorChanged(2.0)
+    W->>RT: SurfaceEvent::Resized(physical)
 
-    EC->>UI: DpiChanged event
-    UI->>UI: recalculate layout at new scale
-    UI->>UI: regenerate glyph atlas if needed
+    EC->>GL: recv WindowEvent::DpiChanged
+    GL->>GL: recalculate UI layout at new scale
+    GL->>GL: regenerate glyph atlas if needed
 
-    EC->>R: Resized event
-    R->>R: resize swapchain to new physical size
-    R->>R: update viewport and projection
+    RT->>RT: resize swapchain to new physical size
+    RT->>RT: update viewport and projection
 ```
 
 ### Core Data Structures
@@ -218,17 +232,19 @@ classDiagram
         -event_rx Receiver~WindowEvent~
         -current_dpi f64
         -current_mode WindowMode
-        +new(config) Window
-        +set_mode(mode)
+        +new(config) Result~Window WindowError~
+        +set_mode(mode) Result~unit WindowError~
         +set_title(title)
         +set_size(size)
-        +set_present_mode(mode)
-        +set_frame_rate_cap(cap)
+        +set_cursor(cursor)
+        +set_cursor_visible(visible)
+        +set_cursor_confined(confined)
+        +set_cursor_captured(captured)
         +enable_hdr(config) Result
         +current_dpi() f64
         +current_mode() WindowMode
         +displays() Vec~DisplayInfo~
-        +raw_handle() RawWindowHandle
+        +surface_handle() SurfaceHandle
         +events() EventIterator
     }
 
@@ -237,7 +253,6 @@ classDiagram
         +size LogicalSize
         +mode WindowMode
         +dpi_policy DpiPolicy
-        +present_mode PresentMode
         +hdr HdrConfig
         +resizable bool
         +decorations bool
@@ -250,6 +265,21 @@ classDiagram
         +id() u64
     }
 
+    class SurfaceHandle {
+        +raw RawWindowHandle
+        +raw_display RawDisplayHandle
+        +initial_size PhysicalSize
+        +scale_factor f64
+        +hdr_capable bool
+    }
+
+    class SurfaceEvent {
+        Resized
+        ScaleFactorChanged
+        HdrChanged
+        SurfaceInvalidated
+    }
+
     class DisplayId {
         +value u32
     }
@@ -258,7 +288,7 @@ classDiagram
         +id DisplayId
         +name String
         +resolution PhysicalSize
-        +refresh_rate_hz f64
+        +refresh_rate_mhz u32
         +color_depth u8
         +hdr_capable bool
         +position Point
@@ -278,12 +308,6 @@ classDiagram
         ExclusiveFullscreen
     }
 
-    class PresentMode {
-        Immediate
-        Fifo
-        Mailbox
-    }
-
     class ColorSpace {
         Srgb
         ScRgb
@@ -294,6 +318,9 @@ classDiagram
     class WindowEvent {
         Resized
         Moved
+        Minimized
+        Maximized
+        Restored
         FocusChanged
         CloseRequested
         Destroyed
@@ -302,26 +329,15 @@ classDiagram
         DisplayChanged
     }
 
-    class FrameRateCap {
-        Uncapped
-        Capped
-    }
-
-    class RawWindowHandle {
-        Win32
-        AppKit
-        Xcb
-        Wayland
-    }
-
     WindowConfig --> WindowMode
-    WindowConfig --> PresentMode
     WindowConfig --> HdrConfig
     Window --> WindowConfig
     Window --> WindowHandle
     Window --> WindowEvent
+    Window --> SurfaceHandle
+    Window --> SurfaceEvent
     Window --> DisplayInfo
-    Window --> RawWindowHandle
+    SurfaceHandle ..> "raw-window-handle" : implements traits
     HdrConfig --> ColorSpace
     DisplayInfo --> DisplayId
 ```
@@ -406,8 +422,6 @@ pub struct WindowConfig {
     pub mode: WindowMode,
     /// DPI handling policy.
     pub dpi_policy: DpiPolicy,
-    /// Initial presentation mode.
-    pub present_mode: PresentMode,
     /// Initial HDR configuration. Disabled by default.
     pub hdr: HdrConfig,
     /// Whether the window is resizable. Default: true.
@@ -432,7 +446,6 @@ impl Default for WindowConfig {
             },
             mode: WindowMode::Windowed,
             dpi_policy: DpiPolicy::SystemScaled,
-            present_mode: PresentMode::Fifo,
             hdr: HdrConfig::disabled(),
             resizable: true,
             decorations: true,
@@ -484,16 +497,23 @@ pub struct RefreshRate(pub u32);
 /// A native OS window.
 ///
 /// Each `Window` owns its native handle and event
-/// channel. The window is destroyed when dropped. All
-/// methods use `&mut self` to prevent concurrent
+/// channel. The window is destroyed when dropped.
+/// All methods use `&mut self` to prevent concurrent
 /// mutation — window state changes must be sequenced.
+///
+/// The `Window` lives on the main thread alongside
+/// the OS event loop. Worker threads and the render
+/// thread communicate with it via channels.
 pub struct Window { /* ... */ }
 
 impl Window {
     /// Create a new window with the given
     /// configuration. The window is visible
-    /// immediately after creation.
-    pub fn new(config: WindowConfig) -> Self;
+    /// immediately after creation. Must be called
+    /// on the main thread.
+    pub fn new(
+        config: WindowConfig,
+    ) -> Result<Self, WindowError>;
 
     /// Return the opaque handle for this window.
     pub fn handle(&self) -> WindowHandle;
@@ -501,10 +521,14 @@ impl Window {
     /// Change the window mode. Transitions preserve
     /// the GPU device context (R-14.1.2). When
     /// switching to `ExclusiveFullscreen`, the
-    /// swapchain is resized to match the display
-    /// resolution. When switching back to `Windowed`,
-    /// the previous size and position are restored.
-    pub fn set_mode(&mut self, mode: WindowMode);
+    /// render thread receives a `SurfaceEvent` to
+    /// resize the swapchain. When switching back to
+    /// `Windowed`, the previous size and position
+    /// are restored.
+    pub fn set_mode(
+        &mut self,
+        mode: WindowMode,
+    ) -> Result<(), WindowError>;
 
     /// Return the current window mode.
     pub fn current_mode(&self) -> WindowMode;
@@ -540,25 +564,37 @@ impl Window {
     /// coordinates.
     pub fn position(&self) -> Point;
 
-    /// Set the presentation mode (R-14.1.5).
-    pub fn set_present_mode(
+    /// Set the cursor icon for this window.
+    pub fn set_cursor(
         &mut self,
-        mode: PresentMode,
+        cursor: CursorIcon,
     );
 
-    /// Return the current presentation mode.
-    pub fn present_mode(&self) -> PresentMode;
-
-    /// Set the frame rate cap (R-14.1.5). The cap is
-    /// enforced independently of the display refresh
-    /// rate.
-    pub fn set_frame_rate_cap(
+    /// Show or hide the cursor while over this window.
+    pub fn set_cursor_visible(
         &mut self,
-        cap: FrameRateCap,
+        visible: bool,
     );
 
-    /// Return the current frame rate cap.
-    pub fn frame_rate_cap(&self) -> FrameRateCap;
+    /// Confine the cursor to the window's client area.
+    pub fn set_cursor_confined(
+        &mut self,
+        confined: bool,
+    );
+
+    /// Capture the cursor for relative motion input
+    /// (e.g., FPS camera). The cursor is hidden and
+    /// locked to the window center.
+    pub fn set_cursor_captured(
+        &mut self,
+        captured: bool,
+    );
+
+    /// Warp the cursor to the given logical position.
+    pub fn set_cursor_position(
+        &mut self,
+        pos: Point,
+    ) -> Result<(), WindowError>;
 
     /// Enable or reconfigure HDR output (R-14.1.6).
     /// Returns an error if the display or OS does not
@@ -587,10 +623,19 @@ impl Window {
         &self,
     ) -> Option<DisplayInfo>;
 
-    /// Return the platform-native handle for GPU
-    /// swapchain creation. The handle is valid for
-    /// the lifetime of the window.
-    pub fn raw_handle(&self) -> RawWindowHandle;
+    /// Return a `SurfaceHandle` for the render thread
+    /// to create a swapchain. The handle implements
+    /// the `raw-window-handle` crate traits
+    /// (`HasRawWindowHandle`, `HasRawDisplayHandle`).
+    /// Valid for the lifetime of the window.
+    pub fn surface_handle(&self) -> SurfaceHandle;
+
+    /// Return an iterator over pending
+    /// `SurfaceEvent`s. The render thread polls these
+    /// to react to resize, DPI, and HDR changes.
+    pub fn surface_events(
+        &mut self,
+    ) -> impl Iterator<Item = SurfaceEvent> + '_;
 
     /// Return an iterator over pending window events.
     /// Non-blocking. Events are consumed in order;
@@ -612,7 +657,8 @@ impl Drop for Window {
 ```rust
 /// Events emitted by the windowing subsystem.
 /// Delivered through the bounded channel accessible
-/// via `Window::events()`.
+/// via `Window::events()`. The main thread produces
+/// these events; worker threads consume them.
 #[derive(Clone, Debug)]
 pub enum WindowEvent {
     /// Client area resized. Both logical and physical
@@ -625,6 +671,14 @@ pub enum WindowEvent {
     /// Window moved to a new position in logical
     /// coordinates.
     Moved(Point),
+    /// Window was minimized to the taskbar/dock.
+    Minimized,
+    /// Window was maximized to fill the display work
+    /// area.
+    Maximized,
+    /// Window was restored from minimized or maximized
+    /// state.
+    Restored,
     /// Window gained or lost keyboard focus.
     FocusChanged { focused: bool },
     /// The user requested the window be closed (close
@@ -762,72 +816,77 @@ impl DpiDetector {
 }
 ```
 
-### Presentation Modes
+### Surface Handle and Events
+
+The windowing subsystem provides a `SurfaceHandle` for one-time swapchain creation and ongoing
+`SurfaceEvent`s so the render thread can react to surface changes. Presentation control (VSync mode,
+frame pacing, present calls) belongs to the render pipeline, not the windowing subsystem.
 
 ```rust
-/// Presentation (VSync) mode (R-14.1.5).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PresentMode {
-    /// No VSync. Frames are presented immediately.
-    /// May cause tearing but minimizes input latency.
-    Immediate,
-    /// VSync on. Frames are queued and presented at
-    /// VSync intervals. Eliminates tearing but adds
-    /// up to one frame of latency.
-    Fifo,
-    /// Triple-buffered. The most recent frame
-    /// replaces any pending frame. Tear-free with
-    /// lower latency than FIFO.
-    Mailbox,
+/// One-time handle passed to the render thread for
+/// swapchain creation. Implements the
+/// `raw-window-handle` crate traits
+/// (`HasRawWindowHandle`, `HasRawDisplayHandle`).
+pub struct SurfaceHandle {
+    /// Platform-native window handle.
+    raw: raw_window_handle::RawWindowHandle,
+    /// Platform-native display handle.
+    raw_display: raw_window_handle::RawDisplayHandle,
+    /// Initial physical size of the client area.
+    pub initial_size: PhysicalSize,
+    /// Initial DPI scale factor.
+    pub scale_factor: f64,
+    /// Whether the display supports HDR output.
+    pub hdr_capable: bool,
 }
 
-/// Frame rate cap, independent of display refresh
-/// rate.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FrameRateCap {
-    /// No cap. The engine renders as fast as possible
-    /// (subject to VSync if enabled).
-    Uncapped,
-    /// Cap to the specified frames per second. The
-    /// engine sleeps or spins to maintain the target
-    /// interval.
-    Capped(u32),
-}
+// Safety: the raw pointers inside the handle are
+// valid for the lifetime of the Window that created
+// them. The Window must not be dropped while the
+// render thread holds the handle.
+unsafe impl Send for SurfaceHandle {}
+unsafe impl Sync for SurfaceHandle {}
 
-/// Controls VSync and frame pacing.
-pub struct PresentController { /* ... */ }
-
-impl PresentController {
-    /// Create a new present controller for the given
-    /// window.
-    pub fn new(
-        window: &Window,
-        mode: PresentMode,
-        cap: FrameRateCap,
-    ) -> Self;
-
-    /// Change the presentation mode. Takes effect on
-    /// the next present call.
-    pub fn set_mode(&mut self, mode: PresentMode);
-
-    /// Change the frame rate cap.
-    pub fn set_frame_rate_cap(
-        &mut self,
-        cap: FrameRateCap,
-    );
-
-    /// Wait until the next frame should begin, based
-    /// on the current mode and cap. Returns the time
-    /// since the previous frame in seconds.
-    pub async fn wait_for_frame(
-        &mut self,
-    ) -> f64;
-
-    /// Query supported presentation modes for the
-    /// current display and GPU combination.
-    pub fn supported_modes(
+unsafe impl raw_window_handle::HasRawWindowHandle
+    for SurfaceHandle
+{
+    fn raw_window_handle(
         &self,
-    ) -> Vec<PresentMode>;
+    ) -> raw_window_handle::RawWindowHandle {
+        self.raw
+    }
+}
+
+unsafe impl raw_window_handle::HasRawDisplayHandle
+    for SurfaceHandle
+{
+    fn raw_display_handle(
+        &self,
+    ) -> raw_window_handle::RawDisplayHandle {
+        self.raw_display
+    }
+}
+
+/// Events sent from the main thread to the render
+/// thread when the surface changes. The render thread
+/// uses these to resize swapchain buffers, update
+/// viewports, or toggle HDR formats.
+#[derive(Clone, Debug)]
+pub enum SurfaceEvent {
+    /// Client area resized to a new physical size.
+    /// The render thread should recreate swapchain
+    /// buffers at the frame boundary.
+    Resized(PhysicalSize),
+    /// DPI scale factor changed. The render thread
+    /// should update viewport scaling.
+    ScaleFactorChanged(f64),
+    /// HDR capability changed (display plugged in or
+    /// user toggled HDR in OS settings).
+    HdrChanged(bool),
+    /// The surface was invalidated (e.g., display
+    /// connection lost). The render thread should
+    /// recreate the swapchain from scratch.
+    SurfaceInvalidated,
 }
 ```
 
@@ -947,47 +1006,19 @@ impl HdrNegotiator {
 
 ### Raw Window Handle
 
-```rust
-/// Platform-native window handle for GPU backend
-/// swapchain creation. Matches the
-/// `raw-window-handle` crate's layout for
-/// interoperability.
-#[derive(Clone, Copy, Debug)]
-pub enum RawWindowHandle {
-    #[cfg(target_os = "windows")]
-    Win32 {
-        hwnd: *mut core::ffi::c_void,
-        hinstance: *mut core::ffi::c_void,
-    },
-    #[cfg(target_os = "macos")]
-    AppKit {
-        ns_view: *mut core::ffi::c_void,
-    },
-    #[cfg(all(
-        target_os = "linux",
-        feature = "x11"
-    ))]
-    Xcb {
-        window: u32,
-        connection: *mut core::ffi::c_void,
-    },
-    #[cfg(all(
-        target_os = "linux",
-        feature = "wayland"
-    ))]
-    Wayland {
-        surface: *mut core::ffi::c_void,
-        display: *mut core::ffi::c_void,
-    },
-}
+The windowing subsystem uses the `raw-window-handle` crate types (`RawWindowHandle`,
+`RawDisplayHandle`) directly instead of defining custom handle enums. The `SurfaceHandle` struct
+(see above) implements the `HasRawWindowHandle` and `HasRawDisplayHandle` traits, providing GPU
+backends with platform-native handles for swapchain creation without additional platform branching.
 
-// Safety: raw pointers are valid for the lifetime
-// of the Window that created them. The Window must
-// not be dropped while a GPU swapchain holds the
-// handle.
-unsafe impl Send for RawWindowHandle {}
-unsafe impl Sync for RawWindowHandle {}
-```
+Each platform backend constructs the appropriate variant:
+
+| Platform      | `RawWindowHandle` variant | `RawDisplayHandle` variant |
+|---------------|---------------------------|----------------------------|
+| Windows       | `Win32`                   | `Windows`                  |
+| macOS         | `AppKit`                  | `AppKit`                   |
+| Linux X11     | `Xcb`                     | `Xcb`                      |
+| Linux Wayland | `Wayland`                 | `Wayland`                  |
 
 ### Error Types
 
@@ -1035,15 +1066,18 @@ graph LR
         DE[Display Events]
     end
 
-    subgraph "Platform Backend"
+    subgraph "Main Thread"
         EP[Event Poller]
         EX[Event Translator]
+        WS[Window System]
     end
 
-    subgraph "Engine Systems"
-        WS[Window System]
+    subgraph "Workers · Job System"
         IS[Input System]
         UIS[UI System]
+    end
+
+    subgraph "Render Thread"
         RS[Renderer]
     end
 
@@ -1055,68 +1089,79 @@ graph LR
     EX -->|InputEvent| IS
     EX -->|DisplayEvent| WS
 
-    WS -->|DpiChanged| UIS
-    WS -->|DpiChanged| RS
-    WS -->|Resized| RS
-    WS -->|RawWindowHandle| RS
-    IS -->|InputEvent| UIS
+    WS -->|WindowEvent via channel| IS
+    WS -->|WindowEvent via channel| UIS
+    WS -->|SurfaceHandle one-time| RS
+    WS -->|SurfaceEvent via channel| RS
 ```
 
-The platform backend runs a single event poller (driven by direct OS event loops: Win32 message
-pump, `NSRunLoop`, xcb event queue, Wayland dispatch, or UIKit `CFRunLoop`) that receives all OS
-events — window, input, and display — in a unified stream. The event translator converts
-platform-native event types into engine event types and routes them to the appropriate bounded
-channel.
+The main thread owns the OS event loop and all platform I/O. It runs the event poller (Win32 message
+pump, `NSRunLoop`, xcb event queue, Wayland dispatch, or UIKit `CFRunLoop`) and translates native
+events into engine types. Worker threads (job system) and the render thread receive events via
+bounded channels.
 
 On platforms where the OS owns the main thread (iOS, Android), the event poller runs on the OS main
-thread and forwards translated events to the game loop thread via a lock-free SPSC queue. On desktop
-platforms, the event poller runs on the game loop thread directly.
+thread and forwards translated events to worker threads via a lock-free SPSC queue. On desktop
+platforms, the main thread runs the event poller directly.
 
 Window events flow through the following path:
 
 1. **OS** emits a native event (e.g., `WM_SIZE`, `NSWindowDidResize`, `wl_surface.configure`).
-2. **Event Poller** receives the native event during its poll cycle.
-3. **Event Translator** maps the native event to a `WindowEvent` variant. Platform-specific data
+2. **Main thread event poller** receives the native event during its poll cycle.
+3. **Event translator** maps the native event to a `WindowEvent` variant. Platform-specific data
    (e.g., Win32 `LPARAM` fields) is decoded into cross-platform types.
-4. **Window System** receives the event through `Window::events()` and updates internal state.
-5. **Downstream systems** (UI, Renderer) receive propagated events.
+4. **Window system** (main thread) updates internal state and produces `SurfaceEvent`s for
+   surface-affecting changes.
+5. **Worker threads** receive `WindowEvent`s via channel for game logic (UI, input).
+6. **Render thread** receives `SurfaceEvent`s via channel to resize swapchain buffers, update
+   viewports, and toggle HDR formats.
 
 ### DPI Change Propagation
 
 When a DPI change occurs (window dragged between monitors):
 
-1. `WindowEvent::DpiChanged` arrives with old and new scale factors plus the OS-suggested window
-   rectangle.
-2. If `DpiPolicy::SystemScaled`, the window resizes to the suggested rectangle automatically. The
-   new physical size is `logical_size * new_scale_factor`.
-3. The UI system receives the DPI change event, recalculates all layout metrics, and regenerates
-   glyph atlases at the new resolution if needed.
-4. The renderer receives the `Resized` event (which follows `DpiChanged`), resizes the swapchain
-   framebuffers, and updates the viewport.
+1. The main thread receives the OS DPI notification and produces `WindowEvent::DpiChanged` with old
+   and new scale factors plus the OS-suggested window rectangle.
+2. If `DpiPolicy::SystemScaled`, the main thread resizes the window to the suggested rectangle
+   automatically. The new physical size is `logical_size * new_scale_factor`.
+3. The main thread sends `WindowEvent::DpiChanged` to worker threads via channel. The UI system
+   recalculates layout metrics and regenerates glyph atlases at the new resolution if needed.
+4. The main thread sends `SurfaceEvent::ScaleFactorChanged` and `SurfaceEvent::Resized` to the
+   render thread via channel. The render thread resizes swapchain framebuffers and updates the
+   viewport at the frame boundary.
 
 ### GPU Backend Integration
 
-The GPU backend receives the `RawWindowHandle` at swapchain creation time:
+The render thread receives a `SurfaceHandle` once at startup and ongoing `SurfaceEvent`s via
+channel:
 
-1. `Window::new(config)` creates the native window and returns a `Window`.
-2. The GPU backend calls `window.raw_handle()` to obtain the platform-native handle.
-3. The GPU backend creates a swapchain (Vulkan `VkSurfaceKHR`, Metal `CAMetalLayer`, DX12
-   `IDXGISwapChain`) from the raw handle.
-4. On `WindowEvent::Resized`, the GPU backend destroys and recreates swapchain buffers at the new
-   resolution.
-5. On fullscreen mode transitions (R-14.1.2), the `Window` coordinates with the GPU backend to
-   ensure the swapchain is resized without device loss.
+1. The main thread calls `Window::new(config)` and creates the native window.
+2. The main thread calls `window.surface_handle()` to obtain a `SurfaceHandle` and sends it to the
+   render thread.
+3. The render thread creates a swapchain (Vulkan `VkSurfaceKHR`, Metal `CAMetalLayer`, DX12
+   `IDXGISwapChain`) using the `HasRawWindowHandle` and `HasRawDisplayHandle` traits on the
+   `SurfaceHandle`.
+4. On `SurfaceEvent::Resized`, the render thread recreates swapchain buffers at the new resolution
+   at the frame boundary.
+5. On fullscreen mode transitions (R-14.1.2), the main thread sends a `SurfaceEvent::Resized` to the
+   render thread. Swapchain recreation is deferred to the frame boundary to avoid device loss.
 
 ### Input System Integration
 
-The windowing subsystem is the source of raw input events on all platforms. The input system
-receives keyboard, mouse, and touch events from the same event poller that produces window events.
-The windowing subsystem is responsible for:
+The main thread is the source of raw input events on all platforms. It receives keyboard, mouse,
+touch, and pen events from the same event poller that produces window events, performs DPI
+coordinate conversion (physical to logical), and forwards converted `PointerEvent`s to worker
+threads via channel. The windowing subsystem is responsible for:
 
 - Translating platform-native key codes to engine-agnostic scan codes.
-- Providing cursor position in both logical and physical coordinates.
+- Performing DPI coordinate conversion (physical to logical) and tagging events with `WindowId`.
+- Extracting pen pressure/tilt from platform events.
+- Cursor capture/confine management via `Window` methods on the main thread.
 - Forwarding focus change events so the input system can suppress input when the window is
   unfocused.
+
+Event types (`PointerEvent`, `PenState`, `PointerDevice`, `PointerEventKind`) are defined in the
+input design, not here. Windowing depends on those types to construct events.
 
 ## Platform Considerations
 
@@ -1125,19 +1170,18 @@ The windowing subsystem is responsible for:
 | Platform      | API                            |
 |---------------|--------------------------------|
 | Windows       | `CreateWindowEx`               |
-| macOS         | `NSWindow` via swift-bridge     |
-| iOS           | `UIWindow` via swift-bridge     |
+| macOS         | `NSWindow` via objc2            |
+| iOS           | `UIWindow` via objc2            |
 | Linux X11     | `x11rb` (`CreateWindowAux`)    |
 | Linux Wayland | `wayland-client`               |
 
 1. **Windows** — COM initialized via `CoInitializeEx`. Window class registered with
    `RegisterClassExW`. Uses `windows-rs` for FFI.
 2. **macOS** — `NSApplication` must be initialized on the OS main thread. `NSWindow` created with
-   `initWithContentRect:styleMask:`. Swift wrappers exposed via swift-bridge.
+   `initWithContentRect:styleMask:` via `objc2-app-kit`.
 3. **iOS** — `UIApplicationMain` owns the OS main thread. `UIWindow` and `UIViewController` created
-   on the OS main thread via swift-bridge wrappers. Input events (touch, accelerometer, keyboard)
-   arrive on the OS main thread via UIKit and are forwarded to the game loop thread through a
-   lock-free SPSC queue. The game loop runs on a dedicated thread, not the UIKit main thread.
+   on the OS main thread via `objc2-ui-kit`. Input events (touch, accelerometer, keyboard) arrive on
+   the OS main thread via UIKit and are forwarded to worker threads through a lock-free SPSC queue.
 4. **Linux X11** — Connection opened via `x11rb::connect`. Window created via `CreateWindowAux`.
    Uses `x11rb` Rust crate (pure Rust xcb implementation).
 5. **Linux Wayland** — `wayland-client` Rust crate for compositor binding. `xdg_wm_base` for shell
@@ -1220,7 +1264,7 @@ The windowing subsystem is responsible for:
 
 | Platform | Window API                      |
 |----------|---------------------------------|
-| iOS      | `UIWindow` via swift-bridge      |
+| iOS      | `UIWindow` via objc2             |
 | Android  | `ANativeWindow` via `ndk` crate |
 | Consoles | Platform SDK                    |
 
@@ -1249,11 +1293,11 @@ events (`onPause`, `onResume`) are mapped to `WindowEvent::FocusChanged`.
 | `test_hdr_config_platform_default_macos`   | R-14.1.6    |
 | `test_hdr_config_platform_default_linux`   | R-14.1.6    |
 | `test_display_id_equality`                 | R-14.1.3    |
-| `test_present_mode_variants`               | R-14.1.5    |
-| `test_frame_rate_cap_variants`             | R-14.1.5    |
+| `test_surface_handle_fields`               | R-14.1.1    |
+| `test_surface_event_variants`              | R-14.1.1    |
 
 1. **`test_window_config_default`** — Verify `WindowConfig::default()` produces a 1280x720 windowed
-   config with FIFO, HDR disabled, and system-scaled DPI policy.
+   config with HDR disabled and system-scaled DPI policy.
 2. **`test_logical_to_physical_100`** — At 1.0 scale factor,
    `LogicalSize(1280, 720).to_physical(1.0)` equals `PhysicalSize(1280, 720)`.
 3. **`test_logical_to_physical_125`** — At 1.25 scale factor,
@@ -1272,42 +1316,41 @@ events (`onPause`, `onResume`) are mapped to `WindowEvent::FocusChanged`.
    selects `Bt2020Pq`.
 10. **`test_display_id_equality`** — Two `DisplayId` values with the same inner value are equal;
     different values are not.
-11. **`test_present_mode_variants`** — Verify `PresentMode` has exactly three variants: `Immediate`,
-    `Fifo`, `Mailbox`.
-12. **`test_frame_rate_cap_variants`** — Verify `FrameRateCap::Capped(30)` and
-    `FrameRateCap::Uncapped` are distinct.
+11. **`test_surface_handle_fields`** — Verify `SurfaceHandle` contains `initial_size`,
+    `scale_factor`, and `hdr_capable` fields populated from the window state at creation time.
+12. **`test_surface_event_variants`** — Verify `SurfaceEvent` has exactly four variants: `Resized`,
+    `ScaleFactorChanged`, `HdrChanged`, `SurfaceInvalidated`.
 
 ### Integration Tests
 
-| Test                                   | Requirement |
-|----------------------------------------|-------------|
-| `test_window_lifecycle`                | R-14.1.1    |
-| `test_auxiliary_window`                | R-14.1.1    |
-| `test_fullscreen_cycle_no_device_loss` | R-14.1.2    |
-| `test_borderless_alt_tab`              | R-14.1.2    |
-| `test_display_enumeration`             | R-14.1.3    |
-| `test_display_hot_plug`                | R-14.1.3    |
-| `test_window_move_to_display`          | R-14.1.3    |
-| `test_dpi_change_multi_monitor`        | R-14.1.4    |
-| `test_fractional_dpi_scaling`          | R-14.1.4    |
-| `test_vsync_fifo_frame_pacing`         | R-14.1.5    |
-| `test_vsync_mailbox_no_tearing`        | R-14.1.5    |
-| `test_frame_rate_cap_30fps`            | R-14.1.5    |
-| `test_hdr_swapchain_format`            | R-14.1.6    |
-| `test_hdr_above_1_not_clipped`         | R-14.1.6    |
-| `test_hdr_peak_luminance_metadata`     | R-14.1.6    |
-| `test_hdr_unsupported_display`         | R-14.1.6    |
+| Test                                    | Requirement |
+|-----------------------------------------|-------------|
+| `test_window_lifecycle`                 | R-14.1.1    |
+| `test_auxiliary_window`                 | R-14.1.1    |
+| `test_fullscreen_surface_events`        | R-14.1.2    |
+| `test_borderless_alt_tab`               | R-14.1.2    |
+| `test_display_enumeration`              | R-14.1.3    |
+| `test_display_hot_plug`                 | R-14.1.3    |
+| `test_window_move_to_display`           | R-14.1.3    |
+| `test_dpi_change_multi_monitor`         | R-14.1.4    |
+| `test_fractional_dpi_scaling`           | R-14.1.4    |
+| `test_surface_event_on_resize`          | R-14.1.1    |
+| `test_hdr_negotiation`                  | R-14.1.6    |
+| `test_hdr_unsupported_display`          | R-14.1.6    |
+| `test_cursor_capture_confine`           | R-14.1.1    |
+
+VSync, frame pacing, and frame rate cap tests belong in the render pipeline test plan, not here. The
+windowing subsystem provides `SurfaceEvent`s; the render pipeline owns presentation.
 
 1. **`test_window_lifecycle`** — On each platform, create a window, resize to 1920x1080, minimize,
-   maximize, restore, and destroy. Assert each state transition emits the correct `WindowEvent` and
-   dimensions match after resize.
+   maximize, restore, and destroy. Assert each state transition emits the correct `WindowEvent`
+   (`Minimized`, `Maximized`, `Restored`, `Destroyed`) and dimensions match after resize.
 2. **`test_auxiliary_window`** — Create a primary window and an auxiliary window. Verify they
    operate independently — resizing one does not affect the other. Destroy auxiliary first, verify
    primary continues.
-3. **`test_fullscreen_cycle_no_device_loss`** — On each platform, cycle: Windowed ->
-   BorderlessFullscreen -> ExclusiveFullscreen -> Windowed. Assert no GPU device loss occurs. Assert
-   the rendered frame is visible within two VSync intervals of each transition. Verify backbuffer
-   resolution matches display resolution in fullscreen modes.
+3. **`test_fullscreen_surface_events`** — On each platform, cycle: Windowed -> BorderlessFullscreen
+   -> ExclusiveFullscreen -> Windowed. Assert each transition emits a `SurfaceEvent::Resized` with
+   the correct physical size. Verify the render thread receives the events via channel.
 4. **`test_borderless_alt_tab`** — In borderless fullscreen, simulate Alt+Tab, verify the window
    loses focus without mode change and regains focus on return.
 5. **`test_display_enumeration`** — On a multi-monitor system, enumerate displays. Assert each
@@ -1319,24 +1362,20 @@ events (`onPause`, `onResume`) are mapped to `WindowEvent::FocusChanged`.
    Assert `current_display()` returns the target display after each move.
 8. **`test_dpi_change_multi_monitor`** — On a dual-monitor system with different DPI values (e.g.,
    96 and 192), drag the window between monitors. Assert `DpiChanged` event fires with correct old
-   and new scale factors. Assert `current_dpi()` updates within one frame.
+   and new scale factors. Assert `SurfaceEvent::ScaleFactorChanged` is sent to the render thread.
+   Assert `current_dpi()` updates within one frame.
 9. **`test_fractional_dpi_scaling`** — Render UI text and buttons at 100%, 125%, 150%, and 200%
    scale. Assert text is rendered at native resolution (no bilinear blur). Assert button hit regions
    match their visual bounds within 1 pixel.
-10. **`test_vsync_fifo_frame_pacing`** — Set `PresentMode::Fifo`, render 300 frames, measure frame
-    times. Assert frame intervals match VSync period within 0.5 ms tolerance.
-11. **`test_vsync_mailbox_no_tearing`** — Set `PresentMode::Mailbox`, render 300 frames. Assert no
-    tearing artifacts via scanline-based detection.
-12. **`test_frame_rate_cap_30fps`** — Set `FrameRateCap::Capped(30)` on a 60 Hz display. Render 300
-    frames, assert frame intervals are 33.3 ms within 1 ms tolerance.
-13. **`test_hdr_swapchain_format`** — On an HDR-capable display, enable HDR. Assert the swapchain
-    reports an HDR-compatible format (scRGB/FP16 on Windows, extended linear sRGB on macOS).
-14. **`test_hdr_above_1_not_clipped`** — With HDR enabled, render a test pattern with pixel values
-    above 1.0. Capture the output and verify values are not clipped.
-15. **`test_hdr_peak_luminance_metadata`** — Enable HDR with `peak_luminance_nits = 1000.0`. Verify
-    the OS-reported metadata matches the display's reported capability.
-16. **`test_hdr_unsupported_display`** — On an SDR-only display, call `enable_hdr()`. Assert it
+10. **`test_surface_event_on_resize`** — Resize a window and verify `SurfaceEvent::Resized` is
+    produced with the correct physical size. Verify the event is received on the render thread
+    channel.
+11. **`test_hdr_negotiation`** — On an HDR-capable display, enable HDR. Assert `HdrNegotiator`
+    reports support. Verify `SurfaceEvent::HdrChanged(true)` is sent to the render thread.
+12. **`test_hdr_unsupported_display`** — On an SDR-only display, call `enable_hdr()`. Assert it
     returns `HdrError::DisplayNotHdrCapable`.
+13. **`test_cursor_capture_confine`** — Call `set_cursor_captured(true)` and verify cursor is
+    locked. Call `set_cursor_confined(true)` and verify cursor stays within the client area.
 
 ### Benchmarks
 
@@ -1392,14 +1431,17 @@ transparency would enable always-on-top FPS counters and performance overlays (U
 
 **Q5. Is this design cohesive with the overall engine?**
 
-The `RawWindowHandle` enum is compatible with the `raw-window-handle` crate, ensuring GPU backends
-(Vulkan, Metal, DX12) create swapchains without platform branching -- consistent with the rendering
-design's backend abstraction. The `DpiPolicy` per-window setting integrates with the UI system's
-layout engine for correct fractional scaling. The bounded channel event delivery decouples the OS
-event loop from the ECS frame, matching the controlled-poll philosophy from the threading design.
-Platform backend selection via `cfg` attributes follows the same pattern as threading, transport,
-and filesystem modules. The `LogicalSize` and `PhysicalSize` types enforce type-safe coordinate
-handling that prevents the DPI bugs common in engines using raw pixel values.
+The `SurfaceHandle` implements the `raw-window-handle` crate traits (`HasRawWindowHandle`,
+`HasRawDisplayHandle`), ensuring GPU backends (Vulkan, Metal, DX12) create swapchains without
+platform branching -- consistent with the rendering design's backend abstraction. The `DpiPolicy`
+per-window setting integrates with the UI system's layout engine for correct fractional scaling. The
+3-thread model (main thread for OS event loop and platform I/O, worker threads for the job system,
+render thread for GPU) cleanly separates concerns: the main thread produces `WindowEvent`s and
+`SurfaceEvent`s, worker threads consume window events for game logic, and the render thread consumes
+surface events for swapchain management. Platform backend selection via `cfg` attributes follows the
+same pattern as threading, transport, and filesystem modules. The `LogicalSize` and `PhysicalSize`
+types enforce type-safe coordinate handling that prevents the DPI bugs common in engines using raw
+pixel values.
 
 ## Open Questions
 
@@ -1407,7 +1449,7 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
    platform-native implementations provide full control over HDR metadata, advanced DXGI swapchain
    flags, `wp_fractional_scale_v1` on Wayland, and all presentation modes without fighting a
    third-party abstraction layer. Platform backends: Win32 `CreateWindowEx` via `windows-rs`,
-   `NSWindow` via Swift through swift-bridge, X11 via `x11rb` and Wayland via `wayland-client`.
+   `NSWindow` via `objc2-app-kit`, X11 via `x11rb` and Wayland via `wayland-client`.
 
 2. **Auxiliary window management** — The API supports creating multiple windows (primary + auxiliary
    for debug overlays, chat pop-outs, streaming dashboards). Open questions:
@@ -1422,9 +1464,9 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
    X11 as a fallback or investigate Wayland direct scanout protocols.
 
 4. **Console platform presentation** — Console platforms (PlayStation, Xbox, Switch) have dedicated
-   flip-queue APIs with platform-specific NDA documentation. The `PresentMode` enum and
-   `PresentController` need console-specific variants that will be added under NDA during console
-   porting (US-14.1.13).
+   flip-queue APIs with platform-specific NDA documentation. The render pipeline's presentation
+   controller needs console-specific variants that will be added under NDA during console porting
+   (US-14.1.13).
 
 5. **Adaptive VSync** — The requirements mention adaptive VSync (R-14.1.5 user stories) but the core
    specification covers Immediate, FIFO, and Mailbox. Adaptive VSync
@@ -1445,8 +1487,128 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
 | `wayland-client`    | latest  | Wayland windowing (Linux)      |
 
 1. **`raw-window-handle`** — De facto standard trait for passing native window handles to GPU
-   backends. Zero-cost abstraction — trait implementations on our `RawWindowHandle` enum.
+   backends. Zero-cost abstraction — `SurfaceHandle` implements `HasRawWindowHandle` and
+   `HasRawDisplayHandle`.
 2. **`windows-rs`** — Win32 API bindings. Used only via `cfg(target_os = "windows")`.
 3. **`x11rb`** — Pure Rust X11/xcb protocol implementation. Used only via
    `cfg(target_os = "linux")`.
 4. **`wayland-client`** — Rust Wayland client library. Used only via `cfg(target_os = "linux")`.
+
+## Review feedback
+
+### Accepted recommendations
+
+#### Align with threading review (3-thread model)
+
+The main thread owns the OS event loop. The game loop thread touches zero OS APIs. Update all data
+flow diagrams to reflect:
+
+- Main thread polls OS events and produces `WindowEvent` and `PointerEvent` structs
+- Main thread sends events to game loop via channel
+- Game loop sends cursor/window requests back to main thread via channel
+
+#### Move `PresentController` to render pipeline
+
+Presentation is a GPU queue operation (Metal `present(drawable)`, D3D12 `Present()`, Vulkan
+`vkQueuePresentKHR`). Remove from windowing design. The render pipeline design owns:
+
+- Swapchain/drawable management
+- VSync mode selection
+- Frame pacing
+- Present calls
+
+Windowing provides a `SurfaceHandle` (one-time) and ongoing `SurfaceEvent`s (resize, DPI change, HDR
+change) to the render thread.
+
+```rust
+pub struct SurfaceHandle {
+    raw: RawWindowHandle,
+    initial_size: PhysicalSize,
+    scale_factor: f64,
+    hdr_capable: bool,
+}
+
+pub enum SurfaceEvent {
+    Resized(PhysicalSize),
+    ScaleFactorChanged(f64),
+    HdrChanged(bool),
+    SurfaceInvalidated,
+}
+```
+
+#### Pointer event boundary with input design
+
+Windowing receives raw OS pointer events (mouse, pen, touch) from the platform event loop and
+performs DPI coordinate conversion (physical → logical). It forwards converted events to the input
+system via channel.
+
+Event types (`PointerEvent`, `PenState`, `PointerDevice`, `PointerEventKind`) are defined in the
+input design, not here. Windowing depends on those types to construct events.
+
+Boundary:
+
+| Windowing responsibility | Input responsibility |
+|--------------------------|---------------------|
+| Receive OS events | Define event types |
+| DPI coordinate conversion | Action mapping |
+| Tag with `WindowId` | Dead zones, curves |
+| Extract pen pressure/tilt | Gesture recognition |
+| Cursor capture/confine | Device abstraction |
+
+#### Add cursor management to `Window`
+
+```rust
+impl Window {
+    pub fn set_cursor(&mut self, cursor: CursorIcon);
+    pub fn set_cursor_visible(&mut self, visible: bool);
+    pub fn set_cursor_confined(&mut self, confined: bool);
+    pub fn set_cursor_captured(&mut self, captured: bool);
+    pub fn set_cursor_position(
+        &mut self, pos: LogicalPosition,
+    ) -> Result<(), WindowError>;
+}
+```
+
+These are window operations backed by platform APIs (`SetCapture` on Windows,
+`CGAssociateMouseAndMouseCursorPosition` on macOS). The game loop sends requests to the main thread
+via channel.
+
+#### Fix fallible APIs
+
+- `Window::new()` → `Result<Self, WindowError>`
+- `set_mode()` → `Result<(), WindowError>`
+
+#### Add missing `WindowEvent` variants
+
+Add `Minimized`, `Maximized`, `Restored` to `WindowEvent` enum. Integration tests expect these
+variants.
+
+#### Fix class diagram mismatch
+
+`DisplayInfo.refresh_rate_hz` in class diagram must match `refresh_rate_mhz` in API code. The
+millihertz API is correct.
+
+#### Use `raw-window-handle` crate traits
+
+Implement `HasRawWindowHandle` / `HasRawDisplayHandle` traits instead of a custom `RawWindowHandle`
+enum.
+
+#### Resize strategy
+
+Defer swapchain recreation to frame boundary. The 1-frame lag during resize drag is imperceptible.
+Note platform asymmetry:
+
+| Platform | Surface resize behavior |
+|----------|----------------------|
+| macOS (Metal 4) | `CAMetalLayer` auto-resizes with view |
+| Windows (D3D12) | Manual `ResizeBuffers()` on swapchain |
+| Linux (Vulkan) | Manual swapchain recreation |
+
+### Open items
+
+1. Event channel backpressure policy — drop oldest, block, or dynamically resize? Rapid `WM_SIZE` on
+   Windows can overflow.
+2. Apple API choice — design references `NSWindow` via Swift / `swift-bridge`, but project uses
+   `objc2`. Align with `objc2`.
+3. Wayland exclusive fullscreen gap — acknowledged in design Q&A but needs a concrete fallback
+   strategy.

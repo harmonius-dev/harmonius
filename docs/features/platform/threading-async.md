@@ -46,7 +46,7 @@
    - **Platform:** Windows uses `CreateFiber`/`SwitchToFiber` via COM wrappers. macOS uses GCD
      dispatch queues and blocks: each fiber is modeled as a suspended block on a serial dispatch
      queue, with `dispatch_suspend`/`dispatch_resume` controlling execution. GCD dispatch queues are
-     accessed through swift-bridge. This avoids deprecated `ucontext` and fragile custom assembly on
+     accessed through `objc2`. This avoids deprecated `ucontext` and fragile custom assembly on
      Apple platforms. Linux uses inline assembly for lightweight context switches with explicit
      stack allocation. Stack sizes default to 64 KiB per fiber with guard pages on all platforms.
 
@@ -120,8 +120,8 @@
    - **Deps:** F-14.3.6, F-14.3.4
    - **Platform:** macOS only. Uses `dispatch_queue_create` for the serial queue and `dispatch_sync`
      at the poll point to drain fiber resumption and Metal completion handlers. GCD/Dispatch is
-     accessed through swift-bridge. No direct core pinning; thread scheduling is delegated to macOS
-     via QoS classes.
+     accessed through `objc2`. No direct core pinning; thread scheduling is delegated to macOS via
+     QoS classes.
 8. **F-14.3.13** — Coroutines and async tasks that need to spread work across multiple frames call
    `runtime.next_frame().await`. This yields the task; the runtime resumes it at the next frame's
    poll point. This replaces manual state tracking and frame counters with a natural async

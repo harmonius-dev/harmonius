@@ -25,8 +25,9 @@
 | US-15.18.10.1 | build engineer (P-16)   |
 | US-15.18.10.2 | engine developer (P-26) |
 
-1. **US-15.18.1.1** — **As a** build engineer (P-16), **I want** modular AWS CDK stacks deploying
-   all server components with a single command, **so that** infrastructure setup is automated.
+1. **US-15.18.1.1** — **As a** build engineer (P-16), **I want** modular AWS deployment templates
+   provisioning all server components with a single command, **so that** infrastructure setup is
+   automated.
 
 2. **US-15.18.1.2** — **As a** engine developer (P-26), **I want** free-tier and enterprise
    deployment profiles, **so that** solo developers and large studios both have appropriate options.

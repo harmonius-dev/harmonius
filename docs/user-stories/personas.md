@@ -108,10 +108,10 @@ discipline.
   real-time preview of materials and lighting, LOD generation without quality loss
 - **Pain points:** Texture memory limits, draw call budgets, manual LOD creation, long asset import
   times, material differences between DCC and engine
-- **Engine touchpoints:** Material editor, world-building tools, foliage painter, DCC plugin
-  (Maya/Blender/Houdini), asset browser, terrain tools, lighting probes
-- **Key features:** F-12.6.1 (DCC Plugin SDK), F-15.3.1 (Material Editor), F-3.3.1 (Foliage
-  Instancing), F-12.2.2 (LOD Generation), F-2.12.9 (Custom Materials)
+- **Engine touchpoints:** Material editor, world-building tools, foliage painter, asset browser,
+  terrain tools, lighting probes
+- **Key features:** F-15.3.1 (Material Editor), F-3.3.1 (Foliage Instancing), F-12.2.2 (LOD
+  Generation), F-2.12.9 (Custom Materials)
 
 ### P-9 Character Artist
 
@@ -120,10 +120,9 @@ discipline.
   modular equipment system, morph target workflow, Character Creator-level quality
 - **Pain points:** Cloth/hair simulation instability, character LOD artifacts, equipment clipping,
   morph target authoring complexity, slow mesh merging
-- **Engine touchpoints:** DCC plugins (ZBrush, Maya, Marvelous Designer), character customization
-  preview, equipment socket editor, morph target editor, hair authoring
-- **Key features:** F-13.8.1 (Facial Morphing), F-13.8.9 (Modular Mesh Parts), F-12.6.18 (ZBrush
-  Plugin), F-12.6.10 (Marvelous Designer), F-2.8.1 (Strand Hair)
+- **Engine touchpoints:** Character customization preview, equipment socket editor, morph target
+  editor, hair authoring
+- **Key features:** F-13.8.1 (Facial Morphing), F-13.8.9 (Modular Mesh Parts), F-2.8.1 (Strand Hair)
 
 ### P-10 Rigger
 
@@ -133,8 +132,8 @@ discipline.
   GPU skinning, physics-ready joint configurations for ragdoll
 - **Pain points:** Rig differences between DCC and engine, IK solver limitations, ragdoll
   instability, retargeting artifacts across body types
-- **Engine touchpoints:** Animation editor (skeleton viewer, retargeting setup), DCC plugins (Maya,
-  MotionBuilder), ragdoll configuration, IK chain definition
+- **Engine touchpoints:** Animation editor (skeleton viewer, retargeting setup), ragdoll
+  configuration, IK chain definition
 - **Key features:** F-9.1.8 (Retargeting), F-9.3.1 (IK Solvers), F-4.3.5 (Ragdoll), F-9.3.8
   (Multi-Skeleton Locomotion), F-9.3.10 (Attachment/Dismemberment)
 
@@ -146,7 +145,7 @@ discipline.
 - **Pain points:** State machine complexity, foot sliding, animation-gameplay desync, long iteration
   cycles for state machine tuning, lack of procedural variation
 - **Engine touchpoints:** Animation editor (timeline, curve editor, state machine, blend space),
-  animation preview viewport, DCC plugins (Maya, MotionBuilder), retargeting
+  animation preview viewport, retargeting
 - **Key features:** F-9.4.1 (State Machine), F-9.4.8 (Blend Spaces), F-9.3.5 (Foot Placement),
   F-9.1.9 (Animation Events), F-9.4.10 (AI Animation Integration)
 
@@ -203,8 +202,8 @@ discipline.
   comprehensive test coverage, clear API boundaries between subsystems, documentation that stays in
   sync with code
 - **Pain points:** Cross-platform debugging (Metal vs Vulkan vs D3D12), unsafe FFI boundaries
-  (swift-bridge, FFI layers), ECS scheduling complexity, performance regressions from seemingly
-  small changes, maintaining backward compatibility for plugins
+  (objc2, FFI layers), ECS scheduling complexity, performance regressions from seemingly small
+  changes, maintaining backward compatibility for plugins
 - **Engine touchpoints:** All source code, GPU backend implementations, ECS internals, render graph
   compiler, physics solver, asset pipeline, platform abstraction layers, CI/CD pipeline, profiler,
   test framework

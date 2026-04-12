@@ -18,12 +18,12 @@ Functional and non-functional requirements for all engine subsystems. Each requi
 | 9 | Animation | 7 | 56 |
 | 10 | UI & 2D | 6 | 75 |
 | 11 | VFX | 6 | 42 |
-| 12 | Content Pipeline | 8 | 87 |
+| 12 | Content Pipeline | 7 | 61 |
 | 13 | Game Framework | 27 | 236 |
 | 14 | Platform | 7 | 130 |
 | 15 | Tools & Editor | 24 | 204 |
 | X | Cross-Cutting | 1 | 33 |
-| | **Total** | **150** | **1,520** |
+| | **Total** | **149** | **1,494** |
 
 ## 1. Core Runtime
 
@@ -167,7 +167,6 @@ Functional and non-functional requirements for all engine subsystems. Each requi
 
 | File | Requirements |
 |------|-----------:|
-| [dcc-plugins.md](content-pipeline/dcc-plugins.md) | 26 |
 | [content-plugins.md](content-pipeline/content-plugins.md) | 12 |
 | [asset-database.md](content-pipeline/asset-database.md) | 10 |
 | [streaming-io.md](content-pipeline/streaming-io.md) | 10 |
