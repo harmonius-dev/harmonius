@@ -1649,7 +1649,6 @@ first-class effect types:
 10. **Minimap markers** — 2D icons on the minimap corresponding to 3D world positions. Not VFX but
     consumes the same gameplay state (quest objectives, enemy positions, resource nodes). Cross-
     reference to UI framework minimap widget.
-
 11. **Animated 3D icons** — spinning quest markers, bobbing exclamation marks, pulsing loot
     indicators, rotating gears above crafting stations. These are NOT flat billboard UI and NOT
     particle VFX — they are 3D mesh entities with procedural animation. Each needs:

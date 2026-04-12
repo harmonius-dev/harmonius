@@ -2017,8 +2017,8 @@ void SimulateParticles(uint3 id : SV_DispatchThreadID) {
 3. **Metal** — Threadgroup memory for local sort.
 4. **Mobile** — Reduced particle budgets (PlatformTier::Mobile).
 
-The VFX effect graph editor (see [effect-graph.md](effect-graph.md)) is the visual authoring surface
-for particle system configurations.
+The VFX effect graph editor (see [effects.md](effects.md)) is the visual authoring surface for
+particle system configurations.
 
 ## Design Q & A
 

@@ -851,8 +851,8 @@ management, animation, audio feedback, HUD components, UI rendering, and asset f
 types derive `Reflect` — all type metadata is generated statically by the codegen pipeline into the
 middleman `.dylib` (zero-reflection constraint, constraints.md).
 
-See [widget-framework.md](widget-framework.md) and [hud-widgets.md](hud-widgets.md) for the full API
-pseudocode. The consolidated API is summarized below.
+See the Widget Identity, Common Widget Components, and HUD Components sections below for the full
+API pseudocode. The consolidated API is summarized below.
 
 ### Widget Identity
 

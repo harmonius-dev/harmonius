@@ -1136,10 +1136,10 @@ pub fn debris_lod_system(
 #### Cloth Ownership Boundary
 
 Physics owns the XPBD constraint solver (`XpbdSolverSystem`). Animation owns cloth authoring
-components (`ClothGarment`, `ClothPanel`), GPU dispatch, and LOD management (see
-[cloth-hair.md](../animation/cloth-hair.md)). Physics provides the solver as a service; animation
-drives when and how cloth is simulated. `ClothSimulation` in this file defines the solver-side
-state; `ClothGarment` in cloth-hair.md defines the authoring-side state.
+components (`ClothGarment`, `ClothPanel`), GPU dispatch, and LOD management. Physics provides the
+solver as a service; animation drives when and how cloth is simulated. `ClothSimulation` in this
+file defines the solver-side state; `ClothGarment` in the animation domain defines the
+authoring-side state.
 
 #### Components
 

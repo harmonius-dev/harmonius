@@ -1961,7 +1961,7 @@ world_seed
 | Mobile | Limited dispatch size | No mesh shaders | Reduced procgen budgets. |
 
 **Note:** The procedural generation graph is a specialization of the universal logic graph runtime
-(see [logic-graph.md](../tools/logic-graph.md)). It reuses the logic graph's type system,
+(see [visual-editors.md](../tools/visual-editors.md)). It reuses the logic graph's type system,
 validation, node evaluation, and visual editor infrastructure, parameterized with
 procedural-generation-specific node types.
 

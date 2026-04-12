@@ -2508,11 +2508,11 @@ draw is compile-time stripped from shipping builds via `cfg(debug_assertions)`.
 ### Networking Integration
 
 Physics state replication is handled by the networking domain (see
-[replication.md](../networking/replication.md)). Physics components (`RigidBody`, `Velocity`,
-`Transform`) carry `#[reflect(Replicate)]` attributes. The fixed-timestep deterministic simulation
-enables server-authoritative physics with client-side prediction and rollback. The networking layer
-snapshots physics state per tick and applies corrections when server state diverges from client
-prediction.
+[network-transport.md](../networking/network-transport.md)). Physics components (`RigidBody`,
+`Velocity`, `Transform`) carry `#[reflect(Replicate)]` attributes. The fixed-timestep deterministic
+simulation enables server-authoritative physics with client-side prediction and rollback. The
+networking layer snapshots physics state per tick and applies corrections when server state diverges
+from client prediction.
 
 ## Design Q & A
 
