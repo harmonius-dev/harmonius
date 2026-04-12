@@ -49,6 +49,13 @@ Test case IDs use `TC-6.G.Z.N` format where G is the group (1=devices, 2=actions
 | TC-6.5.6.1    | `test_vr_action_shared_with_pad`    | R-6.5.6     |
 | TC-6.5.8.1    | `test_pinch_gesture_action`         | R-6.5.8     |
 | TC-6.5.11.1   | `test_gaze_fixation_classify`       | R-6.5.11    |
+| TC-6.2.5.1    | `test_mapping_context_editor_auth`  | R-6.2.5     |
+| TC-6.2.10.1   | `test_trigger_condition_editor`     | R-6.2.10    |
+| TC-6.4.3.1    | `test_haptic_intensity_normalized`  | R-6.4.3     |
+| TC-6.4.5.1    | `test_adaptive_trigger_editor`      | R-6.4.5     |
+| TC-6.5.3.1    | `test_tracking_loss_event_1frame`   | R-6.5.3     |
+| TC-6.5.4.1    | `test_play_area_modes_boundary`     | R-6.5.4     |
+| TC-6.5.5.1    | `test_6dof_controller_components`   | R-6.5.5     |
 
 1. **TC-6.1.1.1** `test_keyboard_event_carries_both` — Inject press, release, and repeat events for
    the W key on each platform. Assert each `RawInputEvent` carries both a non-zero `Scancode` and a
@@ -275,6 +282,48 @@ Test case IDs use `TC-6.G.Z.N` format where G is the group (1=devices, 2=actions
     - Input: stream of `GazeRay` samples at 90 Hz
     - Expected: one `GazeEvent::Fixation` after 200 ms of stability; one `GazeEvent::Saccade` when
       angular velocity crosses threshold
+
+41. **TC-6.2.5.1** `test_mapping_context_editor_auth` — Author a mapping context with two bindings
+    entirely through the visual editor graph and load it into the input system.
+    - Input: editor-saved context file with bindings `{Move -> GamepadLStick, Jump -> South}`
+    - Expected: context loads at runtime with zero source-code changes; both actions produce values
+      when the corresponding devices fire
+
+42. **TC-6.2.10.1** `test_trigger_condition_editor` — Configure trigger conditions (hold 250 ms,
+    double-tap 200 ms) per action binding in the visual editor and preview timing.
+    - Input: `ActionBinding { trigger: TriggerRule::Hold(250ms) }`,
+      `ActionBinding { trigger: TriggerRule::DoubleTap(200ms) }`
+    - Expected: editor preview displays timing graph; at runtime, hold fires after 250 ms and
+      double-tap fires only when two taps arrive within 200 ms
+
+43. **TC-6.4.3.1** `test_haptic_intensity_normalized` — Issue `HapticCommand { intensity: 0.5 }` to
+    each supported backend and read back the device-native command.
+    - Input: intensity 0.5 for Xbox, DualSense, Switch, Steam Input backends
+    - Expected: each backend normalizes the input to its native scale (0-255 or 0.0-1.0) such that
+      0.5 maps to the half-scale native value on every backend
+
+44. **TC-6.4.5.1** `test_adaptive_trigger_editor` — Author an adaptive trigger effect per trigger
+    (Feedback, Weapon, Vibration) in the visual editor and apply at runtime.
+    - Input: editor-saved trigger profiles for left and right trigger
+    - Expected: profiles parse into `AdaptiveTriggerEffect` enum variants; at runtime DualSense
+      trigger responds according to configured effect
+
+45. **TC-6.5.3.1** `test_tracking_loss_event_1frame` — Simulate VR tracking loss at frame N.
+    - Input: platform tracking-lost signal dispatched during frame N
+    - Expected: `TrackingLossEvent` emitted no later than frame N+1; configured editor response
+      (pause/blackout) triggered
+
+46. **TC-6.5.4.1** `test_play_area_modes_boundary` — Configure play area in room-scale, seated, and
+    standing modes and trip the guardian/chaperone boundary in each.
+    - Input: three `PlayAreaMode` configurations, HMD position crossing boundary
+    - Expected: each mode produces correct boundary event (enter/exit); mode-specific limits applied
+
+47. **TC-6.5.5.1** `test_6dof_controller_components` — Connect a 6DOF controller and sample
+    position, orientation, velocity, angular velocity, button states, analog axes, and capacitive
+    touch.
+    - Input: simulated controller sample stream
+    - Expected: each datum exposed through dedicated ECS components; values match simulated input
+      stream within tolerance
 
 ## Integration Tests
 
