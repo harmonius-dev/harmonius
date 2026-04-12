@@ -944,7 +944,7 @@ Platform-agnostic. All platform-specific behavior delegated to lower layers.
 
 ## Test Plan
 
-Companion: [containers-slots-test-cases.md](containers-slots-test-cases.md).
+Companion: [containers-slots-test-cases.md](./containers-slots-test-cases.md).
 
 ### Unit Tests -- Container
 

@@ -1215,7 +1215,7 @@ Occasional false detections do not accumulate to thresholds.
 ## Test Plan
 
 Test cases are in the companion file
-[network-infrastructure-test-cases.md](network-infrastructure-test-cases.md).
+[network-infrastructure-test-cases.md](./network-infrastructure-test-cases.md).
 
 ### Summary
 

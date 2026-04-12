@@ -612,7 +612,7 @@ sequenceDiagram
 
 ## Test Plan
 
-See companion file [render-effects-test-cases.md](render-effects-test-cases.md).
+See companion file [render-effects-test-cases.md](./render-effects-test-cases.md).
 
 ### Unit Tests (Post-Processing)
 

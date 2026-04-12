@@ -1105,7 +1105,7 @@ pub enum CommError {
 ## Test Plan
 
 Test cases are in the companion file
-[network-services-test-cases.md](network-services-test-cases.md).
+[network-services-test-cases.md](./network-services-test-cases.md).
 
 ### Summary
 

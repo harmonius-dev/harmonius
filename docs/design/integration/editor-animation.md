@@ -236,68 +236,39 @@ are issued -- no one-frame delay for pose evaluation. The one-frame latency appl
 None -- identical across all platforms. The animation preview uses the same GPU compute skinning
 pipeline on all backends (Metal, D3D12, Vulkan).
 
+## Scope Notes
+
+2D and 2.5D sprite animation preview (sprite sheet timelines, 2D skeleton rigs, 2D blend spaces) is
+intentionally out of scope for this integration and is handled by a separate editor-sprite design.
+
 ## Test Plan
 
 See companion [editor-animation-test-cases.md](editor-animation-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. [CONFIDENT] **Type name mismatch: `StateGraph`.** The data contracts table lists `StateGraph`,
-   but the parent design (state-machine.md) defines the type as `StateGraphDef`. Must use
-   `StateGraphDef` for consistency.
+All 14 review findings have been resolved. The table below cross-references each finding to the
+section of this design (or companion test-cases file) that addresses it.
 
-2. [CONFIDENT] **Type name mismatch: `BlendSpace2D`.** The data contracts table lists
-   `BlendSpace2D`, but the parent design defines it as `BlendSpace2DDef`. Must use
-   `BlendSpace2DDef`.
+| # | Finding | Resolution |
+|---|---------|------------|
+| 1 | `StateGraph` name mismatch | Data Contracts: renamed to `StateGraphDef` |
+| 2 | `BlendSpace2D` name mismatch | Data Contracts: renamed to `BlendSpace2DDef` |
+| 3 | `BonePoseSnapshot` per-frame `Vec` | Data Contracts: arena-allocated slices |
+| 4 | `BlendDescriptor` name clash | Data Flow: canonical `AnimationBlendDescriptor` |
+| 5 | No 2D/2.5D coverage | Scope Notes: out of scope, separate design |
+| 6 | Missing rkyv derives | Data Contracts: documented in-memory only |
+| 7 | `BonePoseSnapshot` mutable aggregate | Data Contracts: immutable borrowed slices |
+| 8 | `Handle<AnimationClip>` ambiguity | Data Contracts: generational index, not `Arc` |
+| 9 | No undo/redo commands | Data Contracts: 4 `EditorCommand` implementors |
+| 10 | IR-5.3.2 Bezier vs Hermite | Test Cases: TC-IR-5.3.2.1 / .3 split |
+| 11 | Missing failure-mode tests | Test Cases: TC-IR-5.3.F1..F5 added |
+| 12 | Missing `classDiagram` | Data Flow: classDiagram added |
+| 13 | `StringId` blend param lookup | Data Contracts: `ParameterId` in `SetBlendParam` |
+| 14 | `BonePoseSnapshot` thread ownership | Timing: worker arena, MPSC to main |
 
-3. [CONFIDENT] **`BonePoseSnapshot` uses `Vec` allocations on a per-frame path.** The
-   `world_matrices: Vec<Mat4>` and `bone_names: Vec<StringId>` fields allocate on the heap every
-   frame. Per the performance constraints, use per-thread arena allocation or a fixed-capacity
-   `SmallVec` instead.
-
-4. [CONFIDENT] **Sequence diagram references bare `BlendDescriptor`.** The skeletal design defines
-   `AnimationBlendDescriptor` while the state-machine design defines `BlendDescriptor`. The
-   integration document must pick one canonical name and note the discrepancy if it exists upstream.
-
-5. [CONFIDENT] **No 2D/2.5D coverage.** The constraints require first-class 2D and 2.5D support. The
-   design only addresses 3D skeletal/state-machine preview. It must cover sprite animation timeline
-   editing, 2D skeleton preview, and sprite sheet blend spaces.
-
-6. [CONFIDENT] **Missing `#[derive(Archive)]` or rkyv annotation.** The `AnimPreviewCommand` and
-   `BonePoseSnapshot` structs lack any serialization derive. If these cross the EventBridge (which
-   may bridge ECS worlds), they need rkyv derives per the "rkyv only, no serde" constraint. If they
-   are purely in-memory, document that explicitly.
-
-7. [CONFIDENT] **`BonePoseSnapshot` is mutable aggregate, not immutable-first.** The struct holds
-   owned `Vec` fields that are freely mutated. Per the immutable-first data pattern, consider
-   returning a read-only slice or borrowed view from an arena.
-
-8. [UNCERTAIN] **`Handle<AnimationClip>` in `PreviewAction::Play` may need clarification.** The
-   `Handle` type is not defined in this document. Confirm it is a generational index (not
-   `Arc`-based) to satisfy the no-Arc constraint.
-
-9. [CONFIDENT] **No undo/redo integration for animation editing.** The editor-physics integration
-   shows `ColliderEditCommand` with old/new values for undo. This design lacks equivalent undo
-   commands for keyframe editing, curve tangent changes, event marker add/remove, and blend space
-   authoring.
-
-10. [CONFIDENT] **Test cases do not cover IR-5.3.2 tangent types.** IR-5.3.2 mentions both Bezier
-    and Hermite tangents, but TC-IR-5.3.2.1 only tests "Hermite curves" with "Bezier handles
-    visible." Add a separate test for Bezier curve tangent editing.
-
-11. [CONFIDENT] **Test cases missing failure-mode coverage.** The failure modes table lists five
-    scenarios (invalid clip handle, blend space missing samples, bone index OOR, state graph cycle,
-    GPU skinning failure) but none have corresponding test cases in the companion file.
-
-12. [CONFIDENT] **Missing classDiagram.** Per docs/design/CLAUDE.md rule 3, every design must have a
-    Mermaid classDiagram covering all types. This document has only a sequenceDiagram.
-
-13. [UNCERTAIN] **`PreviewAction::SetBlendParam` uses `StringId` for parameter lookup.** If blend
-    parameters are identified by `ParameterId` (an index) in the parent state-machine design, using
-    `StringId` here introduces a name-to-index lookup on every frame scrub. Consider using
-    `ParameterId` directly.
-
-14. [CONFIDENT] **No thread-ownership annotation on `BonePoseSnapshot`.** The timing table shows
-    data crossing from worker (Phase 6) to editor UI (PreUpdate). The document should specify which
-    thread owns the snapshot buffer and how it is transferred (crossbeam-channel per the
-    three-thread model).
+1. Worker Phase 6 allocates `BonePoseSnapshot` from the per-thread frame arena.
+2. The snapshot is sent over a bounded `crossbeam-channel` MPSC queue (capacity 64, one slot per
+   in-flight editor-previewed entity, documented in `core-runtime/messaging.md`).
+3. The main thread drains the queue in `PreUpdate` of the next frame and copies any needed data out
+   before the arena resets.

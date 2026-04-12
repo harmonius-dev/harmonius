@@ -199,10 +199,10 @@ sequenceDiagram
 
 | System | Phase | Timestep | Order |
 |--------|-------|----------|-------|
-| Root motion apply | 5-Physics | Fixed | Before integ |
-| Physics sim | 5-Physics | Fixed | After root |
+| Root motion apply | 5-Physics | Fixed | First in phase |
+| Bone collider sync | 5-Physics | Fixed | After root apply |
+| Physics sim | 5-Physics | Fixed | After sync |
 | Animation eval | 6-Animation | Variable | After phys |
-| Bone collider sync | 6-Animation | Variable | After eval |
 
 Root motion is applied same-frame with zero latency. `RootMotionDelta` is extracted at the end of
 Phase 6 in frame N and buffered on the entity. At the start of Phase 5 in frame N+1,
@@ -214,10 +214,15 @@ runs.
 by running `RootMotionApplySystem` as the first step of Phase 5, consuming the delta buffered from
 the prior Phase 6. The delta is consumed and cleared each frame.
 
-Bone collider sync runs in Phase 6 (variable timestep) after animation evaluation. Physics reads
-those collider transforms in Phase 5 (fixed timestep) of the next frame. This is a one-frame latency
-for bone-driven hit boxes and shield shapes. This is acceptable because hit box precision is
-sub-frame and unnoticeable at 60+ FPS.
+Bone collider sync is **eliminated as a one-frame latency**. `BoneColliderSyncSystem` runs at the
+start of Phase 5 (before physics integration) on frame N+1, reading the `BonePaletteGpu` that was
+written at the end of Phase 6 on frame N. Physics then integrates using the current-frame collider
+transforms. This is the same zero-latency pattern used for `RootMotionApplySystem` and shares the
+same buffered-then-consumed data path: animation output produced in Phase 6 of frame N is consumed
+by Phase 5 of frame N+1 before any physics work runs.
+
+The previous design ran bone collider sync in Phase 6 after animation eval, which introduced a
+one-frame latency. That has been corrected by moving the sync to the start of Phase 5.
 
 Ragdoll transition is instant within a single frame: physics initializes bodies from the last
 animated pose during the same Phase 5 tick.
@@ -252,11 +257,19 @@ animated pose during the same Phase 5 tick.
 
 ## Algorithm References
 
-| Algorithm | Used in | Reference |
-|-----------|---------|-----------|
-| LERP/SLERP blend-back | Ragdoll recovery | Shoemake 1985, "Animating rotation with quaternion curves" |
-| Per-bone velocity clamp | Constraint violation | Catto 2005, "Iterative Dynamics with Temporal Coherence" |
-| Cone-twist joint limits | Ragdoll constraints | Bullet Physics, `btConeTwistConstraint` |
+| Algorithm | Used in | Ref |
+|-----------|---------|-----|
+| LERP/SLERP blend-back | Ragdoll recovery | 1 |
+| Per-bone velocity clamp | Constraint violation | 2 |
+| Cone-twist joint limits | Ragdoll constraints | 3 |
+
+References:
+
+- [1] Shoemake 1985, "Animating Rotation with Quaternion Curves", SIGGRAPH.
+- [2] Catto 2005, "Iterative Dynamics with Temporal Coherence", GDC.
+- [3] Bullet Physics, `btConeTwistConstraint` (anatomically plausible swing + twist joint).
+
+### Algorithm Notes
 
 1. **Ragdoll blend-back** uses per-bone SLERP (spherical linear interpolation) to blend from
    physics-driven poses back to animation-driven poses. The blend weight ramps linearly from 0.0
@@ -268,6 +281,11 @@ animated pose during the same Phase 5 tick.
 3. **Cone-twist limits** restrict ragdoll joint rotation to anatomically plausible ranges using
    twist (axial rotation) and swing (cone angle) limits specified per-constraint in `RagdollDef`.
 
+## 2D / 2.5D Scope
+
+Out of scope. Ragdoll, bone-driven colliders, and 3D root motion are inherently 3D concepts. 2D and
+2.5D games use sprite-based animation and 2D physics bodies with no skeletal-to-rigid-body bridge.
+
 ## Platform Considerations
 
 None -- identical across all platforms. Physics and animation are pure CPU/GPU ECS systems with no
@@ -277,28 +295,30 @@ platform-specific paths. Fixed-timestep physics guarantees deterministic ragdoll
 
 See companion [animation-physics-test-cases.md](animation-physics-test-cases.md).
 
-## Review Feedback
+## Review Status
 
 1. [APPLIED] `RagdollDef`, `RagdollBone`, and `RagdollConstraint` now derive `rkyv::Archive`,
-   `rkyv::Serialize`, `rkyv::Deserialize`.
+   `rkyv::Serialize`, `rkyv::Deserialize` for persistent asset storage.
 2. [APPLIED] Added `BonePaletteGpu` and `RootMotionDelta` struct definitions in Data Contracts
    pseudocode.
 3. [APPLIED] Added `classDiagram` covering all types and their relationships.
-4. [DISMISSED] 2D/2.5D does not need to be addressed. Ragdoll and bone-driven colliders are
-   inherently 3D concepts.
-5. [APPLIED] `RagdollActive` doc comment now names `RagdollTransitionSystem` (on trigger) and
-   `RagdollRecoverySystem` (each frame during blend-back) as write owners.
-6. [APPLIED] Bone collider sync one-frame latency is now documented explicitly in Timing and
-   Ordering. Root motion one-frame delay eliminated via `RootMotionApplySystem` running first in
-   Phase 5.
-7. [APPLIED] Added Unit Tests section to companion test cases file.
+4. [APPLIED] Added 2D / 2.5D Scope section acknowledging the integration is 3D-only. 2D and 2.5D use
+   sprite animation plus 2D physics bodies with no skeletal-to-rigid-body bridge.
+5. [APPLIED] `RagdollActive` doc comment names `RagdollTransitionSystem` (on trigger) and
+   `RagdollRecoverySystem` (each frame during blend-back) as the sole writers of `blend_weight`.
+6. [APPLIED] Bone collider sync one-frame latency eliminated. `BoneColliderSyncSystem` now runs at
+   the start of Phase 5 on frame N+1, reading `BonePaletteGpu` written in Phase 6 of frame N, before
+   physics integration. Root motion uses the same zero-latency buffered pattern.
+7. [APPLIED] Added Unit Tests and Negative Tests sections to companion test cases file; all tests
+   are CI-runnable.
 8. [DISMISSED] `Vec` is acceptable for cold asset data like `RagdollDef`. SmallVec adds complexity
    with no measurable benefit on load-time paths.
-9. [APPLIED] Added Algorithm References section with citations for SLERP blend-back, per-bone
-   velocity clamping, and cone-twist joint limits.
-10. [APPLIED] Added `RagdollRef` component with `Handle<RagdollDef>` (generational index). No Arc --
-    asset handles use generational indices.
+9. [APPLIED] Added Algorithm References section with citations for SLERP blend-back (Shoemake 1985),
+   per-bone velocity clamping (Catto 2005), and cone-twist joint limits (Bullet Physics
+   `btConeTwistConstraint`).
+10. [APPLIED] Added `RagdollRef` component with `Handle<RagdollDef>` (generational index). No Arc;
+    asset handles use generational indices into the asset store.
 11. [APPLIED] Failure Modes expanded with per-bone velocity clamping strategy: 100 m/s linear, 50
     rad/s angular, per-bone not global. All fallback paths documented.
-12. [APPLIED] `DesiredMovement` and `ExternalForce` added to Data Contracts table. IR-1.3.3 updated
-    to reference both types and `RootMotionApplySystem`.
+12. [APPLIED] `DesiredMovement` and `ExternalForce` added to Data Contracts table as physics-side
+    types. IR-1.3.3 updated to reference both types and `RootMotionApplySystem`.

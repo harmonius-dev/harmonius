@@ -27,9 +27,11 @@
    produces `DrawIndirect` args for batched submission. Atlas regions, nine-slice UVs, and tint
    colors are packed per-instance.
 3. **IR-3.6.3** -- `SdfAtlas` provides MSDF glyph textures using the multi-channel signed distance
-   field algorithm (Chlumsky 2015). The UI pass samples the atlas with SDF anti-aliased edges
-   (F-10.4.2, F-10.4.7). Up to 5000+ glyphs per frame. Fallback: when MSDF generation fails for a
-   glyph, the system falls back to rasterized bitmap glyphs at the target size.
+   field algorithm (Chlumsky 2015, <https://github.com/Chlumsky/msdfgen>). The UI pass samples the
+   atlas with SDF anti-aliased edges (F-10.4.2, F-10.4.7). Up to 5000+ glyphs per frame. Fallback:
+   when MSDF generation fails for a glyph, the system falls back to rasterized bitmap glyphs at the
+   target size. Second fallback: if bitmap rasterization also fails (e.g., unsupported font), the
+   glyph renders as a tofu box (`U+FFFD`) at the same size.
 4. **IR-3.6.4** -- World-space UI panels (`F-10.1.10`) render in the 3D scene pass, not the
    screen-space UI pass. They receive lighting and depth testing. Ray- cast input handles
    interaction.
@@ -40,7 +42,44 @@
    aberration, 12-film grain, 13-vignette. UI renders in display space after tonemap.
 7. **IR-3.6.7** -- `NameplateSystem` projects 3D world positions to screen coordinates using the
    active camera's `ViewUniform.view_projection` matrix. Screen positions feed into `ComputedLayout`
-   for nameplate widget placement.
+   for nameplate widget placement. Works identically with 2D (`Transform2D`) and 3D
+   (`GlobalTransform`) sources — the projection uses whichever camera is active.
+
+## Dimensional Modes (2D / 2.5D / 3D)
+
+UI is inherently a **2D** subsystem: all widgets are quads in screen space, rendered in
+`RenderPhase::UI` after tonemap. This is true regardless of whether the game world is 2D, 2.5D, or
+3D. The design supports three modes:
+
+1. **Screen-space UI (always 2D)** -- `QuadBatcher` emits `QuadInstance` records with screen-space
+   `position` and `size`. Orthographic projection is applied in the vertex shader. This is the
+   default path and covers HUD, menus, chat, inventory.
+2. **World-space UI panels (2.5D/3D)** -- Panels with `WorldSpacePanel` component render in the 3D
+   scene pass (`RenderPhase::Transparent`) with depth testing and lighting. They are still 2D quads,
+   but their transform is sampled from `GlobalTransform` (3D) or `Transform2D` (2D/2.5D).
+3. **Nameplates (screen-anchored to world)** -- `NameplateSystem` reads `GlobalTransform` **or**
+   `Transform2D` and projects via `ViewUniform.view_projection`. For pure 2D games the projection
+   matrix is the 2D camera's orthographic matrix; the same code path handles both.
+
+## Widgets Are ECS Entities
+
+Per the engine-wide "ECS-primary (~90%), UI widgets as entities" constraint, every UI widget is a
+first-class ECS entity. Widgets have no special container — they live in the same `World` as game
+entities. The following components drive the UI rendering pipeline:
+
+| Component | Role |
+|-----------|------|
+| `ComputedLayout` | Final screen rect after layout pass |
+| `ComputedStyle` | Final resolved style (color, font, etc.) |
+| `NineSliceSprite` | Optional sprite + border insets |
+| `TextContent` | Optional glyph string + font handle |
+| `WorldSpacePanel` | Marks panel as 3D scene participant |
+| `Nameplate` | Marks entity as nameplate anchor target |
+| `Transform2D` | 2D world position (for 2D/2.5D) |
+| `GlobalTransform` | 3D world position (for 3D) |
+
+The `paint_system` (see ECS Integration below) uses ECS queries to visit widget entities. There is
+no parallel "widget tree" data structure — the ECS archetype graph **is** the widget tree.
 
 ## Data Contracts
 
@@ -56,10 +95,33 @@
 | `UiExtractSnapshot` | UI | Render thread | Immutable snapshot |
 
 ```rust
+/// Render graph phase ordering. `UI` runs after tonemap
+/// and before film grain / vignette. Fully defined here
+/// so the pass ordering contract is explicit.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[repr(u8)]
+pub enum RenderPhase {
+    ShadowMap = 0,
+    Prepass = 1,
+    Opaque = 2,
+    AlphaTest = 3,
+    Transparent = 4,
+    Tonemap = 5,
+    UI = 6,
+    PostProcess = 7,
+    Debug = 8,
+    Present = 9,
+}
+
 /// Immutable snapshot of UI draw data produced by the
-/// extract phase (phase 7). Sent to the render thread
-/// via channel. The render thread consumes this snapshot
-/// to issue GPU draw commands.
+/// extract phase (phase 7). Constructed once per frame by
+/// the worker thread and sent to the render thread over a
+/// bounded MPSC channel (`MPSC_UI_SNAPSHOT_CAPACITY = 2`,
+/// one in-flight + one building). All fields are read-only
+/// on the render thread. The snapshot is frame-transient
+/// and NOT persisted to disk, so no rkyv derives are
+/// required.
+#[derive(Clone, Debug)]
 pub struct UiExtractSnapshot {
     pub quad_vertex_buffer: GpuBuffer,
     pub quad_index_buffer: GpuBuffer,
@@ -67,7 +129,7 @@ pub struct UiExtractSnapshot {
     pub atlas_texture: GpuTextureView,
     pub sdf_atlas_texture: GpuTextureView,
     pub draw_count: u32,
-    pub batches: Vec<BatchDescriptor>,
+    pub batches: Arc<[BatchDescriptor]>,
 }
 
 /// Accumulates widget quad commands during the
@@ -99,7 +161,8 @@ pub struct QuadInstance {
 }
 
 /// Describes one draw batch sharing atlas page and
-/// blend state.
+/// blend state. Frame-transient (not persisted); no rkyv
+/// derives.
 #[derive(Clone, Debug)]
 pub struct BatchDescriptor {
     pub atlas_page: u32,
@@ -107,6 +170,23 @@ pub struct BatchDescriptor {
     pub instance_offset: u32,
     pub instance_count: u32,
 }
+
+/// Blend modes packed into `BatchDescriptor`. All variants
+/// defined so batch merging is deterministic.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u8)]
+pub enum BlendState {
+    Opaque = 0,
+    AlphaBlend = 1,
+    Additive = 2,
+    Multiply = 3,
+    PremultipliedAlpha = 4,
+}
+
+/// Bounded MPSC channel capacity for handing UI snapshots
+/// from the worker thread to the core-pinned render thread.
+/// Two slots allow one in-flight + one under construction.
+pub const MPSC_UI_SNAPSHOT_CAPACITY: usize = 2;
 
 /// Multi-channel signed distance field glyph atlas.
 /// Algorithm: Chlumsky 2015 "Multi-channel Signed
@@ -117,11 +197,23 @@ pub struct SdfAtlas {
     pending_rasterize: Vec<GlyphKey>,
 }
 
-/// Single atlas page texture. Owned by the render
-/// thread. Pages are evicted LRU when the atlas
-/// exceeds `max_pages`. On eviction the GPU texture
-/// is dropped and any glyphs referencing the page
-/// are re-rasterized on demand.
+/// Single atlas page texture. Exclusively owned by the
+/// core-pinned render thread — the worker thread never
+/// touches `GpuTexture` directly. Pages are evicted LRU
+/// when the atlas exceeds `max_pages`. Cleanup protocol:
+///
+/// 1. Worker marks `last_access_frame` when a glyph in
+///    the page is referenced.
+/// 2. At end of frame N, render thread walks `pages` and
+///    evicts any whose `last_access_frame < N - EVICT_GRACE`
+///    (`EVICT_GRACE = 2`, matching `FRAMES_IN_FLIGHT`).
+/// 3. On eviction, `GpuTexture` is dropped on the render
+///    thread (where it was created) and corresponding
+///    `glyph_map` entries are removed.
+/// 4. Subsequent lookups for evicted glyphs push onto
+///    `pending_rasterize` and are re-rasterized next frame.
+///
+/// Frame-transient GPU resource; no rkyv derives.
 pub struct GlyphAtlasPage {
     pub texture: GpuTexture,
     pub size: u32,
@@ -149,13 +241,31 @@ pub struct NineSliceResult {
     pub patch_sizes: [Vec2; 9],
 }
 
-/// Off-screen render-to-texture for 3D previews
-/// inside UI panels. The render graph creates a
-/// sub-view that renders the preview scene into
-/// this target. Persistent targets are owned by
-/// the render graph and reused across frames.
-/// Fallback: if RTT allocation fails, the UI quad
-/// renders a solid fallback color.
+/// Off-screen render-to-texture for 3D previews inside
+/// UI panels. The render graph owns the underlying
+/// `GpuTexture` and participates in resource aliasing:
+///
+/// * `persistent = true` -- the target is allocated once
+///   at registration time and retained across frames. The
+///   render graph treats it as an external resource; no
+///   aliasing is performed. Cleanup happens only when the
+///   UI panel entity is despawned (detected by the graph
+///   reference count dropping to zero).
+/// * `persistent = false` -- the target is allocated from
+///   the transient resource pool at the start of each
+///   frame and aliased with any compatible transient
+///   texture (same size, format, usage). The render graph
+///   resource tracker enforces write-then-read ordering so
+///   the UI pass never samples an aliased texture that is
+///   still being written.
+///
+/// Fallback 1: if persistent allocation fails, the system
+/// retries as transient for one frame and emits a warning
+/// diagnostic.
+/// Fallback 2: if transient allocation also fails, the UI
+/// quad renders a solid fallback color (`clear_color`) and
+/// emits a warning diagnostic.
+/// Frame-transient handle; no rkyv derives.
 pub struct RenderToTexture {
     pub target: GpuTextureView,
     pub size: UVec2,
@@ -165,9 +275,11 @@ pub struct RenderToTexture {
 }
 
 /// Nameplate screen projection result. Stored in a
-/// pre-sized arena-backed `Vec` to avoid per-frame
-/// heap allocation on the hot path.
-/// Frame-transient; not serialized.
+/// pre-sized, arena-allocated slice to avoid per-frame
+/// heap allocation on the hot path. Frame-transient; not
+/// serialized (no rkyv derives).
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
 pub struct NameplateScreenPos {
     pub entity: Entity,
     pub screen_xy: Vec2,
@@ -175,17 +287,24 @@ pub struct NameplateScreenPos {
     pub visible: bool,
 }
 
-/// Pre-sized arena-backed buffer for nameplate
-/// projections. Capacity is set to the maximum
-/// expected nameplate count (default 256).
-pub struct NameplateBuffer {
-    entries: Vec<NameplateScreenPos>,
+/// Pre-sized bump-arena-backed buffer for nameplate
+/// projections. Allocated once at startup from the
+/// per-frame arena (`frame_arena: &Bump`). No per-frame
+/// heap allocations occur after construction. Capacity
+/// (`NAMEPLATE_CAPACITY`) defaults to 256 and is
+/// configurable per-platform.
+pub struct NameplateBuffer<'arena> {
+    entries: &'arena mut [NameplateScreenPos],
+    len: usize,
 }
 
-impl NameplateBuffer {
-    pub fn new(capacity: usize) -> Self { .. }
+pub const NAMEPLATE_CAPACITY: usize = 256;
+
+impl<'arena> NameplateBuffer<'arena> {
+    pub fn new_in(arena: &'arena Bump, capacity: usize) -> Self { .. }
     pub fn clear(&mut self) { .. }
     pub fn push(&mut self, pos: NameplateScreenPos) { .. }
+    pub fn as_slice(&self) -> &[NameplateScreenPos] { .. }
 }
 ```
 
@@ -316,19 +435,35 @@ classDiagram
     }
 
     class NameplateBuffer {
-        +Vec~NameplateScreenPos~ entries
-        +new(capacity) Self
+        +&mut [NameplateScreenPos] entries
+        +usize len
+        +new_in(arena, capacity) Self
         +clear()
         +push(pos)
+        +as_slice() Slice
     }
 
     class RenderPhase {
         <<enum>>
+        ShadowMap
+        Prepass
         Opaque
         AlphaTest
         Transparent
+        Tonemap
         UI
+        PostProcess
         Debug
+        Present
+    }
+
+    class BlendState {
+        <<enum>>
+        Opaque
+        AlphaBlend
+        Additive
+        Multiply
+        PremultipliedAlpha
     }
 
     class ViewUniform {
@@ -343,6 +478,7 @@ classDiagram
     QuadBatcher *-- QuadInstance
     QuadBatcher *-- BatchDescriptor
     QuadBatcher ..> UiExtractSnapshot : produces
+    BatchDescriptor ..> BlendState : uses
     SdfAtlas *-- GlyphAtlasPage
     NineSliceSolver ..> NineSliceResult : produces
     NameplateBuffer *-- NameplateScreenPos
@@ -353,26 +489,36 @@ classDiagram
 
 ## Data Flow
 
+Participants are grouped by owning thread. The vertical bar labelled "thread boundary" marks the
+MPSC channel send from the worker thread to the core-pinned render thread.
+
 ```mermaid
 sequenceDiagram
-    participant WT as WidgetTree
-    participant LY as LayoutEngine
-    participant QB as QuadBatcher
-    participant SA as SdfAtlas
-    participant NP as NameplateSystem
-    participant VU as ViewUniform
-    participant EX as RenderExtractor
-    participant RG as Render Graph
-    participant GPU as GPU UI Pass
+    participant WT as WidgetTree (worker)
+    participant SR as StyleResolver (worker)
+    participant LY as LayoutEngine (worker)
+    participant NP as NameplateSystem (worker)
+    participant VU as ViewUniform (worker, Arc immutable)
+    participant QB as QuadBatcher (worker)
+    participant SA as SdfAtlas (worker)
+    participant EX as RenderExtractor (worker)
+    participant CH as MPSC channel (cap=2)
+    participant RG as Render Graph (render thread, core-pinned)
+    participant GPU as GPU UI Pass (render thread)
 
-    WT->>LY: Compute layout
+    WT->>SR: Dirty widget entities
+    SR->>LY: Resolved ComputedStyle
+    LY->>LY: Compute ComputedLayout
     LY->>QB: Emit quad commands
-    QB->>SA: Resolve glyph UVs
-    NP->>VU: Project world to screen
-    NP->>LY: Set nameplate positions
-    QB->>EX: Phase 7 snapshot
-    EX->>RG: Register UI pass
-    RG->>GPU: After tonemap
+    NP->>VU: Read view_projection (Arc clone)
+    NP->>LY: Write nameplate screen positions
+    QB->>SA: Resolve glyph UVs (lookup)
+    QB->>EX: Build UiExtractSnapshot
+    EX->>CH: send(snapshot)
+    Note over CH: thread boundary: worker --> render
+    CH->>RG: recv(snapshot) on render thread
+    RG->>RG: Register UI pass in RenderPhase::UI
+    RG->>GPU: Execute after tonemap
     GPU->>GPU: Draw indirect quads
     GPU->>GPU: SDF text sampling
 ```
@@ -396,85 +542,62 @@ sequenceDiagram
 |---------|--------|----------|
 | Atlas full | Missing glyphs | LRU evict, repack |
 | Batch overflow | Partial UI | Split into passes |
-| RTT target missing | Black preview | Skip preview quad |
+| RTT persistent fail | Broken preview | Retry transient, warn |
+| RTT transient fail | Black preview | Solid `clear_color` quad |
 | Nameplate behind cam | Off-screen anchor | Cull depth < 0 |
-| > 50 draw calls | Perf target miss | Merge more batches |
+| Draw calls > budget | Perf target miss | Merge more batches |
+| MPSC channel full | Worker back-pressure | Worker stalls 1 frame |
+| MSDF gen fail | Poor glyph edges | Bitmap rasterize |
+| Bitmap raster fail | Glyph missing | Tofu `U+FFFD` box |
+
+The "draw calls > budget" threshold is per-platform (see Platform Considerations). The benchmark
+suite (TC-IR-3.6.1.B1, TC-IR-3.6.4.B1, TC-IR-3.6.6.B1) asserts the per-platform value rather than a
+single fixed number.
 
 ## Platform Considerations
 
-| Platform | Max draws | SDF quality | RTT |
-|----------|----------|-------------|-----|
-| Desktop | 50 | Full MSDF | Yes |
-| Console | 50 | Full MSDF | Yes |
-| Mobile | 30 | SDF (no multi-channel) | Half-res |
-| Switch | 40 | Full MSDF | Half-res |
+| Platform | Max draws | SDF quality | RTT | Nameplates |
+|----------|-----------|-------------|-----|------------|
+| Desktop | 50 | Full MSDF | Full-res | 256 |
+| Console | 50 | Full MSDF | Full-res | 256 |
+| Switch | 40 | Full MSDF | Half-res | 128 |
+| Mobile | 30 | SDF (single-channel) | Half-res | 64 |
+
+Draw-call thresholds are enforced per platform by the benchmark suite. Mobile uses single-channel
+SDF (not MSDF) to halve the atlas memory footprint and skip the multi-channel generation pass.
 
 ## Test Plan
 
 See companion [rendering-ui-test-cases.md](rendering-ui-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. No Mermaid `classDiagram` is present. The design CLAUDE.md requires every design to include a
-   `classDiagram` covering ALL types, structs, enums, traits, type aliases, and their relationships.
-   `UiRenderPass`, `NameplateScreenPos`, `QuadBatcher`, `SdfAtlas`, `NineSliceSolver`,
-   `RenderToTexture`, `RenderPhase::UI`, and `ViewUniform` all need to appear in a class diagram.
-   [CONFIDENT]
+All 14 findings from the integration review have been resolved.
 
-2. No `#[derive(Archive, Deserialize, Serialize)]` (rkyv) annotations on any struct. The engine uses
-   rkyv exclusively for binary serialization (no serde). `NameplateScreenPos` is frame-transient so
-   may not need rkyv, but this should be stated explicitly. Any data that crosses a frame boundary
-   or is snapshot for the render thread should show rkyv derivation. [CONFIDENT]
+| # | Finding | Resolution |
+|---|---------|------------|
+| 1 | Missing `classDiagram` | Added under Data Contracts |
+| 2 | rkyv annotations | Frame-transient types explicitly marked "no rkyv" |
+| 3 | 2D / 2.5D rendering not addressed | Added "Dimensional Modes" section |
+| 4 | UI widgets as ECS entities | Added "Widgets Are ECS Entities" section |
+| 5 | Missing Rust pseudocode | Added for QuadBatcher, SdfAtlas, NineSliceSolver, RTT |
+| 6 | Mutable `UiRenderPass` | Replaced with immutable `UiExtractSnapshot` |
+| 7 | Thread boundary in sequence | Channel `CH` + note + per-participant thread labels |
+| 8 | Missing IR-3.6.4 / 3.6.6 benches | Added TC-IR-3.6.4.B1 and TC-IR-3.6.6.B1 |
+| 9 | `NameplateScreenPos` heap allocs | `NameplateBuffer::new_in(arena, capacity)` |
+| 10 | Fixed `> 50` draw-call threshold | Per-platform thresholds drive benchmark assertions |
+| 11 | Missing MSDF citation | Cited Chlumsky 2015 with msdfgen URL |
+| 12 | `RenderPhase::UI` enum not defined | Full `RenderPhase` enum in Rust pseudocode |
+| 13 | RTT render-graph lifetime | `persistent` vs transient aliasing documented |
+| 14 | `StyleResolver` missing from diagram | Added as `SR` participant in sequence diagram |
 
-3. The design does not address 2D or 2.5D UI rendering. The engine constraints require first-class
-   2D/2.5D support. How does `QuadBatcher` work with `Transform2D`? Does the nameplate system
-   project from 2D world positions? The design must cover 2D and 2.5D modes explicitly. [CONFIDENT]
+Additional refinements applied from project-wide integration review guidance:
 
-4. No mention of UI widgets as ECS entities. The engine constraint is "ECS-primary (~90%), UI
-   widgets as entities." The design references `WidgetTree` and `LayoutEngine` but does not show how
-   widget entities feed into the quad batcher or how ECS queries drive the rendering pipeline. This
-   is a fundamental architectural omission. [CONFIDENT]
-
-5. The Data Contracts table lists six types but only two (`UiRenderPass`, `NameplateScreenPos`) have
-   Rust pseudocode. `QuadBatcher`, `SdfAtlas`, `NineSliceSolver`, and `RenderToTexture` all require
-   Rust struct definitions per the design template. [CONFIDENT]
-
-6. `UiRenderPass` holds `draw_count: u32` as a mutable counter, but the engine prefers
-   immutable-first data patterns. Consider making `UiRenderPass` an immutable snapshot produced by
-   the extract phase rather than a mutable accumulator. [CONFIDENT]
-
-7. The sequence diagram shows `QB->>EX: Phase 7 snapshot` but does not clarify the thread boundary.
-   The three-thread model (main, workers, render) means the extract/snapshot copies data from the
-   worker thread to the render thread via channel. The diagram should show the channel send and
-   which thread owns each participant. [CONFIDENT]
-
-8. No benchmark test case exists for IR-3.6.4 (world-space UI panels) or IR-3.6.6 (UI pass ordering
-   relative to post-process). All IRs should have at least one benchmark entry in the companion file
-   to verify performance targets. [CONFIDENT]
-
-9. `NameplateScreenPos` stores `entity: Entity` which ties the projection result back to an ECS
-   entity, but nothing prevents this struct from being heap-allocated per nameplate per frame. With
-   200+ nameplates this is a hot path. The design should specify arena allocation or a pre-sized
-   `Vec` backed by a per-thread arena. [CONFIDENT]
-
-10. The Failure Modes table lists "> 50 draw calls" as a failure with recovery "Merge more batches,"
-    but the Platform Considerations table allows only 30 draws on mobile. The failure threshold
-    should match the per-platform budget, not a single fixed number. [CONFIDENT]
-
-11. No algorithm reference is cited for the MSDF sampling technique. The constraints require every
-    non-trivial algorithm to cite its source (paper, blog, GDC talk). MSDF text rendering originates
-    from Chlumsky's 2015 thesis and should be cited. [CONFIDENT]
-
-12. The `RenderPhase::UI` variant is listed as "Defined in: Rendering" but no enum definition is
-    shown. Since this is the ordering mechanism that determines when UI renders relative to
-    post-process effects, its full enum (with all phases) should appear in the Rust pseudocode or be
-    cross-referenced to a specific design document section. [UNCERTAIN]
-
-13. The design does not mention how render-to-texture (`RenderToTexture`) interacts with the render
-    graph's resource lifetime tracking. If the RTT target is created and destroyed per frame, this
-    may conflict with the render graph's resource aliasing. If it persists across frames, the
-    ownership and cleanup strategy should be documented. [UNCERTAIN]
-
-14. The Timing table places `StyleResolver` at phase "3-Simulation" with order "Before layout," but
-    it is not shown in the sequence diagram or data flow at all. Either add it to the diagram or
-    explain why it is omitted. [CONFIDENT]
+1. Added `MPSC_UI_SNAPSHOT_CAPACITY = 2` constant documenting the bounded MPSC channel depth.
+2. Made `UiExtractSnapshot.batches` an `Arc<[BatchDescriptor]>` (immutable shared data).
+3. Core-pinned render thread explicitly labelled in sequence diagram.
+4. `BlendState` and `RenderPhase` enums fully enumerated (no placeholder variants).
+5. `GlyphAtlasPage` cleanup protocol documented (LRU eviction on render thread).
+6. MSDF fallback chain documented (MSDF → bitmap → tofu `U+FFFD`).
+7. RTT fallback chain documented (persistent → transient → solid color).
+8. Per-platform draw budgets drive the benchmark assertions in the companion file.

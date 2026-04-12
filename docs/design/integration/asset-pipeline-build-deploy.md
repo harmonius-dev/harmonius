@@ -31,16 +31,33 @@
 | `BuildConfig` | Build | Pipeline | Target platform + profile |
 
 ```rust
-// AssetId    — defined in asset-pipeline.md
-// AssetKind  — defined in asset-processing.md
-// TargetPlatform — defined in build-deploy.md
-// BuildConfig    — defined in build-deploy.md
-// PlatformProfile — defined in asset-processing.md
+// Provenance of externally defined types:
+// AssetId         — defined in
+//   docs/design/content-pipeline/asset-pipeline.md
+// AssetKind       — defined in
+//   docs/design/content-pipeline/asset-processing.md
+// TargetPlatform  — defined in
+//   docs/design/tools/build-deploy.md (enum: Windows,
+//   MacOS, IOS, Linux, Android, ConsoleA, ConsoleB)
+// BuildConfig     — defined in
+//   docs/design/tools/build-deploy.md
+// PlatformProfile — defined in
+//   docs/design/content-pipeline/asset-processing.md
 
 /// Build system requests a cook for a platform.
 /// Processing returns a manifest of baked assets.
-/// Transient in-memory struct — not serialized to
-/// disk, so rkyv derives are not required.
+///
+/// Persistent: rkyv-serialized so editor-initiated
+/// builds survive editor restarts (see Open Question
+/// 1 — persisted by default; flag for transient).
+/// `#[repr(C)]` + `align(16)` for zero-copy mmap
+/// alignment with SIMD-friendly reads.
+#[derive(
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+)]
+#[repr(C, align(16))]
 pub struct CookRequest {
     pub config: BuildConfig,
     pub profile: PlatformProfile,
@@ -49,13 +66,18 @@ pub struct CookRequest {
 
 /// Result of cooking: maps asset IDs to baked
 /// artifact paths in the CAS.
+///
 /// Serialized to CAS via rkyv for zero-copy mmap.
+/// `align(16)` matches the CAS page alignment used
+/// by the platform-native I/O layer, so mmap'd
+/// regions can be cast directly to `ArchivedCookedManifest`
+/// without copying.
 #[derive(
     rkyv::Archive,
     rkyv::Serialize,
     rkyv::Deserialize,
 )]
-#[repr(C)]
+#[repr(C, align(16))]
 pub struct CookedManifest {
     pub platform: TargetPlatform,
     pub entries: Vec<CookedEntry>,
@@ -63,6 +85,9 @@ pub struct CookedManifest {
     /// `cas_key` is a leaf, hashed pairwise via
     /// BLAKE3 to produce this root. Verifies
     /// manifest integrity in a single comparison.
+    /// Algorithm: binary Merkle tree, BLAKE3 at each
+    /// internal node per BLAKE3 spec section 2.1;
+    /// odd leaves promoted (no duplication).
     pub blake3_root: [u8; 32],
 }
 
@@ -71,15 +96,37 @@ pub struct CookedManifest {
     rkyv::Serialize,
     rkyv::Deserialize,
 )]
-#[repr(C)]
+#[repr(C, align(16))]
 pub struct CookedEntry {
     pub asset_id: AssetId,
-    /// BLAKE3 hash of this entry's baked bytes.
+    /// BLAKE3 hash of this entry's baked bytes
+    /// (flat hash, not Merkle). Computed via
+    /// `blake3::hash` over the raw CAS blob.
     pub cas_key: [u8; 32],
     pub size_bytes: u64,
     pub kind: AssetKind,
 }
 ```
+
+### Channels
+
+| Channel | Kind | Buffer | Producer | Consumer |
+|---------|------|--------|----------|----------|
+| `build_requests` | MPSC | 64 | Editor / CLI | PackagingPipeline |
+| `cook_completions` | MPSC | 256 | ProcessingManager | PackagingPipeline |
+| `bundle_completions` | MPSC | 64 | BundleBuilder | PackagingPipeline |
+
+All channels are `crossbeam_channel::bounded` MPSC. Buffer sizes are tuned so producers never block
+the main thread under expected load (1 build/second editor, < 64 cook batches in flight, < 64
+bundles per build). `Arc` is used only for immutable shared data (`Arc<PlatformProfile>`,
+`Arc<CookedManifest>`); all mutation goes through owned values passed across channels.
+
+### Scope Note — 2D / 2.5D
+
+2D and 2.5D asset baking are intentionally out of scope for this integration design. 2D assets
+(sprites, tilemaps, 2D physics shapes) flow through the same cook pipeline with no special handling
+at the integration layer and do not require additional data contracts between Asset Pipeline and
+Build/Deploy. This acknowledgment is recorded here per the integration review.
 
 ## Data Flow
 
@@ -98,7 +145,7 @@ sequenceDiagram
     PM->>IC: filter_changed(asset_ids)
     IC-->>PM: changed_ids
     PM->>PM: process DAG (job system)
-    Note right of PM: crossbeam-deque work-stealing
+    Note right of PM: crossbeam-deque work-stealing<br/>custom job system; no async/await
     PM->>CAS: store baked artifacts
     PM-->>PK: CookedManifest
     PK->>BD: build_bundles(manifest)
@@ -107,9 +154,20 @@ sequenceDiagram
     CS-->>PK: SignedArtifacts
 ```
 
-**Assumption:** the parent asset-pipeline design has been updated per its own review feedback to
-remove `async fn`, `AsyncRwLock`, and `HashMap` violations. This integration design assumes all
-parent APIs are synchronous and use arena-backed collections per constraints.md.
+**Dependency on parent fixes.** This integration design assumes the parent
+[asset-pipeline.md](../content-pipeline/asset-pipeline.md) and
+[asset-processing.md](../content-pipeline/asset-processing.md) have been updated per their own
+review feedback to remove `async fn`, `AsyncRwLock`, and `HashMap` usage. All parent APIs are
+synchronous (no async/await anywhere in the engine or editor — backend servers are a separate
+concern) and use arena-backed collections plus `DashMap` where concurrent maps are needed, per
+[constraints.md](../constraints.md). The process DAG is scheduled on the custom crossbeam-deque job
+system (see [core-runtime/game-loop.md](../core-runtime/game-loop.md)); no thread pool, no Rayon, no
+async runtime. CLI shader tools (`dxc`, `metal-shaderconverter`) are invoked as blocking
+subprocesses from job-system worker threads, never from the main thread.
+
+**Debug tooling.** A runtime-toggleable `CookTrace` flag (set via editor debug panel or CLI
+`--trace-cook`) enables per-asset timing, cache hit/miss logs, and BLAKE3 hash dumps. Disabled by
+default. No recompile required to toggle.
 
 ## Timing and Ordering
 
@@ -241,64 +299,74 @@ classDiagram
 See companion
 [asset-pipeline-build-deploy-test-cases.md](asset-pipeline-build-deploy-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. `CookRequest` and `CookedManifest` use `Vec` (lines
-39, 46) but do not derive `rkyv::Archive`. [APPLIED] Added rkyv derives to `CookedManifest` and
-`CookedEntry`. Documented `CookRequest` as transient (not serialized to disk).
+| # | Finding | Status |
+|---|---------|--------|
+| 1 | rkyv derives on `CookRequest` / `CookedManifest` with alignment | APPLIED — see detail 1 |
+| 2 | Provenance comments for external types | APPLIED — see detail 2 |
+| 3 | Dependency on parent asset-pipeline fixes | APPLIED — see detail 3 |
+| 4 | "process DAG" references crossbeam-deque job system | APPLIED — see detail 4 |
+| 5 | macOS shader tool two-step pipeline clarification | APPLIED — see detail 5 |
+| 6 | Platform-native I/O failure modes (CAS storage) | APPLIED — see detail 6 |
+| 7 | Edge-case tests for IR-5.1.6 and IR-5.1.7 | APPLIED — see detail 7 |
+| 8 | Benchmarks for IR-5.1.6 and IR-5.1.7 | APPLIED — see detail 8 |
+| 9 | Missing `classDiagram` | APPLIED — see detail 9 |
+| 10 | Timing section self-contradiction fix | APPLIED — see detail 10 |
+| 11 | 2D / 2.5D out of scope acknowledgment | APPLIED — see detail 11 |
+| 12 | Signing recovery via editor UI (not CLI prompt) | APPLIED — see detail 12 |
+| 13 | Open Questions section added | APPLIED — see detail 13 |
+| 14 | `blake3_root` documented as Merkle root | APPLIED — see detail 14 |
+| 15 | MPSC channels, buffer lengths, `Arc` immutability note | APPLIED — see detail 15 |
 
-2. `CookedManifest` and `CookRequest` are missing
-`#[repr(C)]`. [APPLIED] Added `#[repr(C)]` to `CookedManifest` and `CookedEntry`. `CookRequest` is
-transient so does not need it.
-
-3. The Data Contracts pseudocode does not show
-`AssetId`, `AssetKind`, `TargetPlatform`, or `BuildConfig` definitions. [APPLIED] Added
-`// defined in <file>` comments for all external types.
-
-4. The parent asset-pipeline design still contains
-`async fn`, `AsyncRwLock`, and `HashMap`. [APPLIED] Added assumption note after the sequence diagram
-stating this design assumes the parent has been updated.
-
-5. The sequence diagram shows `process DAG (thread
-pool)`. [APPLIED] Changed to `process DAG (job system)` with a note specifying crossbeam-deque
-work-stealing.
-
-6. Platform Considerations table lists "dxc + MSC"
-for macOS/iOS without explaining the two-step pipeline. [APPLIED] Expanded table to show full
-pipeline and added detail note documenting HLSL->dxc->DXIL->metal-shaderconverter->metallib.
-
-7. No failure mode covers platform I/O failures
-during CAS storage. [APPLIED] Added failure modes 6-8 covering io_uring, GCD dispatch_io, and IOCP
-failures with explicit fallback paths.
-
-8. IR-5.1.6 (BLAKE3 delta patching) has only one
-test case. [APPLIED] Added TC-IR-5.1.6.2, TC-IR-5.1.6.3, and TC-IR-5.1.6.B1 to companion test-cases
-file.
-
-9. IR-5.1.7 (shared CAS cache) has only one
-integration test. [APPLIED] Added TC-IR-5.1.7.2, TC-IR-5.1.7.3, TC-IR-5.1.7.4 to companion
-test-cases file.
-
-10. The design lacks a classDiagram showing all
-Data Contract types and their relationships. [APPLIED] Added Class Diagram section with all types,
-external references, and relationships.
-
-11. The Timing and Ordering section conflates
-offline and editor-initiated builds. [APPLIED] Clarified two execution contexts: CLI builds (fully
-offline) and editor-initiated builds (poll-only at frame boundaries).
-
-12. No mention of 2D/2.5D asset baking.
-[DISMISSED] Per user decision: 2D/2.5D does not need to be addressed in this integration design. 2D
-assets (sprites, tilemaps, 2D physics shapes) flow through the same cook pipeline with no special
-handling at the integration layer.
-
-13. Code signing failure mode says "Prompt for
-credentials" assuming CLI. [APPLIED] Changed recovery to describe an editor credentials dialog (not
-a CLI prompt), per no-code engine constraint.
-
-14. The document is missing an explicit "Open
-Questions" section. [APPLIED] Added Open Questions section with three items.
-
-15. `blake3_root` does not document whether it is a
-Merkle root or flat hash. [APPLIED] Added doc comment specifying it is a Merkle root: each entry's
-`cas_key` is a leaf, hashed pairwise via BLAKE3.
+1. **rkyv derives with alignment.** `CookRequest`, `CookedManifest`, and `CookedEntry` all derive
+   `rkyv::{Archive, Serialize, Deserialize}` with `#[repr(C, align(16))]`. The 16-byte alignment
+   matches the CAS page alignment used by the platform-native I/O layer, permitting zero-copy mmap
+   casts to the `Archived*` types. `CookRequest` is promoted to persistent by default so
+   editor-initiated builds survive editor restarts (Open Question 1 still tracks the transient-only
+   alternative).
+2. **Provenance.** Every externally defined type (`AssetId`, `AssetKind`, `TargetPlatform`,
+   `BuildConfig`, `PlatformProfile`) now carries a comment pointing to the exact design document
+   that defines it, plus the variant list for enums.
+3. **Parent dependency.** The "Dependency on parent fixes" paragraph after the sequence diagram
+   records the assumption that `async fn`, `AsyncRwLock`, and `HashMap` have been removed from
+   `asset-pipeline.md` and `asset-processing.md`, and that concurrent maps use `DashMap` per the
+   integration review.
+4. **crossbeam-deque job system.** The sequence diagram note says "crossbeam-deque work-stealing /
+   custom job system; no async/await". The dependency paragraph also explicitly states there is no
+   thread pool, no Rayon, no async runtime, and CLI shader tools (`dxc`, `metal-shaderconverter`)
+   run as blocking subprocesses on job-system worker threads, never on the main thread.
+5. **macOS shader pipeline.** Platform Considerations detail 1 documents the two-step HLSL -> `dxc`
+   -> DXIL -> `metal-shaderconverter` -> `.metallib` pipeline, invoked via CLI subprocess per
+   constraints.md.
+6. **Platform-native I/O failure modes.** Failure modes 6-8 cover io_uring (Linux), GCD
+   `dispatch_io` (macOS), and IOCP (Windows) errors during CAS writes, each with retry +
+   blocking-syscall fallback and a warning logged in the build output panel.
+7. **Edge-case tests.** Companion test-cases file adds TC-IR-5.1.6.2 (zero-byte patch),
+   TC-IR-5.1.6.3 (corrupted v1), TC-IR-5.1.6.N1 (tampered Merkle root), TC-IR-5.1.7.2 (empty cache),
+   TC-IR-5.1.7.3 (concurrent writes), TC-IR-5.1.7.4 (LRU eviction), and TC-IR-5.1.7.N1 (malformed
+   CAS key).
+8. **Benchmarks.** Companion file adds TC-IR-5.1.6.B1 (1 GB delta patch), TC-IR-5.1.6.B2 (Merkle
+   root over 100k entries), and TC-IR-5.1.7.B2 (zero-copy mmap CAS store) alongside the existing
+   TC-IR-5.1.7.B1 cache-lookup latency benchmark. All benchmarks run via
+   `cargo bench -p harmonius-integration-benches` with no external services.
+9. **Class diagram.** The Class Diagram section provides a Mermaid `classDiagram` covering
+   `CookRequest`, `CookedManifest`, `CookedEntry`, and all external types with their relationships.
+10. **Timing fix.** The Timing and Ordering section enumerates two distinct contexts: CLI builds
+    (fully offline, no game loop) and editor-initiated builds (game loop polls completions at frame
+    boundaries but does not drive the build).
+11. **2D / 2.5D out of scope.** The "Scope Note — 2D / 2.5D" subsection under Data Contracts
+    explicitly acknowledges 2D/2.5D is out of scope and that 2D assets share the same cook pipeline
+    with no integration-layer special cases.
+12. **Signing recovery via editor UI.** Failure mode 5 now describes an editor credentials dialog
+    (not a CLI prompt), consistent with the no-code engine constraint.
+13. **Open Questions.** A dedicated Open Questions section tracks three open items: `CookRequest`
+    persistence policy, Merkle vs flat BLAKE3 for small manifests, and telemetry granularity for I/O
+    fallbacks.
+14. **`blake3_root` documentation.** The field doc comment specifies it is a binary-Merkle BLAKE3
+    root (BLAKE3 spec section 2.1, odd leaves promoted), while each `cas_key` is a flat
+    `blake3::hash` over the raw CAS blob — no ambiguity.
+15. **Channels and `Arc`.** The Channels subsection lists the three MPSC channels (`build_requests`,
+    `cook_completions`, `bundle_completions`) with bounded buffer lengths (64, 256, 64), confirms
+    all are `crossbeam_channel::bounded` MPSC, and states `Arc` is used only for immutable shared
+    data (`Arc<PlatformProfile>`, `Arc<CookedManifest>`).

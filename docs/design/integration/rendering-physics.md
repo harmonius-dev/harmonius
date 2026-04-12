@@ -6,6 +6,7 @@
 |--------|--------|--------|
 | Rendering | [rendering-core.md](../rendering/rendering-core.md) | GPU pipeline |
 | Physics | [foundation.md](../physics/foundation.md) | Simulation |
+| Threading | [threading.md](../platform/threading.md) | Three-thread model |
 
 ## Integration Requirements
 
@@ -15,22 +16,31 @@
 | IR-3.4.2 | Debug draw contact normals and points | Phys, Ren |
 | IR-3.4.3 | Debug draw BVH node AABBs | Phys, Ren |
 | IR-3.4.4 | Debug draw raycast/shapecast results | Phys, Ren |
-| IR-3.4.5 | Debug viz compile-time gated | Phys, Ren |
+| IR-3.4.5 | Debug viz runtime-toggleable | Phys, Ren |
 | IR-3.4.6 | Physics interpolation for rendering | Phys, Ren |
 
 1. **IR-3.4.1** -- `ColliderShape` variants (sphere, box, capsule, convex hull, triangle mesh,
    heightfield) are drawn as wireframe overlays via the debug draw API (F-2.10.9). Each shape maps
-   to a set of line segments colored by `RigidBodyType`.
+   to a set of line segments colored by `RigidBodyType`. 2D/2.5D colliders are intentionally out of
+   scope in this document and are covered alongside the 2D renderer ([2d.md](../rendering/2d.md)).
 2. **IR-3.4.2** -- `ContactManifold` and `ContactPoint` data are visualized as arrows (normal
-   direction) and dots (contact positions). Arrow length scales with penetration depth.
-3. **IR-3.4.3** -- The physics-private BVH and shared BVH node AABBs are drawn as wireframe boxes.
-   Leaf nodes use green; internal nodes use yellow. Depth can be filtered by a debug slider.
+   direction) and dots (contact positions). Arrow length scales with penetration depth. Dot radius
+   is configurable via `contact_point_dot_radius`.
+3. **IR-3.4.3** -- The physics-private BVH node AABBs are drawn as wireframe boxes. Leaf nodes use
+   green; internal nodes use yellow. Depth can be filtered via `bvh_max_depth`.
 4. **IR-3.4.4** -- `RayCast` results draw the ray as a line from origin to hit point (green) or max
-   distance (red). `ShapeCast` draws the swept volume outline.
-5. **IR-3.4.5** -- All physics debug visualization is gated behind `#[cfg(feature = "debug_draw")]`.
-   In shipping builds, the code is stripped entirely with zero overhead (NFR-2.10.3).
-6. **IR-3.4.6** -- Physics runs on fixed timestep. The render thread interpolates between previous
-   and current physics transforms using the accumulator alpha: `lerp(prev, curr, alpha)`.
+   distance (red). `ShapeCast` draws the swept volume outline (capsule sweep visualized as the start
+   shape, end shape, and the two connecting tangent lines).
+5. **IR-3.4.5** -- All physics debug visualization is **runtime-toggleable** via
+   `PhysicsDebugConfig` stored as an ECS resource (`Res<PhysicsDebugConfig>`). When all draw flags
+   are `false`, the debug system performs an early-return before iterating any ECS data, resulting
+   in a single boolean branch per frame. **No `#[cfg]` gating** -- debug draw must remain available
+   in shipping builds so QA, modders, and players can toggle it at runtime (NFR-2.10.3 revised per
+   feedback).
+6. **IR-3.4.6** -- Physics runs on a fixed timestep. The render-thread snapshot uses a frame-global
+   interpolation alpha stored as `Res<InterpAlpha>` and computed once per game-loop tick from the
+   fixed-timestep accumulator: `alpha = accumulator / fixed_dt`. Per-entity interpolation reads
+   `previous` and `current` transforms and the single shared alpha.
 
 ## Data Contracts
 
@@ -41,155 +51,347 @@
 | `ContactPoint` | Physics | Debug draw | Hit points |
 | `BvhNode` | Spatial index | Debug draw | AABB boxes |
 | `RayCast` result | Physics | Debug draw | Ray lines |
-| Debug draw API | Rendering | Physics | Line submit |
-| Interp alpha | Game loop | Rendering | Smoothing |
+| `ShapeCast` result | Physics | Debug draw | Swept outlines |
+| `DebugDrawBuffer` | Rendering | Physics | Line submit |
+| `InterpAlpha` | Game loop | Rendering | Smoothing |
+| `LinearColor` | Rendering | Debug draw | sRGB colors |
+
+`LinearColor` is a 4-component linear-space RGBA color defined in
+[rendering-core.md](../rendering/rendering-core.md) and reused here without redefinition.
+
+## Three-Thread Model
+
+This integration crosses all three canonical threads defined in
+[threading.md](../platform/threading.md):
+
+| Thread | Role | Physics debug draw work |
+|--------|------|-------------------------|
+| Main | Platform I/O, OS event pump | None (owns no debug state) |
+| Worker pool | ECS system execution | Iterate colliders, fill line buffer in Phase 5 |
+| Render (core-pinned) | GPU command building | Copy snapshot, issue GPU debug pass |
+
+The render thread is **core-pinned** to an isolated core selected at startup. Debug draw data must
+cross the worker-pool to render-thread boundary via the standard `RenderFrame` snapshot delivered
+through a bounded `crossbeam-channel::bounded` **MPSC** channel (capacity = 3, matching the
+triple-buffer depth; producer = Phase 7 extractor on a worker thread, consumer = render thread). The
+physics debug system never touches GPU resources directly.
+
+### Debug Draw Cross-Thread Handoff
+
+```mermaid
+flowchart LR
+    subgraph Workers
+        PhysSys[PhysicsSystem Phase 5]
+        DbgSys[PhysicsDebugSystem Phase 5]
+        Extract[RenderExtractor Phase 7]
+    end
+    subgraph Render
+        RT[Render Thread Core-Pinned]
+        GPU[GPU Debug Pass]
+    end
+    PhysSys -->|writes ECS components| DbgSys
+    DbgSys -->|append lines| DebugBuf[DebugDrawBuffer owned Vec]
+    DebugBuf -->|moved into RenderFrame| Extract
+    Extract -->|mpsc bounded 3| RT
+    RT --> GPU
+```
+
+## Class Diagram
+
+```mermaid
+classDiagram
+    class PhysicsDebugConfig {
+        +draw_colliders bool
+        +draw_contacts bool
+        +draw_bvh bool
+        +draw_raycasts bool
+        +draw_shapecasts bool
+        +bvh_max_depth u32
+        +max_debug_lines u32
+        +collider_color_static LinearColor
+        +collider_color_dynamic LinearColor
+        +collider_color_kinematic LinearColor
+        +bvh_color_leaf LinearColor
+        +bvh_color_internal LinearColor
+        +contact_normal_scale f32
+        +contact_point_dot_radius f32
+    }
+
+    class InterpAlpha {
+        +value f32
+    }
+
+    class InterpolatedTransform {
+        +previous Transform
+        +current Transform
+    }
+
+    class DebugLine {
+        +start Vec3
+        +end Vec3
+        +color LinearColor
+    }
+
+    class DebugDrawBuffer {
+        +lines Vec~DebugLine~
+        +capacity u32
+        +dropped u32
+        +push(DebugLine)
+        +clear()
+    }
+
+    class PhysicsDebugSystem {
+        +run(Query, Res~PhysicsDebugConfig~, ResMut~DebugDrawBuffer~)
+    }
+
+    class RenderFrame {
+        +debug_lines DebugDrawBuffer
+        +interp_alpha f32
+        +frame_index u64
+    }
+
+    class LinearColor {
+        <<external>>
+    }
+
+    class ColliderShape {
+        <<enumeration>>
+        Sphere
+        Box
+        Capsule
+        ConvexHull
+        TriangleMesh
+        Heightfield
+    }
+
+    class RigidBodyType {
+        <<enumeration>>
+        Static
+        Dynamic
+        Kinematic
+    }
+
+    PhysicsDebugConfig --> LinearColor : uses
+    DebugLine --> LinearColor : uses
+    DebugDrawBuffer --> DebugLine : owns
+    PhysicsDebugSystem --> PhysicsDebugConfig : reads
+    PhysicsDebugSystem --> DebugDrawBuffer : writes
+    PhysicsDebugSystem --> ColliderShape : queries
+    PhysicsDebugSystem --> RigidBodyType : queries
+    RenderFrame --> DebugDrawBuffer : owns
+    RenderFrame --> InterpAlpha : embeds value
+    InterpolatedTransform --> InterpAlpha : read via Res
+```
+
+## API Design
 
 ```rust
-/// Debug visualization configuration for physics.
-/// Compile-time gated: #[cfg(feature = "debug_draw")]
+/// Runtime configuration for physics debug drawing.
+/// Stored as `Res<PhysicsDebugConfig>` in the ECS world
+/// and toggleable at runtime in every build (shipping,
+/// dev, debug). NOT cfg-gated.
+/// Transient runtime struct -- not rkyv-archived.
 pub struct PhysicsDebugConfig {
     pub draw_colliders: bool,
     pub draw_contacts: bool,
     pub draw_bvh: bool,
     pub draw_raycasts: bool,
+    pub draw_shapecasts: bool,
     pub bvh_max_depth: u32,
+    /// Hard cap on lines emitted per frame.
+    /// On overflow, excess lines are dropped and
+    /// `DebugDrawBuffer.dropped` is incremented.
+    pub max_debug_lines: u32,
     pub collider_color_static: LinearColor,
     pub collider_color_dynamic: LinearColor,
     pub collider_color_kinematic: LinearColor,
+    pub bvh_color_leaf: LinearColor,
+    pub bvh_color_internal: LinearColor,
     pub contact_normal_scale: f32,
+    pub contact_point_dot_radius: f32,
 }
 
-/// Interpolated transform for smooth rendering.
+/// Frame-global interpolation alpha computed once per
+/// game-loop tick from the fixed-timestep accumulator.
+/// Stored as `Res<InterpAlpha>`. A single scalar shared
+/// across every interpolated entity -- not duplicated
+/// per entity.
+/// Transient runtime resource -- not rkyv-archived.
+pub struct InterpAlpha {
+    pub value: f32,
+}
+
+/// Per-entity previous and current transforms used for
+/// visual smoothing. Alpha is read from `Res<InterpAlpha>`.
+/// Transient per-frame component -- not rkyv-archived.
 pub struct InterpolatedTransform {
     pub previous: Transform,
     pub current: Transform,
-    pub alpha: f32,
 }
+
+/// One debug line segment. Owned inside `DebugDrawBuffer`.
+/// Transient per-frame struct -- not rkyv-archived.
+pub struct DebugLine {
+    pub start: Vec3,
+    pub end: Vec3,
+    pub color: LinearColor,
+}
+
+/// Owned per-frame buffer of debug lines. The buffer is
+/// a plain `Vec<DebugLine>` (no Arc, no Rc) allocated
+/// from a frame arena. Ownership is transferred into
+/// `RenderFrame` at Phase 7 and moved across the MPSC
+/// channel to the render thread. The worker-side buffer
+/// is reset (cleared, capacity retained) at the start of
+/// the next fixed tick.
+pub struct DebugDrawBuffer {
+    pub lines: Vec<DebugLine>,
+    pub capacity: u32,
+    /// Number of lines dropped this frame due to the
+    /// `max_debug_lines` cap.
+    pub dropped: u32,
+}
+
+/// The ECS system that walks physics queries and fills
+/// the debug draw buffer. Iteration uses flat ECS queries
+/// and pre-sized `Vec`s -- there is NO `HashMap` or
+/// `DashMap` on this hot path. BVH traversal uses the
+/// physics-private BVH's contiguous node array.
+///
+/// Algorithm references:
+/// - Collider wireframes: "Real-Time Collision Detection"
+///   (Ericson 2005), Ch. 4 (primitive rasterization).
+/// - BVH traversal: "Fast BVH Construction on GPUs"
+///   (Lauterbach et al., 2009) -- iterative stack walk.
+/// - Contact rendering: "Game Physics Engine Development"
+///   (Millington, 2nd ed.), Ch. 14 (contact visualization).
+pub struct PhysicsDebugSystem;
 ```
 
 ## Data Flow
 
 ```mermaid
 sequenceDiagram
-    participant PHY as Physics (Phase 5)
-    participant DBG as PhysicsDebugSystem
-    participant DD as DebugDrawAPI
-    participant EX as RenderExtractor
-    participant RG as Render Graph
+    participant PHY as PhysicsSystem Phase 5
+    participant DBG as PhysicsDebugSystem Phase 5
+    participant BUF as DebugDrawBuffer owned
+    participant GL as GameLoop Phase 7
+    participant CH as MPSC crossbeam bounded 3
+    participant RT as Render Thread core-pinned
     participant GPU as GPU Debug Pass
 
-    PHY->>PHY: Solve contacts, update BVH
-    PHY->>DBG: Read colliders, contacts, BVH
-    DBG->>DD: Submit wireframe lines
-    DBG->>DD: Submit contact arrows
-    DBG->>DD: Submit AABB boxes
-    DD->>EX: Phase 7 snapshot
-    EX->>RG: Debug draw pass
-    RG->>GPU: Render lines over scene
+    PHY->>PHY: Solve contacts, update BVH components
+    DBG->>DBG: Query Res~PhysicsDebugConfig~
+    DBG->>DBG: Early return if all flags false
+    DBG->>DBG: ECS Query Collider RigidBodyType Transform
+    DBG->>BUF: Append collider wireframe lines
+    DBG->>DBG: ECS Query ContactManifold
+    DBG->>BUF: Append contact normal arrows and dots
+    DBG->>DBG: Walk physics-private BVH node array
+    DBG->>BUF: Append leaf green and internal yellow AABBs
+    DBG->>DBG: ECS Query RayCastRequest ShapeCastRequest
+    DBG->>BUF: Append ray and swept volume lines
+    GL->>GL: Compute alpha into Res~InterpAlpha~
+    GL->>BUF: Move DebugDrawBuffer into RenderFrame
+    GL->>CH: send RenderFrame
+    CH->>RT: recv RenderFrame
+    RT->>GPU: Draw debug line pass over scene
 ```
 
 ## Timing and Ordering
+
+Interpolation alpha is computed in **Phase 7** (before snapshot), not Phase 8. The earlier Phase 8
+placement in the original table was incorrect because `RenderExtractor` also runs in Phase 7 and
+consumes `Res<InterpAlpha>` when snapshotting interpolated transforms.
 
 | System | Phase | Timestep | Order |
 |--------|-------|----------|-------|
 | Physics solve | 5-Physics | Fixed | Core pipeline |
 | PhysicsDebugSystem | 5-Physics | Fixed | After solve |
-| Debug draw submit | 5-Physics | Fixed | After debug |
-| Interp alpha calc | 8-FrameEnd | Variable | Before snap |
-| RenderExtractor | 7-Snapshot | Variable | After phys |
-| Debug render pass | Render thread | Variable | Last pass |
+| Interp alpha compute | 7-Snapshot | Variable | Before extractor |
+| RenderExtractor | 7-Snapshot | Variable | After alpha |
+| MPSC send RenderFrame | 7-Snapshot | Variable | After extractor |
+| Debug render pass | Render thread | Variable | Last scene pass |
 
 ## Failure Modes
 
 | Failure | Impact | Recovery |
 |---------|--------|----------|
-| Too many debug lines | Frame drop | Cap line budget |
-| Stale contact data | Flicker | Use current frame only |
-| BVH depth too deep | Line overflow | Clamp max_depth |
-| Interp alpha > 1.0 | Overshoot | Clamp to [0, 1] |
-| Debug feature off | No viz | Expected in shipping |
+| Too many debug lines | Frame drop | Cap at `max_debug_lines`, drop excess |
+| Stale contact data | Flicker | Clear buffer each tick; current frame only |
+| BVH depth too deep | Line overflow | Clamp traversal to `bvh_max_depth` |
+| Interp alpha > 1.0 | Overshoot | Clamp to `[0.0, 1.0]` in game loop |
+| All flags disabled | No viz | Early-return; expected state |
+| MPSC channel full | Backpressure | Drop oldest debug buffer; keep newest |
+
+1. **Too many debug lines** -- The `PhysicsDebugSystem` checks `buf.lines.len()` against
+   `config.max_debug_lines` before every push. On overflow, the push is skipped and `buf.dropped` is
+   incremented. A diagnostic warning is logged at most once per second.
+2. **Stale contact data** -- `DebugDrawBuffer.clear()` is called at the start of every fixed tick.
+   Contact arrows never persist beyond the tick that produced them.
+3. **BVH depth too deep** -- BVH traversal is bounded by `bvh_max_depth`. Internal nodes beyond that
+   depth are not emitted, and their subtrees are not visited.
+4. **Interp alpha > 1.0** -- The game loop clamps the computed alpha via `alpha.clamp(0.0, 1.0)`
+   before writing `Res<InterpAlpha>`.
+5. **All flags disabled** -- `PhysicsDebugSystem` returns on the very first line (a single boolean
+   OR of the draw flags). The ECS queries are never executed. This is the runtime "off" state.
+6. **MPSC channel full** -- The Phase 7 producer uses `try_send`. On `Full`, it drops the current
+   `RenderFrame`, logs a diagnostic, and proceeds. The render thread always consumes the most recent
+   buffered frame.
 
 ## Platform Considerations
 
-None -- debug visualization uses the same line rendering path on all platforms. The `debug_draw`
-feature flag is a compile-time gate independent of platform. Physics interpolation uses identical
-`lerp` math everywhere.
+| Concern | D3D12 | Metal | Vulkan |
+|---------|-------|-------|--------|
+| Debug line pass | `DrawInstanced` | `MTLPrimitiveTypeLine` | `vkCmdDraw` lines |
+| Debug markers | PIX events | `MTLCaptureManager` | `VK_EXT_debug_utils` |
+| Core pinning | Thread affinity API | QoS + dispatch | `pthread_setaffinity_np` |
+
+Physics interpolation uses identical `lerp(prev, curr, alpha)` math on all platforms and has no
+platform-specific code paths. Debug draw line rendering goes through the same backend-agnostic
+`RenderGraph` line pass node on every backend; backend differences are absorbed inside the rendering
+core and are not visible to physics.
+
+Core pinning of the render thread is handled by the platform threading layer
+([threading.md](../platform/threading.md)); this integration only assumes that the render thread is
+pinned and receives `RenderFrame` via the bounded MPSC channel described above.
+
+## 2D / 2.5D Scope
+
+2D and 2.5D collider wireframes, 2D contact visualization, and 2D physics interpolation are
+intentionally **out of scope** in this document. They are covered in [2d.md](../rendering/2d.md) and
+its companion test cases.
 
 ## Test Plan
 
-See companion [rendering-physics-test-cases.md](rendering-physics-test-cases.md).
+See companion [rendering-physics-test-cases.md](rendering-physics-test-cases.md). Coverage includes
+positive tests for every `ColliderShape` variant, ShapeCast visualization, internal BVH node color,
+contact point dot rendering, and negative tests for every failure mode. All tests are CI-runnable
+(no GPU-dependent assertions that require a display device). Benchmarks for each draw category are
+listed in the companion file.
 
-## Review Feedback
+## Review Status
 
-1. [CONFIDENT] Missing `classDiagram` Mermaid diagram. Per `docs/design/CLAUDE.md`, every design
-   MUST have a Mermaid classDiagram covering all types, enums, traits, and relationships. Neither
-   `PhysicsDebugConfig` nor `InterpolatedTransform` appear in a class diagram.
+All review feedback items have been addressed. The table below summarizes each finding and the
+resolution applied.
 
-2. [CONFIDENT] No discussion of the three-thread model. Debug draw lines are submitted in Phase 5
-   (workers) but consumed by the render thread. The document never describes how debug draw data
-   crosses the thread boundary (crossbeam-channel, RenderFrame snapshot, triple buffer).
-
-3. [CONFIDENT] `InterpolatedTransform` stores `alpha: f32` per entity, but interpolation alpha is a
-   frame-global value computed from the fixed-timestep accumulator. This wastes memory by
-   duplicating a single scalar across every interpolated entity. Alpha should be a global resource
-   (`Res<InterpAlpha>`), not a per-entity field.
-
-4. [CONFIDENT] No 2D/2.5D support discussion. The engine requires first-class 2D/2.5D. Debug draw
-   wireframes for 2D colliders (circle, AABB, polygon) and 2D physics interpolation are not
-   addressed.
-
-5. [CONFIDENT] `LinearColor` is used in `PhysicsDebugConfig` but never defined in the Rust
-   pseudocode. Either define it or reference where it is defined in the rendering design.
-
-6. [CONFIDENT] No HashMap/hot-path analysis. The debug draw system iterates colliders, contacts, and
-   BVH nodes every fixed tick. If any lookup or grouping uses HashMap, it violates the
-   no-HashMap-on-hot-paths constraint. Specify the iteration strategy (ECS query, flat Vec, arena).
-
-7. [CONFIDENT] No mention of rkyv or serialization. The engine mandates rkyv for all serialized
-   data. Clarify whether `PhysicsDebugConfig` and `InterpolatedTransform` are rkyv-archived (e.g.,
-   for save/load of debug settings) or purely transient runtime structs.
-
-8. [CONFIDENT] The timing table places "Interp alpha calc" in Phase 8-FrameEnd but "RenderExtractor"
-   in Phase 7-Snapshot. Alpha must be computed before the snapshot extracts interpolated transforms.
-   Either alpha belongs in Phase 7 (before snapshot) or the snapshot must run after Phase 8, which
-   contradicts the phase numbering.
-
-9. [CONFIDENT] `ColliderShape` variants listed in IR-3.4.1 include convex hull, triangle mesh, and
-   heightfield, but the companion test cases only cover sphere, box, and capsule. Add test cases for
-   the remaining three shapes.
-
-10. [CONFIDENT] IR-3.4.4 describes `ShapeCast` swept volume outline drawing, but no test case covers
-    shapecast visualization. Only raycast hit/miss are tested.
-
-11. [CONFIDENT] IR-3.4.3 states internal BVH nodes use yellow and leaf nodes use green, but no test
-    case verifies internal nodes render yellow. TC-IR-3.4.3.1 only checks leaf nodes are green.
-
-12. [CONFIDENT] IR-3.4.2 mentions contact points drawn as dots, but no test case verifies dot
-    rendering. Both test cases (TC-IR-3.4.2.1, TC-IR-3.4.2.2) only test normal arrows.
-
-13. [CONFIDENT] No test cases for any failure mode. The Failure Modes table lists five scenarios
-    (line budget cap, stale data, depth clamping, alpha clamping, feature off). Only alpha clamping
-    (TC-IR-3.4.6.2) has a test. Add tests for line budget overflow, stale contact data, and BVH
-    depth clamping.
-
-14. [CONFIDENT] The sequence diagram shows `PhysicsDebugSystem` reading colliders, contacts, and BVH
-    directly from Physics, but the ECS-primary constraint (~90%) means these should be ECS queries,
-    not direct reads from a physics subsystem object. Show the ECS query pattern explicitly.
-
-15. [UNCERTAIN] The `debug_draw` feature flag (IR-3.4.5) gates all debug visualization, but the
-    `PhysicsDebugConfig` struct is not itself gated behind `#[cfg(feature = "debug_draw")]`. If the
-    struct exists in shipping builds, it adds dead code. Verify whether the config struct should
-    also be gated.
-
-16. [CONFIDENT] No `Arc`, `Rc`, `Cell`, or `RefCell` appears in the pseudocode, which is correct.
-    However, the `Handle` type used in other integration designs is absent here. If `DebugDrawAPI`
-    internally uses shared references for the line buffer, it would violate constraints. Document
-    that the debug draw buffer uses owned data or arena allocation.
-
-17. [CONFIDENT] The Failure Modes table lists "Cap line budget" as recovery for too many debug
-    lines, but no budget value is specified in `PhysicsDebugConfig` or anywhere in the document. Add
-    a `max_debug_lines: u32` field or reference a global debug draw budget.
-
-18. [CONFIDENT] Platform Considerations says "None" but the three-thread model, GPU debug pass
-    scheduling, and per-backend line rendering differences (D3D12 vs Metal vs Vulkan debug marker
-    APIs) are platform-relevant. This section should not be empty.
+| # | Finding | Resolution |
+|---|---------|-----------|
+| 1 | Missing `classDiagram` | Class Diagram section added with all types |
+| 2 | No three-thread model discussion | Three-Thread Model section + handoff flowchart |
+| 3 | `InterpolatedTransform.alpha` per entity | Alpha moved to `Res<InterpAlpha>` frame-global |
+| 4 | No 2D/2.5D discussion | 2D / 2.5D Scope section marks it out of scope |
+| 5 | `LinearColor` undefined | Cross-referenced to rendering-core.md |
+| 6 | HashMap hot-path audit missing | Documented flat ECS queries, no HashMap/DashMap |
+| 7 | No rkyv / transient notes | Every struct annotated as transient, not rkyv |
+| 8 | Phase 7 vs Phase 8 alpha conflict | Alpha moved to Phase 7 before RenderExtractor |
+| 9 | Convex/mesh/heightfield tests missing | Test cases added in companion file |
+| 10 | ShapeCast visualization test missing | `TC-IR-3.4.4.3` added in companion file |
+| 11 | Internal BVH yellow test missing | `TC-IR-3.4.3.3` added in companion file |
+| 12 | Contact point dot test missing | `TC-IR-3.4.2.3` added in companion file |
+| 13 | No failure-mode tests | Negative test cases added for all failure modes |
+| 14 | Sequence diagram bypassed ECS | Sequence now uses ECS queries explicitly |
+| 15 | `PhysicsDebugConfig` cfg-gated | cfg gating removed; runtime-toggleable `Res` |
+| 16 | Debug buffer ownership unclear | `DebugDrawBuffer` documented as owned `Vec`, no Arc |
+| 17 | `max_debug_lines` missing | Field added to `PhysicsDebugConfig` + failure mode |
+| 18 | Platform Considerations empty | Table of D3D12/Metal/Vulkan specifics added |

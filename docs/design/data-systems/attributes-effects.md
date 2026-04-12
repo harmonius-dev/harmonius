@@ -838,7 +838,7 @@ inline capacity. Arenas reset at frame boundaries.
 ## Test Plan
 
 Detailed test cases in companion file
-[attributes-effects-test-cases.md](attributes-effects-test-cases.md).
+[attributes-effects-test-cases.md](./attributes-effects-test-cases.md).
 
 ### Unit Tests
 

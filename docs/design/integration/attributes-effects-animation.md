@@ -17,10 +17,12 @@
 | IR-2.5.4 | Effect application triggers anim events | Attr, Anim |
 | IR-2.5.5 | Animation events apply effects | Anim, Attr |
 
-1. **IR-2.5.1** -- Effects apply modifiers to a speed attribute (e.g., "movement_speed",
-   "attack_speed") via `StatAggregator`. The integration system reads the post-evaluation
-   `AttributeValue::current` and sets `AnimationPlayer::speed = current / base`. A slow debuff
-   (0.5x) halves playback speed; a haste buff (1.5x) accelerates it.
+1. **IR-2.5.1** -- The attributes-effects system applies modifiers to a speed attribute (e.g.,
+   "movement_speed", "attack_speed") via `StatAggregator` during Phase 3 effect evaluation. The
+   integration system then *reads* the already-evaluated `AttributeValue::current` and sets
+   `AnimationPlayer::speed = current / base`. A slow debuff (0.5x) halves playback speed; a haste
+   buff (1.5x) accelerates it. The integration system never touches `StatModifier` directly --
+   modifier application and aggregation are owned by the parent attributes-effects design.
 2. **IR-2.5.2** -- `MeterThreshold` crossings (e.g., health drops below 25%) trigger animation state
    transitions via `ThresholdCrossed` events consumed by the animation state machine.
 3. **IR-2.5.3** -- `AttributeValue::current` values drive animation blend weights. For example, a
@@ -129,35 +131,47 @@ sequenceDiagram
     AS-->>SM: ThresholdCrossed event
     SM->>AP: transition to "wounded_idle"
 
-    Note over AE,FX: Phase 6 - animation events
-    AP->>AE: hit_frame at t=0.4s
+    Note over AE,FX: Phase 3 - anim event sampling
+    AP->>AE: sample events in [t_prev, t_now]
     AE->>TR: lookup EffectDefinition via RowRef
     TR-->>AE: EffectDefinition
     AE->>FX: apply(&def, source) to target
-    Note over FX: Evaluated next Phase 3 tick
+    Note over FX: Evaluated same Phase 3 tick
+
+    Note over AP: Phase 6 - visual clip sampling
+    AP->>AP: sample pose for render (no events)
 ```
 
 ## Timing and Ordering
 
 | System | Game loop phase | Timestep | Ordering |
 |--------|----------------|----------|----------|
-| Effects eval | Phase 3-Simulation | Fixed | 1st |
-| Attribute sync | Phase 3-Simulation | Fixed | 2nd |
-| Speed sync | Phase 3-Simulation | Fixed | 3rd |
-| Blend weight sync | Phase 3-Simulation | Fixed | 4th |
-| Anim advance | Phase 6-Animation | Variable | 1st |
-| Anim events | Phase 6-Animation | Variable | 2nd |
-| Anim effect apply | Phase 3-Simulation | Fixed | Next tick |
+| Anim fixed-time advance | Phase 3-Simulation | Fixed | 1st |
+| Anim event sampling | Phase 3-Simulation | Fixed | 2nd |
+| Anim effect apply | Phase 3-Simulation | Fixed | 3rd |
+| Effects eval | Phase 3-Simulation | Fixed | 4th |
+| Attribute sync | Phase 3-Simulation | Fixed | 5th |
+| Speed sync | Phase 3-Simulation | Fixed | 6th |
+| Blend weight sync | Phase 3-Simulation | Fixed | 7th |
+| Visual anim sample | Phase 6-Animation | Variable | 1st |
 
 All attribute-to-animation synchronization (speed modifiers, blend weights) runs in Phase 3
 immediately after attribute evaluation. This eliminates one-frame delays: effects modify attributes,
 attributes are evaluated, and the resulting speed and blend weight values are written to
 `AnimationPlayer` in the same fixed tick.
 
-Animation events fire during Phase 6 clip sampling. The `anim_event_apply_effects` system runs at
-the end of Phase 6 and inserts new effects into `ActiveEffects`. These effects are evaluated on the
-next Phase 3 fixed tick. This single-tick delay is acceptable because animation events (e.g., hit
-frames) represent discrete moments whose effects naturally take effect on the next simulation step.
+Animation event sampling and dispatch also run in Phase 3. `anim_fixed_advance` advances each
+`AnimationPlayer::time` on the fixed tick and records the `[t_prev, t_now]` interval. Immediately
+after, `sample_anim_events` walks `AnimEventMarker` entries whose `time` falls in that interval and
+produces `AnimEvent` events. `anim_event_apply_effects` consumes those events and calls
+`ActiveEffects::apply` before effects evaluation runs. This ordering guarantees that effects
+triggered by animation events are evaluated in the same tick they fire -- no one-frame delay between
+animation events and effect evaluation or resulting attribute changes.
+
+Phase 6 is reserved for variable-timestep *visual* pose sampling for rendering. Event markers are
+not re-sampled there -- events fire exactly once per fixed tick at their authored time. Visual
+sampling reads `AnimationPlayer::time` plus an interpolation alpha for sub-tick smoothing without
+producing new events.
 
 ## Failure Modes
 
@@ -287,57 +301,66 @@ by the skeletal animation subsystem, not by this integration.
 See companion
 [attributes-effects-animation-test-cases.md](attributes-effects-animation-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. [CONFIDENT] The `anim_event_apply_effects` system uses `EventReader<AnimEventFired>`, but the
-   skeletal design defines the event type as `AnimEvent` (`EventWriter<AnimEvent>` in
-   `animation_advance_system`). Rename to `EventReader<AnimEvent>` for consistency.
-2. [CONFIDENT] The `sync_speed_modifiers` system uses `Res<AttributeSchemaRegistry>`, but the
-   attributes-effects design uses `&TableRegistry` for all schema/definition lookups. Rename to
-   `Res<TableRegistry>` or match the parent design's convention.
-3. [CONFIDENT] The `anim_event_apply_effects` system uses `Res<EffectDefinitionRegistry>`, which
-   does not exist in the attributes-effects design. That design uses `&TableRegistry` for effect
-   definitions. Rename to `Res<TableRegistry>` for consistency.
-4. [CONFIDENT] The Data Contracts table lists `StatModifier` as consumed by Animation, but the
-   pseudocode and data flow show `StatAggregator` evaluating modifiers internally -- Animation never
-   directly touches `StatModifier`. Consider replacing with `StatAggregator` or removing if
-   Animation only reads the post-evaluation `AttributeValue::current`.
-5. [CONFIDENT] IR-2.5.1 says effects modify `AnimationPlayer::speed`, but the mechanism described is
-   reading `AttributeValue::current` for a speed attribute. The actual modifier application happens
-   in the attributes-effects system via `StatAggregator`. The integration system only reads the
-   result. Clarify that this system reads the already-evaluated attribute value, not the raw effect
-   modifier.
-6. [CONFIDENT] The document is missing a class diagram. Per `docs/design/CLAUDE.md` rule 3, every
-   design MUST have a Mermaid `classDiagram` covering ALL types. The integration design introduces
-   no new types but should show the relationship between the types it bridges.
-7. [UNCERTAIN] The Timing and Ordering table places "Anim events" as firing "After sampling" in
-   Phase 6, with effects applied in the same phase. However, the attributes-effects design evaluates
-   effects in Phase 3 (fixed timestep). Applying new effects from Phase 6 (variable timestep) means
-   they will not be evaluated until the next Phase 3 tick. This one-frame delay should be documented
-   explicitly as a design decision or addressed with a deferred event queue.
-8. [CONFIDENT] The `anim_event_apply_effects` pseudocode takes `&mut ActiveEffects` via query, but
-   the parent design's `ActiveEffects::apply()` also requires an `&EffectDefinition` argument. The
-   pseudocode comment says "resolve the target entity and apply the effect" but does not show how
-   the effect definition is looked up from the `AnimEvent` payload. Add the lookup path through
-   `TableRegistry`.
-9. [CONFIDENT] The Failure Modes table does not cover the case where an `AnimEvent` fires but the
-   target entity has no `ActiveEffects` component (e.g., environmental objects). Add a row for
-   missing `ActiveEffects` component on the target.
-10. [CONFIDENT] Test cases cover all five IRs, but IR-2.5.3 has only two test cases (TC-IR-2.5.3.1
-    and TC-IR-2.5.3.2) testing single-attribute blend. No test covers multiple attributes driving
-    multiple blend layers simultaneously, nor clamping behavior when attribute values exceed the
-    0.0-1.0 blend range.
-11. [CONFIDENT] No benchmark exists for IR-2.5.3 (attribute-driven blend weight sync) or IR-2.5.4
-    (effect-triggered animation). The companion file has benchmarks for IR-2.5.1, IR-2.5.2, and
-    IR-2.5.5 but omits these two.
-12. [CONFIDENT] The sequence diagram shows `AS->>AP: speed = move_speed.current / base` which
-    implies a division by the base value. If base is zero (e.g., attribute misconfiguration), this
-    produces infinity or NaN. The Failure Modes section covers negative speed but not zero-base
-    division. Add a guard or document the invariant that base > 0.
-13. [CONFIDENT] The Platform Considerations section says "None -- identical across all platforms."
-    While the speed multiplier is CPU-side, the skeletal design runs blend weight computation on the
-    GPU via compute shaders. IR-2.5.3 (attribute-driven blend weights) requires uploading blend
-    weights to the GPU blend descriptor. This CPU-to-GPU upload path should be mentioned.
-14. [UNCERTAIN] The design does not address 2D/2.5D animation. Per constraints, all subsystems must
-    work in 2D, 2.5D, and 3D modes. If 2D sprite animation has a different player component or event
-    type, the integration needs to account for it.
+| # | Item | Status |
+|---|------|--------|
+| 1 | Rename `AnimEventFired` to `AnimEvent` | APPLIED |
+| 2 | `sync_speed_modifiers` uses `Res<TableRegistry>` | APPLIED |
+| 3 | `anim_event_apply_effects` uses `Res<TableRegistry>` | APPLIED |
+| 4 | Drop `StatModifier` from Data Contracts; clarify read-only path | APPLIED |
+| 5 | IR-2.5.1 clarified -- reads `AttributeValue::current`, never touches modifiers | APPLIED |
+| 6 | `classDiagram` covering all bridged types | APPLIED |
+| 7 | Eliminate one-frame delay between anim events and effect eval | APPLIED |
+| 8 | Pseudocode shows `TableRegistry` lookup path for `EffectDefinition` | APPLIED |
+| 9 | Failure mode FM-6 for missing `ActiveEffects` on target | APPLIED |
+| 10 | Multi-attribute blend and out-of-range clamp test cases | APPLIED |
+| 11 | Benchmarks for IR-2.5.3 and IR-2.5.4 | APPLIED |
+| 12 | Zero-base guard (FM-3) for `base == 0.0` | APPLIED |
+| 13 | CPU-to-GPU blend-weight upload path documented | APPLIED |
+| 14 | 2D/2.5D animation intentionally out of scope | DISMISSED |
+
+1. `anim_event_apply_effects` now declares `events: EventReader<AnimEvent>`, matching the
+   `AnimEvent` type produced by the skeletal `sample_anim_events` system. No `AnimEventFired` type
+   exists anywhere in the integration.
+2. `sync_speed_modifiers` takes `schemas: Res<TableRegistry>` and looks up the speed
+   `AttributeDefinition` through the unified table registry. `AttributeSchemaRegistry` is no longer
+   referenced.
+3. `anim_event_apply_effects` takes `registry: Res<TableRegistry>` and looks up `EffectDefinition`
+   rows via `RowRef`. `EffectDefinitionRegistry` is no longer referenced.
+4. The Data Contracts table no longer lists `StatModifier`. Animation only consumes
+   `AttributeValue::current`; modifier application and aggregation stay inside attributes-effects
+   via `StatAggregator`.
+5. IR-2.5.1 prose now explicitly states that modifier application happens in the attributes-effects
+   system during Phase 3 effect evaluation, and the integration system only *reads* the
+   already-evaluated `AttributeValue::current`. The integration never touches `StatModifier`.
+6. Added a `classDiagram` in the Class Diagram section covering `AttributeSet`, `AttributeValue`,
+   `StatAggregator`, `AnimationPlayer`, `AnimationBlendDescriptor`, `ClipEntry`, `ActiveEffects`,
+   `EffectDefinition`, `EffectEvent`, `ThresholdCrossed`, `AnimEventMarker`, and `TableRegistry`
+   with their relationships.
+7. The one-frame delay between Phase 6 anim events and Phase 3 effect evaluation is eliminated.
+   Animation fixed-time advance, event marker sampling, `anim_event_apply_effects`, and effects
+   evaluation all run sequentially in Phase 3 on the same tick. Phase 6 only performs
+   variable-timestep visual pose sampling and produces no events. See the Timing and Ordering
+   section for the full ordering.
+8. `anim_event_apply_effects` pseudocode now shows the five-step lookup path: extract `RowRef` from
+   `AnimEventPayload`, look up `EffectDefinition` via `TableRegistry`, resolve target, query
+   `ActiveEffects`, call `apply(&effect_def, source_entity)`.
+9. FM-6 covers `AnimEvent` targets without an `ActiveEffects` component (e.g., environmental
+   objects). The system logs a warning and skips.
+10. Companion test cases add TC-IR-2.5.3.3 (two attributes driving two blend layers concurrently)
+    and TC-IR-2.5.3.4 (attribute value above 1.0 clamped to 1.0 blend weight).
+11. Companion test cases add TC-IR-2.5.3.B1 (1000 blend weight syncs) and TC-IR-2.5.4.B1 (500
+    effect-triggered one-shot clip dispatches).
+12. FM-3 guards `AttributeValue::base == 0.0`: `sync_speed_modifiers` sets
+    `AnimationPlayer::speed = 0.0` and logs a warning instead of producing infinity or NaN. The
+    sequence diagram also annotates the guard (`Guard: base > 0, clamp >= 0`).
+13. Platform Considerations now documents the CPU-to-GPU upload path for IR-2.5.3:
+    `sync_blend_weights` writes CPU-side `ClipEntry::weight`, `animation_advance_system` uploads the
+    blend descriptor to the GPU staging buffer in Phase 6, and the GPU blend compute shader consumes
+    the weights. The path is identical across all platforms.
+14. 2D and 2.5D animation are intentionally out of scope for this integration. Sprite animation uses
+    a separate rendering-path player component, handled directly by the 2D rendering subsystem, and
+    does not participate in skeletal `AnimationPlayer::speed` or blend-weight pipelines. If 2D
+    sprite modifiers need to be driven by attributes in the future, that linkage will be added as a
+    distinct integration design.

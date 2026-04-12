@@ -37,8 +37,14 @@
 4. **IR-1.10.4** -- `SenseResult` scores (distance, angle, occlusion weighted) are ranked to select
    the highest-threat target. The top-scored entity is written to `Blackboard` as the current threat
    target for BT/GOAP consumption.
-5. **IR-1.10.5** -- Perception queries consume `AiBudget` time. Time-sliced execution ensures that
-   perception + decision-making for 500 agents stays within the per-frame AI budget (< 2 ms).
+5. **IR-1.10.5** -- Perception queries consume `AiPerceptionBudget` time. Decision-making (BT/GOAP)
+   consumes a separate `AiDecisionBudget`. Splitting the budget into two resources avoids
+   `ResMut<AiBudget>` / `Res<AiBudget>` conflicts when perception and BT/GOAP schedule in the same
+   phase. Time-sliced execution ensures that perception + decision-making for 500 agents stays
+   within the per-frame AI budget (< 2 ms total, typically 1.2 ms perception + 0.8 ms decision).
+
+**Scope note:** 2D and 2.5D games are intentionally out of scope for this document. 2D sense shapes
+reuse the same 3D integration path (Z collapsed), so no separate coverage is required.
 
 ## Data Contracts
 
@@ -51,7 +57,8 @@
 | `AiPerception` | AI | AI (write) | Perceived list |
 | `PerceivedEntity` | AI | AI (write) | Per-target |
 | `Blackboard` | AI | AI (write) | AI state |
-| `AiBudget` | AI | SA (consume) | Time budget |
+| `AiPerceptionBudget` | AI | SA (consume) | Perception budget |
+| `AiDecisionBudget` | AI | AI (consume) | BT/GOAP budget |
 
 ```rust
 /// System that runs perception queries for AI
@@ -73,7 +80,7 @@ pub fn ai_perception_system(
     senses: Res<Assets<SenseDefinition>>,
     spatial_index: Res<SharedSpatialIndex>,
     propagation: Res<PropagationResultStore>,
-    mut budget: ResMut<AiBudget>,
+    mut budget: ResMut<AiPerceptionBudget>,
 );
 
 /// Writes awareness transitions into blackboard
@@ -223,42 +230,42 @@ are pure CPU ECS operations with no platform-specific dependencies.
 
 See companion [ai-spatial-awareness-test-cases.md](ai-spatial-awareness-test-cases.md).
 
-## Review Feedback
+## Review Status
 
 1. `[APPLIED]` Fixed `&AiPerception` to `&mut AiPerception` in `ai_perception_system` signature.
 
 2. `[APPLIED]` Noted in IR-1.10.3 that Blackboard is a hot path; backing store must use sorted `Vec`
    or `BTreeMap`, never `HashMap`.
 
-3. `[DISMISSED]` 2D/2.5D does not need to be addressed in this integration doc. 2D sense shapes use
-   the same integration path; no separate coverage needed.
+3. `[DISMISSED]` 2D/2.5D out of scope for this integration doc. 2D sense shapes use the same
+   integration path with Z collapsed; no separate coverage needed. One-line note added above.
 
-4. `[APPLIED]` Fixed TC-IR-1.10.3.3 in companion test cases to use `AwarenessTransitionEvent`.
+4. `[APPLIED]` Renamed TC-IR-1.10.3.3 in companion test cases to use `AwarenessTransitionEvent`.
 
-5. `[APPLIED]` Fixed Data Contracts table: `AiPerception` and `PerceivedEntity` consumed by "AI
-   (write)".
+5. `[APPLIED]` Fixed Data Contracts table: `AiPerception` and `PerceivedEntity` now show "AI
+   (write)" -- SA does not write these types.
 
 6. `[APPLIED]` Fixed Data Contracts table: `Blackboard` consumed by "AI (write)".
 
 7. `[APPLIED]` Marked `awareness_blackboard_sync` body as pseudocode; iteration API will align with
    custom ECS at implementation.
 
-8. `[UNCERTAIN]` `AiBudget` is consumed as `ResMut<AiBudget>` in `ai_perception_system`, but in
-   `behavior.md` the BT/GOAP systems also take `Res<AiBudget>` (immutable). If perception mutates
-   the budget and runs in the same phase as BT/GOAP, ordering must guarantee perception finishes
-   before BT/GOAP reads -- the Timing table says so, but should the budget be split into a
-   perception budget vs. a decision budget?
+8. `[APPLIED]` Split `AiBudget` into `AiPerceptionBudget` and `AiDecisionBudget`. Perception takes
+   `ResMut<AiPerceptionBudget>`; BT/GOAP take `ResMut<AiDecisionBudget>`. Two distinct resources
+   eliminate the potential `ResMut` / `Res` conflict when systems co-schedule in Phase 4.
 
-9. `[APPLIED]` Documented cross-thread handoff in IR-1.10.2 and new Concurrency section. Perception
-   reads the ECS resource snapshot. MPSC channel delivers results at Phase 3/4 boundary. Channel
-   buffering documented (bounded, capacity 256).
+9. `[APPLIED]` Documented cross-thread handoff in IR-1.10.2 and the Concurrency section. Perception
+   reads the ECS resource snapshot. A bounded MPSC crossbeam-channel (capacity = 256, oldest-drop)
+   delivers `PropagationResult` from audio worker threads to the game loop at the Phase 3/4
+   boundary.
 
-10. `[DISMISSED]` 2D test cases not needed; same integration path as 3D. Dismissed per user
-    decision.
+10. `[DISMISSED]` No 2D test cases. Scope is 3D; 2D reuses the same integration path.
 
-11. `[APPLIED]` Added TC-IR-1.10.6.1 (target despawn, memory decay removes stale entry).
+11. `[APPLIED]` Added TC-IR-1.10.6.1 (target despawn -> memory decay removes stale entry and clears
+    blackboard keys on next sync).
 
-12. `[APPLIED]` Added TC-IR-1.10.6.2 (faction missing, treated as neutral).
+12. `[APPLIED]` Added TC-IR-1.10.6.2 (faction missing -> treated as neutral; still perceived and
+    scored by geometry).
 
-13. `[APPLIED]` Added `else` branch to clear `THREAT_TARGET_KEY` and `THREAT_POSITION_KEY` when
-    `highest_scored_target()` returns `None`.
+13. `[APPLIED]` `awareness_blackboard_sync` now clears `THREAT_TARGET_KEY` and `THREAT_POSITION_KEY`
+    via the `else` branch when `highest_scored_target()` returns `None`.

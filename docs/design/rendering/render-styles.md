@@ -717,7 +717,7 @@ classDiagram
 
 ## Test Plan
 
-See companion file [render-styles-test-cases.md](render-styles-test-cases.md).
+See companion file [render-styles-test-cases.md](./render-styles-test-cases.md).
 
 ### Unit Tests (AA and Upscaling)
 

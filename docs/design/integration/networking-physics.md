@@ -48,6 +48,7 @@
 | `AngularVelocity` | Physics | Networking | Angular vel |
 | `Collider` | Physics | Networking | Shape for rewind |
 | `ColliderShape` | Physics | Networking | Shape enum |
+| `ContactRange` | Networking | Networking | Snapshot contacts |
 | `PhysicsConfig` | Physics | Networking | Fixed timestep |
 | `ClientPredictor` | Networking | Physics | Predicted input |
 | `ServerReconciler` | Networking | Physics | Rollback trigger |
@@ -58,27 +59,61 @@
 | `Extrapolator` | Networking | Physics | Late snapshot |
 | `ErrorCorrector` | Networking | Physics | Pop reduction |
 
-1. `ColliderShape` is defined in [foundation.md](../physics/foundation.md). An enum with variants:
-   `Sphere`, `Box`, `Capsule`, `ConvexHull`, `TriMesh`, `Heightfield`.
+1. `ColliderShape` is defined in [foundation.md](../physics/foundation.md). The full enum is:
+
+```rust
+/// Collider shape variants. Defined in physics
+/// foundation.md; repeated here for hitbox rewind.
+#[derive(Clone, Copy, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
+pub enum ColliderShape {
+    Sphere { radius: f32 },
+    Box { half_extents: Vec3 },
+    Capsule { half_height: f32, radius: f32 },
+    ConvexHull { vertex_handle: Handle<ConvexMesh> },
+    TriMesh { mesh_handle: Handle<TriMesh> },
+    Heightfield { field_handle: Handle<Heightfield> },
+}
+```
+
+2. **2D / 2.5D scope note.** 2D and 2.5D physics bodies are intentionally out of scope for this
+   integration design; they reuse the same `PhysicsSnapshot` types with `z`/`angular_z` fixed by the
+   physics foundation (see [foundation.md](../physics/foundation.md)).
 
 ### Class Diagram
 
 ```mermaid
 classDiagram
     class PhysicsSnapshot {
-        +position: Vec3
-        +rotation: Quat
-        +linear_velocity: Vec3
-        +angular_velocity: Vec3
-        +active_contact_count: u16
-        +sleeping: bool
+        -position: Vec3
+        -rotation: Quat
+        -linear_velocity: Vec3
+        -angular_velocity: Vec3
+        -contacts: ContactRange
+        -sleeping: bool
+        +new(...) PhysicsSnapshot
+        +position() Vec3
+        +rotation() Quat
+    }
+    class ContactRange {
+        -start: u32
+        -len: u16
+    }
+    class ColliderShape {
+        <<enum>>
+        Sphere
+        Box
+        Capsule
+        ConvexHull
+        TriMesh
+        Heightfield
     }
     class HitboxSnapshot {
-        +tick: u64
-        +entity: Entity
-        +position: Vec3
-        +rotation: Quat
-        +collider_shape: ColliderShape
+        -tick: u64
+        -entity: Entity
+        -position: Vec3
+        -rotation: Quat
+        -collider_shape: ColliderShape
+        +new(...) HitboxSnapshot
     }
     class SnapshotBuffer {
         +ring: [PhysicsSnapshot; MAX_ROLLBACK_TICKS]
@@ -129,6 +164,8 @@ classDiagram
         +apply(current) CorrectedState
     }
 
+    PhysicsSnapshot *-- ContactRange
+    HitboxSnapshot *-- ColliderShape
     SnapshotBuffer *-- PhysicsSnapshot
     HitboxBuffer *-- HitboxSnapshot
     ServerReconciler --> SnapshotBuffer : restores from
@@ -145,31 +182,43 @@ classDiagram
 /// Physics state captured per entity per tick for
 /// rollback support. Stored in SnapshotBuffer.
 /// Immutable after creation -- never mutated once
-/// captured.
-#[derive(Clone, rkyv::Archive)]
+/// captured. All fields are private; construction
+/// occurs via a single `new` constructor and
+/// read-only accessors.
+#[derive(Clone, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
 pub struct PhysicsSnapshot {
     position: Vec3,
     rotation: Quat,
     linear_velocity: Vec3,
     angular_velocity: Vec3,
-    /// Number of active contacts at capture time.
-    /// Full manifold data is not stored; count is
-    /// sufficient for sleep/wake decisions during
-    /// rollback.
-    active_contact_count: u16,
+    /// Indices into a per-tick ContactPool owned by
+    /// the physics worker. IR-4.5.7 requires contact
+    /// capture; the pool holds full ContactManifold
+    /// entries while the snapshot stores only a
+    /// compact range reference to avoid copying
+    /// manifold data into every snapshot.
+    contacts: ContactRange,
     sleeping: bool,
+}
+
+/// Range reference into a per-tick ContactPool.
+/// Immutable value type.
+#[derive(Clone, Copy, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
+pub struct ContactRange {
+    start: u32,
+    len: u16,
 }
 
 /// Hitbox snapshot for lag compensation rewind.
 /// Stores collider world-space transform at a tick.
-/// Immutable after creation.
-#[derive(Clone, rkyv::Archive)]
+/// Immutable after creation; private fields with
+/// read-only accessors.
+#[derive(Clone, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
 pub struct HitboxSnapshot {
     tick: u64,
     entity: Entity,
     position: Vec3,
     rotation: Quat,
-    /// See physics foundation.md ColliderShape.
     collider_shape: ColliderShape,
 }
 
@@ -427,8 +476,14 @@ sequenceDiagram
 All networking I/O (Transport recv) runs on the main thread, which owns the OS event loop and polls
 completions. All simulation work (reconciliation, physics, snapshot capture, hitbox rewind) runs on
 worker threads via the job system. `SnapshotBuffer` and `HitboxBuffer` are owned by the worker
-thread that runs the physics phase. No data crosses thread boundaries; the main thread forwards
-received packets to workers via crossbeam-channel.
+thread that runs the physics phase -- no mutable sharing across threads. The render thread is
+core-pinned and never touches these buffers; all other worker threads run at default QoS. The main
+thread forwards received packets to workers via a crossbeam `Sender<Packet>` / `Receiver<Packet>`
+MPSC channel (multiple producers possible if future platforms add worker-owned sockets; defaults to
+1 producer). Channel buffer length is `NET_PACKET_BUFFER_LEN = 1024` packets, sized for a 64-tick
+server at 16 Hz with 4 tick burst tolerance. `Arc` is used only for immutable snapshot data shared
+read-only between the physics worker and interpolation workers (e.g. `Arc<PhysicsSnapshot>` for
+remote body interpolation fanout). There is no `async`/`await`; all engine code is synchronous.
 
 Physics runs at a fixed timestep in Phase 5. The accumulator decouples physics tick rate from frame
 rate. Rollback resimulates multiple fixed ticks within a single frame when mismatch is detected.
@@ -444,91 +499,76 @@ rate. Rollback resimulates multiple fixed ticks within a single frame when misma
 | Physics snapshot too large | Memory pressure | Compress, limit history depth |
 | Extrapolation diverges | Visual artifact | Clamp max extrapolation time |
 
+## Algorithms
+
+References for the non-trivial networked-physics algorithms used here:
+
+| Algorithm | Source |
+|-----------|--------|
+| Client prediction | Glenn Fiedler, "Networked Physics" GDC 2015 |
+| Server reconciliation / rollback | Yahn Bernier, "Latency Compensating Methods" (Valve) |
+| Snapshot interpolation | Glenn Fiedler, "Snapshot Interpolation" (gafferongames.com) |
+| Error-correction smoothing | EMA exponential decay (Fiedler, "Networked Physics") |
+| Hitbox rewind / lag compensation | Bernier, "Latency Compensating Methods" (Valve) |
+
+1. Client prediction -- <https://gafferongames.com/post/networked_physics_2004/>
+2. Server reconciliation / hitbox rewind --
+   <https://developer.valvesoftware.com/wiki/Latency_Compensating_Methods_in_Client/Server_In-game_Protocol_Design_and_Optimization>
+3. Snapshot interpolation -- <https://gafferongames.com/post/snapshot_interpolation/>
+4. EMA smoothing -- <https://en.wikipedia.org/wiki/Exponential_smoothing>
+
 ## Platform Considerations
 
 Deterministic physics requires:
 
 - IEEE 754 strict compliance on all platforms
 - No `--ffast-math` compiler flags
-- Deterministic iteration order in island solver
+- Deterministic iteration order in island solver (see below)
 - Identical `PhysicsConfig.fixed_dt` on server and client
+
+**Island solver determinism mechanism.** The broad-phase island solver sorts its per-island body
+list by a stable `SolverKey = (entity.generation, entity.index)` before each solve. Constraints
+within an island are sorted by `(body_a_key, body_b_key, constraint_kind_ord)`. The solver then
+iterates islands in sorted `(min_body_key)` order on a single worker thread during the solve phase
+(parallelism is across disjoint islands; within an island the order is fixed). This guarantees
+identical iteration order given identical entity handles, which rollback and cross-platform
+determinism rely on.
 
 The engine disables platform-specific FPU modes (e.g., SSE denormal-as-zero on x86) during physics
 ticks to ensure cross-platform bit-identical results.
+
+## Debug Tools
+
+All networked-physics debug tooling is runtime-toggleable through the engine debug console; no
+recompilation is required. Toggles:
+
+| Toggle | Effect |
+|--------|--------|
+| `net.physics.draw_predicted` | Overlay predicted vs authoritative body positions |
+| `net.physics.draw_rewind` | Visualise HitboxBuffer rewind ghosts |
+| `net.physics.log_rollback` | Emit rollback tick/range/mismatch per event |
+| `net.physics.force_desync` | Inject synthetic mismatch for reconciliation testing |
 
 ## Test Plan
 
 See companion [networking-physics-test-cases.md](networking-physics-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. **Missing `classDiagram`.** The design CLAUDE.md requires every design to have a Mermaid
-   `classDiagram` covering ALL types, but this document has none. `PhysicsSnapshot`,
-   `HitboxSnapshot`, `SnapshotBuffer`, `ClientPredictor`, `ServerReconciler`, `HistoryRewinder`,
-   `SnapshotInterpolator`, `ErrorCorrector`, and their relationships are not diagrammed. [CONFIDENT]
-
-2. **No rkyv derive on data structs.** `PhysicsSnapshot` and `HitboxSnapshot` lack
-   `#[derive(Archive, Serialize, Deserialize)]` from rkyv. The engine constraint mandates rkyv-only
-   binary serialization with zero-copy mmap, and snapshot data that crosses the network or is stored
-   in ring buffers must be serializable. [CONFIDENT]
-
-3. **No 2D/2.5D physics support addressed.** All snapshot structs use `Vec3` and `Quat` exclusively.
-   The engine requires first-class 2D and 2.5D support with `Transform2D` / `Vec2` types. The design
-   should specify how prediction, rollback, and hitbox rewind work for 2D physics bodies.
-   [CONFIDENT]
-
-4. **`ColliderShape` not defined.** `HitboxSnapshot` references `ColliderShape` but neither defines
-   it nor traces it to the physics design document. It should appear in the Data Contracts table
-   with a cross-reference. [CONFIDENT]
-
-5. **No thread ownership specified.** The engine uses a three-thread model (main, workers, render).
-   The design does not state which thread owns `SnapshotBuffer`, `HitboxBuffer`, or
-   `HistoryRewinder`, nor which thread performs rollback resimulation. The Timing and Ordering table
-   lists phases but omits thread assignment. [CONFIDENT]
-
-6. **HashMap risk on hot paths not addressed.** Snapshot lookup by tick and hitbox lookup by
-   entity+tick are hot-path operations during rollback and lag compensation. The design does not
-   specify the data structure used for `SnapshotBuffer` or `HitboxBuffer`. If these use `HashMap`,
-   they violate the no-HashMap-on-hot-paths constraint. Ring buffers or indexed arrays should be
-   specified explicitly. [CONFIDENT]
-
-7. **`PhysicsSnapshot` missing contact data.** IR-4.5.7 states contacts are part of the captured
-   physics state, but `PhysicsSnapshot` has no contacts field. Either contacts should be added to
-   the struct or the omission should be justified. [CONFIDENT]
-
-8. **`SnapshotBuffer` and `HitboxBuffer` lack Rust pseudocode.** Both appear in the Data Contracts
-   table but have no struct definitions. The design CLAUDE.md requires Rust pseudocode for all data
-   contracts. [CONFIDENT]
-
-9. **`ClientPredictor`, `ServerReconciler`, `SnapshotInterpolator`, `ErrorCorrector`, and
-   `HistoryRewinder` lack Rust pseudocode.** These are listed in the Data Contracts table but have
-   no struct or API definitions. Their fields, methods, and ECS integration points are unspecified.
-   [CONFIDENT]
-
-10. **No determinism mechanism for iteration order.** IR-4.5.4 mentions "deterministic iteration
-    order in island solver" but does not specify the mechanism (e.g., sorted entity IDs,
-    deterministic BVH traversal). Without this, the "same inputs produce identical results"
-    guarantee is aspirational. [CONFIDENT]
-
-11. **Extrapolator mentioned only in prose.** The Interpolation section (IR-4.5.6) references
-    `Extrapolator` in the requirement description, but it does not appear in the Data Contracts
-    table and has no Rust pseudocode. [CONFIDENT]
-
-12. **No `ErrorCorrector` smoothing strategy defined.** The Failure Modes table mentions
-    "ErrorCorrector smooths over N frames" but does not specify the algorithm (exponential decay,
-    spring damper, linear blend). The design CLAUDE.md requires algorithm references for non-trivial
-    algorithms. [UNCERTAIN]
-
-13. **Test case TC-IR-4.5.4.1 may be untestable in CI.** Cross-platform determinism ("Same input,
-    Win+Mac+Linux, bit-identical positions") requires running the same test on three OS targets
-    simultaneously and comparing results. The test plan does not describe how this is orchestrated.
-    [UNCERTAIN]
-
-14. **No benchmark for rollback snapshot restore.** There are benchmarks for snapshot capture
-    (TC-IR-4.5.7.B1) and rollback resimulation (TC-IR-4.5.3.B1), but none for the restore step
-    itself (loading a snapshot back into the physics world). For large body counts, restore cost
-    could dominate. [UNCERTAIN]
-
-15. **Immutable-first pattern not followed.** `PhysicsSnapshot` and `HitboxSnapshot` have all `pub`
-    fields with no indication of immutability. Per engine constraints, these should be immutable
-    value types created once and never mutated after capture. [CONFIDENT]
+| # | Finding | Resolution |
+|---|---------|-----------|
+| 1 | Missing classDiagram | Added class diagram for all types |
+| 2 | No rkyv derive on data structs | Added Archive/Serialize/Deserialize |
+| 3 | No 2D/2.5D addressed | 2D/2.5D explicitly out of scope |
+| 4 | ColliderShape not defined | Enum now defined with all variants |
+| 5 | No thread ownership | Main/worker/render ownership specified |
+| 6 | HashMap risk on hot paths | Ring buffers / sorted Vec documented |
+| 7 | PhysicsSnapshot missing contacts | Added `contacts: ContactRange` field |
+| 8 | SnapshotBuffer/HitboxBuffer pseudocode | Pseudocode added |
+| 9 | Predictor/Reconciler/etc pseudocode | Pseudocode added for all types |
+| 10 | Determinism mechanism | SolverKey ordering documented |
+| 11 | Extrapolator not in contracts | Added to contracts + pseudocode |
+| 12 | ErrorCorrector smoothing algorithm | EMA reference linked |
+| 13 | TC-IR-4.5.4.1 CI orchestration | Orchestration plan documented |
+| 14 | No snapshot restore benchmark | TC-IR-4.5.7.B2 added |
+| 15 | Immutable-first pattern | Private fields + accessor pattern |

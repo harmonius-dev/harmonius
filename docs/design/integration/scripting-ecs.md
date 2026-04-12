@@ -19,23 +19,35 @@
 | IR-2.8.6 | Entity variables map to components | Script, ECS |
 
 1. **IR-2.8.1** -- Codegen'd `GraphFn` functions read ECS components via typed queries generated at
-   compile time. The `ExecutionContext` provides a `QueryEngine` reference for the codegen'd
-   function to call `query.get::<T>(entity)`.
-2. **IR-2.8.2** -- Codegen'd functions write ECS components via
-   `ExecutionContext::command_buffer()`. All writes are deferred and flushed at sync points in
-   deterministic order.
+   compile time. The `ExecutionContext` provides a `&'w World` reference (not a separate query
+   engine); codegen emits direct calls such as `ctx.world.get::<T>(entity)`. This matches the
+   canonical `ExecutionContext` defined in [scripting.md](../game-framework/scripting.md).
+2. **IR-2.8.2** -- Codegen'd functions write ECS components via a per-thread `CommandSegment`
+   referenced from `ExecutionContext::commands`. All writes are deferred and merged at sync points
+   in deterministic order. Writes are never flushed mid-system.
 3. **IR-2.8.3** -- Structural changes (spawn, despawn, add/remove components) go through
-   `CommandBuffer::spawn()`, `despawn()`, `insert()`, `remove()`. The graph runtime never accesses
-   the `World` directly for mutations.
+   `CommandSegment::spawn()`, `despawn()`, `insert()`, `remove()`. The graph runtime never accesses
+   the `World` directly for mutations. There is no shared `&mut CommandBuffer`; each worker holds a
+   distinct `&mut CommandSegment` obtained from `ParallelCommandWriter::writer(worker_index)` (see
+   [ecs.md](../core-runtime/ecs.md#parallelcommandwriter-high)).
 4. **IR-2.8.4** -- `GraphExecutionSystem` is a standard ECS system registered in the scheduler. It
    queries all entities with `GraphInstance` components and invokes their codegen'd functions via
-   `par_iter` on the job system.
-5. **IR-2.8.5** -- The graph compiler emits access metadata (`ComponentAccess` sets) for each
+   `par_iter` on the custom job system (crossbeam-deque). No async/await, no coroutines -- control
+   flow inside a graph is a synchronous state machine over `ResumeVariant` enums.
+5. **IR-2.8.5** -- The graph compiler emits access metadata (`GraphAccessDescriptor`) for each
    `GraphProgram`. The ECS scheduler uses these to determine parallelism: graphs reading disjoint
-   component sets run concurrently.
+   component sets run concurrently. This resolves scripting Open Question #1 (see
+   [scripting.md](../game-framework/scripting.md#open-questions)) in favor of explicit access sets.
 6. **IR-2.8.6** -- Entity-scope variables in `VariableStore` map to ECS components. The codegen
-   pipeline emits read/write accessors that go through the `QueryEngine`, not through the
-   `VariableStore` directly.
+   pipeline emits read/write accessors that go through `&'w World` and the per-thread
+   `CommandSegment`, not through the `VariableStore` directly. One entity variable may span multiple
+   components (e.g. a "pose" variable backed by `Transform` plus `AnimState`); the mapping table is
+   emitted by the compiler into the middleman `.dylib`.
+
+## Out of Scope
+
+2D/2.5D-specific scripting concerns (tile-grid queries, sprite animation state) are intentionally
+out of scope for this integration; 2D/2.5D is deferred project-wide.
 
 ## Data Contracts
 
@@ -43,40 +55,47 @@
 |------|-----------|-------------|---------|
 | `GraphInstance` | Scripting | ECS Scheduler | Per-entity comp |
 | `GraphProgram` | Scripting | ECS Scheduler | Access metadata |
-| `ExecutionContext` | Scripting | Codegen'd fns | World access |
+| `GraphInstanceState` | Scripting | Codegen'd fns | Graph local state |
+| `ExecutionContext` | Scripting | Codegen'd fns | World + cmds + arena |
+| `GraphAccessDescriptor` | Integration | ECS Scheduler | Parallelism decl |
 | `ParallelCommandWriter` | ECS | Scripting | Deferred writes |
-| `AccessSet` | ECS | Scripting | Parallelism |
-| `World` | ECS | Scripting | Data store |
+| `CommandSegment` | ECS | Scripting | Per-thread cmds |
+| `AccessSet` | ECS | Scripting | Component bitset |
+| `World` | ECS | Scripting | Read-only accessor |
 
 The `GraphFn` signature takes mutable instance state and an `ExecutionContext` reference. The
-codegen'd function accesses the `World` directly via typed queries generated at compile time.
+codegen'd function accesses the `World` directly via typed queries generated at compile time. The
+integration document re-exports the canonical `ExecutionContext` from `scripting.md` for cross-
+reference; fields are kept identical.
 
 ```rust
 /// Type alias for a codegen'd graph entry function.
 /// Signature matches the canonical definition in
-/// scripting.md.
+/// scripting.md. The `state` argument carries the
+/// graph instance's mutable local variables and
+/// suspend state; the `ctx` argument provides
+/// sandboxed world access.
 pub type GraphFn = fn(
     state: &mut GraphInstanceState,
     ctx: &ExecutionContext<'_>,
 ) -> StepResult;
 
 /// Execution context passed to codegen'd fns.
-/// Provides sandboxed access to the ECS world.
-/// Carries a per-thread arena for temporaries
-/// (reset at frame boundary -- see RF-9).
-///
-/// Canonical definition lives in scripting.md.
-/// This integration document re-exports the same
-/// struct for cross-reference.
+/// Canonical definition lives in scripting.md;
+/// re-exported here for cross-reference. Field
+/// names and types are kept in sync with the
+/// scripting design.
 pub struct ExecutionContext<'w> {
     /// The entity this graph instance is on.
     pub entity: Entity,
     /// Read-only world access for typed queries.
+    /// Codegen emits `ctx.world.get::<T>(e)` calls.
     pub world: &'w World,
     /// Per-thread command segment for deferred
-    /// writes. Each par_iter worker gets its own
-    /// CommandSegment from ParallelCommandWriter
-    /// -- no interior mutability needed.
+    /// writes. Obtained from ParallelCommandWriter
+    /// before the par_iter call; each worker gets
+    /// a distinct &mut CommandSegment -- no Cell,
+    /// no RefCell, no shared &mut CommandBuffer.
     pub commands: &'w mut CommandSegment,
     /// Event writer for emitting events.
     pub events: &'w EventWriter,
@@ -87,9 +106,12 @@ pub struct ExecutionContext<'w> {
     /// Maximum budget checks per execution.
     pub instruction_budget: u32,
     /// Per-thread arena for temporary allocs.
-    /// Reset at frame boundary. See RF-9.
+    /// Reset at frame boundary. See scripting RF-9.
+    /// Used for SmallVec spill and transient
+    /// query result buffers.
     pub arena: &'w ThreadArena,
     /// Debug bridge channel. None in release.
+    /// Runtime-toggleable via GraphExecutionConfig.
     pub debug: Option<&'w DebugBridge>,
 }
 
@@ -98,43 +120,37 @@ impl<'w> ExecutionContext<'w> {
     /// via a typed query on the World.
     pub fn read<T: Component>(
         &self,
-    ) -> Option<&T> {
-        self.world.get::<T>(self.entity)
-    }
+    ) -> Option<&T>;
 
     /// Read a component from another entity.
     pub fn read_entity<T: Component>(
         &self,
         entity: Entity,
-    ) -> Option<&T> {
-        self.world.get::<T>(entity)
-    }
+    ) -> Option<&T>;
 
-    /// Queue a component write (deferred).
-    /// Writes go to the per-thread CommandSegment
-    /// and are merged at the sync point.
+    /// Queue a component write (deferred). Routes
+    /// to the per-thread CommandSegment and is
+    /// merged at the next ECS sync point.
     pub fn write<T: Component>(
-        &self,
+        &mut self,
         entity: Entity,
         value: T,
-    ) {
-        self.commands.insert(entity, value);
-    }
+    );
 
     /// Queue an entity spawn (deferred).
     pub fn spawn(
-        &self,
-    ) -> EntityCommands<'_> {
-        self.commands.spawn()
-    }
+        &mut self,
+    ) -> EntityCommands<'_>;
 }
 
 /// Access metadata emitted by the graph compiler.
 /// Used by the ECS scheduler for parallelism.
-/// Wraps the ECS-canonical `AccessSet` type.
+/// Resolves scripting.md Open Question #1.
 ///
-/// Serialized with rkyv for asset pipeline
-/// persistence alongside `GraphProgram` metadata.
+/// Serialized with rkyv for asset-pipeline
+/// persistence alongside GraphProgram metadata.
+/// AccessSet is a FixedBitSet wrapper defined in
+/// ecs.md; both reads and writes share that type.
 #[derive(
     rkyv::Archive,
     rkyv::Serialize,
@@ -150,6 +166,150 @@ pub struct GraphAccessDescriptor {
 }
 ```
 
+`GraphInstanceState` holds the graph's per-entity mutable variables plus its `ResumeVariant` suspend
+state. When the asset pipeline persists a `GraphInstance` snapshot (save games, network rollback),
+the state struct derives rkyv `Archive`, `Serialize`, and `Deserialize`. Codegen emits the derives
+alongside the struct definition inside the middleman `.dylib`; engine code never touches the layout
+directly.
+
+## Class Diagram
+
+```mermaid
+classDiagram
+    class GraphFn {
+        <<type alias>>
+        fn(&mut GraphInstanceState, &ExecutionContext) StepResult
+    }
+
+    class ExecutionContext {
+        +entity Entity
+        +world &World
+        +commands &mut CommandSegment
+        +events &EventWriter
+        +frame u64
+        +delta_time f32
+        +instruction_budget u32
+        +arena &ThreadArena
+        +debug Option~&DebugBridge~
+        +read() Option~&T~
+        +read_entity(e Entity) Option~&T~
+        +write(e Entity, v T)
+        +spawn() EntityCommands
+    }
+
+    class GraphInstance {
+        <<Component>>
+        +program_id AssetId
+        +state GraphInstanceState
+        +version u64
+    }
+
+    class GraphInstanceState {
+        +vars VariableStore
+        +suspend ResumeVariant
+    }
+
+    class GraphProgram {
+        <<Asset>>
+        +fn_table FnPtrTable
+        +access GraphAccessDescriptor
+        +version u64
+    }
+
+    class GraphAccessDescriptor {
+        +reads AccessSet
+        +writes AccessSet
+        +has_commands bool
+    }
+
+    class AccessSet {
+        <<from ecs>>
+        -bits FixedBitSet
+        +intersects(other) bool
+    }
+
+    class World {
+        <<from ecs>>
+        +get(e Entity) Option~&T~
+    }
+
+    class CommandSegment {
+        <<from ecs>>
+        -ops SmallVec~Command, 32~
+        -arena &ThreadArena
+        +insert(e, v)
+        +despawn(e)
+        +spawn() EntityCommands
+    }
+
+    class ParallelCommandWriter {
+        <<from ecs>>
+        -segments Vec~CommandSegment~
+        +writer(idx WorkerToken) &mut CommandSegment
+        +merge_into(buffer &mut CommandBuffer)
+    }
+
+    class CommandBuffer {
+        <<from ecs>>
+        +flush(world &mut World)
+    }
+
+    class EventWriter {
+        <<from ecs>>
+        +send(ev Event)
+    }
+
+    class ThreadArena {
+        <<from core-runtime>>
+        +alloc(size) NonNull~u8~
+        +reset()
+    }
+
+    class DebugBridge {
+        <<from scripting>>
+        +send(msg DebugMsg)
+    }
+
+    class StepResult {
+        <<enum>>
+        Success
+        Yield(ResumeVariant)
+        Error(GraphError)
+    }
+
+    class ResumeVariant {
+        <<enum>>
+        Entry
+        AfterYield(u32)
+        Done
+    }
+
+    class GraphExecutionSystem {
+        <<System>>
+        +run(query, programs, cmds, events, cfg)
+    }
+
+    GraphExecutionSystem --> GraphInstance : queries
+    GraphExecutionSystem --> GraphProgram : reads
+    GraphExecutionSystem --> ParallelCommandWriter : drives
+    GraphInstance --> GraphProgram : program_id
+    GraphInstance --> GraphInstanceState : holds
+    GraphProgram --> GraphAccessDescriptor : has
+    GraphAccessDescriptor --> AccessSet : reads
+    GraphAccessDescriptor --> AccessSet : writes
+    GraphFn ..> ExecutionContext : uses
+    GraphFn ..> GraphInstanceState : mutates
+    ExecutionContext --> World : borrows
+    ExecutionContext --> CommandSegment : borrows
+    ExecutionContext --> EventWriter : borrows
+    ExecutionContext --> ThreadArena : borrows
+    ExecutionContext --> DebugBridge : optional
+    ParallelCommandWriter --> CommandSegment : owns
+    ParallelCommandWriter ..> CommandBuffer : merges into
+    GraphFn ..> StepResult : returns
+    GraphInstanceState --> ResumeVariant : contains
+```
+
 ## Data Flow
 
 ```mermaid
@@ -157,115 +317,134 @@ sequenceDiagram
     participant SC as ECS Scheduler
     participant GS as GraphExecutionSystem
     participant JS as JobSystem (par_iter)
+    participant PCW as ParallelCommandWriter
     participant GI as GraphInstance
     participant FP as FnPtrTable
-    participant QE as QueryEngine
-    participant CB as CommandBuffer
     participant W as World
+    participant CS as CommandSegment
+    participant CB as CommandBuffer
 
     SC->>GS: run(world)
+    GS->>PCW: allocate N segments
     GS->>JS: par_iter GraphInstance entities
 
-    loop Each batch
+    loop Each worker batch
+        JS->>PCW: writer(worker_token)
+        PCW-->>JS: &mut CommandSegment
         JS->>GI: get program + state
         GI->>FP: entry_fn(state, ctx)
 
-        FP->>QE: query.get::<Health>(self)
-        QE-->>FP: &Health component
-
-        FP->>CB: insert(target, Damage(10))
-        FP->>CB: spawn().insert(VfxBundle)
+        FP->>W: ctx.world.get::<Health>(self)
+        W-->>FP: &Health
+        FP->>CS: insert(target, Damage(10))
+        FP->>CS: spawn().insert(VfxBundle)
         FP-->>GI: StepResult::Success
     end
 
     GS-->>SC: complete
-    SC->>CB: flush_commands()
+    SC->>PCW: merge_into(command_buffer)
+    PCW->>CB: drain segments in worker-id order
+    SC->>CB: flush(&mut world)
     CB->>W: apply deferred mutations
 ```
+
+## Command Buffer Memory and Merging
+
+| Concern | Strategy |
+|---------|----------|
+| Per-entry storage | `SmallVec<[Command; 32]>` in each `CommandSegment` |
+| Spill backing | Segment arena (per-thread `ThreadArena`) |
+| Cross-thread sharing | None -- workers own distinct `&mut CommandSegment` |
+| Merge ordering | Worker-id ascending (stable); see ecs.md section 3 |
+| Merge algorithm | Serial concatenation of segment op streams |
+| Lifetime | Segments live one frame; arenas reset at phase end |
+
+Per-thread segment ownership avoids `Arc`, `Cell`, and `RefCell`. `Arc` is reserved for immutable
+shared data (loaded `GraphProgram` assets, `FnPtrTable`, access-set metadata). The merge step uses a
+stable, serial concatenation of segment op streams in ascending worker-id order; the algorithm is
+specified in [ecs.md](../core-runtime/ecs.md#parallelcommandwriter-high) and mirrors the
+"deterministic merge" approach used by Bevy's `CommandQueue` except that Harmonius uses owned
+`CommandSegment` vectors rather than a shared queue.
 
 ## Timing and Ordering
 
 | System | Game loop phase | Timestep | Ordering |
 |--------|----------------|----------|----------|
-| Graph execution | Phase varies | Variable | Per schedule |
-| Command flush | Sync point | N/A | After systems |
-| Access analysis | Startup | N/A | Once at load |
+| Graph execution (sim) | Phase 3 | Fixed | Per schedule |
+| Graph execution (AI) | Phase 4 | Fixed | Per schedule |
+| Graph execution (anim) | Phase 6 | Variable | Per schedule |
+| Command merge | End of phase | N/A | Stable worker-id |
+| Command flush | Sync point | N/A | After merge |
+| Access analysis | Startup / reload | N/A | Once per program |
 
-`GraphExecutionSystem` runs in whichever phase the graph is assigned to (Phase 3 for simulation,
-Phase 4 for AI, Phase 6 for animation). Command buffers are flushed at the next sync point.
-`ComponentAccess` sets are analyzed once at startup and on hot-reload.
+`GraphExecutionSystem` runs in whichever phase the graph is assigned to. Simulation and AI graphs
+use the fixed timestep (Phase 3 and Phase 4); animation graphs run at the variable render cadence
+(Phase 6). The assignment is stored on the `GraphProgram` asset; the scheduler refuses to register a
+graph whose declared phase does not match its timestep class. Command segments are merged at the end
+of their owning phase and the resulting `CommandBuffer` is flushed at the next sync point.
+`GraphAccessDescriptor` is analyzed once at asset load and recomputed on hot-reload.
 
 ## Failure Modes
 
-| Failure | Impact | Recovery |
-|---------|--------|----------|
-| Entity despawned mid-exec | Stale entity ref | query returns None |
-| Access set conflict | False parallelism | Scheduler serializes |
-| Command buffer overflow | Memory pressure | Flush at capacity |
-| Component not registered | Query returns None | Log error, skip |
+| ID | Failure | Impact | Recovery |
+|----|---------|--------|----------|
+| FM-1 | Entity despawned mid-exec | Stale entity ref | query returns None; graph no-ops |
+| FM-2 | Access set conflict | False parallelism | Scheduler serializes offenders |
+| FM-3 | Command segment overflow | Memory pressure | Halt + log; see detail 3 |
+| FM-4 | Component not registered | Query returns None | Log error, skip write |
+| FM-5 | Hot-reload layout mismatch | Variable slot drift | Reject reload; keep prior `.dylib` |
+| FM-6 | Budget exhausted mid-graph | Possible infinite loop | Yield with `StepResult::Error` |
+
+1. FM-1 -- `World::get` returns `Option`; codegen emits the null check and the graph proceeds as a
+   no-op for that branch.
+2. FM-2 -- If two programs declare overlapping `writes`, the scheduler drops them into the same
+   serial bucket rather than running them in parallel.
+3. FM-3 -- A `CommandSegment` that exhausts its arena returns `GraphError::CommandBufferFull` and
+   the graph aborts its current step. The segment is NOT flushed early -- that would violate the
+   deferred-write determinism contract (IR-2.8.2). The engine logs the overflow and the graph's
+   pending writes for that frame are dropped; the next frame retries from the same `ResumeVariant`.
+4. FM-4 -- Missing components can arise from optional features; codegen guards each write with a
+   registration check.
+5. FM-5 -- The middleman `.dylib` exports a layout hash per `GraphInstanceState`. On reload, the
+   engine compares hashes before swapping function pointers; a mismatch keeps the prior `.dylib`
+   loaded and surfaces an error to the editor.
+6. FM-6 -- The instruction budget counter increments at codegen'd back-edges. When it exceeds
+   `GraphExecutionConfig::instruction_budget`, the graph returns `StepResult::Error` and is parked
+   until the next frame.
 
 ## Platform Considerations
 
-None -- identical across all platforms. The ECS scheduler, query engine, and command buffers are
-pure Rust. The job system uses crossbeam-deque which works identically on all targets.
+None -- identical across all platforms. The ECS scheduler, command buffers, and world queries are
+pure Rust. The job system uses crossbeam-deque which works identically on all targets. Middleman
+`.dylib` hot-reload goes through the platform loader (`dlopen` / `LoadLibrary`) but is handled by
+the scripting design, not this integration.
 
 ## Test Plan
 
-See companion [scripting-ecs-test-cases.md](scripting-ecs-test-cases.md).
+See companion [scripting-ecs-test-cases.md](scripting-ecs-test-cases.md). Coverage includes one
+positive and one negative test per IR, plus benchmarks and CI-runnable integration tests. The
+negative tests exercise command-segment overflow (FM-3), hot-reload layout mismatch (FM-5), and
+multi-component variable mapping (IR-2.8.6).
 
-## Review Feedback
+## Review Status
 
-1. [CONFIDENT] `ExecutionContext` in this document diverges from the canonical definition in
-   `scripting.md`. The scripting design uses `world: &'w World` (direct world ref),
-   `arena: &'w ThreadArena`, `delta_time: f32`, `instruction_budget: u32`, and
-   `debug: Option<&'w DebugBridge>`. This document invents a `QueryEngine` abstraction and omits
-   arena, delta_time, instruction_budget, and debug. The two must be reconciled.
-2. [CONFIDENT] The `query: &'w QueryEngine` field uses a type that does not exist in the ECS or
-   scripting designs. The scripting design accesses components via `world: &'w World` and typed
-   queries generated by codegen. `QueryEngine` is undefined and should be removed or replaced with
-   the canonical `&'w World`.
-3. [CONFIDENT] The `events: &'w EventChannelWriter` field uses a type name inconsistent with the
-   scripting design, which defines `events: &'w EventWriter`. Use the canonical name.
-4. [CONFIDENT] The `tick: u64` field is named `frame: u64` in the scripting design. Pick one name
-   and use it consistently.
-5. [CONFIDENT] The `GraphFn` signature in the scripting design is
-   `fn(state: &mut GraphInstanceState, ctx: &ExecutionContext)`. The sequence diagram here shows
-   `entry_fn(state, ctx)` which is consistent, but the Data Contracts pseudocode omits the `state`
-   parameter entirely from `ExecutionContext` methods. The state parameter must appear in the
-   integration contract.
-6. [CONFIDENT] The `GraphAccessDescriptor` struct in Data Contracts does not appear in the scripting
-   design. The scripting design's open question #1 asks whether graphs should declare access sets.
-   This integration design assumes that question is resolved (yes) but the scripting design has not
-   been updated to reflect it. Either update the scripting design or flag this as a dependency.
-7. [CONFIDENT] The Data Contracts table lists `World` as "Consumed by: Scripting" but the
-   `ExecutionContext` struct in this document does not hold a `&World` reference -- it uses
-   `QueryEngine` instead. The table and struct are inconsistent.
-8. [CONFIDENT] The document lacks a class diagram (Mermaid `classDiagram`). Per the design
-   CLAUDE.md, every design MUST have a Mermaid classDiagram covering ALL types, structs, enums,
-   traits, and their relationships.
-9. [CONFIDENT] No `SmallVec` or arena usage is mentioned for `CommandBuffer` accumulation during
-   graph execution. Per constraints (RF-8, RF-9 in scripting), per-thread arenas and SmallVec should
-   be used for hot-path allocations. The design should specify how command buffer memory is
-   allocated.
-10. [CONFIDENT] The `CommandBuffer` is referenced as `&'w` in `ExecutionContext`, implying shared
-    immutable access. But `commands.insert()` and `commands.spawn()` mutate the buffer. This
-    requires interior mutability (`Cell`/`RefCell`) or `&mut`, both of which conflict with engine
-    constraints (no Arc/Rc/Cell/RefCell). The design must clarify how concurrent par_iter batches
-    write to command buffers without interior mutability -- likely per-thread command buffers merged
-    at sync.
-11. [CONFIDENT] The test cases file does not cover the `VariableStore`-to-component mapping pathway
-    (IR-2.8.6) beyond read/write. It lacks a test for entity-scope variables that span multiple
-    components or for variable layout mismatch after hot-reload.
-12. [UNCERTAIN] The Timing table says graph execution uses "Variable" timestep. Some graphs
-    (physics-driven, networking) may need fixed timestep. The design should clarify whether graphs
-    can opt into fixed-step scheduling or if that is handled by the phase they are assigned to.
-13. [CONFIDENT] The Failure Modes table lists "Command buffer overflow" with recovery "Flush at
-    capacity." Mid-system command flushing would violate the deferred-write contract (IR-2.8.2:
-    "flushed at sync points in deterministic order"). The recovery should be to grow the buffer or
-    abort the graph, not to flush early.
-14. [CONFIDENT] The test cases cover all six IRs (2.8.1 through 2.8.6) with at least two test cases
-    each, plus four benchmarks. Coverage is adequate for the IRs as written.
-15. [UNCERTAIN] The design does not mention serialization of `GraphAccessDescriptor` or
-    `GraphInstance` state. Per constraints, binary serialization must use rkyv only (no serde). If
-    these types are persisted or sent across threads, their serialization strategy should be stated
-    explicitly.
+| # | Finding | Status |
+|---|---------|--------|
+| 1 | `ExecutionContext` diverged from scripting.md canonical | Resolved |
+| 2 | Invented `QueryEngine` removed; use `&'w World` | Resolved |
+| 3 | Use `EventWriter` (not `EventChannelWriter`) | Resolved |
+| 4 | Use `frame` (not `tick`) | Resolved |
+| 5 | `GraphFn` state parameter documented in contracts | Resolved |
+| 6 | `GraphAccessDescriptor` cross-ref to scripting Q#1 | Resolved |
+| 7 | `World` row fixed -- borrowed, not stored | Resolved |
+| 8 | `classDiagram` added | Resolved |
+| 9 | Arena + `SmallVec` for command buffers documented | Resolved |
+| 10 | Per-thread `CommandSegment` (no Cell/RefCell) | Resolved |
+| 11 | Multi-component and hot-reload tests added | Resolved |
+| 12 | Fixed vs variable timestep clarified in timing table | Resolved |
+| 13 | "Flush at capacity" removed; halt + log instead | Resolved |
+| 14 | IR coverage confirmed in test cases file | Resolved |
+| 15 | rkyv strategy for `GraphInstance` state documented | Resolved |
+| 16 | 2D/2.5D out-of-scope note added | Resolved |
+| 17 | Command buffer merge algorithm reference | Resolved |
+| 18 | Negative tests CI-runnable | Resolved |

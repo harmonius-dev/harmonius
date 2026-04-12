@@ -200,6 +200,26 @@ Cutscene blend weights are updated in Phase 3 and consumed by the animation laye
 | Property curve target gone | Track skipped | Log warn, continue |
 | Montage asset not loaded | No montage insert | Log warn, continue |
 
+## Scope
+
+2D and 2.5D animation are intentionally out of scope for this integration; timeline tracks are
+type-generic (`Track<T>`) and apply identically to any dimensionality when 2D is re-introduced.
+
+## Algorithm References
+
+| Operation | Algorithm | Reference |
+|-----------|-----------|-----------|
+| Blend weight ramp | Linear interpolation | Wikipedia "Linear interpolation" |
+| Rotation cross-fade | Quaternion SLERP | Shoemake 1985 |
+| Translation cross-fade | Vector LERP | Wikipedia "Linear interpolation" |
+| Bezier track sample | De Casteljau subdivision | Farin 2002 ch. 4 |
+
+1. Blend weight uses `w = clamp((t - t_start) / duration, 0.0, 1.0)`; consumed by `AnimationLayer`
+   cross-fade to mix gameplay pose and cinematic pose per joint.
+2. SLERP per joint for rotation, LERP for translation and scale; applied after weight is resolved.
+3. De Casteljau is used by the generic `Track<T>` bezier sampler for smooth curve interpolation of
+   float and vector values.
+
 ## Platform Considerations
 
 None -- identical across all platforms. Timeline evaluation and animation parameter writing are pure
@@ -271,7 +291,7 @@ classDiagram
     PlaybackState --> MultiTrackTimeline : plays
 ```
 
-## Review Feedback
+## Review Status
 
 1. [APPLIED] Added `#[derive(Component)]` to `AnimTrackBinding`.
 2. [APPLIED] Changed `AssetHandle<MultiTrackTimeline>` to `AssetId` in `CinematicOverride`, matching
@@ -294,7 +314,7 @@ classDiagram
    type-generic (`Track<T>`) and work identically for any `TrackValue` variant. No 2D-specific
    handling is needed at the integration layer.
 9. [APPLIED] Added `rkyv::Archive`, `rkyv::Serialize`, `rkyv::Deserialize` derives to
-   `AnimTrackBinding`.
+   `AnimTrackBinding` (persistent authored data).
 10. [APPLIED] Split `CinematicOverride` into immutable config (`CinematicOverride` with
     `timeline_id`, `blend_in`, `blend_out`) and mutable runtime state (`CinematicBlendState` with
     `blend_weight`).
@@ -304,3 +324,9 @@ classDiagram
 12. [APPLIED] Added `classDiagram` covering all types: `CinematicOverride`, `CinematicBlendState`,
     `ParameterWriteGuard`, `AnimTrackBinding`, `MultiTrackTimeline`, `PlaybackState`,
     `ParameterMap`, `TrackBindings`, `ActiveMontage`, `TimelineEvent`, and their relationships.
+13. [APPLIED] Blend weight math algorithm referenced: linear ramp
+    `w(t) = clamp((t - t_start) / duration, 0.0, 1.0)` (Wikipedia: "Linear interpolation"). Pose
+    cross-fade uses per-joint SLERP for rotation and LERP for translation/scale (Shoemake 1985,
+    "Animating Rotation with Quaternion Curves").
+14. [APPLIED] No async/await anywhere in the bridge systems -- all systems are synchronous ECS
+    queries running in Phase 3 / Phase 6 of the frame graph.

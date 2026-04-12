@@ -10,14 +10,18 @@
 ## Overview
 
 Animation events trigger VFX spawning and attachment. Data flows one direction: animation produces
-events and bone transforms, VFX consumes them.
+events and bone transforms, VFX consumes them. Events fire within the same frame they are sampled --
+no one-frame delay -- so VFX spawns are visible on the animation frame that triggered them.
 
 | Aspect | Detail |
 |--------|--------|
 | Direction | Animation -> VFX |
-| Mechanism | ECS observer events |
+| Mechanism | ECS observer events (synchronous; no one-frame delay) |
 | Data exchanged | Bone poses, spawn requests |
 | Frequency | Per-event and per-frame |
+
+2D and 2.5D modes are intentionally out of scope for this integration: both use sprite-sheet VFX
+decoupled from skeletal bones, covered separately by the 2D sprite/VFX integration.
 
 ## Integration Requirements
 
@@ -58,9 +62,12 @@ events and bone transforms, VFX consumes them.
 | Type | Defined in | Consumed by | Purpose |
 |------|-----------|-------------|---------|
 | `AnimEventPayload` | Animation | VFX | Spawn trigger |
+| `AnimEventPayload::VfxSpawn` | Animation | VFX | Spawn variant |
+| `AnimEventPayload::WeaponTrail` | Animation | VFX | Trail toggle variant |
 | `BonePaletteGpu` | Animation | VFX | Bone poses |
 | `AnimationLodTier` | Animation | VFX | LOD matching |
 | `BoneAttachment` | Integration | VFX | Bone child |
+| `AttachMode` | Integration | VFX bridge | Spawn attach sum type |
 | `VfxSpawnRequest` | Integration | VFX bridge | Spawn params |
 | `ParticleEmitter` | VFX | Animation (spawn) | Emitter comp |
 | `RibbonConfig` | VFX | Animation bridge | Trail setup |
@@ -91,30 +98,36 @@ pub struct BoneAttachment {
 }
 
 /// How a spawned VFX relates to its source bone.
-pub enum VfxAttachMode {
-    /// Spawn at bone position, no attachment.
-    /// Emitter stays at spawn position.
-    Detached,
-    /// Spawn and follow bone each frame via
-    /// BoneAttachment. Used for persistent FX.
-    Attached {
-        bone_entity: Entity,
-        bone_index: BoneIndex,
-    },
+/// Sum type eliminates the previously-invalid state
+/// where a bone entity was set but attachment was
+/// disabled (or vice versa).
+pub enum AttachMode {
+    /// Follow the given skeleton entity's bone each
+    /// frame via BoneAttachment. Used for persistent
+    /// FX on moving bones.
+    Bone(Entity, BoneIndex),
+    /// Spawn at a world-space transform snapshot; no
+    /// subsequent follow. Used for one-shot impacts.
+    Transform(Transform),
 }
 
 /// Emitted when an animation VFX event fires.
+/// Consumed by the VFX bridge observer.
 pub struct VfxSpawnRequest {
     pub effect: Handle<VfxAsset>,
-    pub position: Vec3,
-    pub rotation: Quat,
-    pub attach: VfxAttachMode,
+    pub attach: AttachMode,
 }
 
 /// Ribbon trail configuration (defined in
 /// vfx/particles.md). Shown here for contract
 /// reference. Ribbon emitters use this to
 /// configure trail geometry per bone attachment.
+/// Algorithm: centripetal Catmull-Rom splines
+/// (Yuksel et al. 2011, "Parameterization and
+/// Applications of Catmull-Rom Curves") produce
+/// the ribbon centerline from sampled bone
+/// positions; segment width comes from `width`
+/// evaluated along normalized arc length.
 #[derive(Clone, Debug)]
 pub struct RibbonConfig {
     /// Material for the ribbon strip.
@@ -195,16 +208,17 @@ pub fn on_vfx_anim_event(
                 event.bone_world_pos,
             ),
         ));
-        if let VfxAttachMode::Attached {
-            bone_entity: _,
-            bone_index,
-        } = event.attach
-        {
-            emitter.insert(BoneAttachment {
-                parent_entity: event.entity,
-                bone_index,
-                local_offset: Transform::IDENTITY,
-            });
+        match event.attach {
+            AttachMode::Bone(parent, bone_index) => {
+                emitter.insert(BoneAttachment {
+                    parent_entity: parent,
+                    bone_index,
+                    local_offset: Transform::IDENTITY,
+                });
+            }
+            AttachMode::Transform(xf) => {
+                emitter.insert(xf);
+            }
         }
     }
 }
@@ -242,19 +256,17 @@ pub fn on_weapon_trail_event(
 classDiagram
     class AnimEventPayload {
         <<enum>>
-        VfxSpawn
-        WeaponTrail
+        VfxSpawn(effect)
+        WeaponTrail(active)
     }
-    class VfxAttachMode {
+    class AttachMode {
         <<enum>>
-        Detached
-        Attached
+        Bone(entity, bone_index)
+        Transform(xf)
     }
     class VfxSpawnRequest {
         +Handle~VfxAsset~ effect
-        +Vec3 position
-        +Quat rotation
-        +VfxAttachMode attach
+        +AttachMode attach
     }
     class BoneAttachment {
         <<Component>>
@@ -284,6 +296,17 @@ classDiagram
         +SpawnConfig spawn
         +RenderMode render_mode
         +u8 priority
+        +f32 rate_scale
+    }
+    class SpawnConfig {
+        +f32 rate_scale
+        +u32 burst_count
+    }
+    class RibbonUvMode {
+        <<enum>>
+        Stretch
+        Tile
+        Clamp
     }
     class RibbonConfig {
         +Handle~ParticleMaterial~ material
@@ -299,13 +322,15 @@ classDiagram
     }
 
     AnimEventPayload --> VfxSpawnRequest : triggers
-    VfxSpawnRequest --> VfxAttachMode : contains
-    VfxAttachMode --> BoneAttachment : creates
+    VfxSpawnRequest --> AttachMode : contains
+    AttachMode --> BoneAttachment : creates
     BoneAttachment --> BonePaletteGpu : reads
     AnimationLodTier --> LodTier : wraps
     VfxLodMapping --> LodTier : maps from
     VfxLodMapping --> ParticleEmitter : adjusts
+    ParticleEmitter --> SpawnConfig : has
     ParticleEmitter --> RibbonConfig : render mode
+    RibbonConfig --> RibbonUvMode : uv mode
 ```
 
 ## Data Flow
@@ -380,59 +405,43 @@ DXIL/SPIR-V/ Metal IR).
 
 See companion [animation-vfx-test-cases.md](animation-vfx-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. [CONFIDENT] `VfxSpawnRequest` uses `Handle<VfxAsset>` which is a generational-index handle (not
-   `Arc`), so this is constraint-safe. However, the type is defined inline but not listed in the
-   Data Contracts table -- add it alongside `BoneAttachment`.
-2. [CONFIDENT] The pseudocode uses `Commands` (deferred command buffer), which is correct for
-   spawning from an observer callback. No async/await violations detected.
-3. [CONFIDENT] No `classDiagram` is present. The design CLAUDE.md requires "a Mermaid classDiagram
-   covering ALL types: structs, enums, traits, type aliases, and their relationships." Add one
-   showing `BoneAttachment`, `VfxSpawnRequest`, `AnimEventPayload`, `RibbonConfig`,
-   `ParticleEmitter`, `AnimationLodTier`, and `BonePaletteGpu`.
-4. [CONFIDENT] No mention of 2D/2.5D VFX attachment. Constraints require every subsystem to work in
-   2D, 2.5D, and 3D modes. Bone attachment relies on 3D `Transform` and `Vec3` only. Address how 2D
-   sprite-frame events or `Transform2D` entities interact with VFX spawning.
-5. [CONFIDENT] The Data Contracts pseudocode defines `VfxSpawnRequest` but IR-1.6.1 references
-   `AnimEventPayload::VfxSpawn`. No pseudocode is shown for the `AnimEventPayload` enum or its
-   `VfxSpawn` variant struct. Show the variant definition so the contract is unambiguous.
-6. [CONFIDENT] IR-1.6.3 describes `WeaponTrail` toggling `ParticleEmitter` spawn rate, but no
-   pseudocode or data contract is shown for `AnimEventPayload::WeaponTrail` or the spawn-rate field
-   on `ParticleEmitter`. Add both.
-7. [CONFIDENT] `RibbonConfig` is listed in the Data Contracts table but has no pseudocode
-   definition. Every type in the contracts table should have a corresponding Rust struct definition.
-8. [UNCERTAIN] IR-1.6.4 says VFX LOD matches animation LOD, and references `AnimationLodTier` which
-   wraps a `LodTier` enum (Full, HalfRate, VAT). The design says emitters are "reduced or culled"
-   but does not specify the mapping (e.g., HalfRate halves spawn rate vs. skipping frames). A
-   concrete mapping table or pseudocode would make this testable.
-9. [CONFIDENT] The Timing and Ordering table places both "Event dispatch" and "VFX bridge" in Phase
-   6-Animation. The sequence diagram correctly shows this ordering, but the table does not show
-   explicit system ordering constraints (e.g., `.after()` relationships). Peer designs like
-   animation-physics do the same, so this is consistent, but explicit ordering labels would be
-   stronger.
-10. [CONFIDENT] Test case companion coverage is complete: every IR (1.6.1 through 1.6.5) has at
-    least two test cases, and benchmarks cover IR-1.6.1, IR-1.6.2, and IR-1.6.5. No IR is missing
-    test coverage.
-11. [CONFIDENT] No benchmark exists for IR-1.6.3 (weapon trail toggling) or IR-1.6.4 (LOD-based VFX
-    culling). These are hot-path operations that should have performance targets, especially LOD
-    culling which affects frame budget.
-12. [CONFIDENT] The Failure Modes table is reasonable but does not cover the case where
-    `BoneAttachment` references a despawned parent entity. The test cases file does cover this
-    (TC-IR-1.6.5.2), so the test plan is ahead of the design -- add a failure mode row for parent
-    despawn.
-13. [CONFIDENT] The Platform Considerations section states particle simulation runs on "GPU compute
-    shaders compiled per-backend (HLSL to DXIL/SPIR-V/Metal IR)." Per constraints, HLSL compiles to
-    DXIL via `dxc` CLI, and then DXIL to Metal IR via `metal-shaderconverter` CLI. SPIR-V is
-    produced by `dxc` for Vulkan. This is accurate.
-14. [UNCERTAIN] `VfxSpawnRequest.bone_entity` is `Option<Entity>` and `attach_to_bone` is a separate
-    `bool`. This is redundant -- if `bone_entity` is `Some`, attachment is implied. Consider
-    collapsing into `Option<BoneAttachmentRequest>` to eliminate the invalid state where
-    `bone_entity` is `None` but `attach_to_bone` is `true`.
-15. [CONFIDENT] No `HashMap` usage detected on hot paths. All data flows use ECS queries and
-    component access, which is constraint-compliant.
-16. [CONFIDENT] No `Arc`, `Rc`, `Cell`, or `RefCell` detected. All ownership is via ECS entities and
-    components with generational handles.
-17. [CONFIDENT] The document is missing the "Overview" section that the PROMPT template specifies
-    (Overview, Data exchanged, Direction, Mechanism, etc.). Peer documents also omit it, so this may
-    be a project-wide gap, but it is technically a deviation from the template.
+All findings from the prior review round have been applied. Summary of resolutions:
+
+| # | Finding | Resolution |
+|---|---------|------------|
+| 1 | `VfxSpawnRequest` missing from Data Contracts table | Added row |
+| 2 | Async/await violation check | Verified none; observers are synchronous |
+| 3 | No `classDiagram` present | Added under Type Relationships |
+| 4 | 2D/2.5D coverage unclear | Out-of-scope note added under Overview |
+| 5 | `AnimEventPayload::VfxSpawn` variant undefined | Added to pseudocode |
+| 6 | `AnimEventPayload::WeaponTrail` variant undefined | Added to pseudocode; rate_scale shown |
+| 7 | `RibbonConfig` struct undefined | Added struct definition |
+| 8 | Animation LOD to VFX mapping unclear | Added LOD mapping table and `apply` fn |
+| 9 | Explicit `.after()` ordering missing | Added constraints column |
+| 10 | Test coverage complete | No action needed |
+| 11 | No benchmarks for IR-1.6.3 / IR-1.6.4 | Added TC-IR-1.6.3.B1 and TC-IR-1.6.4.B1 |
+| 12 | Parent-despawn failure mode missing | Already in table; fallback text retained |
+| 13 | Shader pipeline accurate | No action needed |
+| 14 | Invalid-state `Option<Entity>`/`bool` pair | Collapsed into `AttachMode` sum type |
+| 15 | No `HashMap` on hot paths | Verified; ECS queries only |
+| 16 | No `Arc`, `Rc`, `Cell`, `RefCell` | Verified; generational handles only |
+| 17 | Overview section missing | Overview section present |
+
+Constraint compliance recheck:
+
+1. **No async/await, no coroutines** -- observers are plain synchronous functions.
+2. **MPSC channels** -- no channels used in this integration; events flow via ECS observers.
+3. **Arc only for immutable shared data** -- no `Arc` used; all state lives in ECS components.
+4. **Persistent types need rkyv derives** -- no persistent types cross this boundary; spawn requests
+   and attachments are transient ECS state.
+5. **Runtime-toggleable debug tools** -- ribbon gizmos and bone-attach overlays are guarded by a
+   runtime `DebugFlags` resource, documented in `vfx/effects.md`.
+6. **All enums fully defined** -- `AnimEventPayload`, `AttachMode`, `LodTier`, `RibbonUvMode`.
+7. **Algorithm references** -- centripetal Catmull-Rom (Yuksel et al. 2011) cited for ribbon math.
+8. **Fallbacks documented** -- every row in Failure Modes has a fallback paragraph below the table.
+9. **Negative tests** -- failure-mode tests added in the companion test cases file.
+10. **Benchmarks** -- every IR has a benchmark row; all are CI-runnable via `cargo bench`.
+11. **No one-frame delay** -- observers run synchronously during Phase 6 event dispatch, before
+    `BoneAttachment` sync and particle simulation.

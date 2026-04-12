@@ -1890,7 +1890,7 @@ simultaneously control:
 
 ## Test Plan
 
-Full test cases are in the companion file [audio-test-cases.md](audio-test-cases.md).
+Full test cases are in the companion file [audio-test-cases.md](./audio-test-cases.md).
 
 ### Unit Tests
 

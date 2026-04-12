@@ -608,7 +608,7 @@ classDiagram
 
 ## Test Plan
 
-See companion file [rendering-core-test-cases.md](rendering-core-test-cases.md).
+See companion file [rendering-core-test-cases.md](./rendering-core-test-cases.md).
 
 ### Unit Tests (Scene Rendering)
 

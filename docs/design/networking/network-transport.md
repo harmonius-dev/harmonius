@@ -1290,7 +1290,7 @@ components.
 ## Test Plan
 
 Test cases are in the companion file
-[network-transport-test-cases.md](network-transport-test-cases.md).
+[network-transport-test-cases.md](./network-transport-test-cases.md).
 
 ### Summary
 

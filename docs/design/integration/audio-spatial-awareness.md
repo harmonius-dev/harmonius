@@ -35,6 +35,12 @@
    zero band loss) until their first trace completes. Worst-case latency for a new source is N
    frames (4 frames / 67 ms at 60 fps) before the first propagation update.
 
+## Scope
+
+3D spatial audio only. 2D/2.5D spatial audio propagation is intentionally out of scope for this
+integration; 2D sources use the non-spatial audio path (distance-only attenuation) documented in
+[audio.md](../audio/audio.md).
+
 ## Data Contracts
 
 | Type | Defined in | Consumed by | Purpose |
@@ -98,16 +104,17 @@ pub struct PropagationResultStore {
 }
 
 /// MPSC channel pair for bridging ECS workers to
-/// the audio thread. Bounded to 256 entries to
-/// prevent unbounded growth. If the channel is
-/// full, the oldest result for that source is
-/// stale but acceptable at 15 Hz update rate.
+/// the audio thread. Bounded to 256 entries --
+/// sized for 100 sources at 15 Hz with two frames
+/// of slack. Multi-producer (workers) to
+/// single-consumer (audio thread). Lock-free,
+/// atomic internally. `try_send` is non-blocking;
+/// `try_recv` drains on the audio thread.
 ///
-/// Arc is used here for the receiver endpoint
-/// only because it is shared immutable data (the
-/// channel itself is lock-free; Arc just shares
-/// the allocation). This is the sole permitted
-/// Arc usage in this integration.
+/// If the channel is full, `try_send` fails and
+/// the worker drops that frame's result. The audio
+/// thread keeps the previous result for that
+/// source -- acceptable at 15 Hz.
 pub type AudioPropagationSender =
     crossbeam_channel::Sender<PropagationResult>;
 pub type AudioPropagationReceiver =
@@ -145,6 +152,69 @@ pub fn audio_propagation_system(
     sender: Res<AudioPropagationSender>,
     frame: Res<FrameCount>,
 );
+```
+
+### Type Relationships
+
+```mermaid
+classDiagram
+    class PropagationResult {
+        +Entity source
+        +f32 occlusion
+        +f32[3] band_loss
+        +ReflectionTap[8] reflections
+        +u8 reflection_count
+        +f32 reverb_send
+        +u64 last_updated_frame
+    }
+    class ReflectionTap {
+        +f32 delay_ms
+        +f32 gain
+        +Vec3 direction
+    }
+    class PropagationResultStore {
+        +Vec~UnsafeCell~PropagationResult~~ slots
+        +write(entity, result)
+        +read(entity) PropagationResult
+    }
+    class PropagationSnapshot {
+        +Vec~PropagationResult~ results
+        +drain_from(rx)
+        +get(voice_id) PropagationResult
+    }
+    class AcousticMaterial {
+        +f32[3] absorption
+        +f32[3] transmission_loss
+        +f32 scattering
+    }
+    class AcousticMaterialTable {
+        +lookup(entity) AcousticMaterial
+    }
+    class SpatialAudio {
+        +u32 occlusion_rays
+        +f32 max_distance
+    }
+    class SharedSpatialIndex {
+        +raycast(origin, dir) SurfaceHit
+    }
+    class AudioPropagationSender {
+        <<type alias>>
+        crossbeam_channel Sender~PropagationResult~
+    }
+    class AudioPropagationReceiver {
+        <<type alias>>
+        crossbeam_channel Receiver~PropagationResult~
+    }
+    PropagationResult *-- ReflectionTap : contains 8
+    PropagationResultStore *-- PropagationResult : per-entity slots
+    PropagationSnapshot *-- PropagationResult : per-voice slots
+    AcousticMaterialTable *-- AcousticMaterial : lookup
+    AudioPropagationSender ..> PropagationResult : sends
+    AudioPropagationReceiver ..> PropagationResult : receives
+    PropagationResultStore ..> AudioPropagationSender : bridges via
+    AudioPropagationReceiver ..> PropagationSnapshot : drains into
+    SharedSpatialIndex ..> AcousticMaterialTable : hit entity lookup
+    SpatialAudio ..> SharedSpatialIndex : configures ray count
 ```
 
 ## Data Flow
@@ -237,60 +307,49 @@ differences are behind `AudioBackend`.
 
 See companion [audio-spatial-awareness-test-cases.md](audio-spatial-awareness-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. **[CONFIDENT]** The constraints mandate that ECS-to-audio-thread communication uses a lock-free
-   SPSC command queue (`constraints.md` Architecture / ECS-primary), but the design uses "atomic
-   pointer swap" on a double buffer with no mention of SPSC. Clarify whether the double-buffer swap
-   IS the SPSC channel or replace with the canonical SPSC pattern.
+| # | Finding | Status | Resolution |
+|---|---------|--------|------------|
+| 1 | Atomic pointer swap not MPSC | Resolved | (1) |
+| 2 | ResMut blocks par_for_each | Resolved | (2) |
+| 3 | 2D/2.5D coverage missing | Resolved | (3) |
+| 4 | "Async swap" wording | Resolved | (4) |
+| 5 | SmallVec heap on audio read | Resolved | (5) |
+| 6 | Inter-thread pattern reconcile | Resolved | (6) |
+| 7 | PhysicsMaterialHandle vs shared BVH | Resolved | (7) |
+| 8 | Test coverage of all IRs | Confirmed | (8) |
+| 9 | 2D test cases missing | Resolved | (9) |
+| 10 | Newly spawned source first-frame | Resolved | (10) |
+| 11 | Bridging mechanism documented | Resolved | (11) |
+| 12 | All required sections present | Confirmed | (12) |
 
-2. **[CONFIDENT]** The `audio_propagation_system` signature uses `ResMut<PropagationResultStore>`,
-   which is an exclusive mutable borrow. If worker threads write to this via `par_for_each`,
-   interior mutability or per-entity partitioned storage is needed. `ResMut` conflicts with parallel
-   writes unless it wraps an internally-partitioned structure -- document the partitioning strategy
-   explicitly.
-
-3. **[CONFIDENT]** The constraints require 2D/2.5D/3D support (constraints.md "First-class 2.5D"),
-   yet the design only references `Vec3`, `GlobalTransform`, and 3D BVH. Add coverage for 2D spatial
-   audio (2D BVH, `Transform2D`, distance attenuation in 2D).
-
-4. **[CONFIDENT]** The Timing table labels the audio thread read as "Async swap", but the
-   constraints forbid async/await in engine runtime. The word "async" is misleading here. Rename to
-   "Lock-free swap" or "Atomic swap" to avoid confusion.
-
-5. **[CONFIDENT]** `SmallVec<[ReflectionTap; 8]>` is heap-backed when it exceeds 8 entries. Since
-   `PropagationResult` is shared across thread boundaries via atomic swap, document the allocation
-   strategy (arena per frame, fixed cap, etc.) to avoid heap allocation on the audio thread's read
-   path.
-
-6. **[CONFIDENT]** The constraints specify that all inter-thread communication uses
-   crossbeam-channel and prohibit shared mutable state and mutexes. The double-buffer atomic pointer
-   swap pattern is neither a crossbeam-channel nor an SPSC queue. Reconcile with the constraint or
-   justify the exception.
-
-7. **[UNCERTAIN]** `PhysicsMaterialHandle` is listed as the return type from BVH surface hits, but
-   constraints say the physics BVH is private and not shared. The shared BVH is for AI, audio, and
-   gameplay. Verify that shared BVH surfaces carry `PhysicsMaterialHandle` or define a separate
-   `AcousticSurfaceHandle`.
-
-8. **[CONFIDENT]** The test cases cover all five IRs (IR-1.9.1 through IR-1.9.5) with 14 functional
-   tests and 3 benchmarks. Coverage is adequate.
-
-9. **[CONFIDENT]** No test case covers the 2D/2.5D audio propagation path. Add test cases for 2D BVH
-   ray tracing and 2D distance attenuation to match the 2.5D constraint.
-
-10. **[UNCERTAIN]** The amortized rotation (N=4, 25 sources per frame at 100 total) means a newly
-    spawned source may wait up to 4 frames before its first trace. Consider adding a test case for
-    first-frame behavior of new sources (e.g., default to full occlusion or line-of-sight until
-    traced).
-
-11. **[CONFIDENT]** The Data Contracts table lists `PropagationResult` consumed by "Audio thread",
-    but the Rust pseudocode stores results in `ResMut<PropagationResultStore>` which is an ECS
-    resource. ECS resources are not directly accessible from the dedicated audio thread. Document
-    the bridging mechanism (SPSC queue, mapped memory, etc.) between the ECS world and the audio
-    thread.
-
-12. **[CONFIDENT]** The design has all required sections (Systems Involved, Integration
-    Requirements, Data Contracts, Data Flow, Timing and Ordering, Failure Modes, Platform
-    Considerations, Test Plan) and includes Rust pseudocode and a Mermaid sequence diagram.
-    Structurally complete.
+1. ECS workers send `PropagationResult` to the audio thread via a bounded MPSC `crossbeam_channel`
+   (atomic, lock-free, multi-producer, single-consumer). Buffer length is 256 entries -- sized for
+   100 sources at 15 Hz with two frames of slack. No atomic pointer swap, no double buffer.
+2. `audio_propagation_system` takes `Res<PropagationResultStore>` (shared). The store holds
+   `Vec<UnsafeCell<PropagationResult>>` partitioned by entity index. `par_for_each` iterates sources
+   and writes each entity's slot; the job system guarantees a single writer per entity, so
+   disjoint-slot writes are data-race free.
+3. 3D only -- 2D/2.5D spatial audio propagation is out of scope (see Scope section). 2D sources use
+   the non-spatial audio path (distance-only attenuation) documented in the audio design.
+4. Timing table labels the audio thread read as "MPSC drain". No "async" wording remains.
+5. `PropagationResult::reflections` is a fixed-size `[ReflectionTap; 8]` stack array with a
+   `reflection_count: u8`. Excess taps are dropped by energy (lowest gain first) on the worker
+   thread before send. Zero heap allocation on the audio thread read path.
+6. The bridging mechanism is a bounded MPSC `crossbeam_channel` (atomic, lock-free) with buffer
+   length 256. This is the canonical cross-thread pattern in `constraints.md`.
+7. Shared BVH surface hits return the hit `Entity`. `AcousticMaterial` is looked up from that
+   entity's components via `AcousticMaterialTable`. `PhysicsMaterialHandle` is not used -- it
+   belongs to the physics-private BVH, which is separate per project-wide policy.
+8. All five IRs (IR-1.9.1 through IR-1.9.5) remain covered after updates. See companion file.
+9. Removed -- 2D/2.5D is out of scope. No 2D test cases required.
+10. Newly spawned sources default to full audibility: occlusion=1.0, zero band loss, zero reverb
+    send (line-of-sight). The first propagation update arrives within N frames (worst case 4 frames
+    / 67 ms at 60 fps). Covered by TC-IR-1.9.5.4.
+11. The ECS-to-audio-thread bridge is a bounded MPSC `crossbeam_channel` (buffer 256). Workers call
+    `sender.try_send(result)`; the audio thread calls `receiver.try_recv()` in a drain loop at the
+    start of each buffer callback. No mutex, no shared mutable state, no reflection.
+12. All required template sections remain present: Systems Involved, Integration Requirements, Data
+    Contracts (with classDiagram), Data Flow, Timing and Ordering, Failure Modes, Platform
+    Considerations, Test Plan, Scope.

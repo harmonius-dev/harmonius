@@ -740,7 +740,7 @@ with no platform dependencies.
 ## Test Plan
 
 Comprehensive test cases are defined in the companion file
-[timelines-test-cases.md](timelines-test-cases.md).
+[timelines-test-cases.md](./timelines-test-cases.md).
 
 ### Summary
 

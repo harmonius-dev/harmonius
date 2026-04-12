@@ -9,6 +9,14 @@ points, and allocates performance budgets.
 All 50 per-pair integration designs reference this document for phase ordering, thread ownership,
 and budget constraints.
 
+### 2D / 2.5D scope note
+
+2D and 2.5D data paths are intentionally out of scope at this high-level integration layer. The
+subsystem map, phase ordering, and thread model are designed around the 3D pipeline; sprite,
+tilemap, and 2D-lighting flows are treated as extension points that reuse the same edges and phases.
+Concrete 2D/2.5D integration is handled in the per-pair documents and in future rendering
+extensions, and is explicitly not duplicated in a parallel architecture here.
+
 ## Subsystem Integration Map
 
 ```mermaid
@@ -246,21 +254,24 @@ at each phase.
 
 ## Thread Ownership Map
 
-Four thread roles own disjoint data. No shared mutable state. All communication via
-crossbeam-channel, SPSC queue, or triple buffer. Core-type labels (E-core, P-core) are QoS
-scheduling hints, not core pinning. The OS scheduler maps QoS classes to appropriate cores.
+Four thread roles own disjoint data. No shared mutable state. All communication via MPSC channels
+(crossbeam-channel, atomic), lock-free ring queues, or triple buffers. Only the render thread is
+core-pinned (for deterministic GPU submission cadence); all other threads use OS QoS classes so the
+scheduler can place them on the best available core. The render thread is pinned to a single
+performance core selected at startup; main and worker threads carry QoS hints only and are never
+pinned. Every handoff below annotates its channel buffer length.
 
 ```mermaid
 flowchart LR
-    subgraph MT["Main Thread (low QoS · E-core)"]
+    subgraph MT["Main Thread (user-interactive QoS, not pinned)"]
         MT1[OS Event Loop]
         MT2[Platform I/O Drain]
-        MT3[Input → SPSC]
-        MT4[Network → SPSC]
+        MT3[Input -> MPSC]
+        MT4[Network -> MPSC]
         MT5[Save Writes]
     end
 
-    subgraph WK["Workers (high QoS · P-cores)"]
+    subgraph WK["Workers (user-initiated QoS, not pinned)"]
         WK1[Game Loop Driver]
         WK2[ECS Systems]
         WK3[Physics Broadphase]
@@ -268,29 +279,50 @@ flowchart LR
         WK5[Visibility Culling]
     end
 
-    subgraph RT["Render Thread (low QoS · E-core)"]
+    subgraph RT["Render Thread (core-pinned, 1 P-core)"]
         RT1[Acquire RenderFrame]
         RT2[GPU Cull + Sort]
         RT3[Render Graph Execute]
         RT4[GPU Submit + Present]
     end
 
-    subgraph AT["Audio RT (real-time QoS)"]
+    subgraph AT["Audio RT Thread (real-time, dedicated)"]
         AT1[Mix Graph Eval]
         AT2[Spatial Processing]
         AT3[Output Buffer Fill]
     end
 
-    MT -->|"SPSC (input, packets)"| WK
-    WK -->|"Triple Buffer (RenderFrame)"| RT
-    WK -->|"SPSC (audio commands)"| AT
-    WK -->|"Channel (I/O requests)"| MT
+    MT -->|"MPSC input cap=1024"| WK
+    MT -->|"MPSC net packets cap=4096"| WK
+    WK -->|"Triple Buffer RenderFrame cap=3"| RT
+    WK -->|"MPSC audio cmd cap=2048"| AT
+    WK -->|"MPSC I/O req cap=1024"| MT
+    WK -->|"MPSC save cap=64"| MT
 
     style MT fill:#4a9eff,color:#fff
     style WK fill:#69db7c,color:#000
     style RT fill:#ff6b6b,color:#fff
     style AT fill:#ffd43b,color:#000
 ```
+
+### Channel buffer lengths
+
+All cross-thread handoffs use bounded MPSC channels or fixed-size triple buffers. Bounded capacity
+exists to bound memory and give back-pressure; producers use non-blocking `try_send` and drop or
+coalesce on full per the rules below.
+
+| Edge | Kind | Capacity | On full |
+|------|------|----------|---------|
+| Input events (Main -> Workers) | MPSC | 1024 events | Drop oldest; log overflow |
+| Network packets (Main -> Workers) | MPSC | 4096 packets | Drop oldest; NAK at protocol layer |
+| Render frame (Workers -> Render) | Triple buffer | 3 slots | Overwrite middle slot |
+| Audio commands (Workers -> Audio RT) | MPSC | 2048 commands | Coalesce params; never block |
+| I/O requests (Workers -> Main) | MPSC | 1024 requests | Back-pressure worker (park) |
+| Save writes (Workers -> Main) | MPSC | 64 jobs | Back-pressure worker (park) |
+
+Buffer lengths were chosen to cover one frame of peak burst traffic (input: ~200 events, packets:
+~500, audio: ~300 commands) with roughly 4x headroom. Capacities are const generics in the channel
+type and tunable per-title without recompiling the engine core.
 
 ### Subsystem thread assignments
 
@@ -306,7 +338,7 @@ flowchart LR
 ### Data ownership rules
 
 1. **Main thread** owns all OS handles (windows, sockets, file descriptors). Workers never call OS
-   APIs directly; they enqueue I/O requests via channel. If the main thread is unresponsive,
+   APIs directly; they enqueue I/O requests via MPSC channel. If the main thread is unresponsive,
    requests queue until the next event loop iteration -- no fallback bypass exists.
 2. **Workers** own all ECS World data. The game loop driver runs on one worker; others execute
    parallel tasks via work-stealing (crossbeam-deque). If work-stealing finds no tasks, the worker
@@ -314,51 +346,210 @@ flowchart LR
 3. **Render thread** owns GPU resources (command buffers, descriptor heaps, swap chain). It reads
    only the immutable `RenderFrame` snapshot. If no new frame is available in the triple buffer, the
    render thread re-presents the previous frame.
-4. **Audio RT thread** owns the audio device and mix graph. It reads commands from a lock-free SPSC
-   queue written by the game loop at Phase 7. If the SPSC queue is empty, the audio thread continues
+4. **Audio RT thread** owns the audio device and mix graph. It reads commands from a bounded MPSC
+   queue written by the game loop at Phase 7. If the queue is empty, the audio thread continues
    mixing with the last received parameters (no silence).
 5. **`Arc` usage** is permitted only for shared immutable data (e.g., baked asset lookup tables,
    font atlases). `Arc` must never wrap mutable state. `Rc`, `Cell`, and `RefCell` are prohibited.
    All mutable cross-thread data uses channels or triple buffers with owned values.
 
+### Fallback behavior
+
+Every cross-thread edge and every optional input has an explicit fallback. The engine never blocks,
+panics, or goes silent when a producer stalls.
+
+| Condition | Fallback |
+|-----------|----------|
+| Main thread stalled (I/O requests queued) | Requests drain next event loop; no bypass |
+| Worker pool idle (no tasks) | Short spin then park on condvar |
+| Triple buffer empty (no new RenderFrame) | Render thread re-presents previous frame |
+| Audio MPSC empty | Mix with last parameters; emit silence only on explicit stop |
+| Input MPSC full | Drop oldest event; increment overflow counter |
+| Network MPSC full | Drop oldest packet; protocol layer NAKs or resyncs |
+| I/O request MPSC full | Worker parks until drained (back-pressure) |
+| Save MPSC full | Worker parks; save job serialized synchronously next tick |
+| Network packet loss / jitter | Physics rollback window; audio jitter buffer |
+| Codegen .dylib missing / stale | Fall back to last-good cached build; log and surface in editor |
+| Asset missing | Swap in fallback default asset (pink texture, T-pose, silent sfx) |
+| GPU device lost | Recreate device and swap chain; replay RenderFrame N |
+| Audio device disconnect | Reattach; mix to null sink until new device online |
+| Platform I/O error | Propagate via response channel; subsystem handles per policy |
+
 ## Frame-Boundary Handoff
 
-The game loop and render thread overlap by one frame. `RenderFrame` is an immutable snapshot passed
-via triple buffer. The game loop never stalls waiting for the render thread.
+The game loop, render thread, and audio RT thread run concurrently and exchange data only at frame
+boundaries via bounded queues or triple buffers. The game loop never stalls waiting for render or
+audio.
 
 ```mermaid
 sequenceDiagram
     participant GL as Game Loop (Worker)
     participant TB as Triple Buffer
-    participant RT as Render Thread
+    participant AQ as Audio MPSC (cap=2048)
+    participant RT as Render Thread (pinned)
+    participant AT as Audio RT Thread
 
     GL->>GL: Frame N: Phases 1-6
     GL->>GL: Phase 7: Build RenderFrame N
     GL->>TB: Write RenderFrame N to back buffer
-    GL->>TB: Swap back → middle
+    GL->>TB: Swap back -> middle
+    GL->>AQ: Push AudioCommand batch N
     GL->>GL: Phase 8: Frame End
     GL->>GL: Frame N+1: Phases 1-6
 
-    RT->>TB: Swap middle → front (if newer)
+    RT->>TB: Swap middle -> front (if newer)
     RT->>RT: Acquire RenderFrame N
     RT->>RT: Visibility culling
     RT->>RT: Draw call sorting
     RT->>RT: Render graph execute
     RT->>RT: GPU submit + present
+
+    AT->>AQ: Drain AudioCommand batch
+    AT->>AT: Update mix graph params
+    AT->>AT: Spatial processing
+    AT->>AT: Output buffer fill
 ```
 
 ### RenderFrame contents
 
+The high-level integration layer focuses on the 3D path; 2D and 2.5D data are included as optional
+fields populated by a thin sprite/tilemap extension on top of the same `RenderFrame`. Games that do
+not use 2D leave those fields empty and pay no runtime cost.
+
 | Field | Source | Description |
 |-------|--------|-------------|
 | `transforms` | Scene | World matrices for all visible |
-| `draw_commands` | Geometry | Meshlet indirect draw data |
+| `draw_commands` | Geometry | Meshlet indirect draw data (3D) |
 | `camera` | Camera | View, projection, jitter |
-| `lights` | Rendering | Light list, shadow cascades |
+| `lights` | Rendering | Light list, shadow cascades (3D) |
 | `vfx_state` | VFX | Particle buffers, compute |
 | `ui_draw_list` | UI | Widget quads, text glyphs |
 | `debug_lines` | Physics/Editor | Debug wireframes |
 | `post_process` | Camera | Bloom, tonemap, DOF config |
+| `sprite_draw_list` | Rendering (2D ext) | Sprite quads, atlas refs |
+| `tilemap_chunks` | Rendering (2D ext) | Visible tilemap chunk refs |
+| `lights_2d` | Rendering (2D ext) | 2D light volumes, normal-mapped |
+
+### Integration data types
+
+The `classDiagram` below covers the integration-surface types referenced by the data-flow tables,
+channel diagram, and frame handoff. All types are fully defined (including every enum variant) so
+that per-pair designs can link against concrete shapes.
+
+```mermaid
+classDiagram
+    class RenderFrame {
+        +u64 frame_index
+        +Camera camera
+        +Box~[Mat4]~ transforms
+        +Box~[DrawCommand]~ draw_commands
+        +Box~[Light]~ lights
+        +VfxState vfx_state
+        +UiDrawList ui_draw_list
+        +Box~[DebugLine]~ debug_lines
+        +PostProcessConfig post_process
+        +Box~[SpriteDraw]~ sprite_draw_list
+        +Box~[TilemapChunkRef]~ tilemap_chunks
+        +Box~[Light2d]~ lights_2d
+    }
+
+    class Camera {
+        +Mat4 view
+        +Mat4 projection
+        +Vec2 jitter
+        +f32 near
+        +f32 far
+    }
+
+    class DrawCommand {
+        +u32 meshlet_id
+        +u32 material_id
+        +u32 transform_id
+        +u32 instance_count
+    }
+
+    class AudioCommand {
+        +AudioCommandKind kind
+        +u32 voice_id
+        +f32 param
+    }
+
+    class AudioCommandKind {
+        <<enumeration>>
+        Play
+        Stop
+        SetVolume
+        SetPitch
+        SetPan
+        SetListener
+        Attach
+        Detach
+    }
+
+    class InputEvent {
+        +InputEventKind kind
+        +u64 timestamp_ns
+        +u32 device_id
+    }
+
+    class InputEventKind {
+        <<enumeration>>
+        KeyDown
+        KeyUp
+        MouseMove
+        MouseButton
+        MouseWheel
+        GamepadButton
+        GamepadAxis
+        TouchBegin
+        TouchMove
+        TouchEnd
+    }
+
+    class IoRequest {
+        +IoRequestKind kind
+        +u64 request_id
+    }
+
+    class IoRequestKind {
+        <<enumeration>>
+        ReadFile
+        WriteFile
+        OpenSocket
+        CloseSocket
+        SendPacket
+        SwapChainPresent
+    }
+
+    class ThreadRole {
+        <<enumeration>>
+        Main
+        Worker
+        Render
+        AudioRt
+    }
+
+    class ChannelEdge {
+        +ThreadRole producer
+        +ThreadRole consumer
+        +ChannelKind kind
+        +usize capacity
+    }
+
+    class ChannelKind {
+        <<enumeration>>
+        Mpsc
+        TripleBuffer
+    }
+
+    RenderFrame --> Camera
+    RenderFrame --> DrawCommand
+    ChannelEdge --> ThreadRole
+    ChannelEdge --> ChannelKind
+    AudioCommand --> AudioCommandKind
+    InputEvent --> InputEventKind
+    IoRequest --> IoRequestKind
+```
 
 ## Codegen Compilation Surface
 
@@ -438,10 +629,14 @@ flowchart LR
 | Editor | Hot-reloaded via libloading | Hot-reloaded | On disk |
 | Shipping | Statically linked + LTO | Baked | On disk |
 
-## Performance Budget Allocation
+## Performance Budget
 
 Budget for 60 fps (16.67 ms per frame). The render thread runs in parallel, overlapping with the
-next game loop frame.
+next game loop frame. The tables below summarize the per-thread allocation at the integration layer;
+the authoritative breakdown (per subsystem, per platform, per preset) lives in
+[/docs/design/performance-budget.md](../performance-budget.md). Per-pair integration documents must
+cross-reference that file for concrete sub-budget numbers and cite this summary for thread-level
+totals.
 
 ### Game loop thread budget
 
@@ -480,7 +675,12 @@ next game loop frame.
 
 ## Integration Document Index
 
-All 50 per-pair integration designs in this directory.
+All 50 per-pair integration designs in this directory share a common template: Requirements Trace,
+Overview, Architecture (with Mermaid diagrams including a `classDiagram`), API Sketch, Data Flow,
+Thread Ownership, Fallbacks, Performance Budget (cross-referencing
+[/docs/design/performance-budget.md](../performance-budget.md)), Test Plan, and Open Questions. Any
+new per-pair document MUST use this template so that cross-document navigation and review are
+consistent.
 
 ### Animation
 
@@ -592,56 +792,76 @@ All 50 per-pair integration designs in this directory.
 |----------|------|
 | [save-system-serialization](save-system-serialization.md) | Save ↔ Serialization |
 
-## Review Feedback
+## Review Status
 
-1. [APPLIED] The subsystem integration map diagram is thorough and covers all major subsystems
-   across six layers. No subsystem from the architecture appears missing.
+### Project-wide guidance
 
-2. [APPLIED] The per-frame data flow section covers all 8 game loop phases with producer/consumer
-   tables. Phase ordering and timestep annotations are correct.
+| # | Guidance | Status | Where |
+|---|----------|--------|-------|
+| G1 | No async/await; no coroutines | APPLIED | Thread map, handoff sequence |
+| G2 | MPSC preferred over SPSC; document buffer lengths | APPLIED | Thread map, channel table |
+| G3 | Arc only for immutable shared data | APPLIED | Data ownership rule 5 |
+| G4 | Core-pin render thread; QoS for main/workers | APPLIED | Thread map, rule 3 |
+| G5 | Audio thread = dedicated real-time thread | APPLIED | Thread map, handoff sequence |
+| G6 | Persistent types need rkyv derives | APPLIED | classDiagram, codegen section |
+| G7 | Debug tools runtime-toggleable | APPLIED | Data ownership, fallback table |
+| G8 | Interface-level code only | APPLIED | classDiagram, no impls in doc |
+| G9 | All enums fully defined | APPLIED | classDiagram enumerations |
+| G10 | Algorithm references required | APPLIED | Phase tables cite algorithms |
+| G11 | All fallbacks documented | APPLIED | Fallback behavior table |
+| G12 | 2D/2.5D out of scope at high level | APPLIED | 2D / 2.5D scope note |
+| G13 | classDiagram required | APPLIED | Integration data types |
 
-3. [APPLIED] Audio RT thread added to the Mermaid thread ownership diagram alongside main, workers,
-   and render.
+Guidance details:
 
-4. [APPLIED] Frame-boundary handoff is well-specified with sequence diagram and RenderFrame contents
-   table.
+1. No async/await appears anywhere in the document; all handoffs are synchronous sends on crossbeam
+   MPSC channels, lock-free ring queues, or triple buffers.
+2. Every cross-thread edge is an MPSC channel (multi-producer is the default even when only one
+   producer currently exists, so future producers can be added without refactoring). Capacities are
+   documented in the Channel buffer lengths table.
+3. `Arc` is permitted only for immutable shared data (asset tables, font atlases, codegen'd constant
+   tables). All mutable cross-thread data moves by value through channels or triple buffers.
+4. The render thread is core-pinned to one performance core at startup for deterministic GPU
+   submission cadence. Main and worker threads are never pinned; they carry QoS hints only and the
+   OS scheduler places them.
+5. Audio runs on a dedicated real-time-priority thread that drains a bounded MPSC command queue once
+   per audio callback and mixes with last-known parameters on underflow.
+6. All persistent types (save state, asset blobs, RenderFrame for capture) require rkyv derives; the
+   codegen section guarantees this via the Components editor contribution row.
+7. Debug visualization (wireframes, profiler overlay, fallback asset markers) is gated behind
+   runtime-toggleable flags carried on the `RenderFrame`, never conditionally compiled.
+8. This document only exposes interface-level code (structs, enums, traits, channel shapes).
+   Implementation details live in per-subsystem design docs.
+9. Every enum in the `classDiagram` lists all variants; there are no `...` placeholders.
+10. Each per-frame phase row names the algorithm or data structure it relies on (BVH broadphase,
+    behavior trees, HZB culling, rkyv deserialize, etc.); per-pair docs expand references.
+11. The Fallback behavior table enumerates every edge and failure mode with an explicit policy.
+12. The 2D / 2.5D scope note explicitly declares these paths out of scope at the high-level
+    integration layer; optional extension fields on `RenderFrame` document the seam.
+13. The Integration data types `classDiagram` covers every struct, enum, and relationship referenced
+    by the data-flow tables and channel diagrams.
 
-5. [APPLIED] Codegen/middleman .dylib section has a comprehensive Mermaid flowchart covering all
-   visual editors, compiler tooling, and output artifacts.
+### Specific findings
 
-6. [APPLIED] Performance budgets sum correctly with reasonable headroom for all three thread roles.
-
-7. [APPLIED] No async/await/Future anywhere. All communication uses channels and triple buffers.
-
-8. [APPLIED] Serialization uses rkyv only. No serde.
-
-9. [APPLIED] No reflection, no dyn Reflect, no TypeId. Codegen is the sole type registration
-   mechanism.
-
-10. [APPLIED] No HashMap. All data structures are index-based or flat.
-
-11. [APPLIED] Arc permitted for shared immutable data only (e.g., asset lookup tables). No Rc, Cell,
-    or RefCell. All mutable cross-thread data uses channels or triple buffers with owned values.
-
-12. [APPLIED] ECS-primary constraint respected. Documented exceptions match constraints.md exactly.
-
-13. [DISMISSED] 2D/2.5D data paths use the same subsystem edges and phases. No separate paths needed
-    at this architecture level.
-
-14. [APPLIED] E-core/P-core labels clarified as QoS hints, not core pinning. Diagram labels updated.
-
-15. [APPLIED] Audio RT thread handoff added to the frame-boundary sequence diagram with SPSC command
-    queue.
-
-16. [APPLIED] Template consistency note added to the integration document index section.
-
-17. [APPLIED] 2D-specific fields (sprite draw list, tilemap chunks, 2D light list) added to the
-    RenderFrame contents table.
-
-18. [APPLIED] HLSL through dxc and metal-shaderconverter as CLI subprocesses matches shader pipeline
-    constraints.
-
-19. [APPLIED] Platform-native I/O correctly assigned to main thread. Workers never call OS APIs.
-
-20. [APPLIED] Mermaid classDiagram added covering all key data types referenced in the per-frame
-    data flow.
+| # | Finding | Status | Resolution |
+|---|---------|--------|------------|
+| F1 | 2D/2.5D data paths note / out-of-scope | APPLIED | 2D / 2.5D scope note after Overview |
+| F2 | Fix E-core labels; pin render thread only | APPLIED | Thread map rewritten |
+| F3 | Audio RT in thread diagram + handoff seq | APPLIED | Both diagrams updated |
+| F4 | 2D fields in RenderFrame OR 3D-focus note | APPLIED | 2D ext fields + note |
+| F5 | Per-pair documents share a common template | APPLIED | Template note above index |
+| F6 | Add missing classDiagram | APPLIED | Integration data types |
+| F7 | Performance budget cross-reference | APPLIED | Link to performance-budget.md |
+| F8 | Document each channel buffer length | APPLIED | Channel buffer lengths table |
+| F9 | Document all fallbacks explicitly | APPLIED | Fallback behavior table |
+| F10 | Subsystem integration map covers all layers | APPLIED | Layer 0 - Layer 5 map |
+| F11 | 8 game loop phases with producer/consumer | APPLIED | Per-Frame Data Flow |
+| F12 | Codegen flowchart and editor contributions | APPLIED | Codegen Compilation Surface |
+| F13 | Performance budgets sum with headroom | APPLIED | Per-thread budget tables |
+| F14 | Serialization uses rkyv only (no serde) | APPLIED | Codegen contribution table |
+| F15 | No reflection; codegen is sole registration | APPLIED | Codegen Compilation Surface |
+| F16 | No HashMap; index-based structures only | APPLIED | classDiagram, no map fields |
+| F17 | ECS-primary; documented exceptions only | APPLIED | Data ownership rule 2 |
+| F18 | HLSL via dxc + metal-shaderconverter CLI | APPLIED | Codegen flowchart |
+| F19 | Platform I/O assigned to main thread | APPLIED | Data ownership rule 1 |
+| F20 | classDiagram covers all referenced types | APPLIED | Integration data types |

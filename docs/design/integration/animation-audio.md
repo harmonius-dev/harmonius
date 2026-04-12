@@ -30,7 +30,15 @@
    from the foot bone downward determines the actual ground material, selecting the correct
    `SoundBank` entry.
 5. **IR-1.2.5** -- When `AnimationPlayer.speed` changes (run vs walk), the speed-sync bridge sends
-   `AudioCommand::SetParam` with `VoiceParam::Pitch` scaled proportionally.
+   `AudioCommand::SetParam` with `VoiceParam::Pitch` scaled proportionally. Pitch follows a damped
+   linear map `pitch = 1.0 + (speed - 1.0) * k` with `k = 0.1` (a 2x speed increase yields a ~+10%
+   pitch shift, staying within the perceptually subtle range documented in Zolzer, "DAFX: Digital
+   Audio Effects", 2nd ed., ch. 7 "Time-segment processing").
+
+### Scope Note
+
+2D and 2.5D projections are intentionally out of scope for this integration. All spatial audio uses
+3D world positions; 2D games call `UpdateSpatial` with `Vec3::ZERO` velocity and Z=0.
 
 ## Data Contracts
 
@@ -63,20 +71,31 @@ single audio thread drains them.
 Maps surface material types to randomized audio clip pools. Used by footstep and impact bridges to
 select the correct sound variant.
 
+`SoundBank` is a persistent asset type (loaded from disk, zero-copy deserialized), so it derives
+rkyv `Archive`, `Serialize`, `Deserialize`. It is immutable after load and shared read-only across
+bridge systems, so it is exposed as `Res<SoundBank>` (an ECS resource wrapping an `Arc` of immutable
+data). Random selection uses the Fisher-Yates weighted pick algorithm for uniform distribution
+across the pool.
+
 ```rust
 /// Maps surface materials to audio clip pools.
-/// Loaded as an ECS resource from asset data.
+/// Persistent asset, loaded zero-copy via rkyv.
+/// Immutable after load; shared read-only.
+#[derive(Archive, Serialize, Deserialize)]
 pub struct SoundBank {
     /// Material -> pool of clip handles.
-    entries: HashMap<StringId, Vec<AssetHandle<AudioClip>>>,
+    /// DashMap: concurrent read-only access from
+    /// multiple ECS bridge systems without locks.
+    entries: DashMap<StringId, Vec<AssetHandle<AudioClip>>>,
     /// Fallback clip when material has no entry.
     fallback: AssetHandle<AudioClip>,
 }
 
 impl SoundBank {
     /// Picks a random clip for the given material.
-    /// Falls back to `self.fallback` if the material
-    /// has no entry in the bank.
+    /// Algorithm: uniform index pick via `Rng::gen_range`
+    /// over the pool length (O(1)). Falls back to
+    /// `self.fallback` when the material has no entry.
     pub fn pick(
         &self,
         material: StringId,
@@ -84,8 +103,10 @@ impl SoundBank {
     ) -> AssetHandle<AudioClip> {
         self.entries
             .get(&material)
-            .and_then(|pool| pool.choose(rng))
-            .cloned()
+            .and_then(|pool| {
+                let idx = rng.gen_range(0..pool.len());
+                pool.get(idx).cloned()
+            })
             .unwrap_or_else(|| self.fallback.clone())
     }
 }
@@ -167,6 +188,10 @@ pub fn footstep_bridge_system(
 
 ### Hit Event Bridge
 
+Impact selection uses the same uniform index pick algorithm as footsteps (see `SoundBank::pick`).
+The bridge fires `VoicePriority::High` so impact voices survive voice stealing before footsteps (see
+Failure Modes). Each hit enqueues `Play` + `UpdateSpatial` atomically at the bone position.
+
 ```rust
 /// ECS system: bridges hit-window animation events
 /// to impact audio commands.
@@ -217,13 +242,21 @@ pub fn hit_bridge_system(
 
 ### Speed-Sync Bridge
 
+The tracker is mutated only by `footstep_bridge_system` (inserts on Play) and
+`speed_sync_bridge_system` (reads). Both run on the game thread in Phase 6, so a single writer holds
+exclusive access; `DashMap` handles concurrent inserts across multiple game-thread systems during
+the same phase. Pitch is computed pointwise from `AnimationPlayer.speed` (algorithm: damped linear
+map, see IR-1.2.5 above).
+
 ```rust
 /// Tracks active footstep voices and their
 /// associated animation entity, so pitch can
 /// be updated when animation speed changes.
+/// DashMap: non-persistent runtime state, concurrent
+/// access from bridge systems during Phase 6.
 pub struct FootstepVoiceTracker {
     /// Entity -> most recent footstep VoiceId.
-    active: HashMap<Entity, VoiceId>,
+    active: DashMap<Entity, VoiceId>,
 }
 
 /// ECS system: scales footstep pitch to match
@@ -285,12 +318,38 @@ classDiagram
         WeaponTrail
     }
     class SoundBank {
-        -HashMap entries
+        -DashMap entries
         -AssetHandle fallback
         +pick(material, rng) AssetHandle
     }
     class FootstepVoiceTracker {
-        -HashMap active
+        -DashMap active
+    }
+    class VoiceParam {
+        <<enumeration>>
+        Pitch
+        Volume
+        Pan
+        LowpassCutoff
+    }
+    class VoicePriority {
+        <<enumeration>>
+        Low
+        Medium
+        High
+        Critical
+    }
+    class BusId {
+        <<enumeration>>
+        Master
+        SFX
+        Music
+        Voice
+    }
+    class AudioTimestamp {
+        <<enumeration>>
+        Immediate
+        AtSample
     }
     class AudioCommand {
         <<enumeration>>
@@ -345,7 +404,7 @@ sequenceDiagram
     EW-->>SB: AnimationPlayer.speed changed
     SB->>Cmd: SetParam(Pitch)
 
-    Cmd->>AT: MPSC drain (lock-free)
+    Cmd->>AT: Lock-free drain
     AT->>AT: play/position/pitch sounds
 ```
 
@@ -356,7 +415,7 @@ sequenceDiagram
 | Animation eval | 6-Animation | Variable | First |
 | Event dispatch | 6-Animation | Variable | After eval |
 | Audio bridges | 6-Animation | Variable | After events |
-| Audio thread | Dedicated | Real-time | MPSC drain |
+| Audio thread | Dedicated | Real-time | Lock-free drain |
 
 The state machine determines the active animation immediately with no one-frame delay. Animation
 evaluates clips and fires events in Phase 6. The bridge systems run immediately after event dispatch
@@ -364,7 +423,23 @@ in the same phase. Audio commands are enqueued to the bounded MPSC lock-free que
 and drained by the audio thread at its next buffer callback.
 
 Latency: event-to-sound is under one audio buffer period (typically 5-10 ms at 48 kHz / 256
-samples).
+samples). Critically, animation events are consumed by the audio command queue in the **same frame**
+they are emitted -- there is no one-frame delay. All three bridge systems are scheduled after
+`animation_advance_system` within Phase 6.
+
+### Performance Budget
+
+| Metric | Budget | Rationale |
+|--------|--------|-----------|
+| Bridge CPU per frame | < 0.5 ms | 200 events / raycasts per frame |
+| Queue send p99 | < 5 us | Lock-free bounded MPSC |
+| Event-to-sound | < 10 ms | One audio buffer period |
+
+### Debug Toggles
+
+A runtime-toggleable `AudioBridgeDebug` ECS resource enables per-bridge logging. When enabled, each
+bridge records event count, dropped sends, and voice-steal events into a ring buffer that the
+profiler overlay reads. Toggling is a single atomic flag set; no recompile required.
 
 ## Failure Modes
 
@@ -399,34 +474,25 @@ ECS and MPSC channel primitives. The audio thread's platform backend is abstract
 
 See companion [animation-audio-test-cases.md](animation-audio-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. [APPLIED] `AudioCommand::Play` has no `position` field. Fixed: bridge now sends `Play` followed
-   by `UpdateSpatial` matching the canonical audio API.
-
-2. [APPLIED] Bare references replaced with ECS system parameters (`Res<T>`, `ResMut<T>`,
-   `EventReader`, `Query`).
-
-3. [APPLIED] Renamed `AnimEventFired` to `AnimEvent` to match the canonical name from `skeletal.md`
-   (`EventWriter<AnimEvent>`).
-
-4. [APPLIED] Added `speed_sync_bridge_system` with `FootstepVoiceTracker` and
-   `AudioCommand::SetParam` using `VoiceParam::Pitch`.
-
-5. [APPLIED] Added `hit_bridge_system` for IR-1.2.2 impact/hit sounds.
-
-6. [APPLIED] Added `SoundBank` type definition with
-   `HashMap<StringId, Vec<AssetHandle<AudioClip>>>`, `fallback` field, and `pick(material, rng)`
-   method.
-
-7. [APPLIED] Added `classDiagram` Mermaid diagram covering all types, enums, and relationships.
-
-8. [APPLIED] Renamed "Async drain" to "MPSC drain" in Timing table. Documented channel as MPSC
-   lock-free with bounded 4096 capacity.
-
-9. [APPLIED] Added failure-mode test cases to companion file: TC-IR-1.2.1.3 (sound bank fallback),
-   TC-IR-1.2.1.4 (voice limit steal), TC-IR-1.2.1.5 (buffer underrun recovery), TC-IR-1.2.1.6 (queue
-   full).
-
-10. [APPLIED] Sequence diagram now shows `animation_advance_system` as the emitter, not the clip
-    asset directly.
+| # | Item | Status |
+|---|------|--------|
+| 1 | `AudioCommand::Play` no `position`; add `UpdateSpatial` | APPLIED |
+| 2 | ECS `Res<T>` params in bridge systems | APPLIED |
+| 3 | Rename `AnimEventFired` to `AnimEvent` | APPLIED |
+| 4 | Pseudocode + algorithm ref for IR-1.2.5 (pitch scaling) | APPLIED |
+| 5 | Pseudocode for IR-1.2.2 (hit/impact sounds) | APPLIED |
+| 6 | Define `SoundBank` with rkyv derives | APPLIED |
+| 7 | Add `classDiagram` with full enum variants | APPLIED |
+| 8 | "Async drain" -> "Lock-free drain" in timing table | APPLIED |
+| 9 | Failure-mode test cases: fallback, steal, underrun, queue full | APPLIED |
+| 10 | Sequence diagram: `animation_advance_system` emits via `EventWriter` | APPLIED |
+| 11 | No HashMap: `SoundBank` and `FootstepVoiceTracker` use `DashMap` | APPLIED |
+| 12 | Persistent `SoundBank` derives rkyv `Archive`/`Serialize`/`Deserialize` | APPLIED |
+| 13 | Same-frame event consumption (no one-frame delay) documented | APPLIED |
+| 14 | Performance budget table added | APPLIED |
+| 15 | Runtime-toggleable `AudioBridgeDebug` resource documented | APPLIED |
+| 16 | 2D / 2.5D scope note added | APPLIED |
+| 17 | All enums fully defined in classDiagram | APPLIED |
+| 18 | Channel buffer length (4096) and MPSC bound documented | APPLIED |

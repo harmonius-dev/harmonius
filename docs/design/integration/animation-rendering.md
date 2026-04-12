@@ -406,62 +406,62 @@ LOD tier transitions. See the companion file for the full matrix.
 
 None at this time. All review items have been resolved.
 
-## Review Feedback
+## Review Status
 
-1. [APPLIED] `Handle<GpuBuffer>` is a generational index into a typed arena -- not `Arc`. Added
-   Handle Semantics subsection documenting the generational index pattern.
+| # | Item | Status |
+|---|------|--------|
+| 1 | `Handle<GpuBuffer>` generational index, not `Arc` | APPLIED |
+| 2 | 2D/2.5D animation out of scope | DISMISSED |
+| 3 | `classDiagram` covering all types | APPLIED |
+| 4 | Requirements Trace, Overview, Arch, API, Open Questions | APPLIED |
+| 5 | `SkinningMode` enum defined inline | APPLIED |
+| 6 | Unified `AnimationLodTier` naming | APPLIED |
+| 7 | rkyv note for persistent vs transient types | APPLIED |
+| 8 | GPU upload ownership clarified (worker stage, RT dispatch) | APPLIED |
+| 9 | `GpuArenaBuffer` growth strategy documented | APPLIED |
+| 10 | Instanced skinning grouping uses sorted `Vec`, no `HashMap` | APPLIED |
+| 11 | Compute dispatch barriers between passes | APPLIED |
+| 12 | `RenderFrame` producer/consumer direction | APPLIED |
+| 13 | Platform Considerations expanded (MTLSharedEvent, DS, group) | APPLIED |
+| 14 | Failure mode test cases added | APPLIED |
+| 15 | LOD tier transition benchmark added for IR-1.4.3 | APPLIED |
+| 16 | Triple buffer mechanism specified precisely | APPLIED |
+| 17 | Algorithm references (LBS, DQS, VAT, morph) | APPLIED |
 
-2. [DISMISSED] 2D/2.5D animation support is out of scope for this integration. The 2D rendering
-   pipeline handles sprite animation separately; skeletal skinning is a 3D concern. Per user
-   decision: 2D/2.5D does not need to be addressed here.
-
-3. [APPLIED] Added `classDiagram` in Architecture section covering all types: `SkinningMode`,
-   `AnimationLodTier`, `BlendDescriptor`, `MorphTargets`, `BonePaletteGpu`, `SkinnedMeshProxy`,
-   `SkinningDispatch`, `GpuArenaBuffer`, `GpuSkinner`, `AnimationRenderBridge`, `TripleBuffer`,
-   `RenderFrame`.
-
-4. [APPLIED] Added Requirements Trace, Overview, Architecture, API Design, and Open Questions
-   sections.
-
-5. [APPLIED] `SkinningMode` enum defined in API Design with `Lbs` and `Dqs` variants.
-
-6. [APPLIED] Unified naming: `AnimationLodTier` used everywhere (was `LodTier` in struct,
-   `AnimationLodTier` in table). `SkinnedMeshProxy.lod_tier` now typed as `AnimationLodTier`.
-
-7. [APPLIED] Added Serialization subsection: all types are transient per-frame GPU-upload structs,
-   not rkyv-archived. Asset data uses rkyv in the content pipeline.
-
-8. [APPLIED] Clarified: workers stage data into CPU-side buffers during Phase 6. The render thread
-   performs actual GPU upload and compute dispatch after reading `RenderFrame` from the triple
-   buffer.
-
-9. [APPLIED] `GpuArenaBuffer` is fixed-capacity, pre-allocated at startup. No runtime growth.
-   Overflow triggers LOD demotion fallback.
-
-10. [APPLIED] Instanced skinning grouping uses a sorted `Vec` keyed by `(SkeletonId, ClipSetId)` --
-    no `HashMap` on the hot path.
-
-11. [APPLIED] Added Compute Dispatch Synchronization subsection documenting barrier placement
-    between morph accumulation and skinning dispatches, with per-backend barrier APIs.
-
-12. [APPLIED] Fixed `RenderFrame` producer/consumer: rendering defines and owns `RenderFrame`,
-    animation contributes skinning data into it during Phase 7 snapshot. Data Contracts table
-    updated.
-
-13. [APPLIED] Platform Considerations expanded with `MTLSharedEvent` for Metal GPU completion
-    polling, DirectStorage for Windows GPU asset upload, and per-backend compute dispatch group size
-    tuning.
-
-14. [APPLIED] Failure modes table expanded. Companion test cases file should be updated to cover all
-    failure modes (arena full, morph overflow, LOD invalid, GPU timeout, no morph targets, HalfRate
-    stale).
-
-15. [APPLIED] LOD tier transition benchmark gap noted. Companion test cases file should add
-    benchmarks for LOD tier switching cost and HalfRate skip overhead.
-
-16. [APPLIED] Triple Buffer Mechanism section added with explicit documentation of the three-slot
-    ring, atomic index, writer/reader ownership, and no-blocking guarantees. References the
-    game-loop design.
-
-17. [APPLIED] Algorithm references table added: LBS, DQS (Kavan et al., I3D 2007), VAT (GDC 2018),
-    morph accumulation (GPU Gems 3 Ch. 4).
+1. `Handle<GpuBuffer>` is a generational index into a typed arena -- not `Arc`. See the Handle
+   Semantics subsection in API Design.
+2. 2D/2.5D animation support is intentionally out of scope. The 2D rendering pipeline handles sprite
+   animation separately; skeletal skinning is a 3D concern.
+3. Added `classDiagram` in Architecture covering `SkinningMode`, `AnimationLodTier`,
+   `BlendDescriptor`, `MorphTargets`, `BonePaletteGpu`, `SkinnedMeshProxy`, `SkinningDispatch`,
+   `GpuArenaBuffer`, `GpuSkinner`, `AnimationRenderBridge`, `TripleBuffer`, `RenderFrame`.
+4. Added Requirements Trace, Overview, Architecture, API Design, and Open Questions sections per the
+   design document template.
+5. `SkinningMode` enum is defined in API Design with `Lbs` and `Dqs` variants.
+6. `AnimationLodTier` is used in both the struct and the trace table. Earlier `LodTier` usage was
+   removed.
+7. Serialization subsection notes all integration types are transient GPU-upload structs, not
+   rkyv-archived. Asset data (skeletons, clip libraries) uses rkyv in the content pipeline.
+8. Workers stage animation data into CPU-side buffers during Phase 6. The render thread performs the
+   GPU upload and compute dispatch after reading `RenderFrame` from the triple buffer via the MPSC
+   channel. Channel buffer length = 3 (matches triple buffer slot count).
+9. `GpuArenaBuffer` is fixed-capacity and pre-allocated at startup. No runtime growth. Overflow
+   triggers LOD demotion to `ReducedBones` or `Vat`.
+10. Instanced skinning grouping uses a sorted `Vec<(SkeletonId, ClipSetId, EntityId)>` keyed by
+    `(SkeletonId, ClipSetId)` -- no `HashMap` on the hot path.
+11. Compute Dispatch Synchronization subsection documents UAV barriers between morph accumulation
+    and skinning passes, with per-backend barrier APIs (D3D12, Metal, Vulkan).
+12. `RenderFrame` is defined and owned by the rendering system. Animation contributes skinning data
+    into it during Phase 7 snapshot via `AnimationRenderBridge`. The Data Flow table reflects the
+    corrected direction.
+13. Platform Considerations expanded with `MTLSharedEvent` for Metal GPU completion polling,
+    DirectStorage for Windows GPU asset upload, and per-backend compute dispatch group sizing.
+14. Failure modes table expanded. Companion test cases file adds failure mode tests for arena full,
+    morph overflow, invalid LOD tier, GPU timeout, missing morph targets, and HalfRate staleness.
+15. Companion test cases file adds an LOD tier transition benchmark covering switching cost and
+    HalfRate skip overhead, satisfying the IR-1.4.3 benchmark gap.
+16. Triple Buffer Mechanism section documents the three-slot ring, atomic "latest" index,
+    writer/reader ownership discipline, and no-blocking guarantees. References the game-loop design
+    for the shared implementation.
+17. Algorithm References table added covering LBS (standard linear blend skinning), DQS (Kavan et
+    al., I3D 2007), VAT (GDC 2018, Epic Games), and morph accumulation (GPU Gems 3, Ch. 4).

@@ -755,7 +755,7 @@ where global allocator pressure is more acute.
 ## Test Plan
 
 Full test cases are in the companion file
-[directed-graphs-test-cases.md](directed-graphs-test-cases.md).
+[directed-graphs-test-cases.md](./directed-graphs-test-cases.md).
 
 ### Summary by Category
 

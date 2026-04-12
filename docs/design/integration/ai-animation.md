@@ -251,95 +251,32 @@ determines which animation to play immediately in the same frame as the AI trigg
 None -- identical across all platforms. Both AI and animation systems are pure CPU ECS logic with no
 platform-specific code paths.
 
+**Dimensionality:** 3D only; 2D/2.5D out of scope for this integration.
+
 ## Test Plan
 
 See companion [ai-animation-test-cases.md](ai-animation-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. **[APPLIED]** The `AnimationQuery` struct here uses `active_state: StateNodeId` and
-   `normalized_time`, but the animation state-machine design (`state-machine.md` line 2619) defines
-   it with `current_state: StateId`, `state_elapsed`, `active_montage: Option<MontageId>`, and
-   `root_motion_delta: Vec3`. The integration doc must match the upstream definition exactly.
-   **Fix:** Replaced the data struct with the upstream static query helper pattern from
-   `state-machine.md` line 1697, exposing `current_state()`, `remaining_time()`, `is_in_state()`,
-   `is_transitioning()`, `root_motion_delta()`, and `montage_notify_fired()` methods.
-
-2. **[APPLIED]** The data contract table lists `ParameterMap` as the shared type, but the Rust
-   pseudocode defines a separate `AnimationParams` struct with different fields (`speed`,
-   `direction`, `triggers`). The upstream animation design (`state-machine.md` line 2549) uses
-   `AnimationParams` as the component name with a richer field set (including `is_grounded`,
-   `is_crouching`, `is_jumping`, `is_falling`, `aim_pitch`, `aim_yaw`). The table should say
-   `AnimationParams`, not `ParameterMap`, and the pseudocode should match the upstream struct.
-   **Fix:** Renamed table entry to `AnimationParams`. Updated pseudocode to match upstream with all
-   fields. Updated sequence diagram participant and messages. Updated failure mode table references.
-
-3. **[APPLIED]** The `AnimationParams` pseudocode uses `SmallVec<[StringId; 4]>` for triggers, but
-   the upstream animation design uses the same type. However, `StringId` is not defined anywhere in
-   the animation or AI designs -- the animation design uses `FixedString` for its string types.
-   Clarify whether `StringId` is an alias for `FixedString` or a distinct type, and ensure
-   consistency. **Fix:** Added note explaining `StringId` (hashed runtime identifier) vs
-   `FixedString` (inline fixed-capacity string for asset defs). Both defined in `core-runtime`.
-   Triggers use `StringId` consistent with upstream `AnimationParams`.
-
-4. **[APPLIED]** The data contract table lists `Blackboard` as consumed by Animation, but the design
-   body never describes how or why the animation system reads the blackboard. The data flow diagram
-   and Timing section only show AI reading the blackboard. Either remove `Blackboard` from the
-   contracts table or document the animation system's use of it. **Fix:** Removed `Blackboard` from
-   the data contracts table. Added note clarifying that AI reads the blackboard for its own
-   decisions and bridges results to `AnimationParams`. Animation never reads the blackboard
-   directly. `Blackboard` remains in class diagram to show the bridging relationship.
-
-5. **[APPLIED]** The design CLAUDE.md requires every design to have a Mermaid `classDiagram`
-   covering all types, structs, enums, traits, and relationships. This document has no
-   `classDiagram` -- only a `sequenceDiagram`. Add a class diagram showing `AnimationParams`,
-   `AnimationQuery`, `ActiveMontage`, `Blackboard`, and their relationships. **Fix:** Added class
-   diagram section with `AnimationParams`, `AnimationQuery`, `ActiveMontage`, `MontageInstance`,
-   `AnimationStateMachine`, and `Blackboard` including all fields and relationships.
-
-6. **[APPLIED]** The upstream `Blackboard` design (`behavior.md` line 702) uses
-   `HashMap<BlackboardKey, BlackboardValue>` inside `BlackboardScope`. This violates the engine
-   constraint "No HashMap on hot paths (sorted Vec/BTreeMap only)". While this is an upstream issue,
-   this integration doc should note the constraint or avoid referencing `Blackboard` internals that
-   rely on HashMap. **Fix:** Added note flagging the `HashMap` constraint violation in
-   `BlackboardScope`. Documented that blackboards are hot-path (thousands to millions of instances)
-   and must use `BTreeMap` or sorted `Vec`. This integration does not depend on `Blackboard`
-   internals.
-
-7. **[APPLIED]** The `AnimationParams` pseudocode defines a flat struct with `speed`, `direction`,
-   and `triggers`. The upstream `AnimationParams` has additional boolean fields (`is_grounded`,
-   `is_crouching`, `is_jumping`, `is_falling`) and aim offsets (`aim_pitch`, `aim_yaw`). Should AI
-   systems also write these additional fields, or are they exclusively player-driven? This affects
-   the completeness of IR-1.1.1 and IR-1.1.4. **Decision:** AI systems write all `AnimationParams`
-   fields when controlling NPC locomotion and posture. Updated pseudocode to include all upstream
-   fields. Updated IR-1.1.4 description to list the additional fields AI writes.
-
-8. **[DISMISSED]** No 2.5D or 3D dimensionality considerations are discussed. The constraint
-   "2D/2.5D/3D support required in every subsystem" means the design should at minimum state whether
-   AI-to-animation integration differs across 2D sprite-based, 2.5D isometric, and 3D skeletal
-   animation pipelines, even if the answer is that the `AnimationParams` interface is identical.
-   **Decision:** 2D/2.5D scope does not need to be addressed in this integration design.
-
-9. **[APPLIED]** The test case companion file has no negative/error-path tests for the failure modes
-   listed in the design (missing `AnimationParams`, invalid trigger ID, montage asset missing,
-   budget exceeded). Each failure mode in the table should have at least one corresponding test case
-   verifying the recovery behavior. **Fix:** Added four error-path test cases (TC-IR-1.1.E1 through
-   TC-IR-1.1.E4) to the companion test case file, one per failure mode, verifying the documented
-   recovery behavior.
-
-10. **[APPLIED]** IR-1.1.5 references US-9.4.10.3 for the 500-agent budget target. The test case
-    TC-IR-1.1.5.1 and benchmark TC-IR-1.1.5.B1 test this, but the design does not describe the
-    time-slicing mechanism or how AI budget accounting includes animation cost. Should this
-    integration doc specify the budget-sharing protocol, or is that fully owned by the AI behavior
-    design? **Decision:** Added budget-sharing protocol description to IR-1.1.5. Documented
-    `FrameBudget` reservation in the integration requirements. Documented time-slicing fallback
-    behavior in FM-4.
-
-11. **[APPLIED]** The `AnimationQuery` in the pseudocode is a plain struct, not an ECS component.
-    The upstream design defines it as a static query helper (`pub struct AnimationQuery;` with
-    `impl` methods at line 1697). The integration doc should clarify whether `AnimationQuery` is a
-    component read by AI or a query API called by AI systems, and match the upstream pattern.
-    **Fix:** Replaced the data struct with the upstream static query helper (unit struct + `impl`
-    methods). Updated data contract table to say "AI (call)" instead of "AI (read)". Updated
-    contract detail list to describe it as a query API. Removed one-frame delay language from timing
-    section -- AI reads persisted `AnimationStateMachine` component state same-frame.
+1. **APPLIED** -- `AnimationQuery` realigned to upstream static-helper pattern from
+   `state-machine.md` line 1697 with the correct method set.
+2. **APPLIED** -- `ParameterMap` renamed to `AnimationParams` everywhere; pseudocode matches
+   upstream definition at `state-machine.md` line 2549.
+3. **CLARIFIED** -- Added `StringId` vs `FixedString` note; triggers use `StringId` (hashed runtime
+   identifier) consistent with upstream.
+4. **APPLIED** -- `Blackboard` removed from data contracts table; class diagram retains it to show
+   the AI-side bridging relationship.
+5. **APPLIED** -- Added Mermaid `classDiagram` covering all integration types and relationships.
+6. **APPLIED** -- Flagged upstream `BlackboardScope` HashMap as a hot-path constraint violation;
+   this integration does not depend on blackboard internals.
+7. **CLARIFIED** -- AI writes the full `AnimationParams` field set when controlling NPC locomotion
+   and posture; IR-1.1.4 enumerates the additional fields.
+8. **ACKNOWLEDGED-OUT-OF-SCOPE** -- 2D/2.5D out of scope for this integration; see Platform
+   Considerations note.
+9. **APPLIED** -- Added four negative/error-path test cases (TC-IR-1.1.E1 through TC-IR-1.1.E4), one
+   per failure mode, in the companion test-cases file.
+10. **APPLIED** -- Budget-sharing protocol and time-slicing fallback documented in IR-1.1.5 and
+    FM-4.
+11. **APPLIED** -- `AnimationQuery` clarified as a static query helper (not a component); data
+    contract table says "AI (call)"; same-frame read of persisted state documented.

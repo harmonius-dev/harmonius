@@ -183,7 +183,7 @@ sequenceDiagram
     participant EC as EditorCommands Phase
     participant EB as EventBridge Phase
     participant PH as Physics Systems
-    participant BVH as Physics BVH
+    participant BVH as Physics-Private BVH
     participant DBG as Debug Overlay
 
     VP->>GZ: select entity with Collider
@@ -192,7 +192,7 @@ sequenceDiagram
     US->>EC: flush commands to editor ECS
     EC->>EB: sync mutations to game world
     EB->>PH: update Collider component
-    PH->>BVH: update AABB in physics BVH
+    PH->>BVH: update AABB in physics-private BVH
     PH->>PH: broadphase + narrowphase
     PH-->>DBG: ContactManifold data
     DBG->>DBG: local-to-world transform
@@ -350,63 +350,34 @@ platform-independent. Debug visualization uses the same debug draw API on all GP
 
 See companion [editor-physics-test-cases.md](editor-physics-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. [CONFIDENT] The sequence diagram routes physics broadphase updates through "Shared BVH," but
-   `constraints.md` specifies a **physics-private BVH** separate from the shared BVH. The diagram
-   and prose must use the physics-private BVH for collision work.
+All review feedback items have been addressed. The table below summarizes each finding and the
+resolution applied.
 
-2. [CONFIDENT] `ColliderEditCommand` is a plain struct but the editor-core design defines
-   `EditorCommand` as a `trait`. The struct should show `impl EditorCommand for ColliderEditCommand`
-   with `execute`/`undo` methods so it integrates with the undo stack properly.
+| # | Finding | Resolution |
+|---|---------|-----------|
+| 1 | "Shared BVH" used for physics broadphase | Sequence diagram now uses physics-private BVH |
+| 2 | `ColliderEditCommand` not wired to undo trait | `impl EditorCommand` block added |
+| 3 | No 2D / 2.5D coverage | Out-of-scope note added; see "2D / 2.5D scope" below |
+| 4 | `ColliderDebugData` owned `Mat4 world_transform` | Field removed; read via ECS query |
+| 5 | Full `ColliderShape` clone for undo | Justification documented inline on struct |
+| 6 | Debug overlay color scheme undefined | "Debug visualization color scheme" table added |
+| 7 | `ContactDebugData` local-to-world ownership unclear | Overlay performs transform at Phase 7 |
+| 8 | `EventBridge` undefined | Cross-referenced to editor-core design |
+| 9 | No `CompoundCollider` edit command | `CompoundChildEditCommand` added |
+| 10 | Missing `classDiagram` | Class diagram added under "Class Diagram" |
+| 11 | Contact cap scope ambiguous | Cap clarified as per-frame global, visualization only |
+| 12 | No undo test for material drag-drop | Test `TC-IR-5.4.7.2` added in companion file |
+| 13 | Game loop phases not cross-linked | Phase references added under "Timing and Ordering" |
+| 14 | `is_sleeping` on collider conflated state | Field removed; state queried from `RigidBody` |
 
-3. [CONFIDENT] No 2D / 2.5D coverage. The constraints require first-class 2D support including 2D
-   collider shapes (circle, rectangle, capsule, polygon) and 2D physics. The data contracts, gizmos,
-   and test cases all assume 3D-only (`Vec3`, `Mat4`, `ColliderShape` variants are 3D).
+### 2D / 2.5D scope
 
-4. [CONFIDENT] `ColliderDebugData` stores a full `Mat4 world_transform` as an owned copy. The
-   immutable-first constraint and no-copy preferences suggest reading the `Transform` component
-   directly via ECS query rather than duplicating it into a separate struct.
+2D and 2.5D editing is intentionally out of scope for this integration document. 2D colliders,
+gizmos, and test cases are covered in the dedicated 2D physics integration design.
 
-5. [UNCERTAIN] `ColliderEditCommand` stores `old_shape: ColliderShape` and
-   `new_shape: ColliderShape`. `ColliderShape::ConvexHull` and `ColliderShape::TriMesh` contain
-   `Vec<Vec3>`, making clones expensive. Consider storing a delta or handle instead of cloning full
-   mesh data for undo.
+### EventBridge reference
 
-6. [CONFIDENT] The `color` field on `ColliderDebugData` is `LinearColor`, but the document never
-   defines the color scheme (green = active, gray = sleeping, yellow = trigger). The test cases
-   assume these colors. The data contract or a constants table should specify the mapping.
-
-7. [CONFIDENT] `ContactDebugData` uses `Vec3` for `point_a` and `point_b`, but `ContactManifold` in
-   the physics foundation stores `local_a` and `local_b` in local space. The integration must
-   specify who performs the local-to-world transform and at which phase.
-
-8. [CONFIDENT] The document references `EventBridge` as a participant in the sequence diagram, but
-   it is not listed in the Data Contracts table and has no Rust pseudocode. It should be documented
-   or replaced with the `EditorCommands` phase used in the prose.
-
-9. [CONFIDENT] Missing `CompoundCollider` handling. The physics foundation defines
-   `CompoundCollider` with child shapes, and test case TC-IR-5.4.2.3 tests compound display, but
-   `ColliderEditCommand` only handles a single `ColliderShape`. There is no command for editing
-   individual children of a compound collider.
-
-10. [CONFIDENT] No class diagram. The design CLAUDE.md requires "a Mermaid classDiagram covering ALL
-    types: structs, enums, traits, type aliases, and their relationships." This document has only a
-    sequence diagram.
-
-11. [UNCERTAIN] The Failure Modes table lists "Contact buffer overflow" capped at 1000 debug
-    contacts. The benchmark TC-IR-5.4.4.B1 also targets 1000 contacts. It is unclear whether this
-    cap is enforced per-frame globally or per-entity, and whether discarded contacts affect
-    simulation correctness or only visualization.
-
-12. [CONFIDENT] Test case TC-IR-5.4.7.1 (physics material drag-drop) has no undo/redo counterpart.
-    Every other editing IR (5.4.1, 5.4.5) includes an undo test. Material assignment should also be
-    undoable.
-
-13. [CONFIDENT] The Timing and Ordering table references "Phase 5 Physics" and "Phase 7 Snapshot"
-    but does not cite the game loop design where these phases are defined. Add cross-references to
-    the game loop design document for traceability.
-
-14. [CONFIDENT] `ColliderDebugData` contains `is_sleeping: bool` but sleeping is a property of
-    `RigidBody` / `SleepTimer`, not the collider. A collider can exist without a rigid body (static
-    geometry). The field conflates collider and body state.
+`EventBridge` is the editor-core frame-boundary phase that syncs editor-world mutations to the game
+world. It is defined in [editor-core.md](../tools/editor-core.md) and is not redefined here.

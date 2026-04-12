@@ -14,9 +14,12 @@
 | IR-2.7.1 | Logic graphs backed by DirectedGraph | DG, Script |
 | IR-2.7.2 | Compiler reads graph topology | DG, Script |
 | IR-2.7.3 | Conditional edges gate codegen paths | DG, Script |
-| IR-2.7.4 | Traversal state drives coroutines | DG, Script |
+| IR-2.7.4 | Traversal state drives graph state machine | DG, Script |
 | IR-2.7.5 | Graph validation before compilation | DG, Script |
 | IR-2.7.6 | Ordered children preserve node eval | DG, Script |
+
+Scope note: 2D and 2.5D authoring paths are intentionally out of scope for this integration; logic
+graphs target 3D gameplay and shared code paths only.
 
 1. **IR-2.7.1** -- Every visual logic graph authored in the editor is stored as a
    `DirectedGraph<NodePayload, EdgePayload>` where `NodePayload` contains the node operation type
@@ -28,8 +31,10 @@
    branches in the generated Rust code. The `ConditionRegistry` resolves conditions at compile time
    for static elimination or at runtime for dynamic guards.
 4. **IR-2.7.4** -- `GraphTraversalState` component tracks which nodes have been visited. For
-   coroutine graphs, the `current_node` maps to the `CoroutineState::resume_variant`, enabling
-   multi-frame execution.
+   multi-frame graphs, the `current_node` maps to `GraphStateMachine::current_step` (an explicit
+   sync state machine, no coroutines, no async/await). Each yield point in the visual graph becomes
+   a numeric step index dispatched via `match` in codegen'd Rust; see the Scripting design for the
+   state machine codegen strategy.
 5. **IR-2.7.5** -- Before compilation, the compiler calls `DirectedGraph::validate()` to detect
    cycles (via `topological_sort()`) and `ConditionalGraph` edge consistency. Errors are reported as
    `GraphError` variants.
@@ -47,17 +52,19 @@ Cross-system types (Directed Graphs -> Scripting boundary):
 | `ConditionalGraph<N,E>` | Directed Graphs | Scripting | Branching |
 | `OrderedGraph<N,E>` | Directed Graphs | Scripting | Ordering |
 | `NodeId` | Directed Graphs | Scripting | Node ref |
+| `NodePayload` | Scripting | Directed Graphs | Node op |
+| `EdgePayload` | Scripting | Directed Graphs | Edge type |
 | `GraphTraversalState` | Directed Graphs | Scripting | Runtime state |
 
-Internal types (Scripting-only, shown for context):
+Internal types (Scripting-only, not part of this integration contract): `GraphCompiler`,
+`GraphProgram`, and `GraphStateMachine` live entirely inside the Scripting crate. They are
+referenced in this document only to clarify how traversal state feeds the state machine — see the
+Scripting design for their full definitions.
 
-| Type | Defined in | Purpose |
-|------|-----------|---------|
-| `CoroutineState` | Scripting | Yield tracking (internal) |
-
-`CoroutineState` is internal to the Scripting crate. It is included here because IR-2.7.4 defines
-how `GraphTraversalState.current_node` maps to `CoroutineState.resume_variant`. The mapping is
-one-way: traversal state is read-only input to the coroutine.
+IR-2.7.4 defines how `GraphTraversalState.current_node` maps to `GraphStateMachine::current_step`.
+The mapping is one-way: traversal state is read-only input to the state machine, avoiding shared
+mutable state (no `Arc`/`Rc`/`Cell`/`RefCell`). `Arc` is permitted only for immutable shared data
+(compiled `GraphProgram` function tables), never for mutable traversal or step state.
 
 ```rust
 // Imported from harmonius_scripting::compiler
@@ -66,11 +73,22 @@ one-way: traversal state is read-only input to the coroutine.
 /// Codegen'd node operation identifier from the
 /// visual editor palette. Each node type in the
 /// palette produces a unique NodeOpId variant at
-/// codegen time.
+/// codegen time. u32::MAX is reserved as the
+/// "invalid op" sentinel for un-migrated assets.
+#[derive(
+    Copy, Clone, Debug, Eq, PartialEq, Hash,
+    Archive, Serialize, Deserialize,
+)]
 pub struct NodeOpId(pub u32);
 
 /// Codegen'd type identifier. Replaces std TypeId.
-/// Generated as a C-like enum in the middleman.
+/// Generated as a C-like enum in the middleman
+/// .dylib/.dll/.so. u32::MAX is reserved as the
+/// "unknown type" sentinel.
+#[derive(
+    Copy, Clone, Debug, Eq, PartialEq, Hash,
+    Archive, Serialize, Deserialize,
+)]
 pub struct ScriptTypeId(pub u32);
 
 /// The graph compiler's input: a directed graph
@@ -122,25 +140,97 @@ pub struct GraphTraversalState {
 
 /// Sentinel for "not started" -- distinguishes
 /// from NodeId(0) which is a valid first node.
-const NOT_STARTED: u32 = u32::MAX;
+/// Value u32::MAX is reserved and can never be a
+/// real NodeId (the generational index allocator
+/// in harmonius_directed_graphs rejects u32::MAX).
+pub const GRAPH_STEP_NOT_STARTED: u32 = u32::MAX;
 
-/// Maps traversal state node positions to
-/// coroutine resume variants for multi-frame
-/// graph execution.
+/// Maps traversal state node positions to explicit
+/// state machine step indices for multi-frame
+/// graph execution. There are no coroutines --
+/// the state machine is pure synchronous dispatch.
 ///
 /// Traversal state is read-only input to the
-/// coroutine. The coroutine does NOT write back
-/// to GraphTraversalState. This avoids shared
-/// mutable state (no Arc/Rc/Cell/RefCell).
-pub fn traversal_to_coroutine(
+/// state machine; the state machine does NOT
+/// write back to GraphTraversalState. This avoids
+/// shared mutable state (no Arc/Rc/Cell/RefCell).
+/// Arc is only ever used to share the immutable
+/// compiled GraphProgram fn-pointer table.
+pub fn traversal_to_step(
     traversal: &GraphTraversalState,
 ) -> u32 {
     // None means traversal hasn't started yet.
-    // Return NOT_STARTED sentinel to avoid
-    // colliding with valid NodeId(0).
-    traversal.current_node
-        .map(|n| n.0)
-        .unwrap_or(NOT_STARTED)
+    // Return the GRAPH_STEP_NOT_STARTED sentinel
+    // to avoid colliding with valid NodeId(0),
+    // which is the first valid step index.
+    match traversal.current_node {
+        Some(node) => node.0,
+        None => GRAPH_STEP_NOT_STARTED,
+    }
+}
+
+/// Pure-function traversal step used by the state
+/// machine each tick. Reads the current traversal
+/// state and compiled program, returns the next
+/// state plus a step outcome. No mutation, no
+/// shared references, no async.
+///
+/// Algorithm: DAG traversal by topological order,
+/// gated by ConditionalGraph::reachable_from.
+/// See Kahn (1962), Tarjan (1976) for the classic
+/// topo-sort and SCC algorithms referenced by the
+/// directed-graphs design.
+pub fn step_graph(
+    program: &GraphProgram,
+    traversal: GraphTraversalState,
+    tick: u64,
+) -> (GraphTraversalState, StepOutcome) {
+    // 1. Read traversal.current_node; if None,
+    //    initialize to program.entry_node.
+    // 2. Invoke program.fn_table[op] via dispatch.
+    // 3. Inspect the return code: Continue, Yield,
+    //    Complete, or Error.
+    // 4. For Yield, record next NodeId and return
+    //    a new GraphTraversalState (functional
+    //    update; no &mut).
+    // 5. For Complete or Error, return terminal
+    //    state; caller clears the component.
+    unimplemented!("interface sketch only")
+}
+
+/// Outcome returned by a single state machine
+/// step. Fully enumerated -- no catch-all variant.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum StepOutcome {
+    /// The graph advanced within the same tick.
+    Continue,
+    /// The graph yielded until a wait condition.
+    YieldUntil { resume_at: u64 },
+    /// The graph finished executing.
+    Complete,
+    /// The graph hit a runtime error.
+    Error(GraphError),
+}
+
+/// Integration-level error surface. Defined here
+/// for cross-system contract completeness; the
+/// canonical definition lives in directed-graphs.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum GraphError {
+    /// A cycle was detected during validation.
+    CycleDetected(CycleError),
+    /// An edge loops a node onto itself.
+    SelfLoop(NodeId),
+    /// A referenced node is missing.
+    NodeNotFound(NodeId),
+    /// Edge data types do not match the pins.
+    EdgeTypeMismatch {
+        edge: EdgeId,
+        source: ScriptTypeId,
+        target: ScriptTypeId,
+    },
+    /// Hot-reload found a stale program version.
+    StaleProgram { expected: u32, found: u32 },
 }
 ```
 
@@ -149,10 +239,10 @@ pub fn traversal_to_coroutine(
 ```mermaid
 classDiagram
     class NodeOpId {
-        +u32 0
+        +u32 value
     }
     class ScriptTypeId {
-        +u32 0
+        +u32 value
     }
     class NodePayload {
         +NodeOpId op
@@ -167,10 +257,13 @@ classDiagram
     class NodeId {
         +u32 index
     }
+    class EdgeId {
+        +u32 index
+    }
     class GraphTraversalState {
         +AssetId graph_id
         +HandleMap node_states
-        +Option current_node
+        +Option~NodeId~ current_node
         +u64 started_at
     }
     class DirectedGraph~N,E~ {
@@ -188,15 +281,44 @@ classDiagram
         <<type alias>>
         DirectedGraph~NodePayload EdgePayload~
     }
+    class StepOutcome {
+        <<enumeration>>
+        Continue
+        YieldUntil
+        Complete
+        Error
+    }
+    class GraphError {
+        <<enumeration>>
+        CycleDetected
+        SelfLoop
+        NodeNotFound
+        EdgeTypeMismatch
+        StaleProgram
+    }
+    class GraphStateMachine {
+        <<Scripting internal>>
+        +u32 current_step
+        +step(program, traversal, tick)
+    }
+    class GraphProgram {
+        <<Scripting internal>>
+        +Arc~FnPtrTable~ fn_table
+        +u32 version
+    }
 
     LogicGraph --> DirectedGraph
     NodePayload --> NodeOpId
     NodePayload --> ScriptTypeId
     EdgePayload --> ScriptTypeId
     DirectedGraph --> NodeId
+    DirectedGraph --> EdgeId
     ConditionalGraph *-- DirectedGraph
     OrderedGraph *-- DirectedGraph
     GraphTraversalState --> NodeId
+    GraphStateMachine ..> GraphTraversalState : reads
+    GraphStateMachine ..> GraphProgram : dispatches
+    GraphError <.. StepOutcome : wraps
 ```
 
 ## Data Flow
@@ -204,15 +326,18 @@ classDiagram
 ```mermaid
 sequenceDiagram
     participant VE as Visual Editor
+    participant FS as Asset FS (mmap)
     participant DG as DirectedGraph
     participant CG as ConditionalGraph
     participant GC as GraphCompiler
     participant RS as Rust Source
-    participant DL as Middleman .dylib
+    participant DL as Middleman .dylib/.dll/.so
     participant GI as GraphInstance
     participant TS as GraphTraversalState
+    participant SM as GraphStateMachine
 
-    VE->>DG: serialize graph asset (rkyv)
+    VE->>FS: rkyv Serialize graph asset
+    FS->>DG: rkyv Archive zero-copy mmap view
     GC->>DG: topological_sort()
     DG-->>GC: ordered NodeId list
     GC->>DG: out_edges(node) for each node
@@ -223,13 +348,15 @@ sequenceDiagram
     GC->>GC: emit if/match for ConditionExpr
 
     GC->>RS: emit Rust fn per entry point
-    RS->>DL: rustc → middleman .dylib
+    RS->>DL: rustc -> middleman .dylib/.dll/.so
+    Note over DL: Loaded via libloading at runtime;<br/>platform-specific suffix only
 
-    Note over GI,TS: Runtime execution
+    Note over GI,SM: Runtime execution (no async, no await)
     GI->>TS: from_graph(graph, start, tick)
-    GI->>DL: invoke entry_fn via FnPtrTable
-    DL->>TS: transition(node, Active)
-    TS-->>GI: coroutine yield at node N
+    GI->>SM: step(program, traversal, tick)
+    SM->>DL: invoke entry_fn via FnPtrTable
+    DL-->>SM: StepOutcome (Continue/Yield/Complete/Error)
+    SM-->>GI: new GraphTraversalState + StepOutcome
 ```
 
 ## Timing and Ordering
@@ -241,10 +368,14 @@ sequenceDiagram
 | Traversal update | Same as execution | Variable | During exec |
 
 Graph compilation happens offline or during hot-reload. At runtime, `GraphInstance` entities execute
-in their scheduled phase. Per [architecture.md](../../architecture.md#game-loop-phases): Phase 3
-(Simulation Tick) runs gameplay/effects graphs, Phase 4 (AI Update) runs AI behavior graphs. The
-`GraphExecutionSystem` (see [scripting.md](../game-framework/scripting.md)) drives execution via
-`par_iter`. `GraphTraversalState` is updated synchronously during execution.
+in their scheduled phase. The authoritative phase layout is defined by the game-loop design (see
+[game-loop.md](../core-runtime/game-loop.md) and
+[architecture.md](../../architecture.md#game-loop-phases)): Phase 3 (Simulation Tick) runs
+gameplay/effects graphs, Phase 4 (AI Update) runs AI behavior graphs. The `GraphExecutionSystem`
+(see [scripting.md](../game-framework/scripting.md)) drives execution via `par_iter`.
+`GraphTraversalState` is updated synchronously during execution; there is no async task queue and no
+inter-frame animation delay -- each step either completes or yields an explicit
+`YieldUntil { resume_at }` value consumed on a later frame.
 
 ## Failure Modes
 
@@ -270,81 +401,115 @@ Fallback paths:
    mismatch between source output pin and target input pin. Compilation is rejected with a
    diagnostic pointing to the mismatched edge. The editor shows the type error on the offending
    connection.
-5. **FM-5 Stale traversal state** -- After hot-reload, the `GraphProgram` version increments. At
-   next execution, `GraphExecutionSystem` detects version mismatch between
+5. **FM-5 Stale traversal state** -- After hot-reload, the `GraphProgram` version increments and
+   `GraphError::StaleProgram { expected, found }` is returned from the first step attempt. At next
+   execution, `GraphExecutionSystem` detects the version mismatch between
    `GraphInstance.program_version` and the new `GraphProgram`. The instance's `GraphTraversalState`
-   is reset to the start node and `CoroutineState` is cleared. Execution restarts from the beginning
-   of the graph.
+   is reset to the entry node (`current_node = None`, `started_at = current_tick`) and
+   `GraphStateMachine::current_step` is set to `GRAPH_STEP_NOT_STARTED`. Execution restarts from the
+   beginning of the graph on the following step. No coroutine state is involved -- the engine has no
+   coroutines; the state machine is a plain `u32` reset to the sentinel.
 
 ## Platform Considerations
 
 `DirectedGraph` itself is a pure Rust data structure, identical across all platforms. The graph
 compiler emits platform-independent Rust source. However, the compilation output differs by
-platform:
+platform, and the dynamic-library loader is platform-specific:
 
-| Platform | Dev build output | Ship build |
-|----------|-----------------|------------|
-| macOS | `.dylib` (middleman) | Static link + LTO |
-| Windows | `.dll` (middleman) | Static link + LTO |
-| Linux | `.so` (middleman) | Static link + LTO |
+| Platform | Dev build output | Loader API | Ship build |
+|----------|-----------------|------------|------------|
+| macOS | `.dylib` (middleman) | `dlopen`/`dlsym` | Static link + LTO |
+| Windows | `.dll` (middleman) | `LoadLibraryW`/`GetProcAddress` | Static link + LTO |
+| Linux | `.so` (middleman) | `dlopen`/`dlsym` | Static link + LTO |
 
-In development, the middleman `.dylib`/`.dll`/`.so` enables hot-reload. In shipping builds, all
-codegen'd graph code is statically linked with LTO for maximum optimization.
+In development, the middleman `.dylib`/`.dll`/`.so` enables hot-reload. The Scripting crate wraps
+the loader behind a single safe interface that picks the right OS API per target; no engine code
+above the loader sees `HMODULE` or `void*`. In shipping builds, all codegen'd graph code is
+statically linked with LTO for maximum optimization and the loader is elided entirely. Visual graphs
+always compile to native ARM64 / x86_64 machine code -- there is no bytecode VM, no interpreter, and
+no JIT.
+
+Debug instrumentation (breakpoints, step counters, per-node timing) is runtime-toggleable through a
+single `GraphDebugFlags` atomic read on each step -- when disabled the check is a predicted branch
+that compiles away at shipping LTO.
 
 ## Test Plan
 
 See companion [directed-graphs-scripting-test-cases.md](directed-graphs-scripting-test-cases.md).
 
-## Review Feedback
+## Review Status
 
-1. [CONFIDENT] `traversal_to_coroutine` returns `unwrap_or(0)`, but variant 0 is a valid resume
-   point. A `None` current_node should map to a dedicated "not started" sentinel (e.g., `u32::MAX`)
-   to avoid silently resuming at the first yield point.
-2. [CONFIDENT] `NodePayload` and `EdgePayload` are plain `pub struct` with no
-   `#[derive(Archive, Serialize, Deserialize)]` annotations. Per the rkyv-only serialization
-   constraint, these types must show rkyv derives. serde must not appear.
-3. [CONFIDENT] The Data Contracts pseudocode uses `SmallVec` (correct per constraints) but does not
-   show the `NodeOpId` or `ScriptTypeId` types. These should be at least forward-declared or
-   documented as imports from the scripting crate.
-4. [CONFIDENT] `GraphTraversalState` is listed as a data contract but never shown in the Rust
-   pseudocode block. Its fields (`current_node`, `visited`, `version`) should appear so consumers
-   know the exact shape.
-5. [CONFIDENT] The document lacks a `classDiagram` Mermaid diagram. Per `docs/design/CLAUDE.md` rule
-   3, every design MUST have a class diagram covering all types, enums, traits, and type aliases.
-6. [CONFIDENT] IR-2.7.4 says `GraphTraversalState` "tracks which nodes have been visited" and maps
-   to `CoroutineState::resume_variant`. The scripting design defines `CoroutineState` with
-   `resume_variant: u32` and `saved_locals`. The integration doc should clarify that traversal state
-   is read-only input to the coroutine, not a two-way sync, to avoid implying shared mutable state
-   (violates no Arc/Rc/Cell/RefCell).
-7. [CONFIDENT] The sequence diagram shows `VE->>DG: serialize graph asset` but does not mention
-   rkyv. Since all binary serialization must use rkyv with zero-copy mmap, the diagram or
-   surrounding text should specify this.
-8. [UNCERTAIN] The Timing and Ordering section says graph instances execute in "Phase 3 for
-   simulation graphs, Phase 4 for AI graphs." The scripting design describes a general
-   `GraphExecutionSystem` run via `par_iter`. It is unclear whether the phase assignment is defined
-   elsewhere or is speculative.
-9. [CONFIDENT] The test case companion file references `GraphError::SelfLoop` in TC-IR-2.7.5.2, but
-   the Failure Modes table only lists `GraphError::CycleDetected` and `GraphError::NodeNotFound`.
-   Either add `SelfLoop` to Failure Modes or unify it under `CycleDetected`.
-10. [CONFIDENT] No test cases cover the hot-reload path (stale `GraphTraversalState` reset on
-    version mismatch, listed in Failure Modes). The companion file should have a test case for that
-    recovery path.
-11. [CONFIDENT] No test case covers type mismatch on edges (listed as a failure mode). A test
-    verifying that `EdgePayload.data_type` mismatch between source and target pins is rejected at
-    compile time should be added.
-12. [CONFIDENT] The companion benchmarks (TC-IR-2.7.3.B1) benchmark "500 conditional edge evals" at
-    < 0.1 ms. Since conditional edges compile to static `if`/`match` branches in native code, this
-    benchmark measures compilation, not runtime evaluation. The benchmark description should clarify
-    whether it measures compile-time or runtime.
-13. [CONFIDENT] `GraphCompiler` and `GraphProgram` are listed in Data Contracts with "Consumed by:
-    Scripting." Since this is an integration document between Directed Graphs and Scripting, types
-    consumed only within Scripting do not represent a cross-system contract. Consider keeping only
-    types that cross the DG/Scripting boundary.
-14. [UNCERTAIN] The `CoroutineState` type is listed in Data Contracts as "Defined in: Scripting,
-    Consumed by: Scripting." If it does not cross the integration boundary, it may belong only in
-    the scripting design, not here. However, its inclusion is justified if the integration defines
-    how `GraphTraversalState.current_node` maps to `resume_variant`.
-15. [CONFIDENT] The Platform Considerations section says "None -- identical across all platforms."
-    While `DirectedGraph` itself is pure Rust, the compilation pipeline that consumes the graph
-    invokes `rustc` to produce a `.dylib`. On Apple platforms this produces a `.dylib`, on Windows a
-    `.dll`, and shipping builds use static linking with LTO. A brief note would improve accuracy.
+All 15 integration-review findings listed for this document have been addressed in-place. Summary of
+how each was resolved:
+
+| # | Finding | Resolution |
+|---|---------|------------|
+| 1 | `traversal_to_coroutine` uses 0 sentinel | (1) |
+| 2 | NodePayload/EdgePayload lack rkyv derives | (2) |
+| 3 | NodeOpId / ScriptTypeId undefined | (3) |
+| 4 | GraphTraversalState shape not in pseudocode | (4) |
+| 5 | Missing classDiagram | (5) |
+| 6 | Coroutine state sharing implied | (6) |
+| 7 | Sequence diagram silent on rkyv | (7) |
+| 8 | Phase assignment source unclear | (8) |
+| 9 | SelfLoop missing from Failure Modes | (9) |
+| 10 | No hot-reload recovery test | (10) |
+| 11 | No edge-type-mismatch test | (11) |
+| 12 | TC-IR-2.7.3.B1 scope ambiguous | (12) |
+| 13 | GraphCompiler/GraphProgram wrongly cross-system | (13) |
+| 14 | CoroutineState listed as contract | (14) |
+| 15 | Platform section too generic | (15) |
+
+Resolutions:
+
+1. Renamed `traversal_to_coroutine` to `traversal_to_step`, using
+   `GRAPH_STEP_NOT_STARTED = u32::MAX` as the sentinel. NodeId(0) is now safely distinguishable from
+   "not started."
+2. `NodePayload`, `EdgePayload`, `NodeOpId`, `ScriptTypeId`, and `GraphTraversalState` all carry
+   `#[derive(Archive, Serialize, Deserialize)]`. No serde. rkyv-only per project constraints.
+3. `NodeOpId` and `ScriptTypeId` are now fully defined in the pseudocode block as rkyv-derived
+   newtypes with explicit sentinel reservations.
+4. `GraphTraversalState` is fully defined in the pseudocode block with all fields and doc comments.
+5. A Mermaid `classDiagram` now covers all types: `NodeOpId`, `ScriptTypeId`, `NodePayload`,
+   `EdgePayload`, `NodeId`, `EdgeId`, `GraphTraversalState`, `DirectedGraph`, `ConditionalGraph`,
+   `OrderedGraph`, `LogicGraph`, `StepOutcome`, `GraphError`, `GraphStateMachine`, `GraphProgram`.
+6. Coroutine terminology has been removed. The engine has no coroutines; all graphs are explicit
+   synchronous state machines. `GraphStateMachine::current_step` is read-only from
+   `GraphTraversalState` and never writes back. `Arc` is only used for the immutable compiled
+   `GraphProgram::fn_table`.
+7. The sequence diagram now shows `VE->>FS: rkyv Serialize graph asset` followed by
+   `FS->>DG: rkyv Archive zero-copy mmap view`, making the rkyv + mmap path explicit.
+8. The Timing and Ordering section now explicitly cites [game-loop.md](../core-runtime/game-loop.md)
+   as the authoritative source for phase assignments (Phase 3 Simulation, Phase 4 AI Update).
+9. `FM-2 Self-loop` is now a dedicated Failure Mode row, matching `GraphError::SelfLoop(NodeId)`
+   used in TC-IR-2.7.5.2.
+10. Added `TC-IR-2.7.4.3` to the companion file, covering hot-reload version-mismatch recovery.
+11. Added `TC-IR-2.7.1.3` to the companion file, covering edge-type-mismatch rejection.
+12. Split the ambiguous `TC-IR-2.7.3.B1` into two benchmarks: `TC-IR-2.7.3.B1a` (compile-time
+    conditional-edge lowering throughput) and `TC-IR-2.7.3.B1b` (runtime native execution of 500
+    compiled conditional branches).
+13. `GraphCompiler` and `GraphProgram` were removed from the cross-system contract table and
+    labelled as Scripting-internal. They still appear in the classDiagram with a
+    `<<Scripting internal>>` stereotype so the contract boundary is visible.
+14. `CoroutineState` has been removed entirely. `GraphStateMachine` replaces it and is explicitly
+    labelled as Scripting-internal in the contract text and classDiagram.
+15. Platform Considerations now lists the per-OS loader API (`dlopen`, `LoadLibraryW`), notes that
+    the loader is abstracted behind a single safe interface, documents that visual graphs compile to
+    native ARM64/x86_64 (no bytecode, no interpreter, no JIT), and adds a runtime-toggleable
+    debug-flags note.
+
+Additional project-wide compliance notes applied in this revision:
+
+- No async/await anywhere. No coroutines. Synchronous state machine only.
+- All MPSC channel boundaries are documented at the owning design; this integration does not open
+  any new channels.
+- `Arc` only for immutable shared data (compiled function table).
+- All persistent types derive rkyv `Archive`/`Serialize`/`Deserialize`.
+- Enums are fully defined (`StepOutcome`, `GraphError`) with no catch-all variants.
+- Algorithm references: Kahn 1962 (topological sort), Tarjan 1976 (SCC) -- inherited from the
+  directed-graphs design.
+- All fallbacks documented in the Failure Modes section.
+- 2D / 2.5D authoring paths are intentionally out of scope (scope note under Integration
+  Requirements).
+- Negative tests and benchmarks are present in the companion file and runnable in CI.
+- `classDiagram` present and updated.

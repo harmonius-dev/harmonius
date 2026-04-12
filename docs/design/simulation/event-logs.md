@@ -680,7 +680,7 @@ All persistence goes through the engine's serialization system (F-1.4.1).
 
 ## Test Plan
 
-See companion file [event-logs-test-cases.md](event-logs-test-cases.md) for the full test matrix.
+See companion file [event-logs-test-cases.md](./event-logs-test-cases.md) for the full test matrix.
 
 ### Unit Tests
 

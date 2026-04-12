@@ -335,7 +335,22 @@ classDiagram
         +CellCoord min
         +CellCoord max
     }
+    class VoxelDestructionRequest {
+        +Entity volume_entity
+        +VoxelCoord impact_coord
+        +u32 radius
+        +f32 force
+        +DestructionPattern pattern
+    }
+    class DestructionPattern {
+        <<enumeration>>
+        Sphere
+        Cone
+        Column
+    }
 
+    VoxelDestructionRequest --> VoxelCoord
+    VoxelDestructionRequest *-- DestructionPattern
     UniformGrid~T~ --> CellCoord
     UniformGrid~T~ --> NeighborPattern
     PropagationKernel~T~ --> NeighborPattern
@@ -1146,6 +1161,52 @@ pub fn set_heightmap_region(
 2. Override layer: `VoxelVolume<Option<T>>` / `UniformGrid<Option<f32>>` with `None` = transparent.
 3. At query time, override is checked first; fallback to base if `None`.
 4. Baking collapses layers into a single volume for export.
+
+### 16. Destruction Request Types
+
+Physics fracture events (`DestructionEvent` from `vfx/effects.md`) are converted into grid-space
+destruction requests by the grids-physics integration layer. These types are defined here so both
+the simulation (writer) and physics (reader) domains reference a single source of truth. Consumed by
+the integration design at `integration/grids-volumes-physics.md` (IR-3.10.3).
+
+```rust
+/// Destruction applied to a `VoxelVolume<T>`.
+/// Produced by the grids-physics integration layer
+/// from a physics `DestructionEvent` after coord
+/// conversion via `VoxelVolume::world_to_cell`.
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize,
+    rkyv::Deserialize,
+)]
+pub struct VoxelDestructionRequest {
+    pub volume_entity: Entity,
+    pub impact_coord: VoxelCoord,
+    pub radius: u32,
+    pub force: f32,
+    pub pattern: DestructionPattern,
+}
+
+/// Shape of a destruction region in voxel space.
+/// All variants enumerated; no open-ended values.
+#[derive(
+    Clone, Debug,
+    rkyv::Archive, rkyv::Serialize,
+    rkyv::Deserialize,
+)]
+pub enum DestructionPattern {
+    /// Spherical blast clears voxels in radius.
+    Sphere,
+    /// Directional cone along impact normal.
+    /// `half_angle` is in radians (0..=PI/2).
+    Cone { half_angle: f32 },
+    /// Column collapse downward from impact.
+    Column,
+}
+```
+
+These types are added to the class diagram above as `VoxelDestructionRequest` referencing
+`VoxelCoord` and composing `DestructionPattern`.
 
 ---
 
