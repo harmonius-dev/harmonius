@@ -44,6 +44,36 @@ See those files for the full test case definitions until migration is complete.
 | TC-15.17.3.1 | R-15.17.3 | Review CRUD |
 | TC-15.17.5.1 | R-15.17.5 | Compat test trigger |
 | TC-15.18.1.1 | R-15.18.1 | Deployment stack synthesis |
+| TC-14.8.1.1 | R-14.8.1 | Server-side console build service accepts job |
+| TC-14.8.2.1 | R-14.8.2 | Console build enqueues against isolated worker pool |
+| TC-14.8.3.1 | R-14.8.3 | Proprietary SDK isolated in sandboxed worker |
+| TC-14.8.4.1 | R-14.8.4 | SDK secrets never reach client editor |
+| TC-14.8.5.1 | R-14.8.5 | Shared build server assigns queue slot |
+| TC-14.8.6.1 | R-14.8.6 | Build server auto-scales on queue depth |
+| TC-14.8.7.1 | R-14.8.7 | Remote console deploy transfers artifact |
+| TC-14.8.8.1 | R-14.8.8 | Remote deploy reports progress/completion |
+| TC-14.8.9.1 | R-14.8.9 | Console build artifact produced in expected format |
+| TC-14.8.10.1 | R-14.8.10 | Artifact retained for policy-configured window |
+| TC-15.11.3.1 | R-15.11.3 | Logic graph compile cache key |
+| TC-15.11.6.1 | R-15.11.6 | Cache backend switch (Garage/TiKV) |
+| TC-15.11.8.1 | R-15.11.8 | Cache hit/miss metric counter |
+| TC-15.14.2.1 | R-15.14.2 | Deploy-to-device incremental transfer |
+| TC-15.14.9.1 | R-15.14.9 | Host/target build matrix dispatch |
+| TC-15.15.5.1 | R-15.15.5 | Cross-game preferences roam |
+| TC-15.16.3.1 | R-15.16.3 | Mod package publish |
+| TC-15.16.5.1 | R-15.16.5 | Mod workshop sync |
+| TC-15.17.4.1 | R-15.17.4 | Publisher dashboard metrics |
+| TC-15.17.6.1 | R-15.17.6 | Revenue share calculation |
+| TC-15.17.7.1 | R-15.17.7 | Asset type manifest validation |
+| TC-15.18.2.1 | R-15.18.2 | Collaboration server session open |
+| TC-15.18.3.1 | R-15.18.3 | Git/LFS host accepts push |
+| TC-15.18.4.1 | R-15.18.4 | Build farm dispatch job |
+| TC-15.18.5.1 | R-15.18.5 | Signing server produces signed artifact |
+| TC-15.18.6.1 | R-15.18.6 | Continuous deployment pipeline trigger |
+| TC-15.18.7.1 | R-15.18.7 | Test runner infra executes test job |
+| TC-15.18.8.1 | R-15.18.8 | Shared cache/DB service ready probe |
+| TC-15.18.9.1 | R-15.18.9 | Backup + restore cycle |
+| TC-15.18.10.1 | R-15.18.10 | Enterprise security config applied |
 
 ## Integration Tests
 
