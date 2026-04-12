@@ -39,6 +39,16 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-12.2.9.3   | `test_metal_shaderconverter_msl`    | R-12.2.9  |
 | TC-12.2.9.4   | `test_dxc_dead_code_elimination`    | R-12.2.9  |
 | TC-12.2.9.5   | `test_dxc_error_line_mapping`       | R-12.2.9  |
+| TC-12.5.1.1   | `test_vfs_unified_namespace`        | R-12.5.1  |
+| TC-12.5.2.1   | `test_async_read_no_std_fs`         | R-12.5.2  |
+| TC-12.5.3.1   | `test_gpu_direct_storage_submit`    | R-12.5.3  |
+| TC-12.5.4.1   | `test_texture_residency_request`    | R-12.5.4  |
+| TC-12.5.5.1   | `test_mesh_residency_coarse_fine`   | R-12.5.5  |
+| TC-12.5.6.1   | `test_priority_queue_order_and_age` | R-12.5.6  |
+| TC-12.5.7.1   | `test_budget_monitor_pressure`      | R-12.5.7  |
+| TC-12.5.8.1   | `test_pak_archive_o1_lookup`        | R-12.5.8  |
+| TC-12.5.9.1   | `test_chunk_codec_selection`        | R-12.5.9  |
+| TC-12.5.10.1  | `test_cdn_download_hash_verify`     | R-12.5.10 |
 
 1. **TC-12.2.1.1** `test_texture_bc7_compress_desktop` — Compress a 256×256 RGBA8 source with the
    `Desktop` profile. Assert output format is BC7 and block count matches expected.
@@ -196,17 +206,115 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Input: HLSL with type mismatch, source map mapping line 42 to `mul_node`
     - Expected: `CompilationError { hlsl_line: 42, graph_node: Some("mul_node") }`
 
+32. **TC-12.5.1.1** `test_vfs_unified_namespace` — Mount the same logical path under a loose-file
+    store, a pak archive, and a mock HTTP store. Read bytes from `"textures/brick.ktx2"` through
+    each mount and assert identical content.
+    - Input: three `BackingStore` variants mounted at `/content`, one asset present in each
+    - Expected: `resolve()` returns a `ResolvedAsset` from every mount, identical content bytes,
+      `unmount` removes paths from `list()`
+
+33. **TC-12.5.2.1** `test_async_read_no_std_fs` — Read a 100 MB asset through the streaming runtime
+    and assert zero `std::fs` calls occur in the stream path via static inspection of linked
+    symbols.
+    - Input: 100 MB asset, `StreamingManager::load(..., StreamPriority::Normal, ...)`
+    - Expected: completion via tokio task; no `std::fs::*` symbol referenced in the
+      `harmonius_content::streaming` crate
+
+34. **TC-12.5.3.1** `test_gpu_direct_storage_submit` — On a backend reporting
+    `DirectStorageBackend::is_available() == true`, submit a `GpuTransferRequest` for a 16 MB
+    compressed texture. Assert the destination GPU buffer contains the decompressed pixels.
+    - Input: 16 MB Zstd-compressed texture, valid `GpuBufferHandle`, `codec: Zstd`
+    - Expected: `submit().await == Ok(())`, sampled GPU pixels match reference decode
+
+35. **TC-12.5.4.1** `test_texture_residency_request` — Request mips 0..3 for one texture then assert
+    `is_resident` for each mip. Evict above mip 1 and assert only mips 0..1 remain resident.
+    - Input: `TextureResidency::new(64 * 1024 * 1024)`, 1 texture, mips 0..3
+    - Expected: all four mips resident after request, exactly two mips resident after
+      `evict_mips(id, above_mip = 1)`
+
+36. **TC-12.5.5.1** `test_mesh_residency_coarse_fine` — Request LOD 0 (fine) for a 2 MB mesh while
+    LOD 3 (coarse) is already resident. Assert both LODs are resident after the async load
+    completes.
+    - Input: `MeshResidency::new(32 * 1024 * 1024)`, mesh with 4 LODs, LOD 3 preloaded
+    - Expected: `is_resident(id, 0)` true, `is_resident(id, 3)` true, no eviction of coarse LOD
+
+37. **TC-12.5.6.1** `test_priority_queue_order_and_age` — Enqueue 100 `Prefetch` requests then 10
+    `Critical` requests, then tick 500 frames. Assert critical requests dequeue first and that one
+    aged prefetch is promoted above prefetch baseline.
+    - Input: `PriorityQueue` with `aging_interval_frames = 60`, mixed-priority batch
+    - Expected: first 10 dequeues are `Critical`; after aging, at least one prefetch is ordered
+      above newer prefetch entries
+
+38. **TC-12.5.7.1** `test_budget_monitor_pressure` — Allocate against a 512 MB GPU budget until 95%
+    used. Assert `pressure_level()` reports `Critical` and a further `allocate` returns `false`.
+    - Input: `BudgetConfig { gpu_budget_bytes: 512 * 1024 * 1024, ... }`
+    - Expected: `pressure_level()` transitions `None → Warning → Critical`, `allocate` returns
+      `false` at saturation
+
+39. **TC-12.5.8.1** `test_pak_archive_o1_lookup` — Build a pak with 10,000 entries. Look up a random
+    asset ID and assert the returned `PakEntry` matches the inserted offset/size, and that lookup
+    cost is independent of entry count (hash-based directory).
+    - Input: 10,000 pak entries, random query across full ID range
+    - Expected: lookup returns correct `PakEntry`, asymptotic cost `O(1)` verified by timing
+      1e3/1e4/1e5 archives within 2× variance
+
+40. **TC-12.5.9.1** `test_chunk_codec_selection` — Write a pak containing one audio chunk (LZ4) and
+    one texture chunk (Zstd). Read each chunk and assert the codec flag matches the expected
+    `CompressionCodec` variant, and that decompression roundtrips byte-for-byte.
+    - Input: audio chunk, texture chunk
+    - Expected: `entry.codec == Lz4` for audio, `entry.codec == Zstd` for texture, decompressed
+      bytes equal originals
+
+41. **TC-12.5.10.1** `test_cdn_download_hash_verify` — Resolve a VFS path whose store is a mock CDN
+    with a corrupted chunk. Assert download is rejected with `IntegrityError` and retried, then
+    assert a second fetch with correct bytes succeeds and caches locally.
+    - Input: mock CDN returning corrupted bytes on first fetch, correct bytes on second
+    - Expected: first fetch returns `Err(IntegrityError { expected, actual })`, second fetch
+      succeeds, third access is a local cache hit
+
 ## Integration Tests
 
 | ID           | Name                                | Req       |
 |--------------|-------------------------------------|-----------|
-| TC-12.2.I.1  | `test_full_processing_graph`        | R-12.2.8  |
-| TC-12.2.I.2  | `test_incremental_only_changed`     | R-12.2.8  |
-| TC-12.2.I.3  | `test_shader_graph_full_pipeline`   | R-12.2.7  |
-| TC-12.2.I.4  | `test_texture_processor_per_target` | R-12.2.1  |
-| TC-12.2.I.5  | `test_mesh_lod_meshlet_chain`       | R-12.2.2  |
-| TC-12.2.I.6  | `test_audio_multi_preset_batch`     | R-12.2.6  |
-| TC-12.2.I.7  | `test_processing_parallel_fanout`   | R-12.2.8  |
+| TC-12.2.I.1  | `test_full_processing_graph`        | R-12.2.8   |
+| TC-12.2.I.2  | `test_incremental_only_changed`     | R-12.2.8   |
+| TC-12.2.I.3  | `test_shader_graph_full_pipeline`   | R-12.2.7   |
+| TC-12.2.I.4  | `test_texture_processor_per_target` | R-12.2.1   |
+| TC-12.2.I.5  | `test_mesh_lod_meshlet_chain`       | R-12.2.2   |
+| TC-12.2.I.6  | `test_audio_multi_preset_batch`     | R-12.2.6   |
+| TC-12.2.I.7  | `test_processing_parallel_fanout`   | R-12.2.8   |
+| TC-12.2.I.8  | `us_artist_texture_preset_import`   | US-12.2.1  |
+| TC-12.2.I.9  | `us_build_eng_platform_overrides`   | US-12.2.2  |
+| TC-12.2.I.10 | `us_env_artist_auto_lod_chain`      | US-12.2.3  |
+| TC-12.2.I.11 | `us_artist_lod_ratio_config`        | US-12.2.4  |
+| TC-12.2.I.12 | `us_eng_meshlet_bounds_for_culling` | US-12.2.5  |
+| TC-12.2.I.13 | `us_artist_vertex_order_optimized`  | US-12.2.6  |
+| TC-12.2.I.14 | `us_env_artist_auto_lightmap_uvs`   | US-12.2.7  |
+| TC-12.2.I.15 | `us_audio_designer_preset_encoding` | US-12.2.8  |
+| TC-12.2.I.16 | `us_artist_audio_preset_params`     | US-12.2.9  |
+| TC-12.2.I.17 | `us_artist_readable_hlsl_output`    | US-12.2.12 |
+| TC-12.2.I.18 | `us_build_eng_dep_graph_incremental`| US-12.2.13 |
+| TC-12.2.I.19 | `us_artist_circular_dep_reported`   | US-12.2.14 |
+| TC-12.2.I.20 | `us_artist_shader_error_click_thru` | US-12.2.16 |
+| TC-12.2.I.21 | `us_designer_auto_collider_import`  | US-12.2.18 |
+| TC-12.2.I.22 | `us_artist_collider_algo_choice`    | US-12.2.19 |
+| TC-12.2.I.23 | `us_env_artist_collider_coresident` | US-12.2.20 |
+| TC-12.2.I.24 | `us_eng_shader_reflection_all_backs`| US-12.2.15 |
+| TC-12.5.I.1  | `us_eng_vfs_unified_namespace`      | US-12.5.1  |
+| TC-12.5.I.2  | `us_build_eng_vfs_path_decoupling`  | US-12.5.2  |
+| TC-12.5.I.3  | `us_eng_async_direct_io_reads`      | US-12.5.3  |
+| TC-12.5.I.4  | `us_eng_file_to_gpu_dma`            | US-12.5.4  |
+| TC-12.5.I.5  | `us_env_artist_mip_screen_density`  | US-12.5.5  |
+| TC-12.5.I.6  | `us_env_artist_mesh_lod_crossfade`  | US-12.5.6  |
+| TC-12.5.I.7  | `us_artist_coarse_lod_always_resid` | US-12.5.7  |
+| TC-12.5.I.8  | `us_eng_priority_queue_scheduling`  | US-12.5.8  |
+| TC-12.5.I.9  | `us_eng_coalesce_and_age_requests`  | US-12.5.9  |
+| TC-12.5.I.10 | `us_artist_budget_progressive_evict`| US-12.5.10 |
+| TC-12.5.I.11 | `us_gamer_cdn_on_first_access`      | US-12.5.15 |
+| TC-12.5.I.12 | `us_eng_gpu_direct_storage_stream`  | US-12.5.16 |
+| TC-12.5.I.13 | `us_eng_gpu_compute_decompression`  | US-12.5.17 |
+| TC-12.5.I.14 | `us_dev_residency_lru_prefetch`     | US-12.5.18 |
+| TC-12.5.I.15 | `us_gamer_evict_on_os_pressure`     | US-12.5.19 |
 
 1. **TC-12.2.I.1** `test_full_processing_graph` — Build a processing graph from 50 mixed assets.
    Assert all 50 nodes process in topological order, no node runs before its dependencies, and final
@@ -248,6 +356,204 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
    than single-threaded.
    - Input: 100 textures, 8-thread pool
    - Expected: `wall_time_parallel * 4 < wall_time_serial`
+
+8. **TC-12.2.I.8** `us_artist_texture_preset_import` — As a technical artist, import a folder of 10
+   RGBA8 textures through the `Desktop` preset and 10 through the `MacOsAppleSilicon` preset without
+   touching config. Assert desktop artifacts are BC7 and Apple artifacts are ASTC 4×4.
+   - Input: 20 RGBA8 source textures, two preset selections via import dialog
+   - Expected: 10 BC7 + 10 ASTC 4×4 artifacts in CAS, zero manual format overrides
+
+9. **TC-12.2.I.9** `us_build_eng_platform_overrides` — As a build engineer, run a batch build with a
+   per-platform override table that selects BC7 for `Desktop`, ASTC for Apple Silicon, and ETC2 for
+   `AndroidEtc2Fallback`. Assert every target produces the expected format with no manual
+   intervention.
+   - Input: override table `{desktop: Bc7, apple: Astc4x4, android: Etc2Rgba8}`, 30 textures
+   - Expected: 90 artifacts generated (30 × 3), each matching the override table
+
+10. **TC-12.2.I.10** `us_env_artist_auto_lod_chain` — As an environment artist, import a 20k-tri
+    mesh with default settings (no LOD authoring). Assert a 4-level LOD chain is produced
+    automatically and each LOD is addressable in the processed mesh.
+    - Input: 20k-tri mesh, default `LodConfig`
+    - Expected: `lod_chain.len() == 4`, each LOD present in CAS, monotonically decreasing tri count
+
+11. **TC-12.2.I.11** `us_artist_lod_ratio_config` — As a technical artist, set per-level ratios
+    `[1.0, 0.6, 0.3, 0.1]` and error thresholds in the import settings. Assert the produced chain
+    matches the configured ratios within ±5% and respects each error bound.
+    - Input: 15k-tri mesh, custom `LodConfig`
+    - Expected: tri counts ≈ [15000, 9000, 4500, 1500], Hausdorff error ≤ configured threshold
+
+12. **TC-12.2.I.12** `us_eng_meshlet_bounds_for_culling` — As an engine developer, process a LOD
+    mesh and run the GPU culling pipeline against the generated meshlet AABB + normal cone. Assert
+    back-facing meshlets are culled and visible ones rendered.
+    - Input: 10k-tri sphere LOD, camera inside sphere facing +Z
+    - Expected: meshlets with `cone.axis.dot(view_dir) < -cone.cos_angle` culled, front meshlets
+      drawn
+
+13. **TC-12.2.I.13** `us_artist_vertex_order_optimized` — As a technical artist, process a mesh and
+    assert both vertex cache ACMR and overdraw ratio improve vs the raw imported order.
+    - Input: 8k-tri mesh, unoptimized indices
+    - Expected: ACMR drops below 1.5, overdraw ratio decreases by ≥ 20%
+
+14. **TC-12.2.I.14** `us_env_artist_auto_lightmap_uvs` — As an environment artist, process a static
+    building mesh with no lightmap UV authoring. Assert a non-overlapping UV atlas is generated at
+    uniform texel density.
+    - Input: 200-tri building mesh, `target_texel_density = 32`
+    - Expected: zero UV overlap (rasterized 1024² mask), density variance < 5%
+
+15. **TC-12.2.I.15** `us_audio_designer_preset_encoding` — As an audio designer, import 3 clips
+    tagged `Voice`, `ShortSfx`, and `LatencyCritical`. Assert the artifacts use Opus, ADPCM, and
+    PCM16 respectively.
+    - Input: 3 WAV clips, 3 preset tags
+    - Expected: `[Opus, Adpcm, Pcm16]` matching tags
+
+16. **TC-12.2.I.16** `us_artist_audio_preset_params` — As a technical artist, create two import
+    presets with different Opus bitrates (32 kbps vs 96 kbps) and process the same voice clip
+    through each. Assert the resulting artifact bitrates differ as configured.
+    - Input: 5 s voice clip, two Opus presets
+    - Expected: first artifact bitrate ∈ [28k, 36k], second ∈ [88k, 104k]
+
+17. **TC-12.2.I.17** `us_artist_readable_hlsl_output` — As a technical artist, compile a 10-node PBR
+    graph and open the generated HLSL in an IDE parser. Assert the parser reports zero errors and
+    each node emits a comment containing the graph node ID.
+    - Input: 10-node PBR graph
+    - Expected: HLSL has one `// node: nodeN` comment per graph node, IDE parser returns 0 errors
+
+18. **TC-12.2.I.18** `us_build_eng_dep_graph_incremental` — As a build engineer, process 500 assets
+    with a dep graph (texture → material → mesh → scene). Touch one texture; re-run processing.
+    Assert only dependents of that texture are reprocessed.
+    - Input: 500-asset DAG, modify `textures/tex_42.png`
+    - Expected: reprocess count equals transitive dependents of tex_42; all others cache hit
+
+19. **TC-12.2.I.19** `us_artist_circular_dep_reported` — As a technical artist, intentionally create
+    a circular reference `Mat_A → Mat_B → Mat_A` via import metadata. Assert processing halts with a
+    `CycleDetected` error naming both materials.
+    - Input: 2 materials with mutual references
+    - Expected: `Err(ProcessingError::CycleDetected { cycle: [Mat_A, Mat_B, Mat_A] })`
+
+20. **TC-12.2.I.20** `us_artist_shader_error_click_thru` — As a technical artist, edit a graph node
+    to produce a type error. Assert the error report contains both the HLSL line number and the
+    originating graph node identifier so the editor can jump to the node.
+    - Input: 8-node graph with invalid `mul` types
+    - Expected: `CompilationError { hlsl_line: N, graph_node: Some("mul_node") }` where N > 0
+
+21. **TC-12.2.I.21** `us_designer_auto_collider_import` — As a game designer, import a prop mesh
+    with default settings and assert a collision shape is produced and stored in the processed
+    artifact without manual authoring.
+    - Input: 500-tri prop mesh, default import settings
+    - Expected: processed artifact contains `CollisionShape`, physics backend loads it
+
+22. **TC-12.2.I.22** `us_artist_collider_algo_choice` — As a technical artist, select V-HACD for one
+    mesh, quickhull for a second, and AABB for a third via import settings. Assert each produces the
+    chosen shape variant.
+    - Input: 3 meshes with 3 collider choices
+    - Expected: artifacts contain `CollisionShape::ConvexDecomp`, `::ConvexHull`, `::Aabb`
+      respectively
+
+23. **TC-12.2.I.23** `us_env_artist_collider_coresident` — As an environment artist, load a
+    processed mesh at runtime. Assert the physics binding attaches the collision shape without
+    requiring a separate asset reference.
+    - Input: processed mesh artifact containing collider
+    - Expected: single `load(mesh_id)` yields both render mesh and collider; physics world contains
+      the body
+
+24. **TC-12.2.I.24** `us_eng_shader_reflection_all_backs` — As an engine developer, compile one HLSL
+    source through the pipeline to DXIL, SPIR-V, and MSL. Assert reflection data extracted from each
+    backend reports identical binding layouts and push-constant ranges.
+    - Input: single PBR HLSL source, dxc → DXIL, dxc → SPIR-V, metal-shaderconverter → MSL
+    - Expected: all three reflections contain the same descriptor-set/binding tuples and
+      push-constant ranges; no mismatches
+
+## Integration Tests — Streaming (US-12.5)
+
+1. **TC-12.5.I.1** `us_eng_vfs_unified_namespace` — As an engine developer, mount loose files, a
+   pak, and a mock HTTP store and fetch an asset by VFS path. Assert every subsystem (loader,
+   streaming, editor browser) reaches the asset through the same `VfsPath`.
+   - Input: 3 backing stores with one asset each, 3 subsystem clients
+   - Expected: every client returns identical content bytes via `vfs.resolve(path)`
+
+2. **TC-12.5.I.2** `us_build_eng_vfs_path_decoupling` — As a build engineer, switch a project
+   between a loose-file development layout and a shipping pak layout without changing any asset path
+   strings. Assert all in-engine references still resolve.
+   - Input: two layouts with identical VFS paths, sample project referencing 50 assets
+   - Expected: 50/50 resolve in both layouts; zero path rewrites required
+
+3. **TC-12.5.I.3** `us_eng_async_direct_io_reads` — As an engine developer, load a 100 MB pak entry
+   through the streaming manager while running two worker threads doing CPU-bound work. Assert
+   neither worker is blocked on I/O and throughput reaches ≥ 80% of raw sequential disk BW.
+   - Input: 100 MB entry, 2 busy workers, NVMe device
+   - Expected: workers make forward progress during load; measured BW ≥ 80% of raw
+
+4. **TC-12.5.I.4** `us_eng_file_to_gpu_dma` — As an engine developer, stream a 256 MB compressed
+   texture pack directly into GPU memory through `DirectStorageBackend`. Assert CPU utilization
+   stays below 5% during the transfer.
+   - Input: 256 MB Zstd pack, DirectStorage-capable backend
+   - Expected: transfer completes, CPU busy < 5%, final pixels match reference
+
+5. **TC-12.5.I.5** `us_env_artist_mip_screen_density` — As an environment artist, place 1,000
+   textures in a scene. Assert the residency manager holds only mips matching each texture's current
+   screen-space density.
+   - Input: 1,000 textures, camera at fixed pose
+   - Expected: for each texture, resident mip range equals `mip_for_density(screen_texels)` ± 1
+
+6. **TC-12.5.I.6** `us_env_artist_mesh_lod_crossfade` — As an environment artist, walk a camera
+   across a 10,000-mesh scene. Capture 60 frames during LOD transitions. Assert dithered cross-fade
+   is applied and no popping is visible (delta > threshold per pixel).
+   - Input: 10,000 meshes with 4 LODs each, camera path
+   - Expected: transition frames contain dither pattern; frame-to-frame color delta < threshold
+
+7. **TC-12.5.I.7** `us_artist_coarse_lod_always_resid` — As a technical artist, mark coarsest LOD as
+   permanently resident. Scroll the camera 5 km across terrain. Assert coarse LOD never evicts.
+   - Input: mesh LOD chain with resident-coarse flag, 5 km camera sweep
+   - Expected: `is_resident(id, coarsest_lod) == true` at every frame
+
+8. **TC-12.5.I.8** `us_eng_priority_queue_scheduling` — As an engine developer, submit 100
+   low-priority prefetch requests then 10 frame-critical requests mid-stream. Assert all
+   frame-critical requests complete before any pending prefetch.
+   - Input: 100 `Prefetch` + 10 `Critical` requests
+   - Expected: all 10 critical requests finish before the next prefetch dequeues
+
+9. **TC-12.5.I.9** `us_eng_coalesce_and_age_requests` — As an engine developer, submit 50 adjacent
+   chunk requests (contiguous file offsets) and 10 stale prefetches older than the aging interval.
+   Assert the scheduler issues a single coalesced I/O and the stale prefetches are promoted.
+   - Input: 50 adjacent requests, 10 stale prefetches, `aging_interval_frames = 60`
+   - Expected: coalesced issue count ≤ 5 (20%+ reduction), stale prefetches advance priority tier
+
+10. **TC-12.5.I.10** `us_artist_budget_progressive_evict` — As a technical artist, set a 512 MB GPU
+    budget and load assets until pressure hits `Emergency`. Assert progressive eviction occurs and
+    the process does not OOM.
+    - Input: `gpu_budget_bytes = 512 MB`, asset stream exceeding budget
+    - Expected: `evict_to_budget` runs, post-eviction usage ≤ 512 MB, no crash, no OOM
+
+11. **TC-12.5.I.11** `us_gamer_cdn_on_first_access` — As a game player, launch a game with zero
+    local assets cached. Open a level referencing 20 assets via the CDN manifest. Assert each asset
+    downloads on first access, passes hash verification, and is cached for subsequent accesses.
+    - Input: empty local cache, 20-asset CDN manifest
+    - Expected: 20 downloads on first frame, 0 downloads on second visit, hash match on all
+
+12. **TC-12.5.I.12** `us_eng_gpu_direct_storage_stream` — As an engine developer, stream 500
+    textures into GPU memory via the platform direct-storage path (DirectStorage, Metal IO, or
+    io_uring staging). Assert NVMe bandwidth saturates (≥ 3 GB/s) and CPU memory bandwidth is not
+    consumed by copies.
+    - Input: 500 textures (total 2 GB), platform DS backend
+    - Expected: sustained ≥ 3 GB/s, CPU memcpy traffic ≈ 0 (via perf counter)
+
+13. **TC-12.5.I.13** `us_eng_gpu_compute_decompression` — As an engine developer, load compressed
+    streamed assets and decompress them in place on the GPU via compute. Assert CPU usage stays low
+    during the decompression phase.
+    - Input: 200 Zstd-compressed chunks, compute decompress pipeline
+    - Expected: CPU busy < 5% while GPU decompresses, decompressed bytes match reference
+
+14. **TC-12.5.I.14** `us_dev_residency_lru_prefetch` — As a game developer, configure per-asset type
+    budgets and enable camera-driven prefetch. Walk a camera across an open-world path. Assert LRU
+    eviction keeps within budgets and prefetch hides latency (< 1% visible pop-ins).
+    - Input: texture/mesh budgets, 2 km camera path
+    - Expected: budgets never exceeded, pop-in events < 1% of frames
+
+15. **TC-12.5.I.15** `us_gamer_evict_on_os_pressure` — As a game player, run a long session
+    triggering an OS memory pressure signal. Assert the engine evicts unused assets on signal and
+    the session continues without OOM.
+    - Input: long-running session, synthetic `MemoryPressureLevel::Emergency` signal
+    - Expected: eviction frees ≥ 20% of managed memory, session continues, no crash
 
 ## Benchmarks
 
