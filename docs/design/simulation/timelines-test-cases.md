@@ -33,6 +33,11 @@ Test case IDs use `TC-17.4.Z.N` format. Every row links to a specific R-17.4.Z o
 | TC-17.4.11.3  | `test_event_loop_point`             | R-17.4.11  |
 | TC-17.4.12.1  | `test_rkyv_roundtrip_playback`      | R-17.4.12  |
 | TC-17.4.12.2  | `test_rkyv_roundtrip_track`         | R-17.4.12  |
+| TC-13.5.1.1   | `test_cutscene_multi_track_use`     | R-13.5.1   |
+| TC-13.5.3.1   | `test_camera_rail_spline_drive`     | R-13.5.3   |
+| TC-13.5.4.1   | `test_actor_anim_blend_timeline`    | R-13.5.4   |
+| TC-13.19.4a.1 | `test_npc_schedule_timeline`        | R-13.19.4a |
+| TC-13.23.4.1  | `test_login_reward_calendar`        | R-13.23.4  |
 
 1. **TC-17.4.1.1** `test_track_sample_linear_midpoint` — Track with two keyframes at `t=0, v=0` and
    `t=1, v=10`, both linear. Sample at `t=0.5`. Assert value is `5.0`.
@@ -166,6 +171,36 @@ Test case IDs use `TC-17.4.Z.N` format. Every row links to a specific R-17.4.Z o
     - Input: track with 16 keyframes spanning all interpolation modes
     - Expected: `archived.keyframes` matches input length and contents bit-identically
 
+26. **TC-13.5.1.1** `test_cutscene_multi_track_use` — Build a cutscene entity referencing a
+    `MultiTrackTimeline` with camera, audio, and actor tracks. Evaluate at several frames. Assert
+    each track samples against the same `current_time` without drift.
+    - Input: cutscene with 3 tracks; sample at t=0, 0.5, 1.0
+    - Expected: at each sample, all three tracks report the same `current_time`; samples match
+      independent computation
+
+27. **TC-13.5.3.1** `test_camera_rail_spline_drive` — Drive a camera along a spline by binding a
+    `Track<Vec3>` to `Camera.position` and `Track<Quat>` to `Camera.rotation`. Advance the timeline
+    and assert each frame's camera transform follows the track samples exactly.
+    - Input: two keyframed tracks; 60 frames
+    - Expected: camera position and rotation at each frame equal the sampled track values
+
+28. **TC-13.5.4.1** `test_actor_anim_blend_timeline` — Use a timeline bone-override track to modify
+    an actor's pose while gameplay animation is active. Assert the blend weights yield the correct
+    final pose.
+    - Input: gameplay layer weight 0.3; timeline override weight 0.7
+    - Expected: final bone transforms are `0.3 * gameplay + 0.7 * override`
+
+29. **TC-13.19.4a.1** `test_npc_schedule_timeline` — Model an NPC daily schedule as a timeline with
+    `KeyframeCrossed` trigger events at each waypoint. Advance 24 in-game hours; assert each
+    schedule event fires exactly once.
+    - Input: timeline with 6 schedule triggers over 24 hours
+    - Expected: 6 unique `KeyframeCrossed` events delivered; no duplicate or missed triggers
+
+30. **TC-13.23.4.1** `test_login_reward_calendar` — Author a daily login reward calendar as a
+    timeline with trigger events at day boundaries. Advance 7 days; assert 7 reward triggers fire.
+    - Input: calendar timeline with 7 daily triggers
+    - Expected: 7 `KeyframeCrossed` events, one per day boundary
+
 ## Integration Tests
 
 | ID            | Name                                  | Req        |
@@ -178,6 +213,18 @@ Test case IDs use `TC-17.4.Z.N` format. Every row links to a specific R-17.4.Z o
 | TC-17.4.I.6   | `test_property_animation_codegen`     | R-17.4.9   |
 | TC-17.4.I.7   | `test_scrubber_seek_and_record`       | R-17.4.10  |
 | TC-17.4.I.8   | `test_save_resume_mid_playback`       | R-17.4.12  |
+| TC-17.4.1.I1  | `test_author_generic_track`           | US-17.4.1  |
+| TC-17.4.2.I1  | `test_sim_track_sample_budget`        | US-17.4.2  |
+| TC-17.4.3.I1  | `test_author_multitrack_timeline`     | US-17.4.3  |
+| TC-17.4.4.I1  | `test_sim_32_track_eval`              | US-17.4.4  |
+| TC-17.4.5.I1  | `test_sim_1k_playback_advance`        | US-17.4.5  |
+| TC-17.4.6.I1  | `test_author_playback_controls`       | US-17.4.6  |
+| TC-17.4.7.I1  | `test_author_cutscene_sync`           | US-17.4.7  |
+| TC-17.4.8.I1  | `test_author_anim_blend_override`     | US-17.4.8  |
+| TC-17.4.9.I1  | `test_author_property_anim`           | US-17.4.9  |
+| TC-17.4.10.I1 | `test_author_scrubber_editor`         | US-17.4.10 |
+| TC-17.4.11.I1 | `test_author_event_on_keyframe`       | US-17.4.11 |
+| TC-17.4.12.I1 | `test_author_save_resume`             | US-17.4.12 |
 
 1. **TC-17.4.I.1** `test_32_track_evaluate_under_budget` — Construct a single timeline with 32
    `Track<TrackValue>` instances of varying types. Run `evaluate_all` for one frame on a single
@@ -227,6 +274,75 @@ Test case IDs use `TC-17.4.Z.N` format. Every row links to a specific R-17.4.Z o
    and progresses normally.
    - Input: timeline duration 5.0; advance 2.5 s; save; reload; advance 1.0 s
    - Expected: post-reload `current_time == 3.5`, all events from 2.5–3.5 fire exactly once
+
+9. **TC-17.4.1.I1** `test_author_generic_track` (US-17.4.1) — As a designer, author a generic
+   `Track<f32>` in the timeline editor for a "camera_fov" curve. Save and reload. Assert keyframes
+   and interpolation modes round-trip.
+   - Input: editor-authored 6-keyframe track with mixed interpolation
+   - Expected: reload yields identical keyframes and modes
+
+10. **TC-17.4.2.I1** `test_sim_track_sample_budget` (US-17.4.2) — As a developer, sample one track
+    10,000 times during a frame. Assert per-sample cost meets the documented budget (< 100 ns
+    amortized).
+    - Input: 100-keyframe track; 10,000 samples
+    - Expected: amortized per-sample time < 100 ns
+
+11. **TC-17.4.3.I1** `test_author_multitrack_timeline` (US-17.4.3) — As a designer, author a
+    multi-track timeline containing camera, audio, and actor animation tracks. Lookup tracks by name
+    and by ID. Assert lookups return the expected tracks.
+    - Input: 3-track timeline
+    - Expected: `track_by_name` and `track_by_id` return the correct tracks; misses return None
+
+12. **TC-17.4.4.I1** `test_sim_32_track_eval` (US-17.4.4) — As a developer, evaluate a
+    32-track-per-entity timeline for one frame and assert the full evaluation meets 0.5 ms.
+    - Input: 32-track timeline bound to one entity
+    - Expected: `evaluate_all` wall time < 0.5 ms
+
+13. **TC-17.4.5.I1** `test_sim_1k_playback_advance` (US-17.4.5) — As a developer, run 1,000
+    `PlaybackState` advances in one pass and assert the pass meets 0.5 ms budget.
+    - Input: 1k playback states
+    - Expected: pass wall time < 0.5 ms
+
+14. **TC-17.4.6.I1** `test_author_playback_controls` (US-17.4.6) — As a designer, control playback
+    with play/pause/seek/speed/reverse/loop. Exercise every control and assert state updates
+    accordingly.
+    - Input: timeline duration 2.0; call play, pause, seek(1.0), speed(2.0), reverse, loop
+    - Expected: each call results in the expected `PlaybackState` field change
+
+15. **TC-17.4.7.I1** `test_author_cutscene_sync` (US-17.4.7) — As a cinematic designer, author a
+    cutscene with camera, audio, and actor tracks. Play for 1 second. Assert all three tracks sample
+    against the same `current_time` each frame (no drift).
+    - Input: cutscene with 3 tracks
+    - Expected: per-frame sample time identical across all 3 tracks
+
+16. **TC-17.4.8.I1** `test_author_anim_blend_override` (US-17.4.8) — As an animator, use a timeline
+    to override specific bones on top of gameplay animation. Play the timeline; assert the blended
+    pose matches the designed weights.
+    - Input: gameplay layer weight 0.4; timeline override weight 0.6
+    - Expected: blended bone transforms equal `0.4*A + 0.6*B`
+
+17. **TC-17.4.9.I1** `test_author_property_anim` (US-17.4.9) — As a designer, bind a timeline track
+    to a codegen'd property (e.g., `Light.color`). Play the timeline; assert the target property
+    updates every frame from the sampled track value.
+    - Input: color track bound to `Light.color`; 60 frames
+    - Expected: each frame's color equals the track sample
+
+18. **TC-17.4.10.I1** `test_author_scrubber_editor` (US-17.4.10) — As a designer, scrub the timeline
+    editor to an arbitrary time, edit an entity property, and record a new keyframe at that time.
+    Assert the new keyframe is inserted at exactly the scrub position.
+    - Input: scrub to 1.5; edit property; record
+    - Expected: track keyframe count increases by 1; new keyframe time == 1.5
+
+19. **TC-17.4.11.I1** `test_author_event_on_keyframe` (US-17.4.11) — As a designer, mark a keyframe
+    as a trigger. Play the timeline across that keyframe. Assert exactly one `KeyframeCrossed` event
+    is emitted.
+    - Input: trigger keyframe at 0.5; advance 0.4→0.6
+    - Expected: one `KeyframeCrossed` event at time 0.5
+
+20. **TC-17.4.12.I1** `test_author_save_resume` (US-17.4.12) — As a player, save mid-cutscene and
+    reload later. Assert playback resumes at the saved time and events are not duplicated.
+    - Input: save at t=2.5; reload; advance 1.0 s
+    - Expected: post-reload current_time == 3.5; no duplicate events for t < 2.5
 
 ## Benchmarks
 
