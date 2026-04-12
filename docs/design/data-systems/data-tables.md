@@ -6,43 +6,54 @@
 > [features/](../../features/), [requirements/](../../requirements/), and
 > [user-stories/](../../user-stories/). The table below traces design elements to those definitions.
 
-| Feature    | Requirement  | Design Element                       |
-|------------|--------------|--------------------------------------|
-| F-13.7.1   | R-13.7.1     | Typed table schemas                  |
-| F-13.7.2   | R-13.7.2     | Row-based tables + FK refs           |
-| F-13.7.3   | R-13.7.3     | Foreign key resolution               |
-| F-13.7.4   | R-13.7.4     | Hot reload with versioning           |
-| F-13.7.5   | R-13.7.5     | Row inheritance chains               |
-| F-13.7.10  | R-13.7.10    | Locale-keyed string columns          |
-| F-13.7.11  | R-13.7.11    | Secondary indices                    |
-| F-13.7.12  | R-13.7.12    | ECS component binding                |
-| F-13.7.14  | R-13.7.14    | Schema validation                    |
-| F-13.10.1  | R-13.10.1    | Ability definition tables            |
-| F-13.12.1a | R-13.12.1a   | Race definition tables               |
-| F-13.12.1b | R-13.12.1b   | Class definition tables              |
-| F-13.12.1c | R-13.12.1c   | Multi-class tables                   |
-| F-13.12.1d | R-13.12.1d   | Prestige/rebirth tables              |
-| —          | R-13.7.NF1   | Hash index lookup < 1 µs (100k rows) |
-| —          | R-13.7.NF2   | Full load < 2 s (1M rows)            |
-| —          | R-13.7.NF3   | Hot reload < 500 ms (10k rows)       |
+### Engine Primitives (primary trace)
 
-1. **F-13.7.1** -- Typed column schemas with constraints
-2. **F-13.7.2** -- Row-based data tables as ECS resources
-3. **F-13.7.3** -- Cross-table foreign key references
-4. **F-13.7.4** -- Hot reload with schema versioning
-5. **F-13.7.5** -- Row inheritance (prototype chains)
-6. **F-13.7.10** -- Locale-keyed string columns with fallback
-7. **F-13.7.11** -- Hash/BTree secondary indices
-8. **F-13.7.12** -- ECS component binding from rows
-9. **F-13.7.14** -- Validation and constraint checking
-10. **F-13.10.1** -- Ability definitions stored as table rows
-11. **F-13.12.1a** -- Race definitions as table rows
-12. **F-13.12.1b** -- Class definitions as table rows
-13. **F-13.12.1c** -- Multi-class combos as table rows
-14. **F-13.12.1d** -- Prestige/rebirth data as table rows
-15. **R-13.7.NF1** -- Sorted-Vec index lookup < 1 µs on 100k-row table
-16. **R-13.7.NF2** -- All tables (1M rows total) loaded and validated < 2 s
-17. **R-13.7.NF3** -- Hot reload of a 10k-row table < 500 ms end-to-end
+| Feature   | Requirement | User Story  | Design Element                    |
+|-----------|-------------|-------------|-----------------------------------|
+| F-16.3.1  | R-16.3.1    | US-16.3.1   | Typed data table schemas          |
+| F-16.3.2  | R-16.3.2    | US-16.3.2   | Load-time schema validation       |
+| F-16.3.3  | R-16.3.3    | US-16.3.3   | Immutable rows + RowRef lookup    |
+| F-16.3.4  | R-16.3.4    | US-16.3.4   | Row inheritance (prototype chain) |
+| F-16.3.5  | R-16.3.5    | US-16.3.5   | Foreign key columns + resolution  |
+| F-16.3.6  | R-16.3.6    | US-16.3.6   | Cross-table join queries          |
+| F-16.3.7  | R-16.3.7    | US-16.3.7   | Hash + BTree secondary indices    |
+| F-16.3.8  | R-16.3.8    | US-16.3.8   | Locale-keyed string columns       |
+| F-16.3.9  | R-16.3.9    | US-16.3.9   | ECS component binding from rows   |
+| F-16.3.10 | R-16.3.10   | US-16.3.10  | Formula columns (visual graphs)   |
+| F-16.3.11 | R-16.3.11   | US-16.3.11  | Hot reload 10k rows < 500 ms      |
+| F-16.3.12 | R-16.3.12   | US-16.3.12  | Full load 1M rows < 2 s           |
+
+1. **R-16.3.1** -- Typed columns (bool, i32/i64, f32/f64, string, enum, FK, refs, array)
+2. **R-16.3.2** -- Schema validation with FK integrity, range, custom rules at load time
+3. **R-16.3.3** -- Immutable rows as ECS resources, RowRef zero-copy lookup
+4. **R-16.3.4** -- Prototype chain row inheritance with cycle detection
+5. **R-16.3.5** -- Foreign keys referencing rows in other tables
+6. **R-16.3.6** -- Cross-table join queries via FK relationships
+7. **R-16.3.7** -- Hash O(1) and BTree O(log n) secondary indices
+8. **R-16.3.8** -- Locale-keyed string columns with fallback
+9. **R-16.3.9** -- Spawn ECS entities from rows via codegen'd bindings
+10. **R-16.3.10** -- Formula columns compiled to native Rust via codegen
+11. **R-16.3.11** -- Hot reload 10,000-row table within 500 ms end-to-end
+12. **R-16.3.12** -- Full load and validate 1,000,000 total rows within 2 s
+
+### Game-Framework Consumers (cross-reference)
+
+| Feature    | Requirement | Consumer Role                                 |
+|------------|-------------|-----------------------------------------------|
+| F-13.7.1   | R-13.7.1    | Gameplay table schemas                        |
+| F-13.7.2   | R-13.7.2    | Gameplay rows as ECS resources                |
+| F-13.7.3   | R-13.7.3    | Cross-table gameplay references               |
+| F-13.7.4   | R-13.7.4    | Gameplay hot reload with versioning           |
+| F-13.7.5   | R-13.7.5    | Gameplay row inheritance chains               |
+| F-13.7.10  | R-13.7.10   | Localized gameplay strings                    |
+| F-13.7.11  | R-13.7.11   | Gameplay query indices                        |
+| F-13.7.12  | R-13.7.12   | Gameplay ECS component binding                |
+| F-13.7.14  | R-13.7.14   | Gameplay schema validation                    |
+| F-13.10.1  | R-13.10.1   | Ability definitions stored as table rows      |
+| F-13.12.1a | R-13.12.1a  | Race definitions as table rows                |
+| F-13.12.1b | R-13.12.1b  | Class definitions as table rows               |
+| F-13.12.1c | R-13.12.1c  | Multi-class combos as table rows              |
+| F-13.12.1d | R-13.12.1d  | Prestige/rebirth data as table rows           |
 
 ## Overview
 

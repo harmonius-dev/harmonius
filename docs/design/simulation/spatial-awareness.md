@@ -6,55 +6,49 @@
 > [features/](../../features/), [requirements/](../../requirements/), and
 > [user-stories/](../../user-stories/). The table below traces design elements to those definitions.
 
-### AI Perception Senses (F-7.6.1--7)
+### Engine Primitives (primary trace)
 
-| Feature | Requirement |
-|---------|-------------|
-| F-7.6.1 | R-7.6.1     |
-| F-7.6.2 | R-7.6.2     |
-| F-7.6.5 | R-7.6.5     |
-| F-7.6.6 | R-7.6.6     |
-| F-7.6.7 | R-7.6.7     |
+| Feature   | Requirement | User Story  | Design Element                   |
+|-----------|-------------|-------------|----------------------------------|
+| F-17.3.1  | R-17.3.1    | US-17.3.1   | SenseDefinition primitive        |
+| F-17.3.2  | R-17.3.2    | US-17.3.2   | 2D sense shapes (cone, etc.)    |
+| F-17.3.3  | R-17.3.3    | US-17.3.3   | Awareness state machine          |
+| F-17.3.4  | R-17.3.4    | US-17.3.4   | AwarenessTransitionEvent         |
+| F-17.3.5  | R-17.3.5    | US-17.3.5   | 100 queries/1,000 tgts < 2 ms    |
+| F-17.3.6  | R-17.3.6    | US-17.3.6   | Selection queries (50 < 0.5 ms)  |
+| F-17.3.7  | R-17.3.7    | US-17.3.7   | GPU ultra-scale evaluation       |
+| F-17.3.8  | R-17.3.8    | US-17.3.8   | 3D awareness visual indicators   |
+| F-17.3.9  | R-17.3.9    | US-17.3.9   | Debug gizmo rendering of senses  |
+| F-17.3.10 | R-17.3.10   | US-17.3.10  | One-frame awareness latency      |
 
-1. **F-7.6.1** -- Sight sense (cone + line of sight)
-2. **F-7.6.2** -- Hearing sense (radius + attenuation)
-3. **F-7.6.5** -- Stimuli registration and expiration
-4. **F-7.6.6** -- Sense aging and memory decay
-5. **F-7.6.7** -- Custom senses and perception priority
+1. **R-17.3.1** -- `SenseDefinition` primitive with shape, range, falloff, tags
+2. **R-17.3.2** -- 2D sense shapes (circle, cone, rectangle) with Transform2D
+3. **R-17.3.3** -- Per-entity awareness state machine (5 states)
+4. **R-17.3.4** -- `AwarenessTransitionEvent` via ECS event channel
+5. **R-17.3.5** -- 100 concurrent queries on 1,000 targets within 2 ms
+6. **R-17.3.6** -- Selection queries (raycast, box, nearest-N) within 0.5 ms
+7. **R-17.3.7** -- GPU compute spatial awareness for 1M+ entities
+8. **R-17.3.8** -- 3D visual indicators driven by awareness transitions
+9. **R-17.3.9** -- Debug gizmo rendering of sense volumes, layer filtered
+10. **R-17.3.10** -- Awareness state change within one frame of stimulus
 
-### Stealth and Alert States (F-13.18.1--3)
+### Game-Framework Consumers (cross-reference)
 
-| Feature   | Requirement |
-|-----------|-------------|
-| F-13.18.1 | R-13.18.1   |
-| F-13.18.2 | R-13.18.2   |
-| F-13.18.3 | R-13.18.3   |
-
-1. **F-13.18.1** -- Player visibility and stealth scoring
-2. **F-13.18.2** -- AI alert state machine (5 states)
-3. **F-13.18.3** -- Noise generation and distraction
-
-### Selection and Picking (F-13.11.1--2)
-
-| Feature   | Requirement |
-|-----------|-------------|
-| F-13.11.1 | R-13.11.1   |
-| F-13.11.2 | R-13.11.2   |
-
-1. **F-13.11.1** -- 3D world picking via raycast through shared spatial index
-2. **F-13.11.2** -- 2D screen-space picking with touch slop
-
-### Shared Spatial Index (F-1.9.1, F-1.9.4, F-1.9.9)
-
-| Feature | Requirement |
-|---------|-------------|
-| F-1.9.1 | R-1.9.1     |
-| F-1.9.4 | R-1.9.4     |
-| F-1.9.9 | R-1.9.9     |
-
-1. **F-1.9.1** -- Unified BVH/octree spatial index
-2. **F-1.9.4** -- Unified spatial query API
-3. **F-1.9.9** -- AI perception and gameplay integration
+| Feature   | Requirement | Consumer Role                                   |
+|-----------|-------------|-------------------------------------------------|
+| F-7.6.1   | R-7.6.1     | Sight sense (cone + line of sight)              |
+| F-7.6.2   | R-7.6.2     | Hearing sense (radius + attenuation)            |
+| F-7.6.5   | R-7.6.5     | Stimuli registration and expiration             |
+| F-7.6.6   | R-7.6.6     | Sense aging and memory decay                    |
+| F-7.6.7   | R-7.6.7     | Custom senses and perception priority           |
+| F-13.18.1 | R-13.18.1   | Player visibility and stealth scoring           |
+| F-13.18.2 | R-13.18.2   | AI alert state machine                          |
+| F-13.18.3 | R-13.18.3   | Noise generation and distraction                |
+| F-13.11.1 | R-13.11.1   | 3D world picking via shared spatial index       |
+| F-13.11.2 | R-13.11.2   | 2D screen-space picking with touch slop         |
+| F-1.9.1   | R-1.9.1     | Unified BVH/octree spatial index                |
+| F-1.9.4   | R-1.9.4     | Unified spatial query API                       |
+| F-1.9.9   | R-1.9.9     | AI perception and gameplay integration          |
 
 ### Cross-Cutting Dependencies
 

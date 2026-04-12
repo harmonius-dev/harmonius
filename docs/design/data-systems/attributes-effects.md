@@ -6,21 +6,45 @@
 > [features/](../../features/), [requirements/](../../requirements/), and
 > [user-stories/](../../user-stories/).
 
-### Core Features
+### Engine Primitives (primary trace)
 
-| Feature   | Requirement | Design Element     |
-|-----------|-------------|--------------------|
-| F-13.9.1  | R-13.9.1    | Attribute sets     |
-| F-13.9.2  | R-13.9.2    | Meters             |
-| F-13.9.3  | R-13.9.3    | Modifier stacks    |
-| F-13.10.3 | R-13.10.3   | Gameplay effects   |
-| F-13.12.5 | R-13.12.5   | Faction reputation |
+| Feature   | Requirement | User Story  | Design Element                |
+|-----------|-------------|-------------|-------------------------------|
+| F-16.1.1  | R-16.1.1    | US-16.1.1   | Meter primitive (bounded val) |
+| F-16.1.2  | R-16.1.2    | US-16.1.2   | Threshold crossings + events  |
+| F-16.1.3  | R-16.1.3    | US-16.1.3   | 1,000 meters < 0.5 ms/frame   |
+| F-16.1.4  | R-16.1.4    | US-16.1.4   | Schema-defined attribute sets |
+| F-16.1.5  | R-16.1.5    | US-16.1.5   | 10,000 attr reads < 0.1 ms    |
+| F-16.1.6  | R-16.1.6    | US-16.1.6   | Layered modifier stack        |
+| F-16.1.7  | R-16.1.7    | US-16.1.7   | Effect definitions (4 types)  |
+| F-16.1.8  | R-16.1.8    | US-16.1.8   | Stacking rules (4 variants)   |
+| F-16.1.9  | R-16.1.9    | US-16.1.9   | VFX indicator lifecycle       |
+| F-16.1.10 | R-16.1.10   | US-16.1.10  | 64 effects/entity < 0.1 ms    |
+| F-16.1.11 | R-16.1.11   | US-16.1.11  | ConditionExpr tree evaluation |
+| F-16.1.12 | R-16.1.12   | US-16.1.12  | Effect lifecycle events       |
 
-1. **F-13.9.1** -- Schema-defined named-value collections with modifier stacks
-2. **F-13.9.2** -- Bounded numeric values with drain/fill rates and threshold events
-3. **F-13.9.3** -- Layered modifier pipeline (flat, percent, override)
-4. **F-13.10.3** -- Time-limited bundles applying modifiers, firing events, interacting via tags
-5. **F-13.12.5** -- Faction reputation as a meter with tier thresholds
+1. **R-16.1.1** -- Meter primitive with min/max, default, drain/fill rates
+2. **R-16.1.2** -- Threshold crossings with rising/falling/either direction
+3. **R-16.1.3** -- 1,000 meters evaluated within 0.5 ms per frame
+4. **R-16.1.4** -- Schema-driven attribute sets with typed field definitions
+5. **R-16.1.5** -- 10,000 attribute reads within 0.1 ms per frame
+6. **R-16.1.6** -- Layered modifier stacks (flat, percent, override) deterministic order
+7. **R-16.1.7** -- Effect definitions (Instant, Duration, Periodic, Infinite)
+8. **R-16.1.8** -- Stacking rules (additive, multiplicative, highest-wins, non-stacking)
+9. **R-16.1.9** -- VFX effect graph instances associated with active effects
+10. **R-16.1.10** -- 64 concurrent effects per entity ticked within 0.1 ms
+11. **R-16.1.11** -- Boolean condition expression trees gating effects and thresholds
+12. **R-16.1.12** -- Applied/ticked/expired/removed effect events through ECS channel
+
+### Game-Framework Consumers (cross-reference)
+
+| Feature   | Requirement | Consumer Role                                         |
+|-----------|-------------|-------------------------------------------------------|
+| F-13.9.1  | R-13.9.1    | Character stats composed from attribute sets          |
+| F-13.9.2  | R-13.9.2    | Health/stamina/mana meters bound to characters       |
+| F-13.9.3  | R-13.9.3    | Buff/equipment modifiers applied via modifier stacks |
+| F-13.10.3 | R-13.10.3   | Gameplay effects (buffs, debuffs, DoT, HoT)          |
+| F-13.12.5 | R-13.12.5   | Faction reputation as meter with tier thresholds     |
 
 ### Non-Functional Requirements
 

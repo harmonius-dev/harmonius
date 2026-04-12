@@ -2,19 +2,45 @@
 
 ## Requirements Trace
 
-| Feature  | Requirement | Domain               |
-|----------|-------------|----------------------|
-| F-13.8.1 | R-13.8.1   | Grid-layout storage  |
-| F-13.8.2 | R-13.8.2   | Item stacking        |
-| F-13.8.3 | R-13.8.3   | Socket attachment    |
-| F-13.8.4 | R-13.8.4   | Equipment slots      |
-| F-13.8.5 | R-13.8.5   | Drag-drop operations |
+> **Canonical sources:** Features, requirements, and user stories live in
+> [features/](../../features/), [requirements/](../../requirements/), and
+> [user-stories/](../../user-stories/).
 
-1. **F-13.8.1** -- Containers with optional grid layout
-2. **F-13.8.2** -- Item stacking with per-type limits
-3. **F-13.8.3** -- Socket attachment points on entities
-4. **F-13.8.4** -- Typed equipment slot definitions
-5. **F-13.8.5** -- Drag-drop transfer operations
+### Engine Primitives (primary trace)
+
+| Feature   | Requirement | User Story  | Design Element                 |
+|-----------|-------------|-------------|--------------------------------|
+| F-16.2.1  | R-16.2.1    | US-16.2.1   | Container ECS primitive        |
+| F-16.2.2  | R-16.2.2    | US-16.2.2   | Grid-layout containers         |
+| F-16.2.3  | R-16.2.3    | US-16.2.3   | Item stacking with max stacks  |
+| F-16.2.4  | R-16.2.4    | US-16.2.4   | Container nesting depth check  |
+| F-16.2.5  | R-16.2.5    | US-16.2.5   | Sort requests                  |
+| F-16.2.6  | R-16.2.6    | US-16.2.6   | Socket primitive + tag compat  |
+| F-16.2.7  | R-16.2.7    | US-16.2.7   | Stat propagation from sockets  |
+| F-16.2.8  | R-16.2.8    | US-16.2.8   | Visual override binding        |
+| F-16.2.9  | R-16.2.9    | US-16.2.9   | Transfer validation < 0.1 ms   |
+| F-16.2.10 | R-16.2.10   | US-16.2.10  | Crafting recipe integration    |
+
+1. **R-16.2.1** -- Bounded container component with capacity, weight, slot count
+2. **R-16.2.2** -- Grid-layout containers with 2D cell occupancy and bin packing
+3. **R-16.2.3** -- Item stacking with per-type max stack size and auto merge
+4. **R-16.2.4** -- Container nesting depth validation
+5. **R-16.2.5** -- In-place sort by configurable criteria via SortRequest
+6. **R-16.2.6** -- Socket primitive with tag set, transform offset, occupant
+7. **R-16.2.7** -- Stat modifier propagation from socketed items
+8. **R-16.2.8** -- Visual override binding at socket offsets
+9. **R-16.2.9** -- Transfer validation under 0.1 ms per transfer
+10. **R-16.2.10** -- Crafting ingredient check and atomic consumption
+
+### Game-Framework Consumers (cross-reference)
+
+| Feature  | Requirement | Consumer Role                                         |
+|----------|-------------|-------------------------------------------------------|
+| F-13.8.1 | R-13.8.1    | Inventories composed from grid-layout containers     |
+| F-13.8.2 | R-13.8.2    | Stackable resources (ammo, potions, materials)       |
+| F-13.8.3 | R-13.8.3    | Gem/rune/attachment sockets                          |
+| F-13.8.4 | R-13.8.4    | Typed character equipment slots                       |
+| F-13.8.5 | R-13.8.5    | Drag-drop UI routed through transfer validator       |
 
 ### Cross-Cutting Dependencies
 

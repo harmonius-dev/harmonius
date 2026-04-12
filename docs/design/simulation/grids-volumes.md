@@ -6,49 +6,50 @@
 > [features/](../../features/), [requirements/](../../requirements/), and
 > [user-stories/](../../user-stories/). The table below traces design elements to those definitions.
 
-### Fog of War Grids (F-13.20.1--4)
+### Engine Primitives (primary trace)
 
-| Feature   | Requirement |
-|-----------|-------------|
-| F-13.20.1 | R-13.20.1   |
-| F-13.20.2 | R-13.20.2   |
-| F-13.20.3 | R-13.20.3   |
-| F-13.20.4 | R-13.20.4   |
+| Feature   | Requirement | User Story  | Design Element                    |
+|-----------|-------------|-------------|-----------------------------------|
+| F-17.2.1  | R-17.2.1    | US-17.2.1   | UniformGrid<T> 2D primitive       |
+| F-17.2.2  | R-17.2.2    | US-17.2.2   | 256x256 propagation < 1 ms        |
+| F-17.2.3  | R-17.2.3    | US-17.2.3   | LOS over 128 cells < 0.01 ms      |
+| F-17.2.4  | R-17.2.4    | US-17.2.4   | 2D flow fields (Dijkstra)         |
+| F-17.2.5  | R-17.2.5    | US-17.2.5   | Influence propagation with decay  |
+| F-17.2.6  | R-17.2.6    | US-17.2.6   | VoxelVolume<T> chunked + palette  |
+| F-17.2.7  | R-17.2.7    | US-17.2.7   | Voxel raycast 512 voxels < 2 ms   |
+| F-17.2.8  | R-17.2.8    | US-17.2.8   | SDF from voxels, dirty-region     |
+| F-17.2.9  | R-17.2.9    | US-17.2.9   | GPU dirty region upload < 1 ms    |
+| F-17.2.10 | R-17.2.10   | US-17.2.10  | GPU compute grid propagation      |
+| F-17.2.11 | R-17.2.11   | US-17.2.11  | Hierarchical multi-res grid       |
+| F-17.2.12 | R-17.2.12   | US-17.2.12  | AOI grid for replication filter   |
 
-1. **F-13.20.1** -- Grid-based visibility with 3-state cells and GPU fog texture
-2. **F-13.20.2** -- Vision sources with sight radius, shape, and LOS blocking
-3. **F-13.20.3** -- Vision modifier volumes (stealth zones, smoke, high ground)
-4. **F-13.20.4** -- Fog memory with last-seen snapshots
+1. **R-17.2.1** -- Generic 2D `UniformGrid<T>` with fixed cell size and bounds
+2. **R-17.2.2** -- 256x256 propagation step within 1 ms per tick
+3. **R-17.2.3** -- Line-of-sight over 128-cell distance within 0.01 ms
+4. **R-17.2.4** -- 2D flow fields via Dijkstra propagation from goals
+5. **R-17.2.5** -- Influence propagation with per-step decay and obstacle blocking
+6. **R-17.2.6** -- Generic 3D `VoxelVolume<T>` with chunks and palette compression
+7. **R-17.2.7** -- Voxel raycast up to 512 voxels in length within 2 ms
+8. **R-17.2.8** -- Signed distance fields from voxel surfaces, dirty region scope
+9. **R-17.2.9** -- GPU dirty region upload within 1 ms per tick
+10. **R-17.2.10** -- GPU compute propagation when CPU budget exceeded
+11. **R-17.2.11** -- Hierarchical grid variant with multi-resolution cells
+12. **R-17.2.12** -- Uniform grid of entity sets for networking AOI filter
 
-### Tactical Grids (F-13.21.1, F-13.21.4)
+### Game-Framework Consumers (cross-reference)
 
-| Feature   | Requirement |
-|-----------|-------------|
-| F-13.21.1 | R-13.21.1   |
-| F-13.21.4 | R-13.21.4   |
-
-1. **F-13.21.1** -- Tactical grid (square/hex) with cover, elevation, occupancy
-2. **F-13.21.4** -- Grid cover, flanking, and overwatch stance
-
-### Voxel Blocks (F-13.27.1--3)
-
-| Feature   | Requirement |
-|-----------|-------------|
-| F-13.27.1 | R-13.27.1   |
-| F-13.27.2 | R-13.27.2   |
-| F-13.27.3 | R-13.27.3   |
-
-1. **F-13.27.1** -- Block type registry with O(1) lookup
-2. **F-13.27.2** -- Block placement and destruction via raycast
-3. **F-13.27.3** -- Chunk-based block storage with palette compression
-
-### AI Perception Grids (F-7.6.8)
-
-| Feature | Requirement |
-|---------|-------------|
-| F-7.6.8 | R-7.6.8     |
-
-1. **F-7.6.8** -- Scent trails stored in spatial grid with decay and wind propagation
+| Feature   | Requirement | Consumer Role                                         |
+|-----------|-------------|-------------------------------------------------------|
+| F-13.20.1 | R-13.20.1   | Fog of war 3-state cells and GPU fog texture          |
+| F-13.20.2 | R-13.20.2   | Vision sources with radius, shape, LOS blocking       |
+| F-13.20.3 | R-13.20.3   | Vision modifier volumes (stealth, smoke, high ground) |
+| F-13.20.4 | R-13.20.4   | Fog memory with last-seen snapshots                   |
+| F-13.21.1 | R-13.21.1   | Tactical grid with cover, elevation, occupancy        |
+| F-13.21.4 | R-13.21.4   | Grid cover, flanking, and overwatch stance            |
+| F-13.27.1 | R-13.27.1   | Block type registry with O(1) lookup                  |
+| F-13.27.2 | R-13.27.2   | Block placement and destruction via raycast           |
+| F-13.27.3 | R-13.27.3   | Chunk-based block storage with palette compression    |
+| F-7.6.8   | R-7.6.8     | Scent trails as spatial grid with decay and wind      |
 
 ### Non-Functional Requirements
 

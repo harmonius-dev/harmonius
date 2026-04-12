@@ -6,17 +6,35 @@
 > [features/](../../features/), [requirements/](../../requirements/), and
 > [user-stories/](../../user-stories/). The table below traces design elements to those definitions.
 
-### Bounded Event Log
+### Engine Primitives (primary trace)
 
-| Feature    | Requirement |
-|------------|-------------|
-| F-13.19.3a | R-13.19.3a  |
-| F-13.19.3b | R-13.19.3b  |
-| F-13.19.6  | R-13.19.6   |
+| Feature  | Requirement | User Story | Design Element                   |
+|----------|-------------|------------|----------------------------------|
+| F-17.1.1 | R-17.1.1    | US-17.1.1  | EventLog<T> bounded primitive    |
+| F-17.1.2 | R-17.1.2    | US-17.1.2  | 256 B per-entry memory budget    |
+| F-17.1.3 | R-17.1.3    | US-17.1.3  | Decay curves (linear/exp/step)   |
+| F-17.1.4 | R-17.1.4    | US-17.1.4  | 1,000 logs decay < 2 ms          |
+| F-17.1.5 | R-17.1.5    | US-17.1.5  | Propagation with accuracy loss   |
+| F-17.1.6 | R-17.1.6    | US-17.1.6  | 50-neighbor propagate < 0.5 ms   |
+| F-17.1.7 | R-17.1.7    | US-17.1.7  | Threshold-triggered events       |
+| F-17.1.8 | R-17.1.8    | US-17.1.8  | rkyv save/load round-trip        |
 
-1. **F-13.19.3a** -- Deed memory with emotional weight and time-based decay
-2. **F-13.19.3b** -- Gossip propagation with accuracy degradation per hop
-3. **F-13.19.6** -- Threat tables with per-ability modifiers and decay
+1. **R-17.1.1** -- Generic `EventLog<T>` with capacity, timestamp order, FIFO eviction
+2. **R-17.1.2** -- Per-entry memory bounded to 256 B on all platforms
+3. **R-17.1.3** -- Decay curves (linear, exponential, step) over accuracy
+4. **R-17.1.4** -- Decay pass for 1,000 logs within 2 ms per tick
+5. **R-17.1.5** -- Propagation rules with per-hop accuracy loss
+6. **R-17.1.6** -- Propagation to 50 nearby neighbors within 0.5 ms
+7. **R-17.1.7** -- Threshold triggers (count, time window, event type) fire events
+8. **R-17.1.8** -- rkyv serialization with bit-identical round-trip
+
+### Game-Framework Consumers (cross-reference)
+
+| Feature    | Requirement | Consumer Role                                    |
+|------------|-------------|--------------------------------------------------|
+| F-13.19.3a | R-13.19.3a  | NPC deed memory with emotional weight            |
+| F-13.19.3b | R-13.19.3b  | Gossip propagation between NPCs                  |
+| F-13.19.6  | R-13.19.6   | Threat tables with per-ability modifiers         |
 
 ### Non-Functional Requirements
 

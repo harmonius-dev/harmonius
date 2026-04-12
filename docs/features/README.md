@@ -22,7 +22,9 @@ the domain, Y is the group, and Z is the feature number.
 | 13 | Game Framework | 27 | 360 |
 | 14 | Platform | 7 | 115 |
 | 15 | Tools & Editor | 24 | 238 |
-| | **Total** | **147** | **1,571** |
+| 16 | Data Systems | 4 | 45 |
+| 17 | Simulation | 4 | 42 |
+| | **Total** | **155** | **1,658** |
 
 ## 1. Core Runtime
 
@@ -245,3 +247,21 @@ the domain, Y is the group, and Z is the feature number.
 | [mod-support.md](tools-editor/mod-support.md) | 6 |
 | [vr-editor.md](tools-editor/vr-editor.md) | 6 |
 | [localization-editor.md](tools-editor/localization-editor.md) | 3 |
+
+## 16. Data Systems
+
+| File | Features |
+|------|--------:|
+| [attributes-effects.md](data-systems/attributes-effects.md) | 12 |
+| [data-tables.md](data-systems/data-tables.md) | 12 |
+| [directed-graphs.md](data-systems/directed-graphs.md) | 11 |
+| [containers-slots.md](data-systems/containers-slots.md) | 10 |
+
+## 17. Simulation
+
+| File | Features |
+|------|--------:|
+| [grids-volumes.md](simulation/grids-volumes.md) | 12 |
+| [timelines.md](simulation/timelines.md) | 12 |
+| [spatial-awareness.md](simulation/spatial-awareness.md) | 10 |
+| [event-logs.md](simulation/event-logs.md) | 8 |

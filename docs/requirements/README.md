@@ -22,8 +22,10 @@ Functional and non-functional requirements for all engine subsystems. Each requi
 | 13 | Game Framework | 27 | 236 |
 | 14 | Platform | 7 | 130 |
 | 15 | Tools & Editor | 24 | 204 |
+| 16 | Data Systems | 4 | 45 |
+| 17 | Simulation | 4 | 42 |
 | X | Cross-Cutting | 1 | 33 |
-| | **Total** | **149** | **1,494** |
+| | **Total** | **157** | **1,581** |
 
 ## 1. Core Runtime
 
@@ -247,6 +249,24 @@ Functional and non-functional requirements for all engine subsystems. Each requi
 | [mod-support.md](tools-editor/mod-support.md) | 6 |
 | [vr-editor.md](tools-editor/vr-editor.md) | 6 |
 | [localization-editor.md](tools-editor/localization-editor.md) | 3 |
+
+## 16. Data Systems
+
+| File | Requirements |
+|------|-----------:|
+| [attributes-effects.md](data-systems/attributes-effects.md) | 12 |
+| [data-tables.md](data-systems/data-tables.md) | 12 |
+| [directed-graphs.md](data-systems/directed-graphs.md) | 11 |
+| [containers-slots.md](data-systems/containers-slots.md) | 10 |
+
+## 17. Simulation
+
+| File | Requirements |
+|------|-----------:|
+| [grids-volumes.md](simulation/grids-volumes.md) | 12 |
+| [timelines.md](simulation/timelines.md) | 12 |
+| [spatial-awareness.md](simulation/spatial-awareness.md) | 10 |
+| [event-logs.md](simulation/event-logs.md) | 8 |
 
 ## X. Cross-Cutting
 

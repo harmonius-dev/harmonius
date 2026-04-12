@@ -6,21 +6,44 @@
 > [features/](../../features/), [requirements/](../../requirements/), and
 > [user-stories/](../../user-stories/). The table below traces design elements to those definitions.
 
-### Traced Features
+### Engine Primitives (primary trace)
 
-| Feature    | Requirement |
-|------------|-------------|
-| F-13.6.1   | R-13.6.1    |
-| F-13.6.4   | R-13.6.4    |
-| F-13.10.1  | R-13.10.1   |
-| F-13.12.2a | R-13.12.2a  |
+| Feature   | Requirement | User Story  | Design Element                   |
+|-----------|-------------|-------------|----------------------------------|
+| F-16.4.1  | R-16.4.1    | US-16.4.1   | DirectedGraph<N, E> primitive    |
+| F-16.4.2  | R-16.4.2    | US-16.4.2   | Cycle detection (DFS)            |
+| F-16.4.3  | R-16.4.3    | US-16.4.3   | Topological sort O(V + E)        |
+| F-16.4.4  | R-16.4.4    | US-16.4.4   | ConditionalGraph guards          |
+| F-16.4.5  | R-16.4.5    | US-16.4.5   | OrderedGraph sibling order       |
+| F-16.4.6  | R-16.4.6    | US-16.4.6   | Weighted edges, shortest path    |
+| F-16.4.7  | R-16.4.7    | US-16.4.7   | BFS / DFS pre / DFS post         |
+| F-16.4.8  | R-16.4.8    | US-16.4.8   | Tree ops (root, leaves, LCA)     |
+| F-16.4.9  | R-16.4.9    | US-16.4.9   | Dead-node + transitive reduction |
+| F-16.4.10 | R-16.4.10   | US-16.4.10  | Multi-graph (parallel edges)     |
+| F-16.4.11 | R-16.4.11   | US-16.4.11  | Indicator spawn/despawn events   |
 
-1. **F-13.6.1** -- Quest graph as DAG of typed objectives with conditional edges
-2. **F-13.6.4** -- Branching dialogue trees with conditions and side effects
-3. **F-13.10.1** -- Ability composition via directed graphs
-4. **F-13.12.2a** -- Talent trees as DAGs with typed nodes, prerequisites, tier gating
+1. **R-16.4.1** -- Generic DirectedGraph with adjacency list and generational handles
+2. **R-16.4.2** -- Cycle detection rejecting back edges on acyclic graphs
+3. **R-16.4.3** -- Deterministic topological sort in O(V + E)
+4. **R-16.4.4** -- ConditionalGraph wrapping DirectedGraph with ConditionExpr guards
+5. **R-16.4.5** -- OrderedGraph wrapping DirectedGraph with per-node child ordering
+6. **R-16.4.6** -- Weighted edges, Dijkstra shortest path, budget-limited reach
+7. **R-16.4.7** -- BFS, DFS pre-order, DFS post-order traversals with filters
+8. **R-16.4.8** -- Tree operations: root, leaves, depth, subtree, ancestors, LCA
+9. **R-16.4.9** -- Dead node elimination and transitive reduction
+10. **R-16.4.10** -- Multi-graph support (parallel edges between same node pair)
+11. **R-16.4.11** -- Spawn/despawn 3D indicators via ECS events on traversal changes
 
-> This design provides the **generic graph primitive** that all four features compose upon. No
+### Game-Framework Consumers (cross-reference)
+
+| Feature    | Requirement | Consumer Role                                        |
+|------------|-------------|------------------------------------------------------|
+| F-13.6.1   | R-13.6.1    | Quest graph as DAG of typed objectives              |
+| F-13.6.4   | R-13.6.4    | Branching dialogue trees with conditions            |
+| F-13.10.1  | R-13.10.1   | Ability composition via directed graphs            |
+| F-13.12.2a | R-13.12.2a  | Talent trees as DAGs with prerequisites             |
+
+> This design provides the **generic graph primitive** that all consumers compose upon. No
 > game-specific semantics exist in these types. Domain-specific behavior (quests, dialogue,
 > abilities, talents) is built by parameterizing the graph with domain node and edge types.
 

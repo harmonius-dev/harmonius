@@ -8,8 +8,7 @@ Consolidates test cases from the following former files:
 - editor-plugins-test-cases.md
 - vr-editor-test-cases.md
 
-See those files for the full test case definitions until
-migration is complete.
+See those files for the full test case definitions until migration is complete.
 
 ## Unit Tests
 

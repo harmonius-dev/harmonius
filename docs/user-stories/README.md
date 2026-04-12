@@ -25,7 +25,9 @@ See [personas.md](personas.md) for the complete persona catalog.
 | 13 | Game Framework | 27 | 664 |
 | 14 | Platform | 7 | 175 |
 | 15 | Tools & Editor | 24 | 411 |
-| | **Total** | **148** | **3,075** |
+| 16 | Data Systems | 4 | 45 |
+| 17 | Simulation | 4 | 42 |
+| | **Total** | **156** | **3,162** |
 
 ## 1. Core Runtime
 
@@ -249,3 +251,21 @@ See [personas.md](personas.md) for the complete persona catalog.
 | [mod-support.md](tools-editor/mod-support.md) | 12 |
 | [vr-editor.md](tools-editor/vr-editor.md) | 12 |
 | [localization-editor.md](tools-editor/localization-editor.md) | 6 |
+
+## 16. Data Systems
+
+| File | Stories |
+|------|-------:|
+| [attributes-effects.md](data-systems/attributes-effects.md) | 12 |
+| [data-tables.md](data-systems/data-tables.md) | 12 |
+| [directed-graphs.md](data-systems/directed-graphs.md) | 11 |
+| [containers-slots.md](data-systems/containers-slots.md) | 10 |
+
+## 17. Simulation
+
+| File | Stories |
+|------|-------:|
+| [grids-volumes.md](simulation/grids-volumes.md) | 12 |
+| [timelines.md](simulation/timelines.md) | 12 |
+| [spatial-awareness.md](simulation/spatial-awareness.md) | 10 |
+| [event-logs.md](simulation/event-logs.md) | 8 |

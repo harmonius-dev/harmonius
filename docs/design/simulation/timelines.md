@@ -6,21 +6,45 @@
 > [features/](../../features/), [requirements/](../../requirements/), and
 > [user-stories/](../../user-stories/). The table below traces design elements to those definitions.
 
-### Timeline (F-13.5.1, F-13.5.3, F-13.5.4, F-13.19.4a, F-13.23.4)
+### Engine Primitives (primary trace)
 
-| Feature    | Requirement |
-|------------|-------------|
-| F-13.5.1   | R-13.5.1    |
-| F-13.5.3   | R-13.5.3    |
-| F-13.5.4   | R-13.5.4    |
-| F-13.19.4a | R-13.19.4a  |
-| F-13.23.4  | R-13.23.4   |
+| Feature   | Requirement | User Story  | Design Element                   |
+|-----------|-------------|-------------|----------------------------------|
+| F-17.4.1  | R-17.4.1    | US-17.4.1   | Track<T> + Keyframe<T> primitive |
+| F-17.4.2  | R-17.4.2    | US-17.4.2   | Sample cost < 100 ns             |
+| F-17.4.3  | R-17.4.3    | US-17.4.3   | MultiTrackTimeline asset         |
+| F-17.4.4  | R-17.4.4    | US-17.4.4   | 32 tracks evaluated < 0.5 ms     |
+| F-17.4.5  | R-17.4.5    | US-17.4.5   | 1,000 playbacks advance <0.5 ms  |
+| F-17.4.6  | R-17.4.6    | US-17.4.6   | PlaybackState ECS component      |
+| F-17.4.7  | R-17.4.7    | US-17.4.7   | Cutscene composite primitive     |
+| F-17.4.8  | R-17.4.8    | US-17.4.8   | Animation blending integration   |
+| F-17.4.9  | R-17.4.9    | US-17.4.9   | Property animation via codegen   |
+| F-17.4.10 | R-17.4.10   | US-17.4.10  | Scrubbing and keyframe-on-edit   |
+| F-17.4.11 | R-17.4.11   | US-17.4.11  | Timeline keyframe events         |
+| F-17.4.12 | R-17.4.12   | US-17.4.12  | rkyv playback state persistence  |
 
-1. **F-13.5.1** -- Multi-track timeline sequencer with deterministic playback
-2. **F-13.5.3** -- Camera rails and splines with branching paths (timeline-driven)
-3. **F-13.5.4** -- Actor animation blending between gameplay and cinematic (timeline-driven)
-4. **F-13.19.4a** -- Schedule data model: time ranges, locations, activities (timeline-based)
-5. **F-13.23.4** -- Daily login reward calendar with streak tracking (timeline-based)
+1. **R-17.4.1** -- Generic `Track<T>` with `Keyframe<T>` and interpolation modes
+2. **R-17.4.2** -- Single track sample under 100 ns per sample
+3. **R-17.4.3** -- `MultiTrackTimeline` immutable asset with synced tracks
+4. **R-17.4.4** -- 32 active tracks on one timeline within 0.5 ms per frame
+5. **R-17.4.5** -- 1,000 active playback states advanced within 0.5 ms
+6. **R-17.4.6** -- `PlaybackState` mutable ECS component separate from asset
+7. **R-17.4.7** -- Cutscene entity with camera, actors, audio, VFX, subtitles
+8. **R-17.4.8** -- Animation track integration with priority blending
+9. **R-17.4.9** -- Property animation for any ECS component field via codegen
+10. **R-17.4.10** -- Scrubbing with keyframe creation on entity property edits
+11. **R-17.4.11** -- Timeline events at keyframe crossings through ECS channel
+12. **R-17.4.12** -- rkyv save/restore of playback state bit-identically
+
+### Game-Framework Consumers (cross-reference)
+
+| Feature    | Requirement | Consumer Role                                     |
+|------------|-------------|---------------------------------------------------|
+| F-13.5.1   | R-13.5.1    | Multi-track sequencer consumed by cutscenes       |
+| F-13.5.3   | R-13.5.3    | Camera rails and splines driven by timelines     |
+| F-13.5.4   | R-13.5.4    | Actor animation blending via timelines           |
+| F-13.19.4a | R-13.19.4a  | NPC schedules modeled on timelines               |
+| F-13.23.4  | R-13.23.4   | Daily login reward calendar on timelines         |
 
 ### Non-Functional Requirements
 
