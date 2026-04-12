@@ -1,6 +1,18 @@
 # World Geometry Test Cases
 
-Companion test cases for [world-geometry.md](world-geometry.md).
+Companion test cases for [./world-geometry.md](./world-geometry.md).
+
+## Parent User Story Trace
+
+Each parent user story below is covered by one or more child sub-stories in the TC tables that
+follow. Regressions in any child sub-story test constitute a regression against its parent story.
+
+- **Meshlet pipeline:** US-3.1.1, US-3.1.2, US-3.1.3, US-3.1.4, US-3.1.5, US-3.1.6, US-3.1.7
+- **Voxel world:** US-3.2.1, US-3.2.2, US-3.2.3, US-3.2.4, US-3.2.5, US-3.2.6, US-3.2.7, US-3.2.8a,
+  US-3.2.8b, US-3.2.9, US-3.2.10, US-3.2.11, US-3.2.12, US-3.2.13, US-3.2.14
+- **Terrain tiles:** US-3.3.1, US-3.3.2, US-3.3.3, US-3.3.4, US-3.3.5, US-3.3.6, US-3.3.7
+- **Streaming grid:** US-3.4.1, US-3.4.2, US-3.4.3, US-3.4.4, US-3.4.5, US-3.4.6, US-3.4.7
+- **LOD and culling:** US-3.5.1, US-3.5.2, US-3.5.3, US-3.5.4, US-3.5.5, US-3.5.6, US-3.5.7
 
 ---
 

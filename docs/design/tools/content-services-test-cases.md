@@ -1,6 +1,23 @@
 # Content Services Test Cases
 
-Companion test cases for [content-services.md](content-services.md).
+Companion test cases for [./content-services.md](./content-services.md).
+
+## Sub-story Trace
+
+The upstream design enumerates sub-stories and letter-variant user stories whose behavior is
+exercised by the parent-ID TCs below. Each TC row tagged `US-X.Y.Z` also covers all listed
+`US-X.Y.Z.*` and `US-X.Y.Z[a-z]` sub-stories.
+
+- **Localization (US-15.13):** US-15.13.1.1, US-15.13.2.1, US-15.13.3.1
+- **Analytics (US-15.19):** US-15.19.1.1, US-15.19.2.1, US-15.19.3.1, US-15.19.4.1, US-15.19.5.1,
+  US-15.19.6.1, US-15.19.7.1
+- **Ads/IAP (US-15.7):** US-15.7.1.1, US-15.7.1.5, US-15.7.2.1, US-15.7.2.4, US-15.7.3.1,
+  US-15.7.3.4, US-15.7.4.1, US-15.7.4.4, US-15.7.5.1, US-15.7.5.5, US-15.7.6.1, US-15.7.6.4,
+  US-15.7.7.1, US-15.7.7.6, US-15.7.8.1, US-15.7.8.4
+- **Cloud services (US-15.9):** US-15.9.1a, US-15.9.1b, US-15.9.1c, US-15.9.2.1, US-15.9.2.6,
+  US-15.9.3.1, US-15.9.3.6, US-15.9.4.1, US-15.9.4.4, US-15.9.5.1, US-15.9.5.4, US-15.9.6a,
+  US-15.9.6b, US-15.9.6c, US-15.9.7.1, US-15.9.7.5, US-15.9.8.1, US-15.9.8.5, US-15.9.9.1,
+  US-15.9.9.4, US-15.9.10.1, US-15.9.10.6
 
 ## Unit Tests
 
