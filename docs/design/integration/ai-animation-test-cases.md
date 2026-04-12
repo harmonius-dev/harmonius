@@ -1,9 +1,12 @@
 # AI Behavior ↔ Animation Integration Test Cases
 
+Companion test cases for [ai-animation.md](ai-animation.md).
+
 ## Integration Tests
 
 | ID | Test | Input | Expected | Req |
 |----|------|-------|----------|-----|
+| TC-US-9.4.10.I1 | AI + anim shared budget for 500 agents | 500 concurrent AI+anim entities | Combined evaluation under 2 ms/frame; shared FrameBudget records both costs | US-9.4.10 |
 | TC-IR-1.1.1.1 | BT leaf writes speed | BT MoveTo at 3.0 | ParameterMap.speed == 3.0 | IR-1.1.1 |
 | TC-IR-1.1.1.2 | GOAP action writes trigger | Attack action | "attack" in triggers | IR-1.1.1 |
 | TC-IR-1.1.2.1 | AI reads anim remaining | Anim 80% done | state_remaining < 0.2 | IR-1.1.2 |

@@ -1,9 +1,12 @@
 # Rendering ↔ Physics Integration Test Cases
 
+Companion test cases for [rendering-physics.md](rendering-physics.md).
+
 ## Integration Tests
 
 | ID | Test | Input | Expected | Req |
 |----|------|-------|----------|-----|
+| TC-NFR-2.10.3.1 | Debug visualization zero shipping overhead | Build with debug_draw feature off | Zero debug-draw symbols emitted; release binary does not reference debug draw paths | NFR-2.10.3 |
 | TC-IR-3.4.1.1 | Sphere collider draws wireframe | Sphere r=1.0 at origin | Circle lines at correct radius | IR-3.4.1 |
 | TC-IR-3.4.1.2 | Box collider draws wireframe | Box half-extents (1,2,3) | 12 edge lines at correct size | IR-3.4.1 |
 | TC-IR-3.4.1.3 | Capsule collider draws wireframe | Capsule r=0.5, h=2.0 | Hemisphere caps + cylinder lines | IR-3.4.1 |

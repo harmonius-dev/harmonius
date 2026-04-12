@@ -1,9 +1,14 @@
 # Data Tables ↔ UI Framework Integration Test Cases
 
+Companion test cases for [data-tables-ui.md](data-tables-ui.md).
+
 ## Integration Tests
 
 | ID | Test | Input | Expected | Req |
 |----|------|-------|----------|-----|
+| TC-IR-4.10.8.1 | Table rows sort by column ascending | `sort=(level, Asc)` on 10-row table | List populates with rows in ascending `level` order | IR-4.10.8 |
+| TC-IR-4.10.8.2 | Table rows sort by column descending | `sort=(name, Desc)` on 10-row table | List populates in descending name order | IR-4.10.8 |
+| TC-IR-4.10.8.3 | Sort applied after filter before page | Filter `level>=5`, sort `(name, Asc)`, page size 5 | First page shows 5 filtered rows in ascending name order | IR-4.10.8 |
 | TC-IR-4.10.1.1 | List populates from table | 10-row table bound | 10 list item widgets | IR-4.10.1 |
 | TC-IR-4.10.1.2 | Empty table shows no items | 0-row table bound | Empty list, no children | IR-4.10.1 |
 | TC-IR-4.10.1.3 | List recycles on rebind | Rebind to different table | Old items recycled | IR-4.10.1 |

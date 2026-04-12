@@ -376,6 +376,19 @@ Companion test cases for [navigation.md](navigation.md).
 1. **#1** — Rebuild tile (5,5); check HPA* cluster graph
    - **Expected:** Only cluster for tile (5,5) updated; others unchanged
 
+### TC-7.1.15.1 NavMesh Debug Overlay Renders Polygons
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.15    |
+| 2 | R-7.1.15    |
+
+1. **#1** — Enable debug overlay, capture editor frame with 10 NavMesh tiles
+   - **Expected:** Overlay draws polygon outlines, tile boundaries, area-type shading, off-mesh
+     links, and pending rebuild zones
+2. **#2** — Build shipping binary and inspect
+   - **Expected:** Overlay code eliminated, zero overlay symbols present
+
 ## Integration Tests
 
 ### TC-7.1.3.I1 Path Request Lifecycle
@@ -476,6 +489,194 @@ Companion test cases for [navigation.md](navigation.md).
 
 1. **#1** — Tile A has 10 affected agents; Tile B has 2
    - **Expected:** Tile A rebuilt before Tile B
+
+### TC-7.1.1.I1 Level Designer Generates NavMesh From Static Geometry
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.1    |
+| 2 | US-7.1.1    |
+
+1. **#1** — Level designer loads a scene with 10K static meshes and invokes NavMesh generation with
+   default agent config (radius 0.4, height 1.8)
+   - **Expected:** Generation completes, NavMesh covers all walkable surfaces, excludes slopes > 45
+     deg
+2. **#2** — Designer changes agent radius to 1.0 and regenerates
+   - **Expected:** Corridors narrower than 1.0 are eroded away, confirming agent radius applied
+
+### TC-7.1.2.I2 Level Designer Streams NavMesh Tiles With World
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.2    |
+| 2 | US-7.1.2    |
+
+1. **#1** — Level designer flies camera across 20 world streaming cells
+   - **Expected:** NavMesh tiles align with streaming cells; new tiles load ahead, old tiles unload
+     behind
+2. **#2** — Inspect loaded tile count
+   - **Expected:** Matches active streaming cell set, no orphan NavMesh tiles remain
+
+### TC-7.1.3.I3 Game Designer Assigns Area Costs For Pathfinding
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.3    |
+| 2 | US-7.1.3    |
+
+1. **#1** — Game designer sets cost multiplier 3.0 for "swamp" area type
+   - **Expected:** Subsequent path queries route through grass before swamp when both available
+2. **#2** — Designer sets "lava" area to impassable
+   - **Expected:** Paths never include lava polygons; alternate route returned or NotFound
+
+### TC-7.1.4.I1 Engine Developer Converts Polygon Corridor To Waypoints
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.4    |
+| 2 | US-7.1.4    |
+
+1. **#1** — Engine developer runs funnel algorithm on 10-polygon corridor
+   - **Expected:** Returns minimal waypoint list, each waypoint on NavMesh, path length within 5 %
+     of optimal
+2. **#2** — Run funnel on straight corridor
+   - **Expected:** Returns only start and end waypoints
+
+### TC-7.1.5.I1 Game Designer Smooths Patrol Paths With Catmull-Rom
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.5    |
+| 2 | US-7.1.5    |
+
+1. **#1** — Game designer enables Catmull-Rom smoothing on 8-waypoint patrol path
+   - **Expected:** Smoothed points projected onto NavMesh surface, no point off-mesh
+2. **#2** — Enable mobile profile
+   - **Expected:** Engine falls back to linear interpolation, smoothing cost under budget
+
+### TC-7.1.6.I3 Game Designer Places Dynamic Barricade Obstacle
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.6    |
+| 2 | US-7.1.6    |
+
+1. **#1** — Game designer places barricade prefab at runtime on open NavMesh
+   - **Expected:** Obstacle carve makes barricade AABB impassable within 1 frame
+2. **#2** — Remove barricade
+   - **Expected:** Uncarve restores original NavMesh polygons; existing paths through area re-valid
+
+### TC-7.1.7.I1 Level Designer Places Off-Mesh Jump Link
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.7    |
+| 2 | US-7.1.7    |
+
+1. **#1** — Level designer places an off-mesh jump link between two ledges in editor
+   - **Expected:** Path queries traverse the link when it offers lower cost
+2. **#2** — Designer sets link to one-way
+   - **Expected:** Query only traverses from start to end, reverse path avoids link
+
+### TC-7.1.8.I1 Game Designer Triggers Incremental NavMesh Rebuild
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.8    |
+| 2 | US-7.1.8    |
+
+1. **#1** — Game designer modifies 1 tile of static geometry at runtime
+   - **Expected:** Only that tile and direct neighbours rebuild, other tiles untouched
+2. **#2** — Compare incremental rebuild output to a full regen of the same world
+   - **Expected:** NavMesh polygons equivalent within tolerance
+
+### TC-7.1.9.I2 Engine Developer Runs NavMesh Generation In Background
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.9    |
+| 2 | US-7.1.9    |
+
+1. **#1** — Engine developer triggers 20-tile NavMesh generation while game is running at 60 FPS
+   - **Expected:** Main thread frame time increases by less than 5 %, generation completes on worker
+     threads
+2. **#2** — Inspect worker thread stacks
+   - **Expected:** NavMesh generation runs only on worker pool, not main thread
+
+### TC-7.1.10.I3 Game Designer Destroys Building To Open Path
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.10   |
+| 2 | US-7.1.10   |
+
+1. **#1** — Game designer destroys a wall blocking agent path
+   - **Expected:** Destruction emits nav rebuild event, affected tile rebuilt, agent repaths through
+     breach
+2. **#2** — Rubble debris remains
+   - **Expected:** Debris obstacle carved out of NavMesh, agent paths around rubble
+
+### TC-7.1.11.I2 Level Designer Places Player-Built Structure
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.11   |
+| 2 | US-7.1.11   |
+
+1. **#1** — Level designer places a player-built ramp structure at runtime
+   - **Expected:** Structure registers with nav system, tile rebuild produces walkable ramp polygons
+     and auto-link
+2. **#2** — Agent pathing from below ramp to above
+   - **Expected:** Path uses the new auto-generated link over the ramp
+
+### TC-7.1.12.I1 Game Designer Separates NavMesh Layers By Agent Type
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.12   |
+| 2 | US-7.1.12   |
+
+1. **#1** — Game designer configures humanoid and quadruped layers with different agent radii
+   - **Expected:** Each layer generated on shared source geometry, separate polygon sets
+2. **#2** — Path query on humanoid layer
+   - **Expected:** Uses humanoid polygons only, quadruped polygons not considered
+
+### TC-7.1.13.I1 Game Designer Applies Dynamic Area Cost Override
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.13   |
+| 2 | US-7.1.13   |
+
+1. **#1** — Game designer raises cost of "flooded" area at runtime
+   - **Expected:** Next path query reroutes around flooded polygons without NavMesh rebuild
+2. **#2** — Apply per-faction cost override for "enemy territory"
+   - **Expected:** Enemy agents route directly; friendly agents avoid the area
+
+### TC-7.1.14.I2 Game Developer Uses HPA* For Long Paths
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.14   |
+| 2 | US-7.1.14   |
+
+1. **#1** — Game developer requests path from 1000 agents across continent-scale world
+   - **Expected:** HPA* hierarchical planner produces path in under server per-frame budget
+2. **#2** — Compare HPA* path cost to flat A* reference
+   - **Expected:** HPA* path cost within bounded ratio (e.g. 1.1x) of optimum
+
+### TC-7.1.15.I1 Technical Artist Views NavMesh Debug Overlay In Editor
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.1.15   |
+| 2 | US-7.1.15   |
+
+1. **#1** — Technical artist enables NavMesh debug overlay in editor viewport
+   - **Expected:** Polygons, boundaries, area types, off-mesh links, and pending rebuild zones
+     render as colored overlays
+2. **#2** — Toggle each overlay category independently
+   - **Expected:** Each subset shows and hides without affecting the others
 
 ## Benchmarks
 

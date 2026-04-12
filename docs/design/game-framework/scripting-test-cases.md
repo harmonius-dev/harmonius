@@ -4,6 +4,19 @@ Companion test cases for [scripting.md](scripting.md).
 
 ## Unit Tests
 
+### TC-15.8.1.1 Typed Graph Compiles To Native And Matches Hand-Written Logic
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.8.1    |
+| 2 | R-15.8.1    |
+
+1. **#1** — Compile a typed graph implementing `a * b + c` to native code and execute with random
+   inputs
+   - **Expected:** Result bit-exact to hand-written Rust reference
+2. **#2** — Benchmark compiled graph against hand-written Rust
+   - **Expected:** Runtime within 5 % of hand-written baseline
+
 ### TC-13.4.1.1 Opcode Add F32
 
 | # | Requirement |

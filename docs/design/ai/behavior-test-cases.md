@@ -321,6 +321,18 @@ Companion test cases for [behavior.md](behavior.md).
 2. **#2** — Two Survival category actions (scores 0.4 and 0.8)
    - **Expected:** Score 0.8 action selected (same category, higher score)
 
+### TC-7.4.3.1 Reusable Considerations For Distance LOS Health
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.4.3     |
+| 2 | R-7.4.3     |
+
+1. **#1** — Instantiate built-in considerations: Distance, LOS, Health, Threat, Time, Resources
+   - **Expected:** All six types return scores in [0,1] for a sample agent + target
+2. **#2** — Register a custom consideration implementing the trait interface
+   - **Expected:** Custom consideration is callable by utility scorer exactly like built-ins
+
 ### TC-7.5.1.1 World State Satisfies
 
 | # | Requirement |
@@ -565,6 +577,104 @@ Companion test cases for [behavior.md](behavior.md).
    - **Expected:** Results identical to serial evaluation of same agents
 2. **#2** — 500 agents with shared group blackboard, parallel eval
    - **Expected:** No data races (ThreadSanitizer clean)
+
+### TC-7.3.1.I4 Game Designer Authors Behavior Tree
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.3.1    |
+| 2 | US-7.3.1    |
+
+1. **#1** — Game designer assembles a 20-node behavior tree from sequences, selectors, and leaves
+   - **Expected:** Tree ticks cleanly, transitions between states respect sequence/selector
+     semantics
+2. **#2** — Designer enables parallel composite
+   - **Expected:** Children evaluated concurrently, requireAll/requireOne semantics respected
+
+### TC-7.3.4.I1 Game Designer Uses Blackboard With Scopes
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.3.4    |
+| 2 | US-7.3.4    |
+
+1. **#1** — Game designer reads/writes blackboard keys in self scope and group scope from BT nodes
+   - **Expected:** Self writes visible only to owning entity; group writes visible to all members
+2. **#2** — Register observer on key `"target"`
+   - **Expected:** Observer fires when key mutates, not when unchanged
+
+### TC-7.3.7.I1 Engine Tester Traces Behavior Tree Execution
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.3.7    |
+| 2 | US-7.3.7    |
+
+1. **#1** — Engine tester enables BT trace log on failing agent for 60 frames
+   - **Expected:** Trace records every tick with node name, status, and timestamp
+2. **#2** — Inspect log
+   - **Expected:** Node transitions match expected BT execution path
+
+### TC-7.4.1.I1 Game Designer Uses Utility Curves For Action Scoring
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.4.1    |
+| 2 | US-7.4.1    |
+
+1. **#1** — Game designer assigns logistic response curve to "Attack" consideration and linear curve
+   to "Flee"
+   - **Expected:** Agent scores reflect curve shapes; high-threat triggers logistic saturation
+2. **#2** — Clamp consideration input outside [0,1]
+   - **Expected:** Curve output stays in [0,1]
+
+### TC-7.4.2.I1 Game Designer Selects Utility Action Strategy
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.4.2    |
+| 2 | US-7.4.2    |
+
+1. **#1** — Game designer configures 8 actions and selects "highest score" strategy
+   - **Expected:** Highest-scoring action picked every tick
+2. **#2** — Switch to "weighted random" strategy, run 10000 ticks
+   - **Expected:** Selection distribution matches weights within 5 % statistical tolerance
+
+### TC-7.5.1.I1 Game Designer Defines GOAP World State
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.5.1    |
+| 2 | US-7.5.1    |
+
+1. **#1** — Game designer declares world state facts for hunger, ammo, threat
+   - **Expected:** Facts stored, planner reads current state correctly
+2. **#2** — Modify fact and call `satisfies(goal)`
+   - **Expected:** Returns true/false matching hand-verified comparison
+
+### TC-7.5.2.I1 Game Designer Uses GOAP Planner To Achieve Goal
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.5.2    |
+| 2 | US-7.5.2    |
+
+1. **#1** — Game designer defines 10 actions and goal "Survive with ammo > 0"
+   - **Expected:** Planner returns a sequence of actions whose application yields goal state
+2. **#2** — Set unreachable goal
+   - **Expected:** Planner returns NoPlan cleanly within time budget
+
+### TC-7.5.4.I1 Game Designer Benefits From Plan Cache
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.5.4    |
+| 2 | US-7.5.4    |
+
+1. **#1** — Game designer runs 100 agents with identical world state and goals
+   - **Expected:** Planner hits plan cache on repeat queries, total planning time within budget
+2. **#2** — Mutate one fact affecting the plan
+   - **Expected:** Cache entry invalidates; next request triggers fresh plan
 
 ## Benchmarks
 

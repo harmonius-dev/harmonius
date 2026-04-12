@@ -409,6 +409,19 @@ Companion test cases for [ecs.md](ecs.md).
 2. **#2** — Verify results
    - **Expected:** Only children of Boss-tagged parents returned
 
+### TC-1.1.21.1 Query Partitioning No Borrow Conflicts
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.1.21    |
+| 2 | R-1.1.21    |
+
+1. **#1** — Partition 1M-entity query across 8 workers at archetype granularity
+   - **Expected:** Each worker receives disjoint archetype slices, every entity visited once
+2. **#2** — Run under ThreadSanitizer with one worker writing `&mut Position` and another reading
+   `&Position` on the same archetype
+   - **Expected:** Scheduler rejects the plan or serializes workers; zero data races observed
+
 ### TC-1.1.22.1 Change Detection Chunk Level
 
 | # | Requirement |
@@ -752,6 +765,32 @@ Companion test cases for [ecs.md](ecs.md).
    - **Expected:** Both present
 2. **#2** — Query `(&A, &B)`
    - **Expected:** Correct results across both storage modes
+
+<!-- THIN: design section lacks detail -->
+### TC-1.1.49.I1 Designer Edits Entity Template Fields
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.1.49   |
+| 2 | US-1.1.49   |
+
+1. **#1** — Designer opens entity template "Zombie", modifies `max_health` field from 100 to 150
+   - **Expected:** Template edit persists, entity template reload applies new value to new instances
+2. **#2** — Re-spawn a zombie and inspect component state
+   - **Expected:** Spawned entity receives `max_health = 150`
+
+<!-- THIN: design section lacks detail -->
+### TC-1.1.50.I1 Designer Edits Entity Template Component Set
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.1.50   |
+| 2 | US-1.1.50   |
+
+1. **#1** — Designer adds new component `Flammable` to existing entity template
+   - **Expected:** Template definition updates, subsequent spawns include `Flammable`
+2. **#2** — Designer removes component `StaticMesh` from template
+   - **Expected:** Template updates, subsequent spawns omit `StaticMesh` archetype column
 
 ## Benchmarks
 

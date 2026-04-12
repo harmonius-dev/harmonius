@@ -157,6 +157,57 @@ Companion test cases for [foundation.md](foundation.md).
 1. **#1** — 1000 random colliders, BroadphasePairs vs brute-force O(n^2)
    - **Expected:** Zero misses (all true overlaps detected by broadphase)
 
+### TC-4.2.3.1 Primitive Pair Fast Paths
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.2.3     |
+| 2 | R-4.2.3     |
+
+1. **#1** — Configure Collider with box, sphere, capsule, and convex hull shapes
+   - **Expected:** Each shape constructed via unified API; all four variants accepted
+2. **#2** — Benchmark sphere-sphere contact vs generic GJK path on same pair
+   - **Expected:** Specialized fast path at least 2x faster than GJK reference
+
+### TC-4.2.4.1 Triangle Mesh And Heightfield With Per-Triangle Materials
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.2.4     |
+| 2 | R-4.2.4     |
+
+1. **#1** — Build a triangle mesh collider with per-triangle material indices
+   - **Expected:** Mesh registered with shared BVH; material lookup per triangle returns correct
+     index
+2. **#2** — Create a heightfield collider and test ray-cast against it
+   - **Expected:** Ray-cast hit reports triangle index and the mapped material
+
+### TC-4.2.5.1 Compound Collider Per-Child Layer And Material
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.2.5     |
+| 2 | R-4.2.5     |
+
+1. **#1** — Create compound collider with 3 child primitives, each with distinct `CollisionLayers`
+   and `PhysicsMaterial`
+   - **Expected:** Layer filtering applies per child during broadphase
+2. **#2** — Generate contacts on each child
+   - **Expected:** Contacts carry the child's material, not the compound's root material
+
+### TC-4.2.9.1 PhysicsMaterial Properties And Combine Modes
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.2.9     |
+| 2 | R-4.2.9     |
+
+1. **#1** — Define `PhysicsMaterial` with friction 0.3, restitution 0.8, density 1.0, and a surface
+   tag
+   - **Expected:** All fields accessible; asset serializes cleanly
+2. **#2** — Evaluate each combine mode (Average, Min, Max, Multiply) for two materials
+   - **Expected:** Resulting combined value matches the mode's formula for friction and restitution
+
 ### TC-4.2.6.1 Layer Rejection
 
 | # | Requirement |
@@ -353,6 +404,57 @@ Companion test cases for [foundation.md](foundation.md).
 
 1. **#1** — 10,000 sleeping bodies vs 10,000 active bodies
    - **Expected:** >= 80% tick cost reduction for sleeping scenario
+
+### TC-4.1.1.I2 Game Developer Integrates Rigid Bodies Deterministically
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-4.1.1    |
+| 2 | US-4.1.1    |
+
+1. **#1** — Game developer runs symplectic Euler at fixed 60 Hz timestep for 1 simulated second on
+   100 bodies
+   - **Expected:** End-of-second state bit-identical across two runs with same seed
+2. **#2** — Run same fixture on two platforms (Windows + macOS)
+   - **Expected:** Positions and velocities bit-identical between platforms
+
+### TC-4.1.4.I2 Game Developer Uses CCD To Prevent Bullet Tunneling
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-4.1.4    |
+| 2 | US-4.1.4    |
+
+1. **#1** — Game developer flags bullets with CCD and fires 100 bullets at 200 m/s through a thin
+   wall
+   - **Expected:** Zero bullets tunnel through wall, all produce contact events
+2. **#2** — Disable CCD on same fixture
+   - **Expected:** Majority of bullets tunnel, confirming CCD is the mechanism preventing it
+
+### TC-4.1.5.I2 Engine Developer Partitions Bodies Into Islands
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-4.1.5    |
+| 2 | US-4.1.5    |
+
+1. **#1** — Engine developer simulates 1000 bodies in 10 disjoint groups
+   - **Expected:** Union-find produces 10 islands, each solved on a separate worker thread
+2. **#2** — Two groups collide mid-frame
+   - **Expected:** Islands merge within same frame; island count decreases to 9
+
+### TC-4.1.6.I2 Bodies Sleep And Wake For CPU Budget
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-4.1.6    |
+| 2 | US-4.1.6    |
+
+1. **#1** — 1000 bodies at rest for 1 s
+   - **Expected:** All receive `Sleeping` marker, integration system skips them
+2. **#2** — Apply external force to one sleeping body
+   - **Expected:** Body wakes within same frame; contact with sleeping neighbour also wakes
+     neighbour
 
 ## Benchmarks
 

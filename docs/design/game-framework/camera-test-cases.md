@@ -385,6 +385,126 @@ Companion test cases for [camera.md](camera.md).
 1. **#1** — Super 35 sensor + 50mm focal length
    - **Expected:** Vertical FOV = 2*atan(12.0/50.0) ~= 27.0 deg
 
+### TC-13.25.21.1 Composite Shake Additive
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-13.25.21  |
+| 2 | R-13.25.21  |
+
+1. **#1** — Stack 3 shake profiles (Perlin, wave, impulse) on one camera
+   - **Expected:** Resulting offset equals sum of individual profile offsets at each sample
+2. **#2** — Disable middle profile
+   - **Expected:** Resulting offset equals sum of remaining two only
+
+### TC-13.25.22.1 Cinematic Shake Timeline
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-13.25.22  |
+| 2 | R-13.25.22  |
+
+1. **#1** — Trigger shake from cinematics timeline keyframe at t=2.0s
+   - **Expected:** Shake starts on that frame, stops at keyframe end
+2. **#2** — Scrub timeline backward
+   - **Expected:** Shake state follows timeline position, no residual offset after scrub
+
+### TC-13.25.25.1 Shot Quality Occlusion
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-13.25.25  |
+| 2 | R-13.25.25  |
+
+1. **#1** — Evaluate camera with unobstructed LOS to target
+   - **Expected:** Shot quality score close to 1.0
+2. **#2** — Move obstacle between camera and target
+   - **Expected:** Shot quality score drops, reflecting occlusion penalty
+
+### TC-13.25.30.1 Confiner 3D Slowing
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-13.25.30  |
+| 2 | R-13.25.30  |
+
+1. **#1** — Camera approaches 3D volume boundary at constant velocity
+   - **Expected:** Velocity decreases smoothly near boundary (slowing zone), no hard snap
+2. **#2** — Target leaves confiner volume
+   - **Expected:** Camera clamps at boundary, target off-screen tracked via composer
+
+### TC-13.25.32.1 Auto Focus Tracking
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-13.25.32  |
+| 2 | R-13.25.32  |
+
+1. **#1** — Enable auto focus with target moving from 5 m to 20 m distance
+   - **Expected:** Focus distance tracks target within 1-frame latency
+2. **#2** — Target moves outside frustum
+   - **Expected:** Focus holds last valid distance rather than jumping
+
+### TC-13.25.33.1 Third Person Aim Parallax
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-13.25.33  |
+| 2 | R-13.25.33  |
+
+1. **#1** — Enable aim mode on third-person camera, fire raycast from screen center
+   - **Expected:** Ray origin corrected so screen-center ray converges on crosshair target
+2. **#2** — Disable parallax correction for comparison
+   - **Expected:** Without correction, aim ray diverges from crosshair at distance
+
+### TC-13.25.34.1 FreeLook Range Clamp
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-13.25.34  |
+| 2 | R-13.25.34  |
+
+1. **#1** — FreeLook with yaw range [-90, 90] deg
+   - **Expected:** Input beyond range clamps yaw at limit
+2. **#2** — Release input for recenter duration
+   - **Expected:** Yaw smoothly returns to zero over configured recenter time
+
+### TC-13.25.35.1 Recomposer FOV Override
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-13.25.35  |
+| 2 | R-13.25.35  |
+
+1. **#1** — Recomposer overrides base camera FOV to 30 deg during cinematic
+   - **Expected:** Render uses 30 deg FOV while recomposer active
+2. **#2** — Timeline blends recomposer weight 0->1->0
+   - **Expected:** FOV smoothly interpolates between base and override
+
+### TC-13.25.36.1 Modifier Stack Order
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-13.25.36  |
+| 2 | R-13.25.36  |
+
+1. **#1** — Apply two modifiers in order [shake, noise] on base transform
+   - **Expected:** Final transform = noise(shake(base))
+2. **#2** — Reorder to [noise, shake]
+   - **Expected:** Final transform = shake(noise(base)), differs from ordering 1
+
+### TC-13.25.39.1 Camera Rig Presets Dolly And Crane
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-13.25.39  |
+| 2 | R-13.25.39  |
+
+1. **#1** — Instantiate dolly rig preset, move along path
+   - **Expected:** Camera position follows dolly track nodes
+2. **#2** — Instantiate crane rig preset, set pitch angle
+   - **Expected:** Camera tilts and arcs matching crane geometry
+
 ## Integration Tests
 
 ### TC-NFR-13.25.1.I1 Split Screen 4 Brains
