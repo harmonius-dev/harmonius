@@ -34,6 +34,18 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
 | TC-2.1.2.2    | `test_pipeline_bind_cache`           | GR-2.2    |
 | TC-2.1.4.1    | `test_barrier_elide_same_state`      | GR-4.4    |
 | TC-2.1.4.2    | `test_traceray_compute_fallback`     | GR-4.6    |
+| TC-2.1.1.4    | `test_static_dispatch_no_vtable`     | R-2.1.1   |
+| TC-2.1.2.3    | `test_cmd_buf_graphics_compute_copy` | R-2.1.2   |
+| TC-2.1.3.1    | `test_pso_invalid_combination`       | R-2.1.3   |
+| TC-2.1.4.3    | `test_metal_backend_objc2_init`      | R-2.1.4   |
+| TC-2.1.5.1    | `test_d3d12_backend_windows_init`    | R-2.1.5   |
+| TC-2.1.6.1    | `test_vulkan_validation_zero_errors` | R-2.1.6   |
+| TC-2.1.7.1    | `test_heap_suballoc_alignment`       | R-2.1.7   |
+| TC-2.1.8.1    | `test_state_tracker_redundant_bind`  | R-2.1.8   |
+| TC-2.1.9.1    | `test_barrier_batching_merge`        | R-2.1.9   |
+| TC-2.1.10.1   | `test_work_graph_native_dispatch`    | R-2.1.10  |
+| TC-2.1.11.1   | `test_cross_backend_emulation`       | R-2.1.11  |
+| TC-2.1.12.1   | `test_gpu_perf_query_resolve`        | R-2.1.12  |
 
 1. **TC-2.2.1.1** `test_pass_register_topology` — Register two passes A (writes X) and B (reads X)
    in arbitrary order. Compile graph. Assert execution order is `[A, B]`.
@@ -159,6 +171,66 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
     Submit `TraceRays` call. Assert compute dispatch is issued, not RT pipeline call.
     - Input: device `ray_tracing: false`, code calls `trace_rays(width, height, 1)`
     - Expected: `dispatch(width/8, height/8, 1)` issued via compute
+
+26. **TC-2.1.1.4** `test_static_dispatch_no_vtable` — Confirm `GpuBackend` impls use generics, not
+    trait objects. Verify via `cargo asm` or `trybuild` that no `dyn GpuBackend` appears in API.
+    - Input: full backend trait surface; compile a fixture using `MetalBackend` directly
+    - Expected: zero `dyn GpuBackend` references in generated symbols; calls inlined
+
+27. **TC-2.1.2.3** `test_cmd_buf_graphics_compute_copy` — Open one command buffer; record a graphics
+    pass, a compute dispatch, and a copy. Submit. Assert all three execute on the queue.
+    - Input: `CommandBuffer` with `draw`, `dispatch`, `copy_buffer` calls
+    - Expected: queue executes all three, GPU validation reports no errors
+
+28. **TC-2.1.3.1** `test_pso_invalid_combination` — Build a PSO with mismatched vertex shader output
+    and fragment shader input signatures. Assert pre-validation fails with a typed error.
+    - Input: `PipelineDesc { vs, fs }` with incompatible interfaces
+    - Expected: `PsoBuildError::SignatureMismatch`, no GPU object created
+
+29. **TC-2.1.4.3** `test_metal_backend_objc2_init` — Initialize `MetalBackend` via `objc2-metal`,
+    enumerate devices, and create a default queue. Run only on macOS.
+    - Input: `MetalBackend::new(MetalConfig::default())`
+    - Expected: device count >= 1, default queue valid, no Objective-C exceptions
+
+30. **TC-2.1.5.1** `test_d3d12_backend_windows_init` — Initialize `D3D12Backend` via windows-rs,
+    enumerate adapters, and create a direct queue. Run only on Windows.
+    - Input: `D3D12Backend::new(D3D12Config::default())`
+    - Expected: adapter count >= 1, direct queue valid, no HRESULT errors
+
+31. **TC-2.1.6.1** `test_vulkan_validation_zero_errors` — Initialize Vulkan with validation layers,
+    create instance + device + queue, run a no-op submit. Assert zero validation errors.
+    - Input: `VulkanBackend::new(VulkanConfig { validation: true, .. })`
+    - Expected: validation callback recorded 0 messages
+
+32. **TC-2.1.7.1** `test_heap_suballoc_alignment` — Sub-allocate buffers requiring alignments
+    `[16, 256, 65536]` from a single heap. Assert each returned offset matches alignment.
+    - Input: `heap.suballoc(size, align)` for each alignment
+    - Expected: `offset % align == 0` for all three; no overlap between allocations
+
+33. **TC-2.1.8.1** `test_state_tracker_redundant_bind` — Bind the same vertex buffer 100 times.
+    Assert the state tracker filters all but the first to the backend.
+    - Input: 100 `bind_vertex_buffer(vb, 0)` calls in a row
+    - Expected: backend `set_vertex_buffer` invoked exactly once
+
+34. **TC-2.1.9.1** `test_barrier_batching_merge` — Issue 4 barriers on 4 distinct resources at the
+    same point. Assert the backend receives a single batched barrier call.
+    - Input: 4 resources transition `ShaderRead → RenderTarget`
+    - Expected: backend `resource_barrier(&[r1, r2, r3, r4])` invoked once
+
+35. **TC-2.1.10.1** `test_work_graph_native_dispatch` — On a device with native work graph support,
+    submit a work graph with 3 nodes. Assert all nodes execute and produce expected outputs.
+    - Input: `WorkGraph { nodes: [a, b, c], edges: [(a,b),(b,c)] }`
+    - Expected: outputs match reference; on unsupported device, emulated path used
+
+36. **TC-2.1.11.1** `test_cross_backend_emulation` — Run mesh shader pipeline on a backend lacking
+    native mesh shaders. Assert compute-emulation path is selected and produces same output.
+    - Input: mesh pipeline desc, backend `mesh_shaders: false`
+    - Expected: emulated compute path used; output framebuffer matches native within tolerance
+
+37. **TC-2.1.12.1** `test_gpu_perf_query_resolve` — Insert a timestamp query around a draw, submit,
+    and resolve. Assert returned timestamps are monotonic and non-zero.
+    - Input: `cmd.write_timestamp(q0); cmd.draw(...); cmd.write_timestamp(q1)`
+    - Expected: `t1 > t0`, both > 0, units in nanoseconds per backend convention
 
 ## Integration Tests
 
