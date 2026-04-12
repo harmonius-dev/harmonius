@@ -137,3 +137,42 @@
 5. **US-12.7.6.5** — **As a** technical artist (P-13), **I want** the engine to detect circular
    dependencies between content plugins and report them as errors, **so that** impossible dependency
    graphs are caught early.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-12.7.1 | game designer (P-5) |
+| US-12.7.2 | extension developer (P-25) |
+| US-12.7.3 | game designer (P-5) |
+| US-12.7.4 | game player (P-23) |
+| US-12.7.5 | extension developer (P-25) |
+| US-12.7.6 | extension developer (P-25) |
+
+1. **US-12.7.1** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-12.7.1.1 through US-12.7.1.5 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-12.7.2** -- **As a** extension developer (P-25), **I want** the capabilities defined in
+   sub-stories US-12.7.2.1 through US-12.7.2.4 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-12.7.3** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-12.7.3.1 through US-12.7.3.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+4. **US-12.7.4** -- **As a** game player (P-23), **I want** the capabilities defined in sub-stories
+   US-12.7.4.1 through US-12.7.4.5 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-12.7.5** -- **As a** extension developer (P-25), **I want** the capabilities defined in
+   sub-stories US-12.7.5.1 through US-12.7.5.4 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-12.7.6** -- **As a** extension developer (P-25), **I want** the capabilities defined in
+   sub-stories US-12.7.6.1 through US-12.7.6.5 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.

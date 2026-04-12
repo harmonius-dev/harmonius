@@ -67,3 +67,52 @@
 13. **US-2.6.8.2** — **As a** engine developer (P-26), **I want** Reflex and Anti-Lag integration
     synchronizing CPU submission with GPU back-pressure, **so that** render queue depth is reduced
     for sub-frame input sampling.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-2.6.1 | game developer (P-15) |
+| US-2.6.2 | technical artist (P-13) |
+| US-2.6.3 | technical artist (P-13) |
+| US-2.6.4 | engine developer (P-26) |
+| US-2.6.5 | technical artist (P-13) |
+| US-2.6.6 | game developer (P-15) |
+| US-2.6.7 | game developer (P-15) |
+| US-2.6.8 | game developer (P-15) |
+
+1. **US-2.6.1** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-2.6.1.1 through US-2.6.1.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-2.6.2** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-2.6.2.1 through US-2.6.2.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-2.6.3** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-2.6.3.1 through US-2.6.3.1 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-2.6.4** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-2.6.4.1 through US-2.6.4.1 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-2.6.5** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-2.6.5.1 through US-2.6.5.1 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+6. **US-2.6.6** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-2.6.6.1 through US-2.6.6.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+7. **US-2.6.7** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-2.6.7.1 through US-2.6.7.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+8. **US-2.6.8** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-2.6.8.1 through US-2.6.8.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

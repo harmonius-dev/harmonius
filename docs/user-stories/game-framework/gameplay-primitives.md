@@ -132,3 +132,63 @@
    scaffolds new plugin projects, **so that** I start developing quickly.
 3. **US-13.1.10.3** — **As a** engine developer (P-26), **I want** plugins to declare engine version
    compatibility with ABI validation on load, **so that** incompatible plugins are rejected.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-13.1.1 | game designer (P-5) |
+| US-13.1.10 | game developer (P-15) |
+| US-13.1.2 | game designer (P-5) |
+| US-13.1.3 | game designer (P-5) |
+| US-13.1.4 | game designer (P-5) |
+| US-13.1.5 | game designer (P-5) |
+| US-13.1.6 | game designer (P-5) |
+| US-13.1.7 | game designer (P-5) |
+| US-13.1.8 | game designer (P-5) |
+| US-13.1.9 | game designer (P-5) |
+
+1. **US-13.1.1** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-13.1.1.1 through US-13.1.1.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-13.1.10** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-13.1.10.1 through US-13.1.10.3 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-13.1.2** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-13.1.2.1 through US-13.1.2.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+4. **US-13.1.3** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-13.1.3.1 through US-13.1.3.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-13.1.4** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-13.1.4.1 through US-13.1.4.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+6. **US-13.1.5** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-13.1.5.1 through US-13.1.5.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+7. **US-13.1.6** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-13.1.6.1 through US-13.1.6.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+8. **US-13.1.7** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-13.1.7.1 through US-13.1.7.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+9. **US-13.1.8** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-13.1.8.1 through US-13.1.8.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+10. **US-13.1.9** -- **As a** game designer (P-5), **I want** the capabilities defined in
+    sub-stories
+US-13.1.9.1 through US-13.1.9.3 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.

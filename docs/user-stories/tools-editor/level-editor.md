@@ -70,3 +70,52 @@
 15. **US-15.2.8.1** — **As a** level designer (P-6), **I want** to select a group of placed entities
     in the viewport and save them as a reusable entity template, **so that** I can stamp the same
     pattern across my level without manually re-creating each instance.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-15.2.1 | level designer (P-6) |
+| US-15.2.2 | level designer (P-6) |
+| US-15.2.3 | level designer (P-6) |
+| US-15.2.4 | level designer (P-6) |
+| US-15.2.5 | level designer (P-6) |
+| US-15.2.6 | level designer (P-6) |
+| US-15.2.7 | level designer (P-6) |
+| US-15.2.8 | level designer (P-6) |
+
+1. **US-15.2.1** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.2.1.1 through US-15.2.1.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+2. **US-15.2.2** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.2.2.1 through US-15.2.2.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-15.2.3** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.2.3.1 through US-15.2.3.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-15.2.4** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.2.4.1 through US-15.2.4.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-15.2.5** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.2.5.1 through US-15.2.5.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-15.2.6** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.2.6.1 through US-15.2.6.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+7. **US-15.2.7** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.2.7.1 through US-15.2.7.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+8. **US-15.2.8** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.2.8.1 through US-15.2.8.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.

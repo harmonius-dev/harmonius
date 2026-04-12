@@ -66,3 +66,47 @@
    where submerged bodies displace fluid, **so that** splashes and wakes emerge naturally.
 4. **US-4.8.7.2** -- **As a** engine tester (P-27), **I want** to verify mobile falls back to
    one-way coupling only, **so that** fluid displacement is disabled on constrained devices.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-4.8.1 | game developer (P-15) |
+| US-4.8.2 | game developer (P-15) |
+| US-4.8.3 | game developer (P-15) |
+| US-4.8.4 | engine developer (P-26) |
+| US-4.8.5 | game developer (P-15) |
+| US-4.8.6 | game developer (P-15) |
+| US-4.8.7 | engine developer (P-26) |
+
+1. **US-4.8.1** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.8.1.1 through US-4.8.1.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-4.8.2** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.8.2.1 through US-4.8.2.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-4.8.3** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.8.3.1 through US-4.8.3.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-4.8.4** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-4.8.4.1 through US-4.8.4.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-4.8.5** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.8.5.1 through US-4.8.5.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+6. **US-4.8.6** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.8.6.1 through US-4.8.6.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+7. **US-4.8.7** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-4.8.7.1 through US-4.8.7.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

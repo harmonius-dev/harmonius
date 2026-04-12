@@ -132,3 +132,37 @@
    account-bound across all characters with no gameplay advantage, **so that** purchases are fair.
 5. **US-13.23.8.3** — **As a** player (P-23), **I want** a 24-hour refund window for cosmetic
    purchases, **so that** I buy with confidence.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-13.23.1 | game designer (P-5) |
+| US-13.23.2 | game designer (P-5) |
+| US-13.23.4 | game designer (P-5) |
+| US-13.23.7 | game developer (P-15) |
+| US-13.23.8 | game designer (P-5) |
+
+1. **US-13.23.1** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.23.1.1 through US-13.23.1.4 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+2. **US-13.23.2** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.23.2.1 through US-13.23.2.4 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-13.23.4** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.23.4.1 through US-13.23.4.3 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+4. **US-13.23.7** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-13.23.7.1 through US-13.23.7.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+5. **US-13.23.8** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.23.8.1 through US-13.23.8.3 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.

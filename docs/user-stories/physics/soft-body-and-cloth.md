@@ -69,3 +69,47 @@
 2. **US-4.7.7.2** -- **As a** engine developer (P-26), **I want** extreme-distance cloth replaced
    with an animation fallback at zero simulation cost, **so that** distant cloth has no physics
    overhead.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-4.7.1 | engine developer (P-26) |
+| US-4.7.2 | game developer (P-15) |
+| US-4.7.3 | game developer (P-15) |
+| US-4.7.4 | engine developer (P-26) |
+| US-4.7.5 | game developer (P-15) |
+| US-4.7.6 | game developer (P-15) |
+| US-4.7.7 | game designer (P-5) |
+
+1. **US-4.7.1** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-4.7.1.1 through US-4.7.1.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-4.7.2** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.7.2.1 through US-4.7.2.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-4.7.3** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.7.3.1 through US-4.7.3.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-4.7.4** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-4.7.4.1 through US-4.7.4.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-4.7.5** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.7.5.1 through US-4.7.5.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+6. **US-4.7.6** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.7.6.1 through US-4.7.6.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+7. **US-4.7.7** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-4.7.7.1 through US-4.7.7.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.

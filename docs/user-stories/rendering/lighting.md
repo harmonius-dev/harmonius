@@ -200,3 +200,141 @@
 40. **US-2.4.23.2** — **As a** technical artist (P-13), **I want** light functions baked to static
     textures on mobile and evaluated at runtime on desktop, **so that** the effect scales across
     platforms.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-2.4.1 | environment artist (P-8) |
+| US-2.4.10 | engine developer (P-26) |
+| US-2.4.11 | environment artist (P-8) |
+| US-2.4.12 | environment artist (P-8) |
+| US-2.4.13 | environment artist (P-8) |
+| US-2.4.14 | engine developer (P-26) |
+| US-2.4.15 | environment artist (P-8) |
+| US-2.4.16 | environment artist (P-8) |
+| US-2.4.17 | technical artist (P-13) |
+| US-2.4.18 | effects artist (P-12) |
+| US-2.4.19 | effects artist (P-12) |
+| US-2.4.2 | engine developer (P-26) |
+| US-2.4.20 | environment artist (P-8) |
+| US-2.4.21 | environment artist (P-8) |
+| US-2.4.22 | environment artist (P-8) |
+| US-2.4.23 | effects artist (P-12) |
+| US-2.4.3 | environment artist (P-8) |
+| US-2.4.4 | environment artist (P-8) |
+| US-2.4.5 | game developer (P-15) |
+| US-2.4.6 | environment artist (P-8) |
+| US-2.4.7 | environment artist (P-8) |
+| US-2.4.8 | environment artist (P-8) |
+| US-2.4.9 | technical artist (P-13) |
+
+1. **US-2.4.1** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.4.1.1 through US-2.4.1.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-2.4.10** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-2.4.10.1 through US-2.4.10.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-2.4.11** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.4.11.1 through US-2.4.11.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-2.4.12** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.4.12.1 through US-2.4.12.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-2.4.13** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.4.13.1 through US-2.4.13.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-2.4.14** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-2.4.14.1 through US-2.4.14.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+7. **US-2.4.15** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.4.15.1 through US-2.4.15.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+8. **US-2.4.16** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.4.16.1 through US-2.4.16.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+9. **US-2.4.17** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-2.4.17.1 through US-2.4.17.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+10. **US-2.4.18** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+    sub-stories
+US-2.4.18.1 through US-2.4.18.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+11. **US-2.4.19** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+    sub-stories
+US-2.4.19.1 through US-2.4.19.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+12. **US-2.4.2** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-2.4.2.1 through US-2.4.2.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+13. **US-2.4.20** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-2.4.20.1 through US-2.4.20.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+14. **US-2.4.21** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-2.4.21.1 through US-2.4.21.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+15. **US-2.4.22** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-2.4.22.1 through US-2.4.22.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+16. **US-2.4.23** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+    sub-stories
+US-2.4.23.1 through US-2.4.23.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+17. **US-2.4.3** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-2.4.3.1 through US-2.4.3.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+18. **US-2.4.4** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-2.4.4.1 through US-2.4.4.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+19. **US-2.4.5** -- **As a** game developer (P-15), **I want** the capabilities defined in
+    sub-stories
+US-2.4.5.1 through US-2.4.5.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+20. **US-2.4.6** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-2.4.6.1 through US-2.4.6.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+21. **US-2.4.7** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-2.4.7.1 through US-2.4.7.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+22. **US-2.4.8** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-2.4.8.1 through US-2.4.8.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+23. **US-2.4.9** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-2.4.9.1 through US-2.4.9.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.

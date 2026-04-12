@@ -91,3 +91,42 @@
 18. **US-11.3.6.3** — **As a** game designer (P-5), **I want** concurrent overlays limited (2 on
     mobile, 4 on desktop) with clamped total opacity, **so that** overlay overdraw is controlled per
     platform.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-11.3.1 | effects artist (P-12) |
+| US-11.3.2 | effects artist (P-12) |
+| US-11.3.3 | effects artist (P-12) |
+| US-11.3.4 | effects artist (P-12) |
+| US-11.3.5 | effects artist (P-12) |
+| US-11.3.6 | effects artist (P-12) |
+
+1. **US-11.3.1** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.3.1.1 through US-11.3.1.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+2. **US-11.3.2** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.3.2.1 through US-11.3.2.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-11.3.3** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.3.3.1 through US-11.3.3.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-11.3.4** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.3.4.1 through US-11.3.4.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-11.3.5** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.3.5.1 through US-11.3.5.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-11.3.6** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.3.6.1 through US-11.3.6.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.

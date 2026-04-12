@@ -81,3 +81,42 @@
 
 16. **US-11.2.6.3** — **As a** game designer (P-5), **I want** mobile footprints spawned every 4th
     step (vs. every step on desktop), **so that** footprint generation cost scales per platform.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-11.2.1 | effects artist (P-12) |
+| US-11.2.2 | effects artist (P-12) |
+| US-11.2.3 | engine developer (P-26) |
+| US-11.2.4 | effects artist (P-12) |
+| US-11.2.5 | effects artist (P-12) |
+| US-11.2.6 | effects artist (P-12) |
+
+1. **US-11.2.1** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.2.1.1 through US-11.2.1.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+2. **US-11.2.2** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.2.2.1 through US-11.2.2.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-11.2.3** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-11.2.3.1 through US-11.2.3.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-11.2.4** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.2.4.1 through US-11.2.4.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-11.2.5** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.2.5.1 through US-11.2.5.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-11.2.6** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-11.2.6.1 through US-11.2.6.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.

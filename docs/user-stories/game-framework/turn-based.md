@@ -83,3 +83,37 @@
 7. **US-13.21.5.3** -- [game-specific] **As a** player (P-23), **I want** miss, graze, hit, and
    critical results distinguished with feedback animations and floating text, **so that** each
    outcome feels distinct.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-13.21.1 | game designer (P-5) |
+| US-13.21.2 | game designer (P-5) |
+| US-13.21.3 | game designer (P-5) |
+| US-13.21.4 | game designer (P-5) |
+| US-13.21.5 | game designer (P-5) |
+
+1. **US-13.21.1** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.21.1.1 through US-13.21.1.3 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+2. **US-13.21.2** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.21.2.1 through US-13.21.2.3 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-13.21.3** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.21.3.1 through US-13.21.3.3 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+4. **US-13.21.4** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.21.4.1 through US-13.21.4.4 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+5. **US-13.21.5** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.21.5.1 through US-13.21.5.3 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.

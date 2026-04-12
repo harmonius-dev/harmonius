@@ -93,3 +93,69 @@
    voxel SDF subtraction on terrain, **so that** explosions carve craters in voxel terrain.
 5. **US-4.6.11.2** -- **As a** engine tester (P-27), **I want** to verify structural integrity
    checks on disconnected voxel islands, **so that** floating terrain fragments fall under gravity.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-4.6.1 | game developer (P-15) |
+| US-4.6.10 | engine developer (P-26) |
+| US-4.6.11 | game developer (P-15) |
+| US-4.6.2 | game developer (P-15) |
+| US-4.6.3 | game developer (P-15) |
+| US-4.6.4 | game designer (P-5) |
+| US-4.6.5 | game developer (P-15) |
+| US-4.6.6 | game developer (P-15) |
+| US-4.6.7 | engine developer (P-26) |
+| US-4.6.8 | engine developer (P-26) |
+| US-4.6.9 | game developer (P-15) |
+
+1. **US-4.6.1** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.6.1.1 through US-4.6.1.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-4.6.10** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-4.6.10.1 through US-4.6.10.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-4.6.11** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.6.11.1 through US-4.6.11.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-4.6.2** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.6.2.1 through US-4.6.2.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-4.6.3** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.6.3.1 through US-4.6.3.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+6. **US-4.6.4** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-4.6.4.1 through US-4.6.4.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+7. **US-4.6.5** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.6.5.1 through US-4.6.5.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+8. **US-4.6.6** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.6.6.1 through US-4.6.6.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+9. **US-4.6.7** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-4.6.7.1 through US-4.6.7.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+10. **US-4.6.8** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-4.6.8.1 through US-4.6.8.1 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+11. **US-4.6.9** -- **As a** game developer (P-15), **I want** the capabilities defined in
+    sub-stories
+US-4.6.9.1 through US-4.6.9.1 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.

@@ -105,3 +105,69 @@
 23. **US-15.9.11.1** — **As a** game developer (P-15), **I want** my LLM provider API keys stored in
     the platform-native OS keychain rather than config files or memory at rest, **so that** my
     credentials are never exposed in project files or version control.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-15.9.1 | game designer (P-5) |
+| US-15.9.10 | build engineer (P-16) |
+| US-15.9.11 | game developer (P-15) |
+| US-15.9.2 | game designer (P-5) |
+| US-15.9.3 | technical artist (P-13) |
+| US-15.9.4 | game designer (P-5) |
+| US-15.9.5 | game designer (P-5) |
+| US-15.9.6 | build engineer (P-16) |
+| US-15.9.7 | technical artist (P-13) |
+| US-15.9.8 | engine developer (P-26) |
+| US-15.9.9 | game designer (P-5) |
+
+1. **US-15.9.1** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-15.9.1.1 through US-15.9.1.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-15.9.10** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.9.10.1 through US-15.9.10.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-15.9.11** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-15.9.11.1 through US-15.9.11.1 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+4. **US-15.9.2** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-15.9.2.1 through US-15.9.2.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-15.9.3** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-15.9.3.1 through US-15.9.3.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-15.9.4** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-15.9.4.1 through US-15.9.4.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+7. **US-15.9.5** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-15.9.5.1 through US-15.9.5.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+8. **US-15.9.6** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.9.6.1 through US-15.9.6.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+9. **US-15.9.7** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-15.9.7.1 through US-15.9.7.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+10. **US-15.9.8** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-15.9.8.1 through US-15.9.8.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+11. **US-15.9.9** -- **As a** game designer (P-5), **I want** the capabilities defined in
+    sub-stories
+US-15.9.9.1 through US-15.9.9.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.

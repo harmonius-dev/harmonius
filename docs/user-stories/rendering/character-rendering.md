@@ -81,3 +81,57 @@
 16. **US-2.8.9.2** — **As a** technical artist (P-13), **I want** melanin and blood maps baked to
     diffuse color on mobile at import time, **so that** biometric skin is available without runtime
     pigment evaluation.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-2.8.1 | environment artist (P-8) |
+| US-2.8.2 | technical artist (P-13) |
+| US-2.8.3 | technical artist (P-13) |
+| US-2.8.4 | environment artist (P-8) |
+| US-2.8.5 | environment artist (P-8) |
+| US-2.8.6 | environment artist (P-8) |
+| US-2.8.7 | engine developer (P-26) |
+| US-2.8.8 | environment artist (P-8) |
+| US-2.8.9 | environment artist (P-8) |
+
+1. **US-2.8.1** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.8.1.1 through US-2.8.1.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-2.8.2** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-2.8.2.1 through US-2.8.2.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-2.8.3** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-2.8.3.1 through US-2.8.3.1 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-2.8.4** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.8.4.1 through US-2.8.4.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-2.8.5** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.8.5.1 through US-2.8.5.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+6. **US-2.8.6** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.8.6.1 through US-2.8.6.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+7. **US-2.8.7** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-2.8.7.1 through US-2.8.7.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+8. **US-2.8.8** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.8.8.1 through US-2.8.8.1 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+9. **US-2.8.9** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.8.9.1 through US-2.8.9.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

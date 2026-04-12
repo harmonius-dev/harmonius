@@ -153,3 +153,47 @@
 
 32. **US-5.4.7.4** — **As a** player (P-23), **I want** music to escalate as danger increases and
     calm during peaceful exploration, **so that** tension is communicated through the score.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-5.4.1 | audio designer (P-14) |
+| US-5.4.2 | audio designer (P-14) |
+| US-5.4.3 | audio designer (P-14) |
+| US-5.4.4 | audio designer (P-14) |
+| US-5.4.5 | audio designer (P-14) |
+| US-5.4.6 | audio designer (P-14) |
+| US-5.4.7 | audio designer (P-14) |
+
+1. **US-5.4.1** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.4.1.1 through US-5.4.1.5 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-5.4.2** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.4.2.1 through US-5.4.2.5 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-5.4.3** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.4.3.1 through US-5.4.3.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-5.4.4** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.4.4.1 through US-5.4.4.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-5.4.5** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.4.5.1 through US-5.4.5.5 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+6. **US-5.4.6** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.4.6.1 through US-5.4.6.5 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+7. **US-5.4.7** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.4.7.1 through US-5.4.7.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

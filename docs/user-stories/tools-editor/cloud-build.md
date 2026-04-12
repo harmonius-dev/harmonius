@@ -66,3 +66,47 @@
 
 14. **US-15.24.7.2** — **As a** build engineer (P-16), **I want** historical build results with
     duration trends and success/failure rates, **so that** I can track build health.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-15.24.1 | build engineer (P-16) |
+| US-15.24.2 | build engineer (P-16) |
+| US-15.24.3 | technical artist (P-13) |
+| US-15.24.4 | build engineer (P-16) |
+| US-15.24.5 | build engineer (P-16) |
+| US-15.24.6 | engine developer (P-26) |
+| US-15.24.7 | game designer (P-5) |
+
+1. **US-15.24.1** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.24.1.1 through US-15.24.1.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+2. **US-15.24.2** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.24.2.1 through US-15.24.2.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-15.24.3** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-15.24.3.1 through US-15.24.3.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+4. **US-15.24.4** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.24.4.1 through US-15.24.4.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+5. **US-15.24.5** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.24.5.1 through US-15.24.5.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+6. **US-15.24.6** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-15.24.6.1 through US-15.24.6.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+7. **US-15.24.7** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-15.24.7.1 through US-15.24.7.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.

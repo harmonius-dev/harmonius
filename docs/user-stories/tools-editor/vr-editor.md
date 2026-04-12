@@ -54,3 +54,42 @@
 
 12. **US-15.22.6.2** — **As a** level designer (P-6), **I want** follow mode to buffer camera motion
     to prevent VR discomfort, **so that** following fast-moving users is safe.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-15.22.1 | level designer (P-6) |
+| US-15.22.2 | level designer (P-6) |
+| US-15.22.3 | level designer (P-6) |
+| US-15.22.4 | game designer (P-5) |
+| US-15.22.5 | level designer (P-6) |
+| US-15.22.6 | game designer (P-5) |
+
+1. **US-15.22.1** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.22.1.1 through US-15.22.1.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+2. **US-15.22.2** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.22.2.1 through US-15.22.2.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-15.22.3** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.22.3.1 through US-15.22.3.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+4. **US-15.22.4** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-15.22.4.1 through US-15.22.4.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+5. **US-15.22.5** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-15.22.5.1 through US-15.22.5.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+6. **US-15.22.6** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-15.22.6.1 through US-15.22.6.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.

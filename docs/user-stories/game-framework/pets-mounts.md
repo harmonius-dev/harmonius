@@ -104,3 +104,37 @@
 7. **US-13.15.5.4** -- [game-specific] **As a** player (P-23), **I want** to breed two compatible
    pets and see offspring with inherited traits from both parents, **so that** breeding is a path to
    stronger companions.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-13.15.1 | game designer (P-5) |
+| US-13.15.2 | game designer (P-5) |
+| US-13.15.3 | game designer (P-5) |
+| US-13.15.4 | game designer (P-5) |
+| US-13.15.5 | game designer (P-5) |
+
+1. **US-13.15.1** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.15.1.1 through US-13.15.1.4 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+2. **US-13.15.2** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.15.2.1 through US-13.15.2.3 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-13.15.3** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.15.3.1 through US-13.15.3.5 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+4. **US-13.15.4** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.15.4.1 through US-13.15.4.3 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+5. **US-13.15.5** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.15.5.1 through US-13.15.5.4 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.

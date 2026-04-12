@@ -297,3 +297,405 @@
 3. **US-3.6.67.1** -- **As a** level designer (P-6), **I want** a cellular automata node with
    configurable birth and survival rules, **so that** I generate organic cave layouts and islands
    from standard roguelike rule sets.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-3.6.1 | level designer (P-6) |
+| US-3.6.10 | environment artist (P-8) |
+| US-3.6.11 | level designer (P-6) |
+| US-3.6.12 | environment artist (P-8) |
+| US-3.6.13 | level designer (P-6) |
+| US-3.6.14 | level designer (P-6) |
+| US-3.6.15 | level designer (P-6) |
+| US-3.6.16 | engine developer (P-26) |
+| US-3.6.17 | level designer (P-6) |
+| US-3.6.18 | environment artist (P-8) |
+| US-3.6.19 | level designer (P-6) |
+| US-3.6.2 | level designer (P-6) |
+| US-3.6.20 | level designer (P-6) |
+| US-3.6.21 | level designer (P-6) |
+| US-3.6.22 | level designer (P-6) |
+| US-3.6.23 | level designer (P-6) |
+| US-3.6.24 | environment artist (P-8) |
+| US-3.6.25 | technical artist (P-13) |
+| US-3.6.26 | level designer (P-6) |
+| US-3.6.27 | environment artist (P-8) |
+| US-3.6.28 | level designer (P-6) |
+| US-3.6.29 | technical artist (P-13) |
+| US-3.6.3 | environment artist (P-8) |
+| US-3.6.30 | level designer (P-6) |
+| US-3.6.31 | engine developer (P-26) |
+| US-3.6.32 | engine developer (P-26) |
+| US-3.6.33 | technical artist (P-13) |
+| US-3.6.34 | level designer (P-6) |
+| US-3.6.35 | level designer (P-6) |
+| US-3.6.36 | level designer (P-6) |
+| US-3.6.37 | level designer (P-6) |
+| US-3.6.38 | level designer (P-6) |
+| US-3.6.39 | level designer (P-6) |
+| US-3.6.4 | level designer (P-6) |
+| US-3.6.40 | level designer (P-6) |
+| US-3.6.41 | level designer (P-6) |
+| US-3.6.42 | technical artist (P-13) |
+| US-3.6.43 | technical artist (P-13) |
+| US-3.6.44 | environment artist (P-8) |
+| US-3.6.45 | environment artist (P-8) |
+| US-3.6.46 | environment artist (P-8) |
+| US-3.6.47 | level designer (P-6) |
+| US-3.6.48 | level designer (P-6) |
+| US-3.6.49 | level designer (P-6) |
+| US-3.6.5 | engine developer (P-26) |
+| US-3.6.50 | technical artist (P-13) |
+| US-3.6.51 | engine developer (P-26) |
+| US-3.6.52 | environment artist (P-8) |
+| US-3.6.53 | environment artist (P-8) |
+| US-3.6.54 | technical artist (P-13) |
+| US-3.6.55 | level designer (P-6) |
+| US-3.6.56 | technical artist (P-13) |
+| US-3.6.57 | engine developer (P-26) |
+| US-3.6.58 | engine developer (P-26) |
+| US-3.6.59 | engine developer (P-26) |
+| US-3.6.6 | technical artist (P-13) |
+| US-3.6.60 | level designer (P-6) |
+| US-3.6.61 | level designer (P-6) |
+| US-3.6.62 | engine developer (P-26) |
+| US-3.6.63 | engine developer (P-26) |
+| US-3.6.64 | engine developer (P-26) |
+| US-3.6.65 | environment artist (P-8) |
+| US-3.6.66 | level designer (P-6) |
+| US-3.6.67 | level designer (P-6) |
+| US-3.6.7 | level designer (P-6) |
+| US-3.6.8 | technical artist (P-13) |
+| US-3.6.9 | level designer (P-6) |
+
+1. **US-3.6.1** -- **As a** level designer (P-6), **I want** the capabilities defined in sub-stories
+   US-3.6.1.1 through US-3.6.1.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-3.6.10** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-3.6.10.1 through US-3.6.10.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-3.6.11** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-3.6.11.1 through US-3.6.11.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-3.6.12** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-3.6.12.1 through US-3.6.12.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-3.6.13** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-3.6.13.1 through US-3.6.13.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-3.6.14** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-3.6.14.1 through US-3.6.14.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+7. **US-3.6.15** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-3.6.15.1 through US-3.6.15.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+8. **US-3.6.16** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-3.6.16.1 through US-3.6.16.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+9. **US-3.6.17** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-3.6.17.1 through US-3.6.17.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+10. **US-3.6.18** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.6.18.1 through US-3.6.18.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+11. **US-3.6.19** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.19.1 through US-3.6.19.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+12. **US-3.6.2** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.2.1 through US-3.6.2.1 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+13. **US-3.6.20** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.20.1 through US-3.6.20.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+14. **US-3.6.21** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.21.1 through US-3.6.21.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+15. **US-3.6.22** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.22.1 through US-3.6.22.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+16. **US-3.6.23** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.23.1 through US-3.6.23.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+17. **US-3.6.24** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.6.24.1 through US-3.6.24.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+18. **US-3.6.25** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.6.25.1 through US-3.6.25.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+19. **US-3.6.26** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.26.1 through US-3.6.26.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+20. **US-3.6.27** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.6.27.1 through US-3.6.27.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+21. **US-3.6.28** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.28.1 through US-3.6.28.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+22. **US-3.6.29** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.6.29.1 through US-3.6.29.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+23. **US-3.6.3** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.6.3.1 through US-3.6.3.1 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+24. **US-3.6.30** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.30.1 through US-3.6.30.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+25. **US-3.6.31** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-3.6.31.1 through US-3.6.31.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+26. **US-3.6.32** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-3.6.32.1 through US-3.6.32.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+27. **US-3.6.33** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.6.33.1 through US-3.6.33.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+28. **US-3.6.34** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.34.1 through US-3.6.34.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+29. **US-3.6.35** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.35.1 through US-3.6.35.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+30. **US-3.6.36** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.36.1 through US-3.6.36.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+31. **US-3.6.37** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.37.1 through US-3.6.37.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+32. **US-3.6.38** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.38.1 through US-3.6.38.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+33. **US-3.6.39** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.39.1 through US-3.6.39.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+34. **US-3.6.4** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.4.1 through US-3.6.4.1 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+35. **US-3.6.40** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.40.1 through US-3.6.40.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+36. **US-3.6.41** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.41.1 through US-3.6.41.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+37. **US-3.6.42** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.6.42.1 through US-3.6.42.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+38. **US-3.6.43** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.6.43.1 through US-3.6.43.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+39. **US-3.6.44** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.6.44.1 through US-3.6.44.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+40. **US-3.6.45** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.6.45.1 through US-3.6.45.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+41. **US-3.6.46** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.6.46.1 through US-3.6.46.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+42. **US-3.6.47** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.47.1 through US-3.6.47.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+43. **US-3.6.48** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.48.1 through US-3.6.48.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+44. **US-3.6.49** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.49.1 through US-3.6.49.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+45. **US-3.6.5** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-3.6.5.1 through US-3.6.5.1 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+46. **US-3.6.50** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.6.50.1 through US-3.6.50.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+47. **US-3.6.51** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-3.6.51.1 through US-3.6.51.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+48. **US-3.6.52** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.6.52.1 through US-3.6.52.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+49. **US-3.6.53** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.6.53.1 through US-3.6.53.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+50. **US-3.6.54** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.6.54.1 through US-3.6.54.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+51. **US-3.6.55** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.55.1 through US-3.6.55.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+52. **US-3.6.56** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.6.56.1 through US-3.6.56.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+53. **US-3.6.57** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-3.6.57.1 through US-3.6.57.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+54. **US-3.6.58** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-3.6.58.1 through US-3.6.58.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+55. **US-3.6.59** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-3.6.59.1 through US-3.6.59.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+56. **US-3.6.6** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.6.6.1 through US-3.6.6.1 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+57. **US-3.6.60** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.60.1 through US-3.6.60.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+58. **US-3.6.61** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.61.1 through US-3.6.61.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+59. **US-3.6.62** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-3.6.62.1 through US-3.6.62.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+60. **US-3.6.63** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-3.6.63.1 through US-3.6.63.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+61. **US-3.6.64** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-3.6.64.1 through US-3.6.64.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+62. **US-3.6.65** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.6.65.1 through US-3.6.65.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+63. **US-3.6.66** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.66.1 through US-3.6.66.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+64. **US-3.6.67** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.67.1 through US-3.6.67.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+65. **US-3.6.7** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.7.1 through US-3.6.7.1 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+66. **US-3.6.8** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.6.8.1 through US-3.6.8.1 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+67. **US-3.6.9** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.6.9.1 through US-3.6.9.1 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.

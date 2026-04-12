@@ -97,3 +97,42 @@
    the exact frame, **so that** I can attend to interruptions.
 5. **US-13.5.7.1** — **As a** story director (P-4), **I want** configurable letterbox bars with
    animated reveal/hide, **so that** cinematic framing signals mode change.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-13.5.1 | story director (P-4) |
+| US-13.5.2 | story director (P-4) |
+| US-13.5.3 | story director (P-4) |
+| US-13.5.4 | story director (P-4) |
+| US-13.5.5 | writer (P-17) |
+| US-13.5.7 | story director (P-4) |
+
+1. **US-13.5.1** -- **As a** story director (P-4), **I want** the capabilities defined in
+   sub-stories US-13.5.1.1 through US-13.5.1.4 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+2. **US-13.5.2** -- **As a** story director (P-4), **I want** the capabilities defined in
+   sub-stories US-13.5.2.1 through US-13.5.2.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-13.5.3** -- **As a** story director (P-4), **I want** the capabilities defined in
+   sub-stories US-13.5.3.1 through US-13.5.3.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-13.5.4** -- **As a** story director (P-4), **I want** the capabilities defined in
+   sub-stories US-13.5.4.1 through US-13.5.4.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-13.5.5** -- **As a** writer (P-17), **I want** the capabilities defined in sub-stories
+   US-13.5.5.1 through US-13.5.5.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+6. **US-13.5.7** -- **As a** story director (P-4), **I want** the capabilities defined in
+   sub-stories US-13.5.7.1 through US-13.5.7.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.

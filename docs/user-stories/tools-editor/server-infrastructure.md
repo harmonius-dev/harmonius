@@ -90,3 +90,63 @@
 
 20. **US-15.18.10.2** — **As a** engine developer (P-26), **I want** the free-tier profile to relax
     controls to stay within cost limits, **so that** solo developers are not overcharged.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-15.18.1 | build engineer (P-16) |
+| US-15.18.10 | build engineer (P-16) |
+| US-15.18.2 | build engineer (P-16) |
+| US-15.18.3 | build engineer (P-16) |
+| US-15.18.4 | build engineer (P-16) |
+| US-15.18.5 | build engineer (P-16) |
+| US-15.18.6 | build engineer (P-16) |
+| US-15.18.7 | build engineer (P-16) |
+| US-15.18.8 | build engineer (P-16) |
+| US-15.18.9 | build engineer (P-16) |
+
+1. **US-15.18.1** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.18.1.1 through US-15.18.1.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+2. **US-15.18.10** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.18.10.1 through US-15.18.10.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-15.18.2** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.18.2.1 through US-15.18.2.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+4. **US-15.18.3** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.18.3.1 through US-15.18.3.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+5. **US-15.18.4** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.18.4.1 through US-15.18.4.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+6. **US-15.18.5** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.18.5.1 through US-15.18.5.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+7. **US-15.18.6** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.18.6.1 through US-15.18.6.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+8. **US-15.18.7** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.18.7.1 through US-15.18.7.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+9. **US-15.18.8** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+   sub-stories US-15.18.8.1 through US-15.18.8.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+10. **US-15.18.9** -- **As a** build engineer (P-16), **I want** the capabilities defined in
+    sub-stories
+US-15.18.9.1 through US-15.18.9.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.

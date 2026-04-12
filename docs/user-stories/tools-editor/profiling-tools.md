@@ -71,3 +71,52 @@
 15. **US-15.5.8.1** — **As a** game developer (P-15), **I want** per-phase physics profiling metrics
     showing broadphase, narrowphase, and solver timing separately, **so that** I can identify which
     physics stage is the bottleneck in a heavy simulation frame.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-15.5.1 | engine developer (P-26) |
+| US-15.5.2 | engine developer (P-26) |
+| US-15.5.3 | engine developer (P-26) |
+| US-15.5.4 | engine developer (P-26) |
+| US-15.5.5 | engine developer (P-26) |
+| US-15.5.6 | game designer (P-5) |
+| US-15.5.7 | engine developer (P-26) |
+| US-15.5.8 | game developer (P-15) |
+
+1. **US-15.5.1** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-15.5.1.1 through US-15.5.1.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+2. **US-15.5.2** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-15.5.2.1 through US-15.5.2.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-15.5.3** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-15.5.3.1 through US-15.5.3.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-15.5.4** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-15.5.4.1 through US-15.5.4.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-15.5.5** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-15.5.5.1 through US-15.5.5.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-15.5.6** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-15.5.6.1 through US-15.5.6.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+7. **US-15.5.7** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-15.5.7.1 through US-15.5.7.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+8. **US-15.5.8** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-15.5.8.1 through US-15.5.8.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.

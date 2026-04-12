@@ -150,3 +150,52 @@
 
 32. **US-5.3.8.4** — **As a** game designer (P-5), **I want** to configure custom node parameters
     visually in the editor, **so that** plugin effects are tuned alongside built-in effects.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-5.3.1 | audio designer (P-14) |
+| US-5.3.2 | audio designer (P-14) |
+| US-5.3.3 | audio designer (P-14) |
+| US-5.3.4 | audio designer (P-14) |
+| US-5.3.5 | audio designer (P-14) |
+| US-5.3.6 | audio designer (P-14) |
+| US-5.3.7 | audio designer (P-14) |
+| US-5.3.8 | audio designer (P-14) |
+
+1. **US-5.3.1** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.3.1.1 through US-5.3.1.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-5.3.2** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.3.2.1 through US-5.3.2.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-5.3.3** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.3.3.1 through US-5.3.3.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-5.3.4** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.3.4.1 through US-5.3.4.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-5.3.5** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.3.5.1 through US-5.3.5.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+6. **US-5.3.6** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.3.6.1 through US-5.3.6.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+7. **US-5.3.7** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.3.7.1 through US-5.3.7.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+8. **US-5.3.8** -- **As a** audio designer (P-14), **I want** the capabilities defined in
+   sub-stories US-5.3.8.1 through US-5.3.8.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

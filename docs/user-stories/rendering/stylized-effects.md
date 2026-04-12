@@ -59,3 +59,37 @@
 11. **US-2.11.5.2** — **As a** effects artist (P-12), **I want** x-ray silhouettes with flat color,
     team tint, or fresnel outline modes, **so that** occluded entity visibility matches the game's
     visual language.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-2.11.1 | game developer (P-15) |
+| US-2.11.2 | game developer (P-15) |
+| US-2.11.3 | environment artist (P-8) |
+| US-2.11.4 | game developer (P-15) |
+| US-2.11.5 | game developer (P-15) |
+
+1. **US-2.11.1** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-2.11.1.1 through US-2.11.1.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+2. **US-2.11.2** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-2.11.2.1 through US-2.11.2.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-2.11.3** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.11.3.1 through US-2.11.3.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-2.11.4** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-2.11.4.1 through US-2.11.4.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-2.11.5** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-2.11.5.1 through US-2.11.5.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.

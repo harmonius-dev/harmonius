@@ -57,3 +57,42 @@
 12. **US-15.3.6.2** — **As a** level designer (P-6), **I want** drag-and-drop from the material
     library onto meshes in the viewport, **so that** I can assign materials without opening the
     inspector.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-15.3.1 | technical artist (P-13) |
+| US-15.3.2 | technical artist (P-13) |
+| US-15.3.3 | technical artist (P-13) |
+| US-15.3.4 | game designer (P-5) |
+| US-15.3.5 | technical artist (P-13) |
+| US-15.3.6 | game designer (P-5) |
+
+1. **US-15.3.1** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-15.3.1.1 through US-15.3.1.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+2. **US-15.3.2** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-15.3.2.1 through US-15.3.2.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-15.3.3** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-15.3.3.1 through US-15.3.3.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-15.3.4** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-15.3.4.1 through US-15.3.4.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-15.3.5** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-15.3.5.1 through US-15.3.5.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-15.3.6** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-15.3.6.1 through US-15.3.6.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.

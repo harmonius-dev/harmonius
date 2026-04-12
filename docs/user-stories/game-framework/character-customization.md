@@ -163,3 +163,93 @@
 
 6. **US-13.8.15.2** -- [game-specific] **As a** player (P-23), **I want** to export and import
    character appearance data files, **so that** I can share my character's look with friends.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-13.8.1 | character artist (P-9) |
+| US-13.8.10 | game developer (P-15) |
+| US-13.8.11 | game designer (P-5) |
+| US-13.8.12 | character artist (P-9) |
+| US-13.8.13 | game developer (P-15) |
+| US-13.8.14 | game developer (P-15) |
+| US-13.8.15 | game developer (P-15) |
+| US-13.8.2 | character artist (P-9) |
+| US-13.8.3 | character artist (P-9) |
+| US-13.8.4 | game developer (P-15) |
+| US-13.8.5 | character artist (P-9) |
+| US-13.8.6 | character artist (P-9) |
+| US-13.8.7 | character artist (P-9) |
+| US-13.8.8 | character artist (P-9) |
+| US-13.8.9 | character artist (P-9) |
+
+1. **US-13.8.1** -- **As a** character artist (P-9), **I want** the capabilities defined in
+   sub-stories US-13.8.1.1 through US-13.8.1.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+2. **US-13.8.10** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-13.8.10.1 through US-13.8.10.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-13.8.11** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.8.11.1 through US-13.8.11.3 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+4. **US-13.8.12** -- **As a** character artist (P-9), **I want** the capabilities defined in
+   sub-stories US-13.8.12.1 through US-13.8.12.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+5. **US-13.8.13** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-13.8.13.1 through US-13.8.13.1 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+6. **US-13.8.14** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-13.8.14.1 through US-13.8.14.1 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+7. **US-13.8.15** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-13.8.15.1 through US-13.8.15.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+8. **US-13.8.2** -- **As a** character artist (P-9), **I want** the capabilities defined in
+   sub-stories US-13.8.2.1 through US-13.8.2.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+9. **US-13.8.3** -- **As a** character artist (P-9), **I want** the capabilities defined in
+   sub-stories US-13.8.3.1 through US-13.8.3.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+10. **US-13.8.4** -- **As a** game developer (P-15), **I want** the capabilities defined in
+    sub-stories
+US-13.8.4.1 through US-13.8.4.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+11. **US-13.8.5** -- **As a** character artist (P-9), **I want** the capabilities defined in
+    sub-stories
+US-13.8.5.1 through US-13.8.5.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+12. **US-13.8.6** -- **As a** character artist (P-9), **I want** the capabilities defined in
+    sub-stories
+US-13.8.6.1 through US-13.8.6.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+13. **US-13.8.7** -- **As a** character artist (P-9), **I want** the capabilities defined in
+    sub-stories
+US-13.8.7.1 through US-13.8.7.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+14. **US-13.8.8** -- **As a** character artist (P-9), **I want** the capabilities defined in
+    sub-stories
+US-13.8.8.1 through US-13.8.8.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+15. **US-13.8.9** -- **As a** character artist (P-9), **I want** the capabilities defined in
+    sub-stories
+US-13.8.9.1 through US-13.8.9.2 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.

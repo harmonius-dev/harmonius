@@ -98,3 +98,57 @@
 
 19. **US-2.12.9.3** — **As a** effects artist (P-12), **I want** reusable material functions
     composing into complex materials, **so that** I build effects from shared building blocks.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-2.12.1 | environment artist (P-8) |
+| US-2.12.2 | environment artist (P-8) |
+| US-2.12.3 | effects artist (P-12) |
+| US-2.12.4 | environment artist (P-8) |
+| US-2.12.5 | environment artist (P-8) |
+| US-2.12.6 | environment artist (P-8) |
+| US-2.12.7 | environment artist (P-8) |
+| US-2.12.8 | environment artist (P-8) |
+| US-2.12.9 | technical artist (P-13) |
+
+1. **US-2.12.1** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.12.1.1 through US-2.12.1.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+2. **US-2.12.2** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.12.2.1 through US-2.12.2.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-2.12.3** -- **As a** effects artist (P-12), **I want** the capabilities defined in
+   sub-stories US-2.12.3.1 through US-2.12.3.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-2.12.4** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.12.4.1 through US-2.12.4.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-2.12.5** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.12.5.1 through US-2.12.5.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-2.12.6** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.12.6.1 through US-2.12.6.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+7. **US-2.12.7** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.12.7.1 through US-2.12.7.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+8. **US-2.12.8** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-2.12.8.1 through US-2.12.8.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+9. **US-2.12.9** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-2.12.9.1 through US-2.12.9.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.

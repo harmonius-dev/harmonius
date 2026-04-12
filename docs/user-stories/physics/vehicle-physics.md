@@ -72,3 +72,47 @@
    serialization.
 6. **US-4.5.7.2** -- **As a** engine tester (P-27), **I want** to verify client prediction
    reconciles correctly on server snapshots, **so that** multiplayer vehicle movement is smooth.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-4.5.1 | game developer (P-15) |
+| US-4.5.2 | game developer (P-15) |
+| US-4.5.3 | game developer (P-15) |
+| US-4.5.4 | game developer (P-15) |
+| US-4.5.5 | game developer (P-15) |
+| US-4.5.6 | game developer (P-15) |
+| US-4.5.7 | engine developer (P-26) |
+
+1. **US-4.5.1** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.5.1.1 through US-4.5.1.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-4.5.2** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.5.2.1 through US-4.5.2.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-4.5.3** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.5.3.1 through US-4.5.3.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-4.5.4** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.5.4.1 through US-4.5.4.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-4.5.5** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.5.5.1 through US-4.5.5.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+6. **US-4.5.6** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-4.5.6.1 through US-4.5.6.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+7. **US-4.5.7** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-4.5.7.1 through US-4.5.7.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

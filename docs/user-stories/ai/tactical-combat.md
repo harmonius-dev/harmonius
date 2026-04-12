@@ -117,3 +117,42 @@
 7. **US-7.8.6.4** -- **As an** engine developer (P-26), **I want** retreating agents to use smoke or
    suppressive fire to cover withdrawal when available, **so that** retreat is tactical rather than
    a simple flee.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-7.8.1 | game designer (P-5) |
+| US-7.8.2 | game designer (P-5) |
+| US-7.8.3 | game designer (P-5) |
+| US-7.8.4 | game designer (P-5) |
+| US-7.8.5 | game designer (P-5) |
+| US-7.8.6 | game designer (P-5) |
+
+1. **US-7.8.1** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.8.1.1 through US-7.8.1.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-7.8.2** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.8.2.1 through US-7.8.2.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+3. **US-7.8.3** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.8.3.1 through US-7.8.3.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+4. **US-7.8.4** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.8.4.1 through US-7.8.4.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-7.8.5** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.8.5.1 through US-7.8.5.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+6. **US-7.8.6** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.8.6.1 through US-7.8.6.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.

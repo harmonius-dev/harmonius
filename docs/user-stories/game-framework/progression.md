@@ -114,3 +114,37 @@
    set progress with collected vs. missing pieces, **so that** I know what I need.
 7. **US-13.12.10.1** — **As a** game designer (P-5), **I want** durability per item with
    configurable drain rates and repair costs, **so that** equipment maintenance is an economic sink.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-13.12.10 | game designer (P-5) |
+| US-13.12.4 | game designer (P-5) |
+| US-13.12.5 | game designer (P-5) |
+| US-13.12.7 | game designer (P-5) |
+| US-13.12.9 | game designer (P-5) |
+
+1. **US-13.12.10** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.12.10.1 through US-13.12.10.1 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+2. **US-13.12.4** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.12.4.1 through US-13.12.4.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-13.12.5** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.12.5.1 through US-13.12.5.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+4. **US-13.12.7** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.12.7.1 through US-13.12.7.1 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+5. **US-13.12.9** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.12.9.1 through US-13.12.9.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.

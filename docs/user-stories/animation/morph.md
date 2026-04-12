@@ -81,3 +81,37 @@
 
 6. **US-9.2.5.3** -- **As a** game developer (P-15), **I want** morph targets streamed in before a
    character becomes visible, **so that** players never see default-shape pop-in during gameplay.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-9.2.1 | engine developer (P-26) |
+| US-9.2.2 | rigger (P-10) |
+| US-9.2.3 | character animator (P-11) |
+| US-9.2.4 | technical artist (P-13) |
+| US-9.2.5 | engine developer (P-26) |
+
+1. **US-9.2.1** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-9.2.1.1 through US-9.2.1.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-9.2.2** -- **As a** rigger (P-10), **I want** the capabilities defined in sub-stories
+   US-9.2.2.1 through US-9.2.2.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+3. **US-9.2.3** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.2.3.1 through US-9.2.3.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-9.2.4** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-9.2.4.1 through US-9.2.4.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-9.2.5** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-9.2.5.1 through US-9.2.5.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

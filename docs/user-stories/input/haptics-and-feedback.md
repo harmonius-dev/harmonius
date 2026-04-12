@@ -50,3 +50,37 @@
     **so that** switching devices does not lose all feedback.
 15. **US-6.4.5.3** — **As an** engine developer (P-26), **I want** fallback chain ordering validated
     at build time, **so that** every profile produces feedback on every controller class.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-6.4.1 | player (P-23) |
+| US-6.4.2 | player (P-23) |
+| US-6.4.3 | player (P-23) |
+| US-6.4.4 | player (P-23) |
+| US-6.4.5 | game designer (P-5) |
+
+1. **US-6.4.1** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-6.4.1.1 through US-6.4.1.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-6.4.2** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-6.4.2.1 through US-6.4.2.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+3. **US-6.4.3** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-6.4.3.1 through US-6.4.3.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+4. **US-6.4.4** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-6.4.4.1 through US-6.4.4.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-6.4.5** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-6.4.5.1 through US-6.4.5.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.

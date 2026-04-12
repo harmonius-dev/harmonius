@@ -74,3 +74,52 @@
    including character class, party composition, quest progress summary, death count, currency,
    completion percentage, and difficulty, **so that** I can choose the right save to load without
    opening each one.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-13.3.1 | player (P-23) |
+| US-13.3.2 | game developer (P-15) |
+| US-13.3.3 | game designer (P-5) |
+| US-13.3.4 | player (P-23) |
+| US-13.3.5 | player (P-23) |
+| US-13.3.6 | engine developer (P-26) |
+| US-13.3.7 | game developer (P-15) |
+| US-13.3.8 | player (P-23) |
+
+1. **US-13.3.1** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-13.3.1.1 through US-13.3.1.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-13.3.2** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-13.3.2.1 through US-13.3.2.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-13.3.3** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-13.3.3.1 through US-13.3.3.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+4. **US-13.3.4** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-13.3.4.1 through US-13.3.4.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-13.3.5** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-13.3.5.1 through US-13.3.5.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+6. **US-13.3.6** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-13.3.6.1 through US-13.3.6.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+7. **US-13.3.7** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-13.3.7.1 through US-13.3.7.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+8. **US-13.3.8** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-13.3.8.1 through US-13.3.8.1 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.

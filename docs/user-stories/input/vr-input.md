@@ -48,3 +48,37 @@
     in the editor, **so that** haptic design is data-driven.
 15. **US-6.5.5.3** — **As an** engine developer (P-26), **I want** VR haptic output abstracted
     across OpenXR, PSVR2, and Quest APIs, **so that** authored patterns work on all platforms.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-6.5.1 | player (P-23) |
+| US-6.5.2 | player (P-23) |
+| US-6.5.3 | player (P-23) |
+| US-6.5.4 | player (P-23) |
+| US-6.5.5 | player (P-23) |
+
+1. **US-6.5.1** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-6.5.1.1 through US-6.5.1.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-6.5.2** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-6.5.2.1 through US-6.5.2.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+3. **US-6.5.3** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-6.5.3.1 through US-6.5.3.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+4. **US-6.5.4** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-6.5.4.1 through US-6.5.4.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-6.5.5** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-6.5.5.1 through US-6.5.5.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.

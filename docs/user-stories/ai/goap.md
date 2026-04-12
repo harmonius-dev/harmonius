@@ -125,3 +125,42 @@
 
 11. **US-7.5.6.4** -- **As an** engine developer (P-26), **I want** concurrent goal candidates to be
     limited per platform tier, **so that** goal evaluation cost is bounded on mobile.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-7.5.1 | game designer (P-5) |
+| US-7.5.2 | game designer (P-5) |
+| US-7.5.3 | game designer (P-5) |
+| US-7.5.4 | game designer (P-5) |
+| US-7.5.5 | game designer (P-5) |
+| US-7.5.6 | game designer (P-5) |
+
+1. **US-7.5.1** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.5.1.1 through US-7.5.1.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-7.5.2** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.5.2.1 through US-7.5.2.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+3. **US-7.5.3** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.5.3.1 through US-7.5.3.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+4. **US-7.5.4** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.5.4.1 through US-7.5.4.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-7.5.5** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.5.5.1 through US-7.5.5.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+6. **US-7.5.6** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.5.6.1 through US-7.5.6.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.

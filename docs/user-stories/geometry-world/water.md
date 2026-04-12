@@ -132,3 +132,52 @@
 1. **US-3.4.8.1** -- **As a** game developer (P-15), **I want** the ocean surface built as
    camera-centred clipmap rings with FFT displacement applied in the vertex shader, **so that**
    water maintains high tessellation near the camera and scales to infinite extent.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-3.4.1 | environment artist (P-8) |
+| US-3.4.2 | environment artist (P-8) |
+| US-3.4.3 | level designer (P-6) |
+| US-3.4.4 | environment artist (P-8) |
+| US-3.4.5 | environment artist (P-8) |
+| US-3.4.6 | environment artist (P-8) |
+| US-3.4.7 | environment artist (P-8) |
+| US-3.4.8 | game developer (P-15) |
+
+1. **US-3.4.1** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-3.4.1.1 through US-3.4.1.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-3.4.2** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-3.4.2.1 through US-3.4.2.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-3.4.3** -- **As a** level designer (P-6), **I want** the capabilities defined in sub-stories
+   US-3.4.3.1 through US-3.4.3.3 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+4. **US-3.4.4** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-3.4.4.1 through US-3.4.4.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-3.4.5** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-3.4.5.1 through US-3.4.5.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+6. **US-3.4.6** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-3.4.6.1 through US-3.4.6.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+7. **US-3.4.7** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-3.4.7.1 through US-3.4.7.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+8. **US-3.4.8** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-3.4.8.1 through US-3.4.8.1 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

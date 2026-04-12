@@ -119,3 +119,47 @@
 3. **US-3.1.7.3** -- **As a** engine developer (P-26), **I want** the visibility buffer to scale to
    millions of unique materials, **so that** large open-world scenes render without material
    batching limits.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-3.1.1 | engine developer (P-26) |
+| US-3.1.2 | engine developer (P-26) |
+| US-3.1.3 | engine developer (P-26) |
+| US-3.1.4 | engine developer (P-26) |
+| US-3.1.5 | technical artist (P-13) |
+| US-3.1.6 | engine developer (P-26) |
+| US-3.1.7 | engine developer (P-26) |
+
+1. **US-3.1.1** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-3.1.1.1 through US-3.1.1.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-3.1.2** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-3.1.2.1 through US-3.1.2.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-3.1.3** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-3.1.3.1 through US-3.1.3.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-3.1.4** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-3.1.4.1 through US-3.1.4.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-3.1.5** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-3.1.5.1 through US-3.1.5.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+6. **US-3.1.6** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-3.1.6.1 through US-3.1.6.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+7. **US-3.1.7** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-3.1.7.1 through US-3.1.7.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

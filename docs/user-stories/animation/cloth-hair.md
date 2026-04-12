@@ -87,3 +87,42 @@
 5. **US-9.5.6.3** -- **As a** technical artist (P-13), **I want** per-strand wind response
    parameters (drag coefficient, turbulence scale) tunable per character, **so that** hair wind
    behavior matches the character's hair style and weight.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-9.5.1 | character animator (P-11) |
+| US-9.5.2 | character animator (P-11) |
+| US-9.5.3 | character animator (P-11) |
+| US-9.5.4 | engine developer (P-26) |
+| US-9.5.5 | rigger (P-10) |
+| US-9.5.6 | character animator (P-11) |
+
+1. **US-9.5.1** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.5.1.1 through US-9.5.1.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-9.5.2** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.5.2.1 through US-9.5.2.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-9.5.3** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.5.3.1 through US-9.5.3.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-9.5.4** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-9.5.4.1 through US-9.5.4.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+5. **US-9.5.5** -- **As a** rigger (P-10), **I want** the capabilities defined in sub-stories
+   US-9.5.5.1 through US-9.5.5.2 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+6. **US-9.5.6** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.5.6.1 through US-9.5.6.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

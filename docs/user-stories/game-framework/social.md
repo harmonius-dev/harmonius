@@ -99,3 +99,37 @@
    exclusive rewards for top ranks, **so that** PvP competition has ongoing incentives.
 6. **US-13.13.10d.1** — **As a** game designer (P-5), **I want** optional PvP stat normalization
    that overrides gear advantages in rated matches, **so that** skill determines outcomes.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-13.13.2 | game designer (P-5) |
+| US-13.13.4 | player (P-23) |
+| US-13.13.7 | player (P-23) |
+| US-13.13.8 | player (P-23) |
+| US-13.13.9 | game designer (P-5) |
+
+1. **US-13.13.2** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.13.2.1 through US-13.13.2.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+2. **US-13.13.4** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-13.13.4.1 through US-13.13.4.1 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+3. **US-13.13.7** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-13.13.7.1 through US-13.13.7.1 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+4. **US-13.13.8** -- **As a** player (P-23), **I want** the capabilities defined in sub-stories
+   US-13.13.8.1 through US-13.13.8.1 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-13.13.9** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.13.9.1 through US-13.13.9.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.

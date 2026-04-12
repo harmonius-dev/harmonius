@@ -69,3 +69,32 @@ sway, bob, fire, and reload per hand, **so that** two-weapon combat feels respon
 14. **US-9.6.4.4** -- **As an** engine developer (P-26), **I want** independent per-hand spring
     systems for dual wield, **so that** each hand's sway, bob, and recoil are computed separately
     without interference.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-9.6.1 | character animator (P-11) |
+| US-9.6.2 | character animator (P-11) |
+| US-9.6.3 | character animator (P-11) |
+| US-9.6.4 | character animator (P-11) |
+
+1. **US-9.6.1** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.6.1.1 through US-9.6.1.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-9.6.2** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.6.2.1 through US-9.6.2.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+3. **US-9.6.3** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.6.3.1 through US-9.6.3.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+4. **US-9.6.4** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.6.4.1 through US-9.6.4.4 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.

@@ -91,3 +91,42 @@
    feedback matches the art style.
 4. **US-13.11.8.2** — **As a** player (P-23), **I want** selected entities to show colored outlines
    and hovered entities to show a thinner preview, **so that** selection state is always visible.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-13.11.1 | game designer (P-5) |
+| US-13.11.2 | game designer (P-5) |
+| US-13.11.3 | game designer (P-5) |
+| US-13.11.5 | game designer (P-5) |
+| US-13.11.7 | game designer (P-5) |
+| US-13.11.8 | game designer (P-5) |
+
+1. **US-13.11.1** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.11.1.1 through US-13.11.1.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+2. **US-13.11.2** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.11.2.1 through US-13.11.2.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+3. **US-13.11.3** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.11.3.1 through US-13.11.3.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+4. **US-13.11.5** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.11.5.1 through US-13.11.5.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+5. **US-13.11.7** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.11.7.1 through US-13.11.7.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.
+
+6. **US-13.11.8** -- **As a** game designer (P-5), **I want** the capabilities defined in
+   sub-stories US-13.11.8.1 through US-13.11.8.2 combined into a single umbrella feature,
+   **so that** I have a coherent parent story covering the refined child stories.

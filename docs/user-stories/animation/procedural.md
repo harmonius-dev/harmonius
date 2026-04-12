@@ -178,3 +178,92 @@
 4. **US-9.3.15.1** -- **As an** engine developer (P-26), **I want** to load trained neural
    locomotion policies as an AnimationLayerStack pose source, **so that** research-tier learned
    motion works inside the standard animation pipeline without forking.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-9.3.1 | engine developer (P-26) |
+| US-9.3.10 | character animator (P-11) |
+| US-9.3.11 | engine developer (P-26) |
+| US-9.3.12 | character animator (P-11) |
+| US-9.3.13 | game developer (P-15) |
+| US-9.3.14 | character artist (P-9) |
+| US-9.3.15 | engine developer (P-26) |
+| US-9.3.2 | engine developer (P-26) |
+| US-9.3.3 | engine developer (P-26) |
+| US-9.3.4 | character animator (P-11) |
+| US-9.3.5 | character animator (P-11) |
+| US-9.3.6 | engine developer (P-26) |
+| US-9.3.7 | character animator (P-11) |
+| US-9.3.8 | rigger (P-10) |
+| US-9.3.9 | engine developer (P-26) |
+
+1. **US-9.3.1** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-9.3.1.1 through US-9.3.1.3 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+2. **US-9.3.10** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.3.10.1 through US-9.3.10.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-9.3.11** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-9.3.11.1 through US-9.3.11.3 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-9.3.12** -- **As a** character animator (P-11), **I want** the capabilities defined in
+   sub-stories US-9.3.12.1 through US-9.3.12.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-9.3.13** -- **As a** game developer (P-15), **I want** the capabilities defined in
+   sub-stories US-9.3.13.1 through US-9.3.13.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-9.3.14** -- **As a** character artist (P-9), **I want** the capabilities defined in
+   sub-stories US-9.3.14.1 through US-9.3.14.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+7. **US-9.3.15** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-9.3.15.1 through US-9.3.15.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+8. **US-9.3.2** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-9.3.2.1 through US-9.3.2.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+9. **US-9.3.3** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-9.3.3.1 through US-9.3.3.2 combined into a single umbrella feature, **so that** I
+   have a coherent parent story covering the refined child stories.
+
+10. **US-9.3.4** -- **As a** character animator (P-11), **I want** the capabilities defined in
+    sub-stories
+US-9.3.4.1 through US-9.3.4.3 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+11. **US-9.3.5** -- **As a** character animator (P-11), **I want** the capabilities defined in
+    sub-stories
+US-9.3.5.1 through US-9.3.5.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+12. **US-9.3.6** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-9.3.6.1 through US-9.3.6.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+13. **US-9.3.7** -- **As a** character animator (P-11), **I want** the capabilities defined in
+    sub-stories
+US-9.3.7.1 through US-9.3.7.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+14. **US-9.3.8** -- **As a** rigger (P-10), **I want** the capabilities defined in sub-stories
+US-9.3.8.1 through US-9.3.8.3 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+15. **US-9.3.9** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+    sub-stories
+US-9.3.9.1 through US-9.3.9.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.

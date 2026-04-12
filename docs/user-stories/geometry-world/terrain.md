@@ -208,3 +208,117 @@
 4. **US-3.2.19.1** -- **As a** game developer (P-15), **I want** tilemap chunks to generate compound
    2D colliders from solid, slope, and one-way platform tiles, **so that** 2D physics matches the
    visible tiles without separate collision authoring.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-3.2.1 | level designer (P-6) |
+| US-3.2.10 | level designer (P-6) |
+| US-3.2.11 | environment artist (P-8) |
+| US-3.2.12 | technical artist (P-13) |
+| US-3.2.13 | level designer (P-6) |
+| US-3.2.14 | engine developer (P-26) |
+| US-3.2.15 | engine developer (P-26) |
+| US-3.2.16 | environment artist (P-8) |
+| US-3.2.17 | level designer (P-6) |
+| US-3.2.18 | level designer (P-6) |
+| US-3.2.19 | game developer (P-15) |
+| US-3.2.2 | environment artist (P-8) |
+| US-3.2.3 | technical artist (P-13) |
+| US-3.2.4 | level designer (P-6) |
+| US-3.2.5 | environment artist (P-8) |
+| US-3.2.6 | level designer (P-6) |
+| US-3.2.7 | level designer (P-6) |
+| US-3.2.8 | level designer (P-6) |
+| US-3.2.9 | level designer (P-6) |
+
+1. **US-3.2.1** -- **As a** level designer (P-6), **I want** the capabilities defined in sub-stories
+   US-3.2.1.1 through US-3.2.1.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-3.2.10** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-3.2.10.1 through US-3.2.10.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+3. **US-3.2.11** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-3.2.11.1 through US-3.2.11.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+4. **US-3.2.12** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+   sub-stories US-3.2.12.1 through US-3.2.12.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+5. **US-3.2.13** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-3.2.13.1 through US-3.2.13.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+6. **US-3.2.14** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-3.2.14.1 through US-3.2.14.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+7. **US-3.2.15** -- **As a** engine developer (P-26), **I want** the capabilities defined in
+   sub-stories US-3.2.15.1 through US-3.2.15.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+8. **US-3.2.16** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+   sub-stories US-3.2.16.1 through US-3.2.16.1 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+9. **US-3.2.17** -- **As a** level designer (P-6), **I want** the capabilities defined in
+   sub-stories US-3.2.17.1 through US-3.2.17.2 combined into a single umbrella feature, **so that**
+   I have a coherent parent story covering the refined child stories.
+
+10. **US-3.2.18** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.2.18.1 through US-3.2.18.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+11. **US-3.2.19** -- **As a** game developer (P-15), **I want** the capabilities defined in
+    sub-stories
+US-3.2.19.1 through US-3.2.19.1 combined into a single umbrella feature, **so that** I have a
+coherent parent story covering the refined child stories.
+
+12. **US-3.2.2** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.2.2.1 through US-3.2.2.3 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+13. **US-3.2.3** -- **As a** technical artist (P-13), **I want** the capabilities defined in
+    sub-stories
+US-3.2.3.1 through US-3.2.3.3 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+14. **US-3.2.4** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.2.4.1 through US-3.2.4.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+15. **US-3.2.5** -- **As a** environment artist (P-8), **I want** the capabilities defined in
+    sub-stories
+US-3.2.5.1 through US-3.2.5.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+16. **US-3.2.6** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.2.6.1 through US-3.2.6.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+17. **US-3.2.7** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.2.7.1 through US-3.2.7.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+18. **US-3.2.8** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.2.8.1 through US-3.2.8.3 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.
+
+19. **US-3.2.9** -- **As a** level designer (P-6), **I want** the capabilities defined in
+    sub-stories
+US-3.2.9.1 through US-3.2.9.2 combined into a single umbrella feature, **so that** I have a coherent
+parent story covering the refined child stories.

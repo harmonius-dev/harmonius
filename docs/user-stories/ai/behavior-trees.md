@@ -184,3 +184,47 @@
 4. **US-7.3.7.4** -- **As an** engine developer (P-26), **I want** the tree visualization overlay to
    compile only in editor builds and be stripped from shipping builds, **so that** release builds
    have zero debug overhead.
+
+## Parent Stories
+
+The 3-segment parent stories below are umbrella rollups for the refined 4-segment sub-stories listed
+above. Each parent inherits the persona of its first sub-story and describes the umbrella capability
+that the sub-stories refine.
+
+| ID | Persona |
+|----|---------|
+| US-7.3.1 | game designer (P-5) |
+| US-7.3.2 | game designer (P-5) |
+| US-7.3.3 | game designer (P-5) |
+| US-7.3.4 | game designer (P-5) |
+| US-7.3.5 | game designer (P-5) |
+| US-7.3.6 | game designer (P-5) |
+| US-7.3.7 | game designer (P-5) |
+
+1. **US-7.3.1** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.3.1.1 through US-7.3.1.6 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+2. **US-7.3.2** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.3.2.1 through US-7.3.2.5 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+3. **US-7.3.3** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.3.3.1 through US-7.3.3.5 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+4. **US-7.3.4** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.3.4.1 through US-7.3.4.5 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+5. **US-7.3.5** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.3.5.1 through US-7.3.5.5 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+6. **US-7.3.6** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.3.6.1 through US-7.3.6.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
+
+7. **US-7.3.7** -- **As a** game designer (P-5), **I want** the capabilities defined in sub-stories
+   US-7.3.7.1 through US-7.3.7.4 combined into a single umbrella feature, **so that** I have a
+   coherent parent story covering the refined child stories.
