@@ -32,6 +32,9 @@ Companion test cases for [team-tools.md](team-tools.md).
 | TC-15.10.3.8 | R-15.10.3 | 24 |
 | TC-15.10.3.9 | R-15.10.3 | 25 |
 | TC-15.10.3.10 | R-15.10.3 | 26 |
+| TC-15.12.4.1 | R-15.12.4 | 27 |
+| TC-15.12.13.1 | R-15.12.13 | 28 |
+| TC-15.12.14.1 | R-15.12.14 | 29 |
 
 1. Video encode pipeline produces H.264/H.265 frames
 2. QUIC transport round-trip delivers input and frames
@@ -59,6 +62,9 @@ Companion test cases for [team-tools.md](team-tools.md).
 24. Binary conflict diff on nested properties reports full path
 25. Binary conflict resolve with mixed picks across properties
 26. Binary conflict parse fails gracefully on unknown type
+27. Remote GPU server allocates a session with isolated VRAM partition and returns session token
+28. Asset comment thread creation persists author, target ref, body, and timestamp
+29. PR review viewer renders diff hunks and accepts inline comment submission
 
 ## Integration Tests
 
