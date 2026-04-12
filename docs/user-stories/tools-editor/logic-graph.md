@@ -33,6 +33,8 @@
 | US-15.8.13.2 | engine developer (P-26)    |
 | US-15.8.14.1 | game designer (P-5)        |
 | US-15.8.14.2 | engine developer (P-26)    |
+| US-15.8.15.1 | game designer (P-5)        |
+| US-15.8.16.1 | game designer (P-5)        |
 
 1. **US-15.8.1.1** — **As a** game designer (P-5), **I want** a typed, functional graph runtime as
    the sole authoring mechanism for all engine logic, **so that** I never need to write textual
@@ -135,3 +137,12 @@
 29. **US-15.8.14.2** — **As a** engine developer (P-26), **I want** rename refactoring that
     propagates through all referencing graphs, **so that** API changes do not leave broken
     references.
+
+30. **US-15.8.15.1** — **As a** game designer (P-5), **I want** to press Tab to open a hotkey search
+    palette that filters nodes by name and auto-connects them on placement with arrow-key navigation
+    between nodes, **so that** I can author logic entirely from the keyboard faster than mouse-based
+    wiring.
+
+31. **US-15.8.16.1** — **As a** game designer (P-5), **I want** to group related nodes inside a
+    labeled colored macro container box that can collapse and expand, **so that** I can organize
+    complex graphs visually without losing the individual nodes inside a single opaque subgraph.

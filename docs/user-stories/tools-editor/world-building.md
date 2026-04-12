@@ -28,6 +28,7 @@
 | US-15.6.11.2 | technical artist (P-13) |
 | US-15.6.12.1 | level designer (P-6)    |
 | US-15.6.12.2 | technical artist (P-13) |
+| US-15.6.13.1 | level designer (P-6)    |
 
 1. **US-15.6.1.1** — **As a** level designer (P-6), **I want** sculpting brushes for raising,
    lowering, smoothing, and flattening terrain, **so that** I can shape heightmaps directly in the
@@ -102,3 +103,7 @@
 
 24. **US-15.6.12.2** — **As a** technical artist (P-13), **I want** to create and share custom brush
     presets with per-brush parameter defaults, **so that** the team has consistent sculpting tools.
+
+25. **US-15.6.13.1** — **As a** level designer (P-6), **I want** to lock an individual world cell
+    for editing so that my colleague can simultaneously edit a different cell, **so that** two
+    designers can collaborate on the same world without stepping on each other's changes.

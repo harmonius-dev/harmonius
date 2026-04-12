@@ -171,3 +171,73 @@
      mandatory trophy support; Xbox requires proper `CoreApplication` lifecycle events and Xbox
      Accessibility Guidelines (XAG) compliance. Both platforms require responding to memory pressure
      notifications and releasing non-essential resources within platform-mandated timeframes.
+
+## Authentication and Profile
+
+| ID        | Feature                                |
+|-----------|----------------------------------------|
+| F-14.5.13 | Unified Platform Authentication Service|
+| F-14.5.14 | User Profile and Friends Cache         |
+
+1. **F-14.5.13** — A platform authentication service exposing `authenticate()`, `current_user()`,
+   and `token()` that authenticates the local player via the active platform SDK (Steam, PSN, Xbox
+   Live, Nintendo, Epic, Apple Game Center, Google Play Games). The service produces a
+   `PlatformUser` (platform_id, display_name, avatar_url) and a short-lived `AuthToken` used by
+   engine session services (F-8.5.1) to bootstrap game server authentication. Token refresh runs
+   automatically before expiry.
+   - **Deps:** F-14.5.7
+   - **Platform:** Each platform uses its native auth SDK. On PC without a platform SDK, the engine
+     falls back to a direct OAuth flow against the game's identity provider.
+2. **F-14.5.14** — A user profile service exposing `fetch_local()` for the current player and
+   `fetch_friends()` for a cached friends list. Each `UserProfile` contains display name, avatar,
+   online status, and platform identifier. The friends list is cached locally and refreshed on
+   demand or via a configurable interval. Used by the friends UI, party invites, and cross-play
+   features.
+   - **Deps:** F-14.5.13
+   - **Platform:** Friends fetched via Steam Friends, PSN Friend List, Xbox Live People System, Game
+     Center friends, Epic Online Services Friends, Google Play Games players.
+
+## Purchases and Subscriptions
+
+| ID        | Feature                                 |
+|-----------|-----------------------------------------|
+| F-14.5.15 | Cross-Platform Purchase Abstraction     |
+| F-14.5.16 | Cross-Platform Subscription Management  |
+
+1. **F-14.5.15** — A unified `PurchaseApi` abstracting in-app purchases across every platform store
+   with `query_products`, `initiate_purchase`, `restore_purchases`, `validate_receipt`, and
+   `check_entitlement`. A `ReceiptValidator` performs server-side receipt validation via each
+   store's verification endpoint, duplicate detection, and transaction retry on transient failures.
+   Supports consumable, non-consumable, and entitlement products.
+   - **Deps:** F-14.5.13, F-14.5.6
+   - **Platform:** Steam IAP, PSN Store, Xbox Store, Nintendo eShop, App Store StoreKit 2, Google
+     Play Billing Library, Epic Games Store IAP — each wrapped behind the unified trait.
+2. **F-14.5.16** — A `SubscriptionApi` abstracting subscription lifecycle with `check_status`,
+   `manage_renewal`, `handle_grace_period`, and a `SubState` enum (Active, GracePeriod,
+   BillingRetry, Expired, Cancelled, Revoked, Paused). The API unifies subscription state machines
+   across platforms so gameplay code treats all stores identically for entitlement gating and
+   renewal prompts.
+   - **Deps:** F-14.5.15
+   - **Platform:** App Store auto-renewables, Google Play Billing subscriptions, Xbox Game Pass,
+     PlayStation Plus, Steam Subscriptions.
+
+## Account Linking and Mods
+
+| ID        | Feature                        |
+|-----------|--------------------------------|
+| F-14.5.17 | Multi-Platform Account Linking |
+| F-14.5.18 | Cross-Platform Mod API         |
+
+1. **F-14.5.17** — An `AccountLinker` service mapping multiple platform identities to a single game
+   account with `link`, `unlink`, `list_linked`, and `merge_entitlements` operations. Players
+   linking a new platform inherit all progression, purchases, and friends from previously linked
+   accounts. The linker enforces one-linked-account-per-platform and resolves conflicts via merge
+   callbacks.
+   - **Deps:** F-14.5.13, F-14.5.15
+2. **F-14.5.18** — A unified `ModApi` with `upload`, `download`, `subscribe`, and `rate` for
+   user-generated content across platform mod distribution systems. Mods are abstracted as a package
+   (manifest plus asset files) that the engine publishes to and consumes from each platform's native
+   mod system.
+   - **Deps:** F-14.5.13
+   - **Platform:** Steam Workshop, mod.io for console and Epic, Bethesda Creation Club pattern for
+     first-party content.

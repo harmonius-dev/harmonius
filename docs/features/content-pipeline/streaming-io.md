@@ -106,3 +106,29 @@
    game upfront. respect iOS/Android background download APIs, and pause on cellular by default.
    - **Deps:** F-12.5.1, F-12.5.8, F-12.5.9
    - **Platform:** Mobile networks are slower and metered. Downloads use smaller chunk sizes,
+
+## GPU Direct Storage and Residency
+
+| ID        | Feature                         |
+|-----------|---------------------------------|
+| F-12.5.11 | GPU Direct Storage Asset Loading|
+| F-12.5.12 | Resource Residency Manager      |
+
+1. **F-12.5.11** — Disk-to-GPU asset loading that bypasses CPU memory entirely for textures and
+   meshes. Uses DirectStorage on Windows, Metal I/O on Apple platforms, and io_uring staging buffers
+   on Linux to transfer compressed payloads from NVMe straight into GPU-visible memory where
+   decompression runs on a compute shader. Saturates NVMe bandwidth during open-world streaming
+   while leaving CPU bandwidth free for gameplay and simulation.
+   - **Deps:** F-12.5.2, F-12.5.9
+   - **Platform:** Windows uses DirectStorage 1.2+. Apple platforms use Metal I/O via
+     `MTLIOCommandQueue`. Linux uses io_uring with GPU-visible staging buffers. Mobile tiers fall
+     back to CPU staging when GPU DMA is unavailable.
+2. **F-12.5.12** — Central residency manager tracking per-asset-type memory budgets (textures,
+   meshes, audio, animations) with LRU eviction, predictive prefetching driven by camera position
+   and velocity, scene transition bulk unloads, and emergency eviction triggered by OS memory
+   pressure signals. The manager exposes budget queries to the streaming scheduler and enforces hard
+   ceilings to prevent out-of-memory crashes during traversal.
+   - **Deps:** F-12.5.6, F-12.5.7
+   - **Platform:** Mobile uses tighter per-type budgets (textures 256 MB, meshes 128 MB). iOS hooks
+     `didReceiveMemoryWarning`; Android hooks `onTrimMemory` for emergency eviction. Desktop budgets
+     scale with available VRAM and system RAM.

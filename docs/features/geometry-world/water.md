@@ -107,3 +107,18 @@
    - **Deps:** F-3.4.1, F-3.4.2, F-3.4.6
    - **Platform:** Foam coverage map resolution halved on mobile. Object wake foam disabled on
      mobile. Whitecap generation from FFT Jacobian simplified on Switch.
+
+## Clipmap Mesh Generation
+
+| ID      | Feature |
+|---------|-------------------------------- |
+| F-3.4.8 | Water Clipmap Ring Mesh Generation |
+
+1. **F-3.4.8** — Ocean and large-water surface meshes are generated as camera-centred concentric
+   clipmap rings with per-ring tessellation factor. FFT displacement (F-3.4.1) is applied in the
+   vertex shader rather than baked into vertex buffers. Rings regenerate when the camera exceeds a
+   configurable movement threshold, so near-camera water retains high tessellation while the surface
+   scales to infinite extent.
+   - **Deps:** F-3.4.1
+   - **Platform:** Ring count and tessellation factor scale per tier: mobile 3 rings, Switch 5,
+     desktop 7+, high-end PC 9.

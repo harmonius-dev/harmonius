@@ -134,3 +134,55 @@
    - **Deps:** F-9.4.1, F-7.3.1, F-7.5.1, F-15.8.4
    - **Platform:** CPU-side and lightweight. Active AI-animated agent count inherits per-tier
      instance budget (see F-9.1.5).
+
+## Transition Modes and Pose Sources
+
+| ID       | Feature |
+|----------|----------------------------------- |
+| F-9.4.11 | Inertialization Transition Blend Mode |
+| F-9.4.12 | Multiply Animation Layer Blend Mode |
+| F-9.4.13 | Sprite-Sheet Pose Source in State Machine |
+| F-9.4.14 | Motion Matching Pose Source in State Machine |
+
+1. **F-9.4.11** — An inertialization transition mode samples only the target pose at each step and
+   decays the source-to-target offset over the transition duration. Costs roughly half of a
+   crossfade because only one clip is sampled. Integrates with sync markers and per-bone blend
+   profiles the same as crossfade.
+   - **Deps:** F-9.4.2 (Transitions), F-9.1.3 (Animation Blending)
+2. **F-9.4.12** — A Multiply layer blend mode scales bone transforms by the layer weight times a
+   bone factor, enabling size pulsing, muscle flex, and magnification effects that cannot be
+   expressed as override or additive layers.
+   - **Deps:** F-9.4.4 (State Machine Animation Layers), F-9.1.4 (Animation Layers)
+3. **F-9.4.13** — A `SpriteSheet` pose source reads a texture atlas plus frame list, frame FPS, and
+   playback mode (once, loop, ping-pong) to drive 2D sprite-sheet animation through the same state
+   machine transitions, conditions, layers, and sync groups used for 3D skeletal animation.
+   - **Deps:** F-9.4.1 (State Graph), F-9.4.2 (Transitions)
+4. **F-9.4.14** — A `MotionMatching` pose source in the state machine references a pose database and
+   search schema. The state machine can enter and exit motion matching regions via inertialization
+   transitions (F-9.4.11), preserving transition blend fidelity.
+   - **Deps:** F-9.4.1, F-9.3.6 (Motion Matching), F-9.4.11
+
+## Montages, Parameters, and Feedback
+
+| ID       | Feature |
+|----------|----------------------------------- |
+| F-9.4.15 | Montage Priority Resolution |
+| F-9.4.16 | AnimationParams ECS Component Bridge |
+| F-9.4.17 | AnimationQuery Read-Only State Export |
+
+1. **F-9.4.15** — `MontageDef` carries a `u8` priority field. When multiple montages target the same
+   bone groups, the highest priority wins. Equal priorities resolve by last-started-wins.
+   Deterministic priority resolution prevents visual artifacts when gameplay and AI systems
+   simultaneously request montages.
+   - **Deps:** F-9.4.7 (Animation Montages)
+2. **F-9.4.16** — An `AnimationParams` ECS component holds structured parameter values (speed,
+   direction, grounded, crouching, jumping, falling, aim pitch, aim yaw, typed triggers) that
+   gameplay and AI systems write. The state machine reads this component for transition evaluation,
+   decoupling parameter sources from animation consumers so the same state graph drives player and
+   AI instances of a character.
+   - **Deps:** F-9.4.5 (State Variables and Conditions), F-1.1.2
+3. **F-9.4.17** — An `AnimationQuery` read-only ECS component exposes the current state name,
+   elapsed time, remaining time, transitioning flag, active montage name, and root motion delta. AI
+   and gameplay systems query this component to sequence actions relative to animation progress
+   without polling state machine internals.
+   - **Deps:** F-9.4.1, F-9.4.7, F-9.1.6 (Root Motion)

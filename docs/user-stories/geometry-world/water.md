@@ -122,3 +122,13 @@
 3. **US-3.4.7.3** -- **As a** engine developer (P-26), **I want** foam map resolution and feature
    set to scale per platform tier, **so that** mobile disables wake foam while desktop renders full
    dynamic foam.
+
+## Clipmap Mesh Generation
+
+| ID         | Persona                  |
+|------------|--------------------------|
+| US-3.4.8.1 | game developer (P-15)    |
+
+1. **US-3.4.8.1** -- **As a** game developer (P-15), **I want** the ocean surface built as
+   camera-centred clipmap rings with FFT displacement applied in the vertex shader, **so that**
+   water maintains high tessellation near the camera and scales to infinite extent.

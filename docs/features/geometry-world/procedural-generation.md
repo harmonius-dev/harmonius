@@ -795,3 +795,29 @@
    - **Deps:** F-3.6.62 (Server Generation), F-3.6.63 (Sparse Storage), F-3.6.60 (Pipeline),
    - **Platform:** Loaded tier count scales per tier: mobile keeps fewer LOD tiers resident.
      Prefetch distance reduced on mobile to save memory.
+
+## Simulation Nodes
+
+| ID       | Feature |
+|----------|-------------------------------- |
+| F-3.6.65 | Erosion Node |
+| F-3.6.66 | BSP Partition Node |
+| F-3.6.67 | Cellular Automata Node |
+
+1. **F-3.6.65** — `ErosionNode` applies thermal and hydraulic erosion to input heightmaps using
+   iterative simulation (water flow accumulates sediment where slope is high, deposits where slope
+   is low; thermal erosion redistributes material exceeding the repose angle). Configurable
+   iteration count, rainfall, evaporation, and sediment capacity parameters control realism versus
+   cost. Used for natural-looking mountains, canyons, riverbeds, and weathered terrain.
+   - **Deps:** F-3.6.1 (PCG Graph)
+2. **F-3.6.66** — `BspPartitionNode` recursively subdivides a rectangular region into child regions
+   via binary space partitioning, producing dungeon room layouts. Each leaf becomes a room; parent
+   partitions become corridors connecting sibling rooms. Configurable minimum room size, split ratio
+   variance, and corridor width. Standard algorithm for roguelike and classic grid dungeon
+   generation.
+   - **Deps:** F-3.6.1
+3. **F-3.6.67** — `CellularAutomataNode` evaluates 2D cellular automata with configurable birth
+   survival rules over an input grid for a configurable number of iterations. Produces organic cave
+   systems, islands, and blob-like features. The standard "4-5 rule" (birth with 4+ neighbors,
+   survive with 5+) produces roguelike cave layouts; other rule sets produce different topologies.
+   - **Deps:** F-3.6.1

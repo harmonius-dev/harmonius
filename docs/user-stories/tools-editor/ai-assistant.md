@@ -26,6 +26,7 @@
 | US-15.9.9.2  | technical artist (P-13) |
 | US-15.9.10.1 | build engineer (P-16)   |
 | US-15.9.10.2 | engine developer (P-26) |
+| US-15.9.11.1 | game developer (P-15)   |
 
 1. **US-15.9.1.1** — **As a** game designer (P-5), **I want** voice input captured and transcribed
    with word-level timestamps via a configurable STT backend, **so that** I can issue commands
@@ -100,3 +101,7 @@
 22. **US-15.9.10.2** — **As a** engine developer (P-26), **I want** assistant interaction logs
     stored in a separate audit trail from content generation logs, **so that** compliance review is
     independent.
+
+23. **US-15.9.11.1** — **As a** game developer (P-15), **I want** my LLM provider API keys stored in
+    the platform-native OS keychain rather than config files or memory at rest, **so that** my
+    credentials are never exposed in project files or version control.

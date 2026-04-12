@@ -35,3 +35,21 @@
    - **Rationale:** Custom predicates enable contextual queries without post-filtering.
    - **Verification:** Register a predicate excluding entities with a specific component. Assert
      filtered entities are skipped during traversal.
+
+## Public Query Resource and Oriented Shapes
+
+7. **R-4.4.7** -- The engine **SHALL** expose a `PhysicsQueries` ECS resource providing ray cast,
+   shape cast, point overlap, and AABB overlap queries against the physics BVH, accepting collision
+   filter function pointers and returning results synchronously.
+   - **Rationale:** Gameplay systems need a single globally accessible query API without wiring
+     broadphase state through every caller.
+   - **Verification:** Access `PhysicsQueries` from an arbitrary ECS system. Issue a ray cast.
+     Assert the result matches the equivalent `RayCast` system parameter query. Assert filter
+     function pointers are invoked during traversal.
+8. **R-4.4.8** -- The engine **SHALL** accept a rotation parameter on shape cast and overlap queries
+   to correctly orient capsule, box, and convex hull query shapes.
+   - **Rationale:** Non-axis-aligned sweeps and overlaps require rotation to produce correct
+     contacts for oriented capsules, boxes, and convex hulls.
+   - **Verification:** Sweep a capsule rotated 45 degrees against a static capsule. Assert the
+     contact normal matches the analytic solution. Omit the rotation parameter and assert a
+     compile-time default identity rotation is used.

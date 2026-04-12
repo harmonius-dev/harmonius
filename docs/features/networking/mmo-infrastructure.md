@@ -89,6 +89,7 @@
 | ID      | Feature                        |
 |---------|--------------------------------|
 | F-8.7.8 | Inter-Server Communication Bus |
+| F-8.7.9 | Kubernetes-Native Game Server Operator |
 
 1. **F-8.7.8** — A dedicated message bus for server-to-server communication within the server mesh.
    Servers exchange player migration requests, cross-shard events (world bosses, faction wars),
@@ -100,3 +101,92 @@
    - **Deps:** F-8.7.1 (World Sharding), F-8.1.5 (Encryption)
    - **Platform:** Server-to-server only; no client platform dependency. Runs on Linux datacenter
      infrastructure.
+2. **F-8.7.9** — A Kubernetes-native operator written in Rust (kube-rs) that manages game server
+   fleet lifecycle through custom resources (GameServer CRD, GameDeployment CRD). The operator
+   handles pod provisioning, auto-scaling based on player population and CPU load, rolling updates
+   with player migration, and graceful drain on scale-down. Game-aware reconciliation loops monitor
+   tick time, player count, and memory budgets, triggering scale events or rollbacks based on
+   game-specific health metrics rather than generic HTTP liveness probes. Runs as a cluster-scoped
+   controller on any Kubernetes distribution (EKS, GKE, AKS, k3s, bare-metal kubeadm).
+   - **Deps:** F-8.7.6, F-8.7.4
+   - **Platform:** Server-side only. Requires Kubernetes 1.27+. Distributed as a Helm chart with the
+     operator container image and CRD manifests.
+
+## Persistence Backend
+
+| ID       | Feature                         |
+|----------|---------------------------------|
+| F-8.7.10 | TiKV Unified Persistence Layer  |
+
+1. **F-8.7.10** — TiKV serves as the single persistence backend for all server-side storage — player
+   characters, inventories, skill ratings, leaderboards, achievements, sessions, rate limit
+   counters, trades, cloud saves, and telemetry aggregates. The engine exposes a typed storage API
+   supporting key-value operations, ordered range scans (leaderboards), multi-key transactions
+   (trades, auction settlements), TTL-expiring keys (sessions, rate limits), and atomic counter
+   increments. TiKV replaces PostgreSQL, DynamoDB, Redis, and Valkey with a single horizontally
+   scalable store, eliminating multi-database operational overhead.
+   - **Deps:** F-8.7.5
+   - **Platform:** Server-side only. Deployed via the TiKV Helm chart alongside the game servers.
+     Client platforms are unaffected.
+
+## Edge and CDN
+
+| ID       | Feature                         |
+|----------|---------------------------------|
+| F-8.7.11 | Self-Hosted Edge Cache and CDN  |
+
+1. **F-8.7.11** — A self-hosted CDN layer built on Pingora edge pods provides HTTP/3+QUIC asset
+   delivery, disk-backed caching, and per-asset-type TTL configuration (long TTL for immutable
+   content-addressed assets, short TTL for leaderboard snapshots). A cache invalidation API allows
+   build pipelines and live-ops tools to purge specific paths or tags after content updates. Edge
+   pods deploy close to players via Kubernetes node pools in multiple regions, eliminating
+   dependence on commercial CDNs (CloudFront, Fastly) for asset delivery.
+   - **Deps:** F-8.7.9, F-8.7.10
+   - **Platform:** Server-side infrastructure. Clients on all platforms receive asset downloads over
+     HTTP/3+QUIC from the nearest edge pod.
+
+## Observability
+
+| ID       | Feature                                        |
+|----------|------------------------------------------------|
+| F-8.7.12 | Server Monitoring and Observability Stack     |
+
+1. **F-8.7.12** — Integrated monitoring and observability using Prometheus for metrics scraping
+   (tick time, player count, CPU, memory, replication bandwidth, entity count), Vector for
+   structured log collection, Loki for log aggregation, Grafana for dashboards and alerting, and
+   configurable alert thresholds for game-specific signals (tick time over budget, population drop,
+   migration failure rate). Dashboards ship preconfigured for the standard server fleet layout and
+   can be customized per game. Alert integration supports PagerDuty, OpsGenie, Slack, and email.
+   - **Deps:** F-8.7.9
+   - **Platform:** Server-side. Deployed as part of the Helm chart bundle. No client impact.
+
+## Deployment Strategy
+
+| ID       | Feature                                        |
+|----------|------------------------------------------------|
+| F-8.7.13 | Game-Aware GitOps Deployment Operator         |
+
+1. **F-8.7.13** — The GameDeployment CRD supports rolling update, canary, and blue-green strategies
+   with configurable drain policies (Immediate, GracefulMigrate, WaitForEmpty). Canary deployments
+   validate game-specific metrics (tick time, crash rate, player session length) before promoting to
+   full rollout. Failed validation triggers automatic rollback to the previous stable version with
+   player migration back to the old pods. GitOps integration (Flux or Argo CD) watches a repository
+   of GameDeployment manifests and reconciles cluster state against declared desired state, enabling
+   version-controlled deployments with full audit history.
+   - **Deps:** F-8.7.9, F-8.7.12
+   - **Platform:** Server-side. GitOps controllers run in-cluster alongside the game operator.
+
+## Instance Management
+
+| ID       | Feature                                        |
+|----------|------------------------------------------------|
+| F-8.7.14 | Instance Manager with Difficulty and Lockout  |
+
+1. **F-8.7.14** — The instance manager creates, tracks, and destroys instanced zone copies
+   (dungeons, raids, battlegrounds, scenarios) with configurable difficulty tiers (Normal, Heroic,
+   Mythic, Mythic+ with key level), lockout timers (daily, weekly, rolling), group-scoped state
+   isolation, and on-demand lifecycle (spawn instance when a group enters, destroy when empty or
+   expired). Instance difficulty parameters (enemy health, damage, loot tables, affixes) are
+   data-driven and can be tuned live without a server restart.
+   - **Deps:** F-8.7.1, F-8.5.3
+   - **Platform:** Server-side. Transparent to all client platforms.

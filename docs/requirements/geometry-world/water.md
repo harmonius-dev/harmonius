@@ -59,3 +59,15 @@
    - **Rationale:** Dynamic foam produces realistic whitecaps and surf without manual placement.
    - **Verification:** Observe whitecaps in rough seas. Assert foam intensity correlates with wave
      folding. Assert foam coverage map resolution scales per tier.
+
+## Clipmap Mesh Generation
+
+8. **R-3.4.8** -- The engine **SHALL** generate ocean and large-water surface meshes as
+   camera-centred concentric clipmap rings with per-ring tessellation factor, applying FFT
+   displacement in the vertex shader and regenerating rings when the camera exceeds a configurable
+   movement threshold.
+   - **Rationale:** Camera-centred clipmap rings maintain high tessellation near the camera and
+     scale to infinite extent without baking per-position vertex buffers.
+   - **Verification:** Move the camera past the ring regeneration threshold. Assert rings regenerate
+     centred on the new camera position. Assert near rings carry higher tessellation than far rings.
+     Assert the vertex shader samples FFT displacement per vertex.

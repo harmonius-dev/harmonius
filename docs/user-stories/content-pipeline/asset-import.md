@@ -76,3 +76,21 @@
 3. **US-12.1.12** — **As an** environment artist (P-8), **I want** to cancel a batch import and have
    partially imported assets rolled back, **so that** the database stays consistent if I realize I
    selected the wrong files.
+
+## Asset Server Runtime API
+
+| ID          | Persona                    |
+|-------------|----------------------------|
+| US-12.1.13  | game developer (P-15)      |
+| US-12.1.14  | game developer (P-15)      |
+| US-12.1.15  | engine developer (P-26)    |
+
+1. **US-12.1.13** — **As a** game developer (P-15), **I want** `AssetServer::load()` to return a
+   handle immediately while I/O runs asynchronously, **so that** gameplay code can request assets
+   without adopting `async` everywhere.
+2. **US-12.1.14** — **As a** game developer (P-15), **I want** to query a per-handle load state
+   (Queued, Loading, BytesReady, Processing, GpuUploading, Ready, Failed) from ECS systems,
+   **so that** I can gate behavior on asset readiness without polling internal fields.
+3. **US-12.1.15** — **As an** engine developer (P-26), **I want** asset handles to be
+   reference-counted so unloads dispatch when the last handle drops, **so that** residency is
+   managed without manual unload calls from gameplay.

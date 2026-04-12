@@ -168,3 +168,43 @@
     are feasible.
 12. **US-3.2.14.2** -- **As a** level designer (P-6), **I want** distant voxel nodes to use coarse
     LOD that refines as I approach, **so that** terrain detail loads progressively.
+
+## Multi-Planet Coordinate System
+
+| ID           | Persona                 |
+|--------------|-------------------------|
+| US-3.2.15.1  | engine developer (P-26) |
+| US-3.2.15.2  | game developer (P-15)   |
+| US-3.2.16.1  | environment artist (P-8)|
+
+1. **US-3.2.15.1** -- **As an** engine developer (P-26), **I want** three coordinate spaces
+   (chunk-local, planet-local, universe) with each planet owning its own ECS world, **so that**
+   multi-planet games use a single well-defined coordinate model.
+2. **US-3.2.15.2** -- **As a** game developer (P-15), **I want** inter-planetary travel to migrate
+   an entity between planet worlds with a one-time Planet A → Universe → Planet B coordinate
+   transform, **so that** cross-planet travel is a single discrete event rather than per-frame
+   conversion.
+3. **US-3.2.16.1** -- **As an** environment artist (P-8), **I want** cube-sphere chunk projection
+   that curves a flat grid onto a planet radius in the vertex shader with seam-matched normals,
+   **so that** planetary surfaces are continuous and authored as flat chunks.
+
+## 2D Tilemap Geometry
+
+| ID           | Persona                 |
+|--------------|-------------------------|
+| US-3.2.17.1  | level designer (P-6)    |
+| US-3.2.17.2  | engine developer (P-26) |
+| US-3.2.18.1  | level designer (P-6)    |
+| US-3.2.19.1  | game developer (P-15)   |
+
+1. **US-3.2.17.1** -- **As a** level designer (P-6), **I want** chunked 2D tilemaps with background,
+   midground, and foreground layers, **so that** I can author 2D and 2.5D levels at any scale.
+2. **US-3.2.17.2** -- **As an** engine developer (P-26), **I want** tilemap chunks to stream in and
+   out based on camera position with per-chunk dirty flags, **so that** infinite and procedural
+   tilemaps update incrementally.
+3. **US-3.2.18.1** -- **As a** level designer (P-6), **I want** auto-tiling to pick the right tile
+   variant from neighbor bitmask lookup, **so that** I paint terrain regions without selecting every
+   transition piece.
+4. **US-3.2.19.1** -- **As a** game developer (P-15), **I want** tilemap chunks to generate compound
+   2D colliders from solid, slope, and one-way platform tiles, **so that** 2D physics matches the
+   visible tiles without separate collision authoring.

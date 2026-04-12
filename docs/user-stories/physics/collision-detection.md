@@ -113,3 +113,39 @@
    footsteps and impact VFX, **so that** materials produce matching sensory feedback.
 6. **US-4.2.9.3** -- **As a** engine tester (P-27), **I want** to verify material combination is
    symmetric, **so that** collision order does not affect behavior.
+
+## Voxel Terrain and Convex Decomposition
+
+| ID            | Persona                 |
+|---------------|-------------------------|
+| US-4.2.10.1   | game developer (P-15)   |
+| US-4.2.10.2   | engine developer (P-26) |
+| US-4.2.11.1   | technical artist (P-13) |
+| US-4.2.12.1   | engine developer (P-26) |
+
+1. **US-4.2.10.1** -- **As a** game developer (P-15), **I want** modified voxel chunks to rebuild
+   their trimesh collider on a job worker and atomically swap at the next FixedUpdate, **so that**
+   players digging or building see updated physics without frame hitches.
+2. **US-4.2.10.2** -- **As an** engine developer (P-26), **I want** a per-frame chunk rebuild budget
+   enforced by platform tier, **so that** heavy voxel editing never exceeds the physics frame
+   budget.
+3. **US-4.2.11.1** -- **As a** technical artist (P-13), **I want** non-convex source meshes
+   automatically decomposed into compound convex hulls at import time via V-HACD, **so that**
+   complex props have accurate collision without manual decomposition in a DCC tool.
+4. **US-4.2.12.1** -- **As an** engine developer (P-26), **I want** runtime quickhull to generate a
+   single convex hull from an arbitrary vertex set, **so that** destruction fragments and procedural
+   geometry gain collision without an offline bake step.
+
+## Collision Layer Interaction Matrix
+
+| ID           | Persona                 |
+|--------------|-------------------------|
+| US-4.2.13.1  | game designer (P-5)     |
+| US-4.2.13.2  | game developer (P-15)   |
+
+1. **US-4.2.13.1** -- **As a** game designer (P-5), **I want** an editor-configurable 32x32
+   collision layer interaction matrix, **so that** I can toggle which layer pairs interact without
+   writing filter code.
+2. **US-4.2.13.2** -- **As a** game developer (P-15), **I want** matrix entries that select overlap
+   only without contact response, **so that** hitbox and hurtbox combat layers report events without
+   generating collision impulses.

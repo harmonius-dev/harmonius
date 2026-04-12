@@ -27,6 +27,9 @@
 | US-14.5.23 | engine tester (P-27)    |
 | US-14.5.24 | engine tester (P-27)    |
 | US-14.5.25 | engine tester (P-27)    |
+| US-14.5.29 | player (P-23)           |
+| US-14.5.30 | player (P-23)           |
+| US-14.5.31 | game developer (P-15)   |
 
 ## Achievements and Leaderboards
 
@@ -123,3 +126,15 @@
 25. **US-14.5.25** — **As an** engine tester (P-27), **I want** the temp file system to guarantee
     that all temp data is recreatable via RAII handles that auto-delete on drop, **so that**
     deleting the temp directory never causes data loss.
+
+## Account Linking, Subscriptions, and Mods
+
+26. **US-14.5.29** — **As a** player (P-23), **I want** to link my Steam and PlayStation accounts to
+    a single game account, **so that** my achievements, purchases, and progression carry across
+    platforms without duplicate grind.
+27. **US-14.5.30** — **As a** player (P-23), **I want** to manage my subscription renewal (upgrade,
+    downgrade, cancel) through the in-game settings, **so that** I do not have to navigate the
+    platform store separately to change my plan.
+28. **US-14.5.31** — **As a** game developer (P-15), **I want** to upload a mod package to the
+    platform mod distribution system via a unified API, **so that** players can discover and
+    subscribe to it on whichever platform they own.

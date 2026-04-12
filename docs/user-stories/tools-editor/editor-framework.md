@@ -22,6 +22,8 @@
 | US-15.1.8.2 | engine developer (P-26)    |
 | US-15.1.9.1 | level designer (P-6)       |
 | US-15.1.9.2 | game designer (P-5)        |
+| US-15.1.10.1 | game designer (P-5)       |
+| US-15.1.11.1 | environment artist (P-8)  |
 
 1. **US-15.1.1.1** — **As a** game designer (P-5), **I want** to drag, dock, split, and tab panels
    into custom layouts, **so that** my workspace matches my current task.
@@ -77,3 +79,11 @@
 
 18. **US-15.1.9.2** — **As a** game designer (P-5), **I want** VR mode changes visible on the
     desktop monitor in real time, **so that** team members can follow along without a headset.
+
+19. **US-15.1.10.1** — **As a** game designer (P-5), **I want** to navigate back to a previous undo
+    branch that I abandoned earlier in a non-linear undo tree, **so that** I can recover an approach
+    I previously discarded without losing my current branch.
+
+20. **US-15.1.11.1** — **As a** environment artist (P-8), **I want** to float editor panels onto a
+    second monitor with per-monitor DPI scaling and independent dock trees, **so that** I can
+    maximize my viewport on the primary display while keeping inspectors on the secondary one.

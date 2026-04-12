@@ -45,3 +45,25 @@
 2. **US-13.4.3.2** — **As a** game designer (P-5), **I want** persistent state (local variables,
    coroutine positions) preserved across reloads when the layout is compatible, **so that** the game
    continues naturally.
+
+## Variable Scoping
+
+| ID          | Persona             |
+|-------------|---------------------|
+| US-13.4.4.1 | game designer (P-5) |
+
+1. **US-13.4.4.1** — **As a** game designer (P-5), **I want** to choose whether each variable in a
+   logic graph is local (reset each execution), graph (persistent per instance), or entity (mapped
+   to an ECS component), **so that** I can model both transient computations and persistent state
+   without manual plumbing.
+
+## Runtime Error Handling
+
+| ID          | Persona             |
+|-------------|---------------------|
+| US-13.4.5.1 | game designer (P-5) |
+
+1. **US-13.4.5.1** — **As a** game designer (P-5), **I want** the engine to show me which node
+   caused a runtime error in my logic graph (missing component, division by zero, budget exhausted,
+   type mismatch, empty query) and transition that graph instance to an error state, **so that** I
+   can fix the failing node without crashing the game or restarting the session.

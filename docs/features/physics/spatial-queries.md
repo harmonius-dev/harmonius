@@ -65,3 +65,23 @@
    candidate entity during broadphase and narrowphase traversal. This enables queries like "find the
    nearest enemy not behind cover" without post-filtering large result sets.
    - **Deps:** F-4.4.1, F-4.2.6, F-1.1.17 (Composable Archetype Queries)
+
+## Public Query Resource and Oriented Shapes
+
+| ID      | Feature |
+|---------|----------------------------------- |
+| F-4.4.7 | PhysicsQueries ECS Resource API |
+| F-4.4.8 | Oriented Shape Cast and Overlap |
+
+1. **F-4.4.7** — A `PhysicsQueries` ECS resource exposes ray cast, shape cast, point overlap, and
+   AABB overlap APIs that any ECS system can call via `Res<PhysicsQueries>`. The resource holds a
+   read-only handle into the physics BVH and dispatches to the same broadphase/narrowphase routines
+   used by the system-parameter query APIs. Callers supply collision filter function pointers (not
+   boxed closures) so batch calls have bounded per-query dispatch cost.
+   - **Deps:** F-4.4.1, F-4.4.2, F-4.4.3, F-1.1.23 (World Resources)
+2. **F-4.4.8** — Shape cast and overlap APIs accept an optional `Quat` rotation parameter that
+   orients capsule, box, and convex hull query shapes. The default identity rotation preserves
+   existing call sites. Narrowphase dispatch uses the rotated shape when computing contacts,
+   enabling non-axis-aligned sweeps for weapon hitboxes, rotated capsule projectiles, and oriented
+   AI perception volumes.
+   - **Deps:** F-4.4.2, F-4.4.3, F-4.2.3 (Primitive and Convex Collision Shapes)

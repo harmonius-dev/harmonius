@@ -106,3 +106,20 @@
    output targets Metal 2.0+.
    - **Deps:** F-12.2.7 (HLSL Code Generation), F-15.8.5 (Shader and Material Graphs),
    - **Platform:** DXC DXIL output targets Shader Model 6.0+. DXC SPIR-V output targets Vulkan
+
+## Collision Shape Generation
+
+| ID        | Feature                         |
+|-----------|---------------------------------|
+| F-12.2.10 | Collision Shape Auto-Generation |
+
+1. **F-12.2.10** — Generate physics collision shapes automatically from source meshes during asset
+   processing. Supports V-HACD convex decomposition for complex concave meshes, quickhull convex
+   wrap for simple hulls, and analytic bounding primitive fitting (AABB, sphere, capsule) for fast
+   approximation. Parameters are declared per-mesh in the asset import settings so designers get
+   usable colliders without manual authoring. Generated shapes are stored alongside the render mesh
+   in the processed asset and referenced by the physics collider component at runtime.
+   - **Deps:** F-12.1.1 (Native Asset Ingestion)
+   - **Platform:** V-HACD decomposition runs offline on desktop build machines. Mobile and console
+     builds use precomputed collision shapes — runtime generation is never performed on shipping
+     devices.

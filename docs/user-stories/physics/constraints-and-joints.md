@@ -94,3 +94,21 @@
 4. **US-4.3.9.2** -- **As a** engine tester (P-27), **I want** to verify attachment re-establishes
    joint constraints and updates the skeleton hierarchy, **so that** replaced limbs function
    correctly.
+
+## Warm Starting and LOD
+
+| ID          | Persona                 |
+|-------------|-------------------------|
+| US-4.3.10.1 | engine developer (P-26) |
+| US-4.3.11.1 | game developer (P-15)   |
+| US-4.3.12.1 | game developer (P-15)   |
+
+1. **US-4.3.10.1** -- **As an** engine developer (P-26), **I want** the warm-start factor tunable
+   via `SolverConfig` per platform tier, **so that** I can trade convergence speed against
+   oscillation risk on constrained devices.
+2. **US-4.3.11.1** -- **As a** game developer (P-15), **I want** ragdoll simulation to drop to
+   animation blend at distance via RagdollLod tiers, **so that** battle scenes with many downed
+   enemies stay within the physics frame budget.
+3. **US-4.3.12.1** -- **As a** game developer (P-15), **I want** distant chains and ropes to use a
+   cheap Verlet fallback without collision, **so that** decorative environmental chains do not
+   consume solver time.

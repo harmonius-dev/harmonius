@@ -88,3 +88,30 @@
    showing percentage or value/max text. Used for loading screens, download progress, crafting
    timers, experience bars, and reputation tracks.
    - **Deps:** F-10.1.1, F-10.1.5
+
+## Containers and Selection
+
+| ID        | Feature           |
+|-----------|-------------------|
+| F-10.2.9  | Tab Bar           |
+| F-10.2.10 | Tree View         |
+| F-10.2.11 | Color Picker      |
+
+1. **F-10.2.9** — Tab bar widget presenting a horizontal or vertical row of tabs, each switching the
+   visible content panel. Supports keyboard navigation (left/right or up/down), drag-to- reorder
+   tabs within the bar, per-tab close buttons, and overflow menus when the tab count exceeds the
+   visible space. Used for switching between inventory, skills, quest log, character sheet, and
+   settings panels within a single window.
+   - **Deps:** F-10.1.1, F-10.1.8 (Focus System)
+2. **F-10.2.10** — Tree view widget displaying hierarchical data as collapsible nodes. Supports
+   keyboard expand/collapse (right/left arrow), multi-select with shift and ctrl modifiers,
+   drag-to-reorder branches, virtualized rendering for large trees (thousands of nodes), and custom
+   per-node content templates. Used for entity hierarchies in the editor, quest step trees, skill
+   trees, and file browser style pickers.
+   - **Deps:** F-10.1.1, F-10.2.5 (Virtualized Lists), F-10.1.8 (Focus System)
+3. **F-10.2.11** — Color picker widget combining a hue/saturation wheel (or square), a
+   brightness/value slider, hex and RGB numerical input fields, an alpha slider, and an eyedropper
+   tool for sampling screen pixels. Picked colors can be previewed live on a target preview area and
+   stored in a recent colors history. Used for character customization, cosmetic appearance menus,
+   world builder tools, and editor material authoring.
+   - **Deps:** F-10.1.1, F-10.2.3 (Sliders and Toggles), F-10.1.7 (Data Binding)

@@ -101,3 +101,31 @@
 3. **US-8.7.15** — **As a** QA tester (P-19), **I want** concurrency tests that submit simultaneous
    auction bids and buyouts across shards, **so that** deterministic resolution is verified and no
    race conditions exist in cross-shard economy transactions.
+
+## Kubernetes Operator
+
+| ID        | Persona                     |
+|-----------|-----------------------------|
+| US-8.7.16 | server administrator (P-22) |
+| US-8.7.17 | server administrator (P-22) |
+| US-8.7.18 | server administrator (P-22) |
+
+1. **US-8.7.16** — **As a** server administrator (P-22), **I want** to deploy the full game server
+   infrastructure with a single `helm install` on any Kubernetes cluster, **so that** I am not
+   locked into a specific cloud vendor or managed Kubernetes offering.
+2. **US-8.7.17** — **As a** server administrator (P-22), **I want** Grafana dashboards showing
+   per-server tick time, player count, CPU, and memory scraped from Prometheus, **so that** I can
+   observe fleet health in real time and alert on threshold breaches.
+3. **US-8.7.18** — **As a** server administrator (P-22), **I want** canary deployments that validate
+   game-specific metrics (tick time, crash rate) before rolling out to all pods with automatic
+   rollback on threshold breach, **so that** bad builds never reach most players.
+
+## Instance Management
+
+| ID        | Persona       |
+|-----------|---------------|
+| US-8.7.19 | player (P-23) |
+
+1. **US-8.7.19** — **As a** player (P-23), **I want** to select Normal, Heroic, or Mythic difficulty
+   when entering a dungeon instance, **so that** I can choose the challenge level appropriate for my
+   group without queuing for a different activity.

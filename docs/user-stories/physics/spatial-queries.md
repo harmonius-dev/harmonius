@@ -66,3 +66,17 @@
    "nearest enemy not behind cover" work without post-filtering.
 5. **US-4.4.6.2** -- **As a** engine developer (P-26), **I want** custom predicates to receive an
    EntityRef during traversal, **so that** filters access any component on candidate entities.
+
+## Public Query Resource and Oriented Shapes
+
+| ID          | Persona                 |
+|-------------|-------------------------|
+| US-4.4.7.1  | game developer (P-15)   |
+| US-4.4.8.1  | game developer (P-15)   |
+
+1. **US-4.4.7.1** -- **As a** game developer (P-15), **I want** a PhysicsQueries ECS resource
+   accessible from any system, **so that** gameplay code can ray cast and overlap test without
+   wiring collision state per caller.
+2. **US-4.4.8.1** -- **As a** game developer (P-15), **I want** shape casts and overlaps to accept a
+   rotation parameter, **so that** oriented capsule, box, and convex hull sweeps return correct
+   contacts for non-axis-aligned queries.

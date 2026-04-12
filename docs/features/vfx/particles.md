@@ -79,3 +79,19 @@
    - **Deps:** F-11.1.1
    - **Platform:** Requires async compute queue support. Disabled on mobile GPUs that lack compute.
      Switch uses 32^3 grid (vs. 128^3 desktop). Mobile falls back to sprite particles.
+
+## Initialization
+
+| ID       | Feature                  |
+|----------|--------------------------|
+| F-11.1.8 | Particle Warm-Up         |
+
+1. **F-11.1.8** — Pre-simulate a particle emitter for a configurable warm-up duration at spawn time,
+   stepping the GPU simulation forward as if the emitter had been running for that duration before
+   the first frame. Warm-up runs across a configurable number of steps so a newly streamed campfire
+   appears with steady-state smoke, embers, and light particles instead of spawning empty and
+   filling over several seconds. Warm-up is enabled per-emitter and controls total duration, step
+   count, and whether rendering is suppressed during the pre-simulation.
+   - **Deps:** F-11.1.1
+   - **Platform:** Mobile limits warm-up step count and duration to avoid load-time stalls. Desktop
+     and High-end run full warm-up at emitter spawn.

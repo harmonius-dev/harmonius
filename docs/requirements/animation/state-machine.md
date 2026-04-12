@@ -80,6 +80,72 @@
    - **Verification:** Set a blackboard variable from a behavior tree and verify the animation state
      transitions. Query remaining clip time and verify the value matches expected playback position.
 
+## Transition Modes and Pose Sources
+
+1. **R-9.4.11** -- The engine **SHALL** support an inertialization transition blend mode in the
+   state machine that samples only the target pose and decays the source offset over the transition
+   duration, alongside Crossfade and Frozen modes.
+   - **Rationale:** Inertialization costs roughly half of crossfade evaluation and produces smoother
+     transitions for motion matching and state graph transitions.
+   - **Verification:** Transition from walk to run via inertialization. Assert only the target pose
+     is sampled each frame. Assert the offset decays to zero over the configured duration.
+2. **R-9.4.12** -- The engine **SHALL** support a Multiply layer blend mode in the animation layer
+   stack, scaling bone transforms by layer factors for scaling animations and effects.
+   - **Rationale:** Multiply blending produces size pulsing, muscle flex, and magnification effects
+     that override and additive layers cannot express.
+   - **Verification:** Apply a Multiply layer scaling a bone by 1.5. Assert the final pose has the
+     bone scaled relative to the base. Assert disabling the layer returns the base scale.
+3. **R-9.4.13** -- The engine **SHALL** expose a `SpriteSheet` pose source in the state machine with
+   texture atlas reference, frame list, frames-per-second, and playback mode, allowing 2D
+   sprite-sheet animation to reuse all state machine transitions, conditions, layers, and sync
+   groups.
+   - **Rationale:** 2D games should reuse the state machine infrastructure rather than maintaining a
+     separate sprite animation system.
+   - **Verification:** Drive a 2D character with a sprite-sheet pose source in a state graph. Assert
+     transitions, conditions, and sync groups fire exactly as they do for skeletal animation.
+4. **R-9.4.14** -- The engine **SHALL** expose a `MotionMatching` pose source in the state machine
+   referencing a pose database and search schema, with inertialization transitions into and out of
+   matching states.
+   - **Rationale:** State graphs must be able to enter and exit motion matching regions without
+     losing transition blend fidelity.
+   - **Verification:** Create a state containing a motion matching node. Transition into it via
+     inertialization. Assert the pose database drives subsequent frames. Transition out and assert
+     inertialization decays the motion-matched offset.
+
+## Montages, Parameters, and Codegen
+
+5. **R-9.4.15** -- The engine **SHALL** resolve overlapping montages on the same bone groups via a
+   `u8` priority field on `MontageDef`, with last-played-wins tiebreaking when priorities are equal.
+   - **Rationale:** Multiple gameplay systems may request montages on the same bone groups;
+     deterministic priority resolution avoids nondeterministic visual artifacts.
+   - **Verification:** Play two montages targeting the same bone group with different priorities.
+     Assert the higher-priority montage wins. Play two with equal priority and assert the most
+     recently started wins.
+6. **R-9.4.16** -- The engine **SHALL** provide an `AnimationParams` ECS component written by
+   gameplay and AI systems (speed, direction, grounded, crouching, jumping, falling, aim pitch, aim
+   yaw, triggers) and read by the state machine for transition evaluation, decoupling input sources
+   from animation.
+   - **Rationale:** A single parameter component lets player input and AI logic drive the same state
+     machine without duplicating state graphs.
+   - **Verification:** Set speed from player input. Assert the locomotion state machine transitions.
+     Set speed from AI logic on a second entity. Assert the same state machine transitions
+     identically.
+7. **R-9.4.17** -- The engine **SHALL** provide an `AnimationQuery` read-only ECS component exposing
+   current state, elapsed time, remaining time, transitioning flag, active montage, and root motion
+   delta for AI and gameplay inspection.
+   - **Rationale:** AI and gameplay systems must observe animation state to sequence actions without
+     polling the state machine internals.
+   - **Verification:** Run a montage. Assert `AnimationQuery.active_montage` reports the montage
+     name. Assert `remaining_time` matches the authored duration minus elapsed playback.
+8. **R-9.4.18** -- The engine **SHALL** compile editor-authored state graphs to static Rust
+   evaluation functions via the middleman codegen pipeline, producing inlined match-based dispatch
+   with no runtime graph traversal.
+   - **Rationale:** Static codegen eliminates graph interpretation overhead and enables the compiler
+     to inline transition conditions.
+   - **Verification:** Author a state graph in the editor. Build the project. Assert the generated
+     Rust contains a match expression over state variants. Assert no runtime graph data structure is
+     traversed during evaluation.
+
 ## Non-Functional Requirements
 
 1. **R-9.4.NF1** -- The engine **SHALL** evaluate 1000 state graph instances within 1 ms CPU time.

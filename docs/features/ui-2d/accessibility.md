@@ -83,3 +83,19 @@
    timing adjustability for time-limited UI interactions (ready checks, loot rolls, trade
    confirmations).
    - **Deps:** F-10.6.1, F-10.6.3, F-10.6.4, F-10.6.5
+
+## Motion Sensitivity
+
+| ID       | Feature            |
+|----------|--------------------|
+| F-10.6.8 | Reduced Motion Mode |
+
+1. **F-10.6.8** — Reduced motion accessibility mode that suppresses or scales animations, parallax
+   effects, and camera shake for players with vestibular sensitivity. Individual settings control:
+   animation speed scaling (0.0 to 1.0, where 0.0 disables animations entirely), disable parallax on
+   scrollable UI and backgrounds, disable camera shake from explosions and impacts, and disable
+   screen-space motion blur and strong transitions. Settings respect the platform reduced-motion
+   preference when exposed by the OS.
+   - **Deps:** F-10.1.13 (Widget Animation), F-10.1.1
+   - **Platform:** Reads system accessibility preferences on macOS (NSAccessibility reduce motion),
+     Windows (SPI_GETCLIENTAREAANIMATION), and iOS/Android (UIAccessibility / AccessibilityManager).

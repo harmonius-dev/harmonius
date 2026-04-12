@@ -61,21 +61,52 @@
    - **Verification:** Create two materials. Collide. Assert combined friction matches the
      configured combine mode.
 
+## Voxel Terrain, Decomposition, and Layers
+
+10. **R-4.2.10** -- The engine **SHALL** regenerate per-chunk triangle mesh colliders for voxel
+    terrain on modification, rebuilding only affected chunks on a job worker and atomically swapping
+    the collider in the physics BVH at the next `FixedUpdate` step.
+    - **Rationale:** Runtime voxel edits require physics collision to update without blocking the
+      game loop or regenerating unaffected chunks.
+    - **Verification:** Carve a voxel chunk at runtime. Assert the affected chunk rebuilds on a
+      worker thread. Assert the new collider is installed at the next FixedUpdate. Assert unaffected
+      chunks remain unchanged.
+11. **R-4.2.11** -- The engine **SHALL** decompose non-convex meshes into compound convex hulls at
+    asset import time via V-HACD with configurable maximum hull count and per-hull vertex limit,
+    storing the result as a baked `CompoundCollider`.
+    - **Rationale:** Offline V-HACD trades import cost for cheap runtime collision without manual
+      DCC decomposition.
+    - **Verification:** Import a concave mesh with V-HACD enabled. Assert the baked CompoundCollider
+      contains at most the configured hull count. Assert each hull respects the vertex limit.
+12. **R-4.2.12** -- The engine **SHALL** generate convex hulls from arbitrary vertex sets at runtime
+    via quickhull in O(n log n) for destructible fragments and procedural geometry.
+    - **Rationale:** Destruction and procedural systems need cheap convex hull generation without an
+      offline bake step.
+    - **Verification:** Feed 1000 random vertices to the runtime quickhull. Assert the returned hull
+      is convex. Assert runtime stays within the O(n log n) envelope.
+13. **R-4.2.13** -- The engine **SHALL** expose an editor-configurable 32x32 collision layer
+    interaction matrix that generates layer filter bitmasks at build time, supporting hitbox/hurtbox
+    overlap without physics response and per-layer budgeting.
+    - **Rationale:** Designers need to toggle layer pair interaction from the editor without writing
+      filter code, and combat hitboxes need overlap without contact response.
+    - **Verification:** Toggle a layer pair off in the editor. Assert the generated bitmask excludes
+      the pair. Assert a hitbox layer overlaps its target without generating contact impulses.
+
 ## Non-Functional Requirements
 
-10. **R-4.2.NF1** -- The engine **SHALL** complete broadphase for 50,000 AABBs within 1 ms on
+14. **R-4.2.NF1** -- The engine **SHALL** complete broadphase for 50,000 AABBs within 1 ms on
     minimum-spec hardware.
     - **Rationale:** Broadphase must not dominate the physics frame budget in dense scenes.
     - **Verification:** Populate 50K entities with random extents. Assert broadphase completes
       within 1 ms.
 
-11. **R-4.2.NF2** -- The engine **SHALL** complete narrowphase for 10,000 primitive pairs within 2
+15. **R-4.2.NF2** -- The engine **SHALL** complete narrowphase for 10,000 primitive pairs within 2
     ms on minimum-spec hardware.
     - **Rationale:** Narrowphase must scale to large contact counts without exceeding frame budget.
     - **Verification:** Benchmark 10K overlapping primitive pairs. Assert narrowphase completes
       within 2 ms.
 
-12. **R-4.2.NF3** -- The engine **SHALL** deliver collision events in the same frame they are
+16. **R-4.2.NF3** -- The engine **SHALL** deliver collision events in the same frame they are
     detected with zero latency.
     - **Rationale:** Same-frame delivery prevents desync between physics and gameplay feedback.
     - **Verification:** Move two spheres into contact. Assert CollisionStarted fires the same frame

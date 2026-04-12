@@ -64,3 +64,21 @@
      physically-based sway.
    - **Verification:** Render a tree with subsurface leaf transmission. Assert backlit leaves
      transmit light. Assert wind skeleton drives distinct per-species sway.
+
+## Meshlet Foliage Path
+
+8. **R-3.3.8** -- The engine **SHALL** render dense foliage (trees, bushes) through the meshlet
+   cluster DAG with masked blend mode and opacity micromasks, transitioning distant foliage to
+   voxelized cluster representations that preserve volume without per-asset LOD chains.
+   - **Rationale:** Nanite-style cluster LOD maintains detail and volume on forests where classic
+     billboard LOD visibly pops.
+   - **Verification:** Render a forest through the meshlet pipeline. Assert near foliage uses the
+     full cluster DAG. Assert distant clusters replace with voxelized representations and no visible
+     pop at the transition.
+9. **R-3.3.9** -- The engine **SHALL** drive meshlet foliage wind animation via skeletal bone chains
+   on trunk and branches rather than vertex-shader World Position Offset, preserving meshlet cluster
+   AABB bounds for correct cluster culling.
+   - **Rationale:** WPO invalidates cluster bounds each frame, breaking the cluster culler;
+     bone-driven deformation keeps bounds stable.
+   - **Verification:** Apply bone-chain wind to a meshlet tree. Assert cluster AABBs remain stable
+     frame-to-frame. Compare against a WPO baseline and assert improved culling accuracy.

@@ -61,3 +61,23 @@
    with configurable concurrency limits. Supports cancellation at any point, rolling back partially
    imported assets to maintain database consistency. (Audio Source Import)
    - **Deps:** F-12.1.1 (Native Asset Ingestion), F-12.1.2 (Texture Source Import), F-12.1.3
+
+## Asset Server Runtime API
+
+| ID       | Feature                        |
+|----------|--------------------------------|
+| F-12.1.6 | Per-Handle Asset State Machine |
+| F-12.1.7 | Synchronous AssetServer API    |
+
+1. **F-12.1.6** — Track an explicit per-handle asset state machine: Queued (request received),
+   Loading (I/O dispatched), BytesReady (decoded bytes in CPU memory), Processing (CPU-side
+   transforms), GpuUploading (staging transfer in flight), Ready (fully resident), and Failed
+   (error). The state is queryable from ECS systems via `asset_server.state(handle)` so gameplay can
+   gate behavior on asset readiness without polling internal fields.
+   - **Deps:** F-12.1.7, F-12.5.2
+2. **F-12.1.7** — A synchronous `AssetServer::load<T>(path) -> Handle<T>` API that returns a typed
+   handle immediately while dispatching I/O asynchronously on the main thread's platform event loop.
+   Handles are reference-counted; dropping the last handle schedules unload through the residency
+   manager. The sync API avoids colouring gameplay code with `async` while still delivering
+   non-blocking loads.
+   - **Deps:** F-12.1.6, F-12.5.2

@@ -169,3 +169,53 @@
    duration of graph execution without requiring `'static` or `Arc`.
    - **Deps:** F-14.3.14, F-14.3.15, F-14.3.8
    - **Platform:** None. Safety is enforced by the Rust type system at compile time.
+
+## Data Parallelism
+
+| ID        | Feature                                          |
+|-----------|--------------------------------------------------|
+| F-14.3.18 | Data-Parallel Slice Operations (for, map, reduce)|
+
+1. **F-14.3.18** — A suite of data-parallel primitives built on the work-stealing thread pool:
+   `parallel_for`, `parallel_map`, `parallel_reduce`, `parallel_for_zip`, `parallel_for_indexed`.
+   All primitives operate on mutable and immutable slices within scoped execution, use recursive
+   bisection with auto-tuned chunk sizes based on element count and core count, and integrate with
+   the task graph so nested parallelism composes correctly. Used by physics broadphase, frustum
+   culling, particle updates, animation sampling, and AI perception.
+   - **Deps:** F-14.3.1, F-14.3.8
+   - **Platform:** None. Built on the work-stealing pool.
+
+## I/O Infrastructure
+
+| ID        | Feature                            |
+|-----------|------------------------------------|
+| F-14.3.19 | Pre-Allocated Aligned I/O Buffer Pool |
+| F-14.3.20 | GPU Direct I/O                     |
+
+1. **F-14.3.19** — A `BufferPool` of pre-allocated, aligned `BufferSlot` objects for zero-copy I/O
+   operations. Buffer slots are acquired and released without allocation, supporting direct I/O
+   alignment requirements (typically 4 KiB or 512 B) on all platforms. Used by file reads, network
+   packet staging, and asset streaming to avoid per-operation allocation.
+   - **Deps:** F-14.3.5
+   - **Platform:** Alignment matches platform direct I/O requirements: Windows 4 KiB for unbuffered
+     I/O, Linux 512 B or filesystem block size, macOS 4 KiB.
+2. **F-14.3.20** — Direct disk-to-GPU DMA for asset loading, bypassing the CPU staging path. Uses
+   DirectStorage on Windows, Metal I/O (`MTLIOCommandQueue`) on Apple platforms, and a staging
+   buffer fallback on Linux (BAR memory or compute-queue upload). Integrated with the platform I/O
+   driver so asset loads go directly to GPU resources without CPU copies.
+   - **Deps:** F-14.3.5, F-14.3.19
+   - **Platform:** Windows DirectStorage 1.2+, Apple Metal I/O on macOS 13+, iOS 16+, tvOS 16+.
+     Linux falls back to the staging buffer path.
+
+## Work Graph Emulation
+
+| ID        | Feature                            |
+|-----------|------------------------------------|
+| F-14.3.21 | CPU-Side GPU Work Graph Emulation  |
+
+1. **F-14.3.21** — Emulate GPU work graphs (D3D12 work graphs) CPU-side on platforms without native
+   hardware support by expanding work graph nodes into indirect dispatch chains within the task
+   graph. This lets the same work graph authoring model apply to Metal, Vulkan without work graph
+   extensions, and older D3D12 drivers, producing equivalent (though lower-bandwidth) execution.
+   - **Deps:** F-14.3.3, F-14.3.14
+   - **Platform:** All platforms without native work graph support.

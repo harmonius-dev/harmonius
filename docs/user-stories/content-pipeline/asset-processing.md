@@ -115,3 +115,21 @@
 3. **US-12.2.17** — **As a** build engineer (P-16), **I want** compiled shader bytecode cached by
    HLSL source hash in the shared build cache, **so that** unchanged shaders are not recompiled
    across CI runs.
+
+## Collision Shape Generation
+
+| ID         | Persona                    |
+|------------|----------------------------|
+| US-12.2.18 | game designer (P-5)        |
+| US-12.2.19 | technical artist (P-13)    |
+| US-12.2.20 | environment artist (P-8)   |
+
+1. **US-12.2.18** — **As a** game designer (P-5), **I want** collision shapes generated
+   automatically from mesh sources at import time, **so that** I do not have to author physics
+   colliders for every prop by hand.
+2. **US-12.2.19** — **As a** technical artist (P-13), **I want** to choose between V-HACD convex
+   decomposition, quickhull, and analytic primitives (AABB, sphere, capsule) per mesh in the import
+   settings, **so that** each asset gets the right fidelity-performance tradeoff.
+3. **US-12.2.20** — **As an** environment artist (P-8), **I want** generated collision shapes stored
+   alongside the render mesh in the processed asset, **so that** runtime physics bindings work
+   without extra wiring.

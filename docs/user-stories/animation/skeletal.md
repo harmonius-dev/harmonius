@@ -118,3 +118,87 @@
 6. **US-9.1.10.2** -- **As a** technical artist (P-13), **I want** per-entity LOD bias for hero
    characters, **so that** important characters maintain full animation quality regardless of
    distance.
+
+## Skeleton Types and Rigs
+
+| ID           | Persona                    |
+|--------------|----------------------------|
+| US-9.1.11.1  | rigger (P-10)              |
+| US-9.1.12.1  | rigger (P-10)              |
+| US-9.1.13.1  | technical artist (P-13)    |
+| US-9.1.14.1  | rigger (P-10)              |
+
+1. **US-9.1.11.1** -- **As a** rigger (P-10), **I want** a canonical humanoid rig with standard
+   named slots for hips, spine, arms, legs, and optional fingers, **so that** any two humanoid
+   skeletons can share animation through automatic retargeting.
+2. **US-9.1.12.1** -- **As a** rigger (P-10), **I want** predefined quadruped and bird rigs plus a
+   custom chain variant for arbitrary topologies, **so that** I can author skeletons for any
+   creature without reinventing the rig template.
+3. **US-9.1.13.1** -- **As a** technical artist (P-13), **I want** named bone chains that build bone
+   masks by semantic group, **so that** I compose per-chain IK, blend masks, and ragdoll scopes
+   without referencing raw bone indices.
+4. **US-9.1.14.1** -- **As a** rigger (P-10), **I want** the custom skeleton variant to support
+   spider, vehicle, segmented, and mechanical rigs with specialized joint types, **so that**
+   non-organic characters work on the same animation pipeline as humanoids.
+
+## Motion Capture and IK Chains
+
+| ID           | Persona                    |
+|--------------|----------------------------|
+| US-9.1.15.1  | character animator (P-11)  |
+| US-9.1.15.2  | character animator (P-11)  |
+| US-9.1.16.1  | technical artist (P-13)    |
+
+1. **US-9.1.15.1** -- **As a** character animator (P-11), **I want** streaming body mocap data
+   ingested via MocapEvent components and retargeted to the canonical humanoid rig, **so that** live
+   performance capture drives in-engine characters in real time.
+2. **US-9.1.15.2** -- **As a** character animator (P-11), **I want** ARKit-style 52-blendshape face
+   capture from an iOS device routed to the face morph targets, **so that** facial performances can
+   be recorded without a dedicated capture stage.
+3. **US-9.1.16.1** -- **As a** technical artist (P-13), **I want** FABRIK solving multi-bone chains
+   on GPU with pole targets and angle limits, **so that** spines, tails, and tentacles deform
+   organically where two-bone IK is insufficient.
+
+## Ragdoll Blending
+
+| ID           | Persona                    |
+|--------------|----------------------------|
+| US-9.1.17.1  | game developer (P-15)      |
+| US-9.1.17.2  | character animator (P-11)  |
+| US-9.1.18.1  | character animator (P-11)  |
+
+1. **US-9.1.17.1** -- **As a** game developer (P-15), **I want** on-trigger conversion from animated
+   pose to ragdoll with velocity inherited from the last frame's animation delta, **so that** deaths
+   and knockbacks look physically continuous.
+2. **US-9.1.17.2** -- **As a** character animator (P-11), **I want** a ragdoll blend weight that
+   smoothly lerps bones between physics and animation over a configurable duration, **so that**
+   get-up animations transition seamlessly out of ragdoll.
+3. **US-9.1.18.1** -- **As a** character animator (P-11), **I want** partial ragdoll that drives
+   only the upper body from physics while the lower body keeps walking, **so that** hit reactions
+   look dynamic without interrupting locomotion.
+
+## Skinning Extensions
+
+| ID           | Persona                    |
+|--------------|----------------------------|
+| US-9.1.19.1  | technical artist (P-13)    |
+| US-9.1.20.1  | character animator (P-11)  |
+| US-9.1.20.2  | game developer (P-15)      |
+| US-9.1.21.1  | character artist (P-9)     |
+| US-9.1.21.2  | game developer (P-15)      |
+
+1. **US-9.1.19.1** -- **As a** technical artist (P-13), **I want** to select 1, 2, 4, or 8 bone
+   influences per mesh with auto-reduction on LOD meshes, **so that** GPU skinning bandwidth matches
+   the mesh's deformation complexity.
+2. **US-9.1.20.1** -- **As a** character animator (P-11), **I want** to define named bone sockets on
+   skeleton assets by clicking a bone and naming the socket, **so that** weapons, helmets, and VFX
+   emitters attach to characters without writing code.
+3. **US-9.1.20.2** -- **As a** game developer (P-15), **I want** attached entities to inherit the
+   socket bone's world transform times the socket's local offset, **so that** weapon meshes follow
+   the hand through every animation including ragdoll.
+4. **US-9.1.21.1** -- **As a** character artist (P-9), **I want** modular body parts (head, torso,
+   arms, legs, hair, cape) authored against the same canonical skeleton, **so that** characters can
+   swap parts for customization without rerigging.
+5. **US-9.1.21.2** -- **As a** game developer (P-15), **I want** modular parts optionally merged
+   into a single combined mesh at load time, **so that** heavily customized characters still issue
+   one draw call per material.

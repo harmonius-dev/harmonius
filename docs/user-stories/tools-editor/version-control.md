@@ -20,6 +20,7 @@
 | US-15.10.7.2 | level designer (P-6)       |
 | US-15.10.8.1 | build engineer (P-16)      |
 | US-15.10.8.2 | extension developer (P-25) |
+| US-15.10.9.1 | character artist (P-9)     |
 
 1. **US-15.10.1.1** — **As a** game designer (P-5), **I want** an integrated Git client with stage,
    commit, push, pull, and branch operations in the editor UI, **so that** I never need a command
@@ -74,3 +75,8 @@
 
 16. **US-15.10.8.2** — **As a** extension developer (P-25), **I want** the provider abstraction to
     auto-detect from the remote URL, **so that** I do not configure hosting manually.
+
+17. **US-15.10.9.1** — **As a** character artist (P-9), **I want** a visual per-property binary
+    conflict resolution UI that shows structural diffs between ours and theirs side by side for each
+    field, **so that** I can pick the correct value field by field when merging a conflicted mesh
+    asset.

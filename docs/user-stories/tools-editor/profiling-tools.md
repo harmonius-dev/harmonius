@@ -18,6 +18,7 @@
 | US-15.5.6.2 | technical artist (P-13) |
 | US-15.5.7.1 | engine developer (P-26) |
 | US-15.5.7.2 | build engineer (P-16)   |
+| US-15.5.8.1 | game developer (P-15)   |
 
 1. **US-15.5.1.1** — **As a** engine developer (P-26), **I want** a per-frame CPU timeline showing
    job system tasks and engine ticks as color-coded bars, **so that** I can identify CPU
@@ -66,3 +67,7 @@
 14. **US-15.5.7.2** — **As a** build engineer (P-16), **I want** remote profiling to work with
     development kits and mobile devices on the local network, **so that** I can capture
     target-platform data.
+
+15. **US-15.5.8.1** — **As a** game developer (P-15), **I want** per-phase physics profiling metrics
+    showing broadphase, narrowphase, and solver timing separately, **so that** I can identify which
+    physics stage is the bottleneck in a heavy simulation frame.

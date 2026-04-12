@@ -101,3 +101,79 @@
    surfaces.
 6. **US-4.1.10.2** -- **As a** engine tester (P-27), **I want** to verify surface smoothing
    eliminates vibration on triangle edges and tile seams, **so that** character movement is stable.
+
+## Advanced Forces and Friction
+
+| ID           | Persona                 |
+|--------------|-------------------------|
+| US-4.1.11.1  | game developer (P-15)   |
+| US-4.1.12.1  | game designer (P-5)     |
+| US-4.1.13.1  | game designer (P-5)     |
+
+1. **US-4.1.11.1** -- **As a** game developer (P-15), **I want** optional gyroscopic torque applied
+   during integration for flagged rigid bodies, **so that** spinning tops, wheels, and projectiles
+   precess correctly under external torque without paying the cost on every body.
+2. **US-4.1.12.1** -- **As a** game designer (P-5), **I want** a rolling friction coefficient on
+   physics materials that brings spheres and wheels to rest on flat ground, **so that** billiards,
+   vehicles, and marble gameplay behave realistically without infinite rolling.
+3. **US-4.1.13.1** -- **As a** game designer (P-5), **I want** directional friction on physics
+   materials with a separate lateral coefficient, **so that** ice surfaces, rails, and conveyor
+   belts have grip along one axis and slip along the other.
+
+## Gravity Models and Multi-Planet
+
+| ID           | Persona                 |
+|--------------|-------------------------|
+| US-4.1.14.1  | game designer (P-5)     |
+| US-4.1.14.2  | engine developer (P-26) |
+| US-4.1.15.1  | game developer (P-15)   |
+| US-4.1.15.2  | engine tester (P-27)    |
+
+1. **US-4.1.14.1** -- **As a** game designer (P-5), **I want** to select uniform, radial, or custom
+   gravity per world via an ECS resource, **so that** I can switch between flat-world and planet
+   physics without rewriting the integration system.
+2. **US-4.1.14.2** -- **As an** engine developer (P-26), **I want** all collision detection and
+   constraint solving to run in flat planet-local Cartesian space regardless of gravity mode,
+   **so that** curved-space physics math is never required.
+3. **US-4.1.15.1** -- **As a** game developer (P-15), **I want** each planet to be a separate ECS
+   world with its own physics BVH and gravity, **so that** space exploration games with multiple
+   planets simulate each one independently.
+4. **US-4.1.15.2** -- **As an** engine tester (P-27), **I want** to verify that inter-planetary
+   entity migration preserves velocity through the universe-level transform, **so that** bodies
+   crossing planet boundaries remain physically consistent.
+
+## 2D Physics
+
+| ID           | Persona                 |
+|--------------|-------------------------|
+| US-4.1.16.1  | game developer (P-15)   |
+| US-4.1.16.2  | game developer (P-15)   |
+
+1. **US-4.1.16.1** -- **As a** game developer (P-15), **I want** a 2D rigid body mode with scalar
+   moment of inertia and 2D collider shapes, **so that** I can build 2D and 2.5D games on the same
+   island, sleeping, CCD, and solver infrastructure as 3D physics.
+2. **US-4.1.16.2** -- **As a** game developer (P-15), **I want** 2D and 3D physics to coexist in the
+   same ECS world, **so that** 2.5D games can mix 2D gameplay physics with 3D debris and particle
+   effects.
+
+## Character Controller Extensions
+
+| ID           | Persona                 |
+|--------------|-------------------------|
+| US-4.1.17.1  | game designer (P-5)     |
+| US-4.1.18.1  | game designer (P-5)     |
+| US-4.1.19.1  | game developer (P-15)   |
+| US-4.1.20.1  | game developer (P-15)   |
+
+1. **US-4.1.17.1** -- **As a** game designer (P-5), **I want** characters to slide along walls with
+   configurable wall friction and corner handling, **so that** traversal feels smooth in tight
+   corridors and around steep geometry without abrupt stops.
+2. **US-4.1.18.1** -- **As a** game designer (P-5), **I want** multi-jump, wall jump, and jump
+   buffer parameters tunable per character, **so that** platformer movement feel can be dialed in
+   without code changes.
+3. **US-4.1.19.1** -- **As a** game developer (P-15), **I want** crouching to shape-cast for ceiling
+   clearance before uncrouching, **so that** characters cannot pop into solid geometry under low
+   overhangs.
+4. **US-4.1.20.1** -- **As a** game developer (P-15), **I want** character controllers to push
+   dynamic rigid bodies on contact with a configurable push strength, **so that** players visibly
+   interact with loose props rather than treating them as immovable.

@@ -124,3 +124,53 @@
    surfaces reduce traction). Materials are authored in the visual editor and assigned per-collider
    via a `PhysicsMaterialHandle` component.
    - **Deps:** F-4.2.1, F-12.7.1 (Binary Asset Format)
+
+## Voxel Terrain Collision
+
+| ID       | Feature |
+|----------|------------------------------ |
+| F-4.2.10 | Per-Chunk Voxel Trimesh Collision |
+
+1. **F-4.2.10** — Generate a `TriMesh` collider per voxel chunk from the chunk surface mesh produced
+   by the voxel meshing pipeline (F-3.2.12). When players modify voxels the affected chunk is
+   re-meshed and a new collider is built on a job system worker; the old collider remains in the
+   physics BVH until the next `FixedUpdate` when atomic swap installs the new collider. Heightfield
+   chunks use in-place height patching without full rebuild. Chunk rebuild count per frame is
+   bounded by a platform-specific budget to protect frame time.
+   - **Deps:** F-4.2.4 (Triangle Mesh and Heightfield Shapes), F-4.2.1, F-3.2.12 (Voxel Meshing
+     Pipeline), F-3.2.13 (Runtime Voxel Editing)
+   - **Platform:** Mobile: max 1 chunk rebuild per frame, 16x16x16 chunks. Switch: max 2 rebuilds,
+     16x16x16. Desktop: max 4 rebuilds, 32x32x32. High-end PC: max 8 rebuilds, 32x32x32.
+
+## Convex Decomposition
+
+| ID       | Feature |
+|----------|-------------------------------------- |
+| F-4.2.11 | Offline V-HACD Convex Decomposition |
+| F-4.2.12 | Runtime Quickhull Generation |
+
+1. **F-4.2.11** — At asset import time, non-convex source meshes are decomposed into multiple convex
+   hulls via V-HACD (Volumetric Hierarchical Approximate Convex Decomposition) and stored as a baked
+   `CompoundCollider`. Typical settings produce 8-16 hulls per mesh at 32-64 vertices per hull. All
+   decomposition cost is paid offline. Designers can also manually place simple shapes (boxes,
+   capsules, spheres) in the visual editor to override automatic decomposition.
+   - **Deps:** F-4.2.5 (Compound Shapes), F-4.2.3 (Convex Hull Shapes), F-12.2.3 (Asset Processing)
+2. **F-4.2.12** — At runtime, quickhull (O(n log n)) generates a single convex hull from an
+   arbitrary vertex set for destructible objects, procedural geometry, and voxel chunk fragments.
+   Faster than V-HACD but produces one hull rather than a decomposition — suitable for convex
+   fragments spawned by destruction and procedural generation systems.
+   - **Deps:** F-4.2.3 (Convex Hull Shapes), F-4.6.3 (Runtime Fracture)
+
+## Collision Layer Interaction Matrix
+
+| ID       | Feature |
+|----------|-------------------------------------- |
+| F-4.2.13 | 32x32 Collision Layer Interaction Matrix |
+
+1. **F-4.2.13** — An editor-configurable 32x32 collision layer interaction matrix records which
+   layer pairs interact and whether the interaction produces contact response or overlap only. The
+   matrix is authored in the visual editor and baked at build time into layer filter bitmasks on
+   every `CollisionLayers` component. Overlap-only pairs support hitbox/hurtbox combat where contact
+   events fire without generating collision impulses. Per-layer budgets constrain active collider
+   counts so that gameplay layers (bullets, triggers, pickups) cannot starve the physics budget.
+   - **Deps:** F-4.2.6 (Collision Filtering and Layers), F-4.2.8 (Trigger Volumes)

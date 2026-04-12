@@ -27,6 +27,7 @@
 | US-2.9.13.2 | technical artist (P-13)      |
 | US-2.9.14.1 | technical artist (P-13)      |
 | US-2.9.14.2 | effects artist (P-12)        |
+| US-2.9.15.1 | environment artist (P-8)     |
 
 1. **US-2.9.1.1** — **As a** effects artist (P-12), **I want** bright-source bloom with configurable
    luminance threshold and blur iterations, **so that** neon signs and explosions glow naturally.
@@ -113,3 +114,8 @@
 23. **US-2.9.14.2** — **As a** effects artist (P-12), **I want** the post-process graph to compile
     to optimized GPU compute dispatches, **so that** custom chains run efficiently within the
     post-processing pipeline.
+
+24. **US-2.9.15.1** — **As an** environment artist (P-8), **I want** overlapping post-process
+    volumes to blend their parameters by priority, weight, and shape (global, box, sphere) with
+    configurable blend distances, **so that** transitions between areas with different grading,
+    exposure, and effects are smooth and art-directed.

@@ -89,6 +89,49 @@
    - **Verification:** Enable the overlay and verify all listed elements are visible. Verify the
      overlay is absent from shipping builds.
 
+## Pose Source Composition and Advanced IK
+
+1. **R-9.3.12** -- The engine **SHALL** provide a Full Body IK (FBIK) solver variant that unifies
+   center-of-mass balance, momentum, and prioritized end-effector solving in a single solver pass,
+   distinct from per-chain FABRIK.
+   - **Rationale:** FBIK produces physically plausible poses when characters reach overhead, lean on
+     surfaces, or counterbalance weight, which per-chain solvers cannot represent.
+   - **Verification:** Place a character reaching for an overhead target. Assert FBIK shifts the
+     center of mass forward and adjusts the opposite arm for balance. Assert FABRIK in isolation
+     does not.
+2. **R-9.3.13** -- The engine **SHALL** expose pose sources (keyframe clip, blend space, motion
+   matching, motion capture, procedural IK, ragdoll, spring bones, procedural gait, learned policy)
+   as interchangeable entries in an `AnimationLayerStack`, composable via override, additive, and
+   multiply blend modes with bone masks.
+   - **Rationale:** Decoupling pose sources from the layer stack lets complex creatures combine
+     authored and procedural animation without bespoke glue code.
+   - **Verification:** Build a layer stack combining a mocap base layer, a foot IK layer, and a
+     spring bone refinement layer. Assert the final pose reflects all three composed in order. Swap
+     the base layer to motion matching and assert the remaining layers continue to apply.
+3. **R-9.3.14** -- The engine **SHALL** resolve spring bone collisions against character body
+   capsule or SDF proxies, preventing capes, tails, and accessory chains from intersecting the
+   owning character.
+   - **Rationale:** Spring bones without body collision clip through the character mesh during rapid
+     movement.
+   - **Verification:** Enable spring bone collision on a cape. Rapidly rotate the character. Assert
+     the cape does not penetrate the body capsule at any simulation step.
+4. **R-9.3.15** -- The engine **SHALL** support composing motion capture base layers with foot IK,
+   look-at, and spring bone refinement layers, using inertialization for transitions between mocap
+   takes.
+   - **Rationale:** Studio mocap workflows require post-process refinement and smooth transitions
+     without baking corrections into every take.
+   - **Verification:** Play a mocap take with foot IK and look-at refinement. Assert the final pose
+     plants feet correctly on terrain and the head tracks the aim target. Transition to a second
+     take via inertialization and assert the blend decays smoothly.
+5. **R-9.3.16** -- The engine **SHALL** accept trained neural-network locomotion policies as a pose
+   source producing joint torques from character movement state, blending through the
+   `AnimationLayerStack`. (Research-tier feature; non-shipping.)
+   - **Rationale:** Learned locomotion research may produce physically grounded motion that is
+     impractical to author by hand; the pipeline must accept the policy as a first-class pose
+     source.
+   - **Verification:** Load a trained policy. Assert the layer stack executes it as a pose source.
+     Assert the output drives joint torques on the target skeleton.
+
 ## Non-Functional Requirements
 
 1. **R-9.3.NF1** -- The engine **SHALL** solve 500 two-bone IK chains within 0.5 ms GPU time.

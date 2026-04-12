@@ -108,3 +108,23 @@
    - **Deps:** F-3.3.1, F-3.3.3, F-3.3.4
    - **Platform:** Subsurface leaf transmission disabled on mobile. Canopy mesh LOD more aggressive
      on mobile. Wind skeleton simplified to trunk-only on mobile.
+
+## Meshlet Foliage Path
+
+| ID      | Feature |
+|---------|----------------------------------- |
+| F-3.3.8 | Meshlet Cluster LOD for Dense Foliage |
+| F-3.3.9 | Skeletal Bone-Chain Wind for Meshlet Foliage |
+
+1. **F-3.3.8** — Dense foliage (trees, bushes) renders through the meshlet cluster DAG (F-3.1.x)
+   with masked blend mode and opacity micromasks. Distant foliage transitions to voxelized cluster
+   representations that preserve volume without per-asset LOD chains. This provides Nanite-style
+   continuous detail for forests where classic billboard LOD would pop.
+   - **Deps:** F-3.3.1, F-3.3.3, F-3.1.1 (Meshlet Cluster DAG)
+   - **Platform:** Desktop and high-end PC only. Mobile and Switch fall back to F-3.3.3 impostor
+     LOD.
+2. **F-3.3.9** — Meshlet foliage wind animation is driven by skeletal bone chains on trunk and
+   branches rather than vertex-shader World Position Offset. Bone-driven deformation preserves
+   meshlet cluster AABB bounds so the cluster culler receives correct visibility, unlike WPO which
+   would invalidate cluster bounds every frame.
+   - **Deps:** F-3.3.8, F-9.1.1 (GPU Compute Skinning), F-3.3.4 (GPU Vertex Shader Wind)

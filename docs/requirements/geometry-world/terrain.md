@@ -104,14 +104,60 @@
     - **Verification:** Load a planetary world. Assert memory stays within budget. Assert
       compression exceeds 10:1.
 
+## Multi-Planet Coordinate System
+
+15. **R-3.2.15** -- The engine **SHALL** support three coordinate spaces -- chunk-local,
+    planet-local, and universe -- with each planet as a separate ECS world embedded in a
+    universe-level Euclidean space, applying a one-time coordinate conversion on inter-planetary
+    entity migration.
+    - **Rationale:** Multi-planet games lose f32 precision at interstellar distances without a
+      three-tier coordinate model.
+    - **Verification:** Create two planet worlds in a universe. Migrate an entity between them.
+      Assert the position transforms via Planet A to Universe to Planet B. Assert per-frame
+      simulation uses only planet-local coordinates.
+16. **R-3.2.16** -- The engine **SHALL** subdivide each planet into 6 cube faces, each a flat grid
+    of chunks, with the vertex shader projecting chunk-local Cartesian to planet surface via
+    normalized cube projection and handling cube-face seam vertices and normals to preserve
+    continuity.
+    - **Rationale:** Cube-sphere projection enables planetary terrain authoring as flat chunks while
+      rendering a continuous sphere.
+    - **Verification:** Build a planet with 6 cube faces. Assert the vertex shader curves chunk
+      vertices onto the sphere. Assert shared edge vertices at face seams produce identical world
+      positions and averaged normals.
+
+## 2D Tilemap Geometry
+
+17. **R-3.2.17** -- The engine **SHALL** store 2D tilemaps as fixed-size chunks of tiles (default
+    16x16) organized into multiple layers, with per-chunk dirty flags and distance-based chunk
+    streaming.
+    - **Rationale:** Chunked storage supports infinite and procedural 2D levels with incremental
+      updates rather than full-map rebuilds.
+    - **Verification:** Create a multi-layer tilemap. Modify one tile. Assert only its chunk is
+      flagged dirty. Move the camera beyond the streaming radius and assert distant chunks unload.
+18. **R-3.2.18** -- The engine **SHALL** support auto-tiling that selects tile variants from
+    neighbor connectivity via 4-bit cardinal or 8-bit cardinal-plus-diagonal bitmasks, compatible
+    with Wang tile and blob tileset conventions.
+    - **Rationale:** Designers need to paint terrain regions without manually selecting every
+      transition tile.
+    - **Verification:** Paint a terrain region. Assert border tiles receive the correct variant from
+      the 8-bit bitmask lookup. Assert blob tileset conventions produce seamless borders.
+19. **R-3.2.19** -- The engine **SHALL** generate per-chunk compound 2D colliders from tile flags
+    (solid, slope, one-way platform), registered in the 2D physics BVH and rebuilt incrementally
+    when a chunk's tiles change.
+    - **Rationale:** Tilemap collision must stay in sync with visible tiles without separate
+      collision authoring.
+    - **Verification:** Paint solid and slope tiles. Assert the chunk compound collider contains
+      rectangle and triangle colliders. Modify a tile and assert only the affected chunk's collider
+      rebuilds.
+
 ## Non-Functional Requirements
 
-15. **R-3.2.NF1** -- The engine **SHALL** decode a 257x257 LZ4-compressed heightfield tile within 1
+20. **R-3.2.NF1** -- The engine **SHALL** decode a 257x257 LZ4-compressed heightfield tile within 1
     ms CPU time.
     - **Rationale:** Tile decode must not stall terrain streaming during fast camera movement.
     - **Verification:** Benchmark tile decode. Assert completion within 1 ms.
 
-16. **R-3.2.NF2** -- The engine **SHALL** mesh a 16x16x16 voxel chunk within 5 ms CPU time using any
+21. **R-3.2.NF2** -- The engine **SHALL** mesh a 16x16x16 voxel chunk within 5 ms CPU time using any
     supported meshing algorithm.
     - **Rationale:** Interactive voxel editing requires sub-frame mesh regeneration.
     - **Verification:** Modify a voxel and trigger re-mesh. Assert mesh regeneration completes

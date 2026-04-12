@@ -147,3 +147,17 @@
 4. **US-3.3.7.4** -- **As a** engine developer (P-26), **I want** artist-authored and procedurally
    generated trees to integrate seamlessly with the LOD pipeline, **so that** both tree sources
    share the same rendering path.
+
+## Meshlet Foliage Path
+
+| ID         | Persona                    |
+|------------|----------------------------|
+| US-3.3.8.1 | environment artist (P-8)   |
+| US-3.3.9.1 | engine developer (P-26)    |
+
+1. **US-3.3.8.1** -- **As an** environment artist (P-8), **I want** trees and bushes rendered
+   through the meshlet cluster DAG with voxelized distant clusters, **so that** forests maintain
+   detail and volume at any distance without per-asset LOD chains.
+2. **US-3.3.9.1** -- **As an** engine developer (P-26), **I want** meshlet foliage wind driven by
+   skeletal bone chains rather than vertex World Position Offset, **so that** meshlet cluster AABBs
+   stay stable for correct cluster culling.

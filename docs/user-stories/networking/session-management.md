@@ -120,3 +120,56 @@
 2. **US-8.5.18** — **As a** QA tester (P-19), **I want** integration tests that verify cross-play
    matchmaking respects platform certification rules and opt-out preferences, **so that** console
    certification is not blocked by matchmaking bugs.
+
+## Social and Progression Services
+
+| ID        | Persona                     |
+|-----------|-----------------------------|
+| US-8.5.19 | player (P-23)               |
+| US-8.5.20 | player (P-23)               |
+| US-8.5.21 | player (P-23)               |
+| US-8.5.22 | server administrator (P-22) |
+
+1. **US-8.5.19** — **As a** player (P-23), **I want** to view my rank on daily, weekly, and all-time
+   leaderboards filtered by friends, **so that** I can track my competitive standing against people
+   I care about.
+2. **US-8.5.20** — **As a** player (P-23), **I want** incremental achievement progress (e.g., 45/100
+   enemies defeated) to persist across sessions, **so that** I see my progress toward unlocking each
+   achievement and do not lose ground when I quit.
+3. **US-8.5.21** — **As a** player (P-23), **I want** to save my game to the cloud and load it on a
+   different device, **so that** I can continue playing exactly where I left off without
+   re-downloading anything.
+4. **US-8.5.22** — **As a** server administrator (P-22), **I want** player session telemetry (login,
+   playtime, progression) aggregated for analysis, **so that** I can identify retention trends and
+   balance issues without querying raw logs.
+
+## Matchmaking Extensions
+
+| ID        | Persona       |
+|-----------|---------------|
+| US-8.5.23 | player (P-23) |
+| US-8.5.24 | player (P-23) |
+| US-8.5.25 | player (P-23) |
+| US-8.5.26 | player (P-23) |
+
+1. **US-8.5.23** — **As a** player (P-23), **I want** the matchmaker to find a replacement when a
+   teammate leaves mid-match, **so that** my team is not permanently disadvantaged by a leaver.
+2. **US-8.5.24** — **As a** player (P-23), **I want** match abandoners to face escalating penalties
+   (cooldown, rating loss, temp ban) tracked per rolling window, **so that** competitive matches are
+   not ruined by frequent leavers.
+3. **US-8.5.25** — **As a** player (P-23), **I want** to see my display rank (Bronze, Silver, Gold,
+   Platinum, Diamond, Master) mapped from my Glicko-2 rating, **so that** I have a clear sense of my
+   skill level without parsing raw rating numbers.
+4. **US-8.5.26** — **As a** player (P-23), **I want** to choose between casual, competitive, and
+   raid queues with different matching rules, **so that** I can play the mode that fits my current
+   session without a single queue forcing strict rules on quick games.
+
+## Platform Store
+
+| ID        | Persona       |
+|-----------|---------------|
+| US-8.5.27 | player (P-23) |
+
+1. **US-8.5.27** — **As a** player (P-23), **I want** to browse and purchase items through the
+   in-game store that routes to my platform's payment system, **so that** purchases are seamless and
+   I do not have to leave the game to visit the platform store.

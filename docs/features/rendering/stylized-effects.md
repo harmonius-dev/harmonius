@@ -84,3 +84,31 @@
    - **Platform:** Mobile: flat color silhouettes only (no fresnel); max 8 x-ray entities. Switch:
      flat color + team tint; max 16 entities. Desktop/High-end: full silhouette modes with fresnel
      outline; unlimited entities.
+
+## Painterly and Pixel Art Styles
+
+| ID       | Feature                      |
+|----------|------------------------------|
+| F-2.11.6 | Painterly Rendering Style    |
+| F-2.11.7 | Pixel Art Rendering Style    |
+
+1. **F-2.11.6** — Non-photorealistic painterly rendering with brush-stroke simulation, edge
+   darkening, and wet-edge effects for a hand-painted or watercolor aesthetic. A brush-radius
+   parameter drives a screen-space Kuwahara-style filter that abstracts scene color into painterly
+   regions. Edge darkening intensity adds ink-like contours around silhouettes and internal creases.
+   Wet-edge intensity modulates rim accumulation where adjacent brushstrokes meet, reproducing
+   pigment pooling. The style compiles as a post-process stage on top of the standard lit scene,
+   preserving PBR lighting while remapping surface appearance.
+   - **Deps:** F-2.9.1 (Post-Processing Pipeline), F-2.11.1 (Outline Rendering)
+   - **Platform:** Mobile: disabled. Switch: reduced brush radius and no wet-edge. Desktop: full
+     quality painterly stage at half resolution. High-end: full resolution with per-material brush
+     parameters.
+2. **F-2.11.7** — Pixel art rendering that quantizes the final image to a configurable pixel
+   resolution, restricts color output to a palette with configurable maximum color count, and
+   applies nearest-neighbor filtering during the final upscale to display resolution. An optional
+   dithering pattern smooths color banding within palette constraints. Used to render
+   high-resolution 3D assets in a retro pixel-art style, enabling pixel-perfect output on any
+   display while authoring content at full fidelity.
+   - **Deps:** F-2.9.1 (Post-Processing Pipeline)
+   - **Platform:** Mobile: full quality; pixel quantization is lightweight. Switch: full quality.
+     Desktop/High-end: full quality with highest palette sizes and finest pixel resolutions.

@@ -119,6 +119,7 @@
 |----------|---------------------------|
 | F-2.1.13 | CPU Work Graph Emulation  |
 | F-2.1.14 | Safe GPU Resource Handles |
+| F-2.1.15 | Shader Compilation Pipeline |
 
 1. **F-2.1.13** — CPU-side emulation of D3D12 work graphs via indirect dispatch chains in the task
    graph. Producer nodes enqueue work items into intermediate buffers; consumer nodes read from
@@ -138,3 +139,13 @@
    - **Platform:** None. Generational handles are a Rust-side abstraction. Backend implementations
      translate handles to native resource references (MTLBuffer, ID3D12Resource, VkBuffer)
      internally.
+3. **F-2.1.15** — HLSL shader sources are compiled to DXIL, SPIR-V, and metallib artifacts via `dxc`
+   and `metal-shaderconverter` CLI subprocesses invoked during asset processing. Compiled artifacts
+   are cached keyed by source hash, include set, and target profile; incremental processing
+   recompiles only changed permutations. Shipping builds ship precompiled binaries and never invoke
+   shader compilers at runtime, eliminating compilation hitches and removing shader compiler
+   dependencies from the shipping game binary.
+   - **Deps:** F-2.1.1, F-2.1.3
+   - **Platform:** D3D12 consumes DXIL produced by dxc. Vulkan consumes SPIR-V produced by dxc
+     `-spirv`. Metal consumes metallib produced by metal-shaderconverter from the SPIR-V
+     intermediate. All compilers run as CLI subprocesses; no runtime compilation on any platform.

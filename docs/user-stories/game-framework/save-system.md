@@ -52,3 +52,25 @@
    native API fully async, **so that** sync never blocks the game.
 3. **US-13.3.6.1** — **As a** engine developer (P-26), **I want** the save I/O pipeline to compress,
    encrypt, and checksum data with atomic rename, **so that** saves are always consistent.
+
+## Save Context Filtering
+
+| ID          | Persona              |
+|-------------|----------------------|
+| US-13.3.7.1 | game developer (P-15)|
+
+1. **US-13.3.7.1** — **As a** game developer (P-15), **I want** to tag entities with save contexts
+   (character, world, instance, settings) so that I can selectively serialize entity subsets,
+   **so that** character data saves separately from world state and can be carried across maps
+   independently.
+
+## Rich Save Slot Metadata
+
+| ID          | Persona       |
+|-------------|---------------|
+| US-13.3.8.1 | player (P-23) |
+
+1. **US-13.3.8.1** — **As a** player (P-23), **I want** save slots to display rich metadata
+   including character class, party composition, quest progress summary, death count, currency,
+   completion percentage, and difficulty, **so that** I can choose the right save to load without
+   opening each one.

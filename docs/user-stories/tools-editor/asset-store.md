@@ -24,6 +24,7 @@
 | US-15.17.9.2  | extension developer (P-25) |
 | US-15.17.10.1 | extension developer (P-25) |
 | US-15.17.10.2 | build engineer (P-16)      |
+| US-15.17.11.1 | studio head (P-1)          |
 
 1. **US-15.17.1.1** — **As a** game designer (P-5), **I want** an in-editor marketplace browser with
    search, filters, and 3D previews, **so that** I can find assets without leaving the editor.
@@ -88,3 +89,7 @@
 20. **US-15.17.10.2** — **As a** build engineer (P-16), **I want** per-project license compliance
     reports listing all third-party assets with attribution requirements, **so that** legal
     obligations are tracked.
+
+21. **US-15.17.11.1** — **As a** studio head (P-1), **I want** to deploy a self-hosted private asset
+    marketplace using the same open-source code with team-only OAuth authentication, **so that** my
+    studio can share proprietary assets securely without exposing them publicly.

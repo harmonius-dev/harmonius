@@ -18,6 +18,7 @@
 | US-15.2.6.2 | technical artist (P-13) |
 | US-15.2.7.1 | level designer (P-6)    |
 | US-15.2.7.2 | game designer (P-5)     |
+| US-15.2.8.1 | level designer (P-6)    |
 
 1. **US-15.2.1.1** — **As a** level designer (P-6), **I want** to drag entities from the asset
    browser into the world with grid and surface snapping, **so that** I can populate levels quickly.
@@ -65,3 +66,7 @@
 14. **US-15.2.7.2** — **As a** game designer (P-5), **I want** foliage painters to respect slope
     limits, altitude ranges, and exclusion zones, **so that** trees do not appear on cliffs or in
     building footprints.
+
+15. **US-15.2.8.1** — **As a** level designer (P-6), **I want** to select a group of placed entities
+    in the viewport and save them as a reusable entity template, **so that** I can stamp the same
+    pattern across my level without manually re-creating each instance.

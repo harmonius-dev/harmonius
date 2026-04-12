@@ -76,3 +76,20 @@
    - **Deps:** F-11.3.3 (Full-Screen Distortion)
    - **Platform:** Mobile skips caustic projection and god rays; uses depth fog and simplified blue
      tint only. Bubble particles reduced to 25% of desktop count.
+
+## Wind
+
+| ID       | Feature                      |
+|----------|------------------------------|
+| F-11.4.8 | Shared Wind Field GPU Texture |
+
+1. **F-11.4.8** — A GPU-resident volumetric wind field texture updated each frame from all active
+   `WindZone` volumes (global, directional, radial, vortex). The wind field is sampled by every
+   system that reads wind: weather particles (rain, snow, dust), fire propagation, vegetation and
+   foliage sway (F-2.7.11), ribbon particles, and destruction debris. Sharing one texture ensures
+   all wind-driven effects remain coherent — a gust pushing leaves also pushes smoke and sparks in
+   the same direction and magnitude. The grid resolution and world extent scale per platform.
+   - **Deps:** F-11.1.1
+   - **Platform:** Mobile: low-resolution 2D wind field (no vertical variation) with large cell
+     size. Switch: 3D wind field with reduced resolution. Desktop: full 3D wind field with per-cell
+     turbulence. High-end: high-resolution 3D wind field with temporal filtering.

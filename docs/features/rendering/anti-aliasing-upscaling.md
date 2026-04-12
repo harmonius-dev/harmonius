@@ -12,6 +12,7 @@
 | F-2.6.6 | Third-Party Upscaler Integration      |
 | F-2.6.7 | Frame Generation                      |
 | F-2.6.8 | Latency Reduction                     |
+| F-2.6.9 | SMAA (Enhanced Subpixel Morphological AA) |
 
 1. **F-2.6.1** — Multi-frame jittered sample accumulation that blends the current frame with
    reprojected history using motion vectors. Reduces geometric aliasing and specular shimmer.
@@ -73,3 +74,12 @@
    - **Platform:** Mobile: basic frame pacing only (no reflex-style pipeline). Switch: frame pacing
      with v-sync alignment. Desktop: NVIDIA Reflex / AMD Anti-Lag integration for sub-frame input
      sampling. High-end: full Reflex + frame gen latency compensation.
+9. **F-2.6.9** — Multi-pass spatial anti-aliasing using SMAA (Enhanced Subpixel Morphological AA).
+   The pipeline runs three passes: edge detection (luma or color), blending weight calculation via
+   precomputed area and search textures, and neighborhood blending. Configurable quality presets
+   (Low, Medium, High, Ultra) control search steps, corner rounding, and diagonal edge detection.
+   Serves as an intermediate option between the lightweight FXAA and temporal TAA/TSR paths for
+   titles that cannot tolerate temporal history artifacts.
+   - **Platform:** Mobile: SMAA Low (fewer search steps, no diagonal detection). Switch: SMAA
+     Medium. Desktop: SMAA High as default spatial option. High-end: SMAA Ultra available but
+     typically superseded by TAA/TSR.

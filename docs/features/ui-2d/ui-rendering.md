@@ -72,3 +72,20 @@
    child widgets to their parent's bounds for scroll views and masked containers. Edge anti-aliasing
    must remain sharp at all UI scale factors (100% through 300%) without blurring adjacent elements.
    - **Deps:** F-10.4.1, F-10.4.3
+
+## Render Graph Integration
+
+| ID       | Feature                          |
+|----------|----------------------------------|
+| F-10.4.8 | UI Render Graph Pass Integration |
+
+1. **F-10.4.8** — UI rendering is expressed as a fixed set of named passes inserted into the engine
+   render graph at well-defined points relative to the 3D pipeline: a World-Space UI pass after the
+   main opaque pass (so 3D UI receives lighting and depth), a Render-to-Texture pass for 3D-in-UI
+   previews, a Screen-Space UI pass after tonemapping (so HUD is not affected by exposure or
+   grading), a Vector Path pass for resolution-independent vector content, and a Post-Process UI
+   pass rendered last so overlays are unaffected by scene post-processing. The graph compiler places
+   barriers and aliases UI transient targets with other transient passes.
+   - **Deps:** F-2.2.1 (Render Graph), F-10.4.1
+   - **Platform:** None. Pass ordering is identical across backends; the graph compiler resolves
+     barrier and aliasing differences per backend automatically.

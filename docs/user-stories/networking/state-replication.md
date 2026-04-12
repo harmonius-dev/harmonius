@@ -68,3 +68,31 @@
 2. **US-8.2.11** — **As an** engine developer (P-26), **I want** test scenarios that verify
    owner-only and team-only properties are never sent to unauthorized clients, **so that**
    competitive integrity is maintained and data leaks are caught during development.
+
+## Interest Management and 2D
+
+| ID        | Persona               |
+|-----------|-----------------------|
+| US-8.2.12 | game developer (P-15) |
+| US-8.2.13 | game developer (P-15) |
+
+1. **US-8.2.12** — **As a** game developer (P-15), **I want** to configure the networking grid cell
+   size and per-distance-tier update frequencies, **so that** replication scales efficiently for my
+   world size without hand-tuning interest management for each zone.
+2. **US-8.2.13** — **As a** game developer (P-15), **I want** Vec2 spatial types for input,
+   hitboxes, and multicast filtering, **so that** my 2D game uses the networking stack without
+   paying for 3D vector overhead on every replicated field.
+
+## Scale and Quantization
+
+| ID        | Persona                 |
+|-----------|-------------------------|
+| US-8.2.14 | player (P-23)           |
+| US-8.2.15 | engine developer (P-26) |
+
+1. **US-8.2.14** — **As a** player (P-23), **I want** to request a layer transfer to join a friend
+   in a crowded zone, **so that** population overflow does not permanently separate me from my
+   group.
+2. **US-8.2.15** — **As an** engine developer (P-26), **I want** per-field quantization attributes
+   on replicated components, **so that** I can reduce bandwidth for position, rotation, and speed
+   with a single attribute and no game-logic changes.

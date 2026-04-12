@@ -147,3 +147,43 @@ synchronize with animation progress.
 
 13. **US-9.4.10.3** -- **As a** game developer (P-15), **I want** 500 AI agents evaluating animation
     state machines within 2 ms, **so that** large NPC crowds animate within budget.
+
+## Transition Modes and Pose Sources
+
+| ID           | Persona                    |
+|--------------|----------------------------|
+| US-9.4.11.1  | character animator (P-11)  |
+| US-9.4.12.1  | technical artist (P-13)    |
+| US-9.4.13.1  | game developer (P-15)      |
+| US-9.4.14.1  | engine developer (P-26)    |
+
+1. **US-9.4.11.1** -- **As a** character animator (P-11), **I want** inertialization transitions
+   that sample only the target clip and decay the source offset, **so that** motion matching and
+   state graph transitions look smoother and cost half as much to evaluate.
+2. **US-9.4.12.1** -- **As a** technical artist (P-13), **I want** a Multiply layer blend mode that
+   scales bone transforms, **so that** size pulsing, muscle flex, and magnification effects can be
+   expressed without custom blend code.
+3. **US-9.4.13.1** -- **As a** game developer (P-15), **I want** the same state machine to drive 2D
+   sprite-sheet animation via a SpriteSheet pose source, **so that** 2D games reuse state machine
+   transitions, conditions, layers, and sync groups without a separate system.
+4. **US-9.4.14.1** -- **As an** engine developer (P-26), **I want** motion matching as a first-class
+   pose source inside the state machine with inertialization transitions into and out of matching
+   regions, **so that** authored states can contain motion matching without losing blend fidelity.
+
+## Montages, Parameters, and Feedback
+
+| ID           | Persona                    |
+|--------------|----------------------------|
+| US-9.4.15.1  | game developer (P-15)      |
+| US-9.4.16.1  | game developer (P-15)      |
+| US-9.4.17.1  | game developer (P-15)      |
+
+1. **US-9.4.15.1** -- **As a** game developer (P-15), **I want** montage priority resolution with
+   last-started-wins tiebreaking, **so that** gameplay and AI systems requesting montages on the
+   same bones resolve deterministically without visual artifacts.
+2. **US-9.4.16.1** -- **As a** game developer (P-15), **I want** gameplay and AI systems to drive
+   the same `AnimationParams` component read by the state machine, **so that** the same state graph
+   works for both player and AI-controlled instances of a character.
+3. **US-9.4.17.1** -- **As a** game developer (P-15), **I want** to read current state, elapsed
+   time, remaining time, and active montage from `AnimationQuery`, **so that** AI can wait for
+   attack animations to complete before choosing the next action.

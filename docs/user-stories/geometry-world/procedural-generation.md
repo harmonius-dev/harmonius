@@ -279,3 +279,21 @@
    occupied space.
 3. **US-3.6.64.1** -- **As a** engine developer (P-26), **I want** on-demand detail resolution
    across 6+ LOD tiers with prefetching, **so that** only the local region is loaded at full detail.
+
+## Simulation Nodes
+
+| ID           | Persona                  |
+|--------------|--------------------------|
+| US-3.6.65.1  | environment artist (P-8) |
+| US-3.6.66.1  | level designer (P-6)     |
+| US-3.6.67.1  | level designer (P-6)     |
+
+1. **US-3.6.65.1** -- **As an** environment artist (P-8), **I want** an erosion node that applies
+   thermal and hydraulic erosion to heightmaps with tunable iteration count and sediment parameters,
+   **so that** mountains, canyons, and riverbeds look naturally weathered.
+2. **US-3.6.66.1** -- **As a** level designer (P-6), **I want** a BSP partition node that
+   recursively subdivides a region into rooms connected by corridors, **so that** I generate classic
+   grid dungeons without writing generation code.
+3. **US-3.6.67.1** -- **As a** level designer (P-6), **I want** a cellular automata node with
+   configurable birth and survival rules, **so that** I generate organic cave layouts and islands
+   from standard roguelike rule sets.

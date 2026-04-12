@@ -62,3 +62,25 @@
    - **Deps:** F-8.6.1, F-8.6.2, F-8.4.5
    - **Platform:** Video encoding for social sharing uses platform media APIs (Media Foundation on
      Windows, AVFoundation on macOS, VA-API/V4L2 on Linux).
+
+## Camera and Encoding
+
+| ID      | Feature                               |
+|---------|---------------------------------------|
+| F-8.6.6 | Configurable Spectator Camera Presets |
+| F-8.6.7 | Replay File Compression               |
+
+1. **F-8.6.6** — Configurable spectator camera presets (Free, PlayerLocked, OverheadTactical) with
+   per-game-mode transition speed, follow distance, and overhead angle settings. Presets are data-
+   driven so designers can tune spectator camera behavior per game mode without code changes. Smooth
+   transitions between presets support broadcast-quality camera cuts.
+   - **Deps:** F-8.6.4
+   - **Platform:** Mobile limits preset choices to player-locked and overhead; free camera requires
+     keyboard and mouse.
+2. **F-8.6.7** — Replay files are compressed using configurable compression algorithms stored in the
+   replay header (None, LZ4 for fast decode, Zstd for higher ratio). Mobile clients receive
+   Zstd-compressed replays with higher ratios to reduce download size and storage footprint, while
+   desktop clients default to LZ4 for lowest decode latency during seek.
+   - **Deps:** F-8.6.1
+   - **Platform:** Both LZ4 and Zstd are available on all platforms via Rust crates. Mobile uses
+     Zstd level 9; desktop uses LZ4 default.

@@ -81,3 +81,34 @@
    - **Deps:** F-5.2.1, F-5.3.2
    - **Platform:** Active reverb zone count scales per tier: mobile 1-2 concurrent, Switch 3-4,
      desktop 6+. Early reflections disabled on mobile; uses algorithmic reverb only (see F-5.3.3).
+
+## Acoustic Materials and Parallel Propagation
+
+| ID       | Feature                              |
+|----------|--------------------------------------|
+| F-5.2.8  | Acoustic Material Properties         |
+| F-5.2.9  | Parallel Sound Propagation           |
+| F-5.2.10 | 2D Sound Propagation                 |
+
+1. **F-5.2.8** — Extend physics materials with per-surface acoustic properties: per-frequency-band
+   absorption coefficients, transmission loss for occlusion, and surface scattering. The propagation
+   solver (F-5.2.6) consumes these values when ray-casting through geometry, producing emergent
+   acoustics — stone caves reverberate, carpeted rooms sound muffled, glass lets high frequencies
+   through while blocking lows — with no manual reverb zone placement.
+   - **Deps:** F-5.2.5, F-5.2.6, F-4.2.1 (Physics Materials)
+   - **Platform:** Mobile uses 3-band absorption; desktop uses 8-band to match the DSP filter
+     resolution. Material data is asset-authored and consumes negligible CPU at runtime.
+2. **F-5.2.9** — Evaluate sound propagation in parallel across worker threads via the job system. A
+   `par_for_each` over active sound sources filters by `Changed<Transform>` and amortizes ray
+   tracing across frames (1/N sources per frame) so propagation scales with listener-visible source
+   count rather than world population. Change detection prevents recomputation for static sources.
+   - **Deps:** F-5.2.6, F-14.3.3 (Job System), F-1.1.x (Change Detection)
+   - **Platform:** Mobile amortizes across 8 frames; desktop across 2 frames. Per-tier worker thread
+     count bounds parallelism.
+3. **F-5.2.10** — Trace sound propagation in 2D for top-down, side-view, and 2.5D games where no
+   vertical structure exists. The solver collapses geometry to a 2D representation and casts rays
+   within the XY plane, producing occlusion and portal propagation without paying 3D tracing cost.
+   Enables stealth games with room-based audio and 2D platformers with environmental echo.
+   - **Deps:** F-5.2.6
+   - **Platform:** 2D propagation is cheaper than 3D on every tier — mobile supports 2D propagation
+     at full update rate where 3D would be disabled.

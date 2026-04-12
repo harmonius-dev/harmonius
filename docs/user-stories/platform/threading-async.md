@@ -28,6 +28,9 @@
 | US-14.3.24 | engine tester (P-27)    |
 | US-14.3.25 | engine tester (P-27)    |
 | US-14.3.26 | QA tester (P-19)        |
+| US-14.3.27 | engine developer (P-26) |
+| US-14.3.28 | engine developer (P-26) |
+| US-14.3.29 | engine developer (P-26) |
 
 ## Player Experience
 
@@ -121,3 +124,15 @@
 26. **US-14.3.26** — **As a** QA tester (P-19), **I want** compile-time graph validation to produce
     structured error messages identifying the exact problem, **so that** invalid configurations fail
     with actionable diagnostics.
+
+## Data Parallelism and I/O Infrastructure
+
+27. **US-14.3.27** — **As an** engine developer (P-26), **I want** `parallel_for` with auto-tuned
+    chunk sizes based on element count and core count, **so that** physics broadphase, frustum
+    culling, and particle updates saturate every core without manual chunk tuning per subsystem.
+28. **US-14.3.28** — **As an** engine developer (P-26), **I want** a pre-allocated aligned buffer
+    pool for I/O operations where slots are acquired and released without allocation, **so that**
+    file reads and writes avoid per-operation allocation overhead under streaming load.
+29. **US-14.3.29** — **As an** engine developer (P-26), **I want** GPU I/O via DirectStorage on
+    Windows and Metal I/O on Apple with a staging-buffer fallback on Linux, **so that** asset
+    loading bypasses the CPU staging path and reduces load times for large open-world levels.

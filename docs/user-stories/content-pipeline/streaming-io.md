@@ -95,3 +95,25 @@
 2. **US-12.5.15** — **As a** game player (P-23), **I want** assets streamed from a CDN on first
    access, verified, and cached locally for future use, **so that** I can start playing without
    downloading the entire game upfront.
+
+## GPU Direct Storage and Residency
+
+| ID         | Persona                    |
+|------------|----------------------------|
+| US-12.5.16 | engine developer (P-26)    |
+| US-12.5.17 | engine developer (P-26)    |
+| US-12.5.18 | game developer (P-15)      |
+| US-12.5.19 | game player (P-23)         |
+
+1. **US-12.5.16** — **As an** engine developer (P-26), **I want** textures and meshes loaded
+   directly from disk into GPU memory via DirectStorage, Metal I/O, or io_uring staging, **so that**
+   streaming saturates NVMe bandwidth without consuming CPU memory bandwidth.
+2. **US-12.5.17** — **As an** engine developer (P-26), **I want** GPU compute decompression of
+   streamed assets in place, **so that** the CPU is free for gameplay and simulation during
+   open-world traversal.
+3. **US-12.5.18** — **As a** game developer (P-15), **I want** the residency manager to enforce
+   per-asset-type memory budgets with LRU eviction and predictive camera-driven prefetch,
+   **so that** open-world games stay within memory limits without manual unload calls.
+4. **US-12.5.19** — **As a** game player (P-23), **I want** the engine to evict unused assets during
+   scene transitions and on OS memory pressure, **so that** long play sessions do not crash from
+   out-of-memory errors.

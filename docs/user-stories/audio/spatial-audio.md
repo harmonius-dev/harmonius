@@ -33,6 +33,13 @@
 | US-5.2.7.3  | engine developer (P-26) |
 | US-5.2.7.4  | game designer (P-5)     |
 | US-5.2.7.5  | player (P-23)           |
+| US-5.2.8.1  | level designer (P-6)    |
+| US-5.2.8.2  | audio designer (P-14)   |
+| US-5.2.8.3  | player (P-23)           |
+| US-5.2.9.1  | engine developer (P-26) |
+| US-5.2.9.2  | engine developer (P-26) |
+| US-5.2.10.1 | game designer (P-5)     |
+| US-5.2.10.2 | audio designer (P-14)   |
 
 1. **US-5.2.1.1** — **As a** audio designer (P-14), **I want** sounds positioned in world space with
    per-listener panning, distance gain, and Doppler pitch shift every audio frame, **so that** 3D

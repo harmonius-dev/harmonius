@@ -14,6 +14,7 @@
 | F-2.7.8  | Voxel-Based Volumetric Clouds                 |
 | F-2.7.9  | Art-Directable Breaking Waves                 |
 | F-2.7.10 | Weather System                                |
+| F-2.7.11 | Detail Meshes and Foliage                     |
 
 1. **F-2.7.1** — Physically-based sky rendering using precomputed atmosphere LUTs (transmittance,
    multi-scattering, sky view, aerial perspective). Supports time-of-day transitions with sun
@@ -88,3 +89,14 @@
       precipitation particles; no material wetness. Switch: precipitation particles at reduced count
       (500 max); simplified puddle rendering. Desktop: full weather system. High-end: full quality
       with extended precipitation range.
+11. **F-2.7.11** — GPU-instanced detail meshes and foliage (grass blades, rocks, flowers, shrubs,
+    ground debris) scattered across terrain via density maps and biome masks. Instances are
+    generated per-frame on the GPU from compact scatter records, culled against frustum and distance
+    thresholds, and batched into indirect draw calls. Distance-based LOD transitions each instance
+    through high-poly, low-poly, and billboard tiers with hysteresis. Wind animation is driven by
+    the shared wind field texture (F-11.4.8), producing coherent sway across foliage, particles, and
+    weather effects.
+    - **Deps:** F-2.3.7 (GPU Instancing), F-2.3.2 (GPU Frustum Culling)
+    - **Platform:** Mobile: reduced scatter density, billboard-only LOD past near range. Switch:
+      medium density with reduced billboard distance. Desktop: full density with all LOD tiers.
+      High-end: extended scatter range with per-instance wind response.

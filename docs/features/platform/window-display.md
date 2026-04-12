@@ -130,3 +130,65 @@
    - **Platform:** `LogicalSize.to_physical(scale_factor)` and
      `PhysicalSize.to_logical(scale_factor)` handle all conversions. All window size, position, and
      event payloads use these types.
+
+## Cursor and Transparency
+
+| ID        | Feature                           |
+|-----------|-----------------------------------|
+| F-14.1.13 | Cursor Management API             |
+| F-14.1.14 | Transparent Window Backgrounds    |
+
+1. **F-14.1.13** — Cursor management API on `Window`: `set_cursor` (icon), `set_cursor_visible`
+   (hide/show), `set_cursor_confined` (lock to window bounds), `set_cursor_captured` (capture for
+   relative motion input, e.g., FPS camera), and `set_cursor_position` (warp). Capture mode delivers
+   raw delta motion events instead of absolute cursor positions, required for FPS camera and editor
+   viewport navigation.
+   - **Deps:** F-14.1.1
+   - **Platform:** Windows uses `SetCursor`, `ShowCursor`, `ClipCursor`, and raw input; macOS uses
+     `NSCursor` with `CGAssociateMouseAndMouseCursorPosition`; Linux uses `xcb_grab_pointer` (X11)
+     or `zwp_relative_pointer_v1` (Wayland).
+2. **F-14.1.14** — Support creating windows with transparent backgrounds via
+   `WindowConfig.transparent`. Transparent windows composite correctly over the desktop or behind
+   other windows, enabling overlays, tool panels, and photo-mode viewports.
+   - **Deps:** F-14.1.1
+   - **Platform:** Windows uses `WS_EX_LAYERED` or a swapchain with alpha; macOS uses
+     `NSWindow.isOpaque = false` and a clear background color; Linux Wayland requires a compositor
+     that supports alpha blending.
+
+## Thread-Safety Channels
+
+| ID        | Feature                                 |
+|-----------|-----------------------------------------|
+| F-14.1.15 | Render Thread Surface Event Delivery    |
+| F-14.1.16 | Thread-Safe Window Mutation Channel     |
+
+1. **F-14.1.15** — A dedicated `SurfaceEvent` channel (Resized, ScaleFactorChanged, HdrChanged,
+   SurfaceInvalidated) delivered to the render thread so that swapchain recreation happens at the
+   render thread's frame boundary rather than mid-frame. Separate from the general window event
+   channel so render thread wakeups are isolated from input and lifecycle events.
+   - **Deps:** F-14.1.9
+   - **Platform:** None. Channels are Rust-side primitives.
+2. **F-14.1.16** — A bounded `WindowRequest` channel from the game loop thread to the main thread
+   carrying window mutation requests (mode change, resize, cursor capture, position). The main
+   thread drains the channel each event-loop iteration and invokes the OS windowing APIs, which must
+   only run on the main thread for cross-platform safety. Responses (success, error) are posted back
+   to the caller via an oneshot reply channel.
+   - **Deps:** F-14.1.1, F-14.1.9
+   - **Platform:** Required on macOS (AppKit main-thread-only), Linux Wayland (main-thread-only
+     event dispatch), and required-by-convention on Windows.
+
+## HDR Negotiation
+
+| ID        | Feature                                |
+|-----------|----------------------------------------|
+| F-14.1.17 | HDR Negotiation and Dynamic Metadata   |
+
+1. **F-14.1.17** — An `HdrNegotiator` that queries display HDR support (`is_hdr_supported`), reports
+   display peak luminance (`display_peak_luminance`), enables HDR with the appropriate color space
+   (`enable`), disables HDR (`disable`), and supports dynamic peak luminance metadata updates
+   (`update_peak_luminance`) when the tone mapper adjusts its output range. The OS compositor
+   receives accurate HDR metadata each frame rather than a single static value at swapchain
+   creation.
+   - **Deps:** F-14.1.6
+   - **Platform:** DXGI HDR metadata on Windows, CAMetalLayer EDR headroom on Apple,
+     `wp_color_management_v1` on Wayland.

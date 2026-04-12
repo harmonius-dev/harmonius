@@ -57,22 +57,48 @@
    - **Verification:** Stack 10 boxes with and without warm starting. Assert warm-started solve
      converges in fewer iterations. Assert WarmStartData persists across substeps.
 
+## LOD and Fallbacks
+
+10. **R-4.3.10** -- The engine **SHALL** scale the cached `WarmStartData` impulses by a configurable
+    per-platform warm-start factor at the start of each solve pass, with the factor tunable per
+    `SolverConfig`.
+    - **Rationale:** Tunable warm-start scaling trades convergence speed against oscillation risk
+      differently per platform tier.
+    - **Verification:** Vary the warm-start factor from 0.5 to 1.0 on a ragdoll stack. Assert
+      convergence iterations decrease as the factor increases. Assert no oscillation at the
+      configured default.
+11. **R-4.3.11** -- The engine **SHALL** reduce ragdoll simulation fidelity based on camera distance
+    via `RagdollLod` tiers, running full joint solve at near distance, reduced bone counts at mid
+    distance, and replacing distant ragdolls with animation-driven blend at zero physics cost.
+    - **Rationale:** Mass-casualty scenes must keep per-ragdoll cost within the physics budget
+      without visibly popping distant ragdolls.
+    - **Verification:** Place 32 ragdolls at varied distances. Assert near ragdolls run full solve,
+      mid-distance ragdolls use the reduced bone set, and far ragdolls pay zero physics cost.
+12. **R-4.3.12** -- The engine **SHALL** fall back to position-based Verlet integration without
+    collision for chain joints beyond a configurable distance threshold, skipping the full
+    constraint solver.
+    - **Rationale:** Decorative environmental chains at distance should not consume solver time when
+      Verlet approximation is visually sufficient.
+    - **Verification:** Place a chain at twice the Verlet fallback distance. Assert the chain uses
+      Verlet integration (no solver rows). Move the camera closer and assert the full solver
+      resumes.
+
 ## Non-Functional Requirements
 
-10. **R-4.3.NF1** -- The engine **SHALL** achieve constraint solver throughput of at least 5000 rows
+13. **R-4.3.NF1** -- The engine **SHALL** achieve constraint solver throughput of at least 5000 rows
     per millisecond, solving 500 joints within 4 ms.
     - **Rationale:** Joint-heavy scenes (ragdolls, vehicles, chains) must stay within the physics
       frame budget.
     - **Verification:** Benchmark 500 joints across mixed types. Assert total solve time stays
       within 4 ms.
 
-11. **R-4.3.NF2** -- The engine **SHALL** activate a ragdoll from animation within 0.5 ms per
+14. **R-4.3.NF2** -- The engine **SHALL** activate a ragdoll from animation within 0.5 ms per
     ragdoll, supporting 8 simultaneous activations per frame.
     - **Rationale:** Mass-casualty events must not cause frame hitches.
     - **Verification:** Activate 8 ragdolls in a single frame. Assert per-ragdoll activation cost
       stays within 0.5 ms.
 
-12. **R-4.3.NF3** -- The engine **SHALL** maintain chain stability for 32-segment chains over 60
+15. **R-4.3.NF3** -- The engine **SHALL** maintain chain stability for 32-segment chains over 60
     seconds with positional drift below 1 mm.
     - **Rationale:** Visible chain stretching breaks immersion for ropes, cables, and bridges.
     - **Verification:** Simulate a 32-segment chain under gravity for 60 s. Assert endpoint drift

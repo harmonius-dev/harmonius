@@ -68,3 +68,90 @@
    - **Deps:** F-8.2.5
    - **Platform:** Server-side feature; benefits all client platforms equally. Mobile clients
      benefit most from dormancy reducing their limited bandwidth consumption.
+
+## Interest Management
+
+| ID      | Feature                         |
+|---------|---------------------------------|
+| F-8.2.7 | Grid-Based Networking Relevancy |
+
+1. **F-8.2.7** — Grid-based interest management for networking relevancy where the world is divided
+   into fixed-size cells. Each client subscribes to cells near its position, with subscription
+   changes triggered on cell boundary transitions. Update frequency decreases by cell distance: same
+   cell at full rate (e.g., 60 Hz), adjacent cells at half rate (30 Hz), two-away cells at quarter
+   rate (10 Hz), and beyond-range cells excluded. Grid cell size is configurable per game.
+   - **Deps:** F-8.2.3
+   - **Platform:** Mobile uses larger cells and lower base rates to fit within bandwidth budgets.
+
+## 2D Support
+
+| ID      | Feature                |
+|---------|------------------------|
+| F-8.2.8 | 2D Multiplayer Support |
+
+1. **F-8.2.8** — Vec2 spatial variants for player input movement vectors, hitbox data (circle and
+   rect), multicast filter Spatial(Vec2, radius), and error correction alongside 3D equivalents. 2D
+   games use the same transport, replication, and prediction infrastructure without paying 3D vector
+   overhead.
+   - **Deps:** F-8.2.1
+
+## Scale and Layering
+
+| ID      | Feature                           |
+|---------|-----------------------------------|
+| F-8.2.9 | Player Layering (Vertical Scaling)|
+
+1. **F-8.2.9** — Multiple instances of the same world region run on different servers as "layers"
+   for massive populations (target 1M+ concurrent players per world). Overflow assignment routes new
+   arrivals to less populated layers; layer transfer requests let players switch layers to join
+   friends; layer merging consolidates layers as population drops; layer locking prevents
+   mid-encounter transfers during boss fights. Ghost entities render cross-layer visibility so
+   neighboring layers appear populated.
+   - **Deps:** F-8.7.1, F-8.7.3
+   - **Platform:** Server-side. Transparent to clients beyond layer selection UI.
+
+## Delta Compression
+
+| ID       | Feature                                |
+|----------|----------------------------------------|
+| F-8.2.10 | Replicated Property Quantization       |
+| F-8.2.11 | Adaptive Replication Send Rate         |
+| F-8.2.12 | Networked Entity Authority Transfer    |
+| F-8.2.13 | Entity Tombstone with TTL              |
+| F-8.2.14 | Codegen Diff/Patch for Replication     |
+| F-8.2.15 | Structural Replication Op Ordering     |
+
+1. **F-8.2.10** — Per-field quantization attributes (`#[quantize(min, max, bits)]`) on replicated
+   component properties encode fields with configurable bit precision. Typical reductions: position
+   deltas from 12 to 6 bytes, rotation from 16-byte quaternion to 4 bytes via smallest-three,
+   velocity from 12 to 4 bytes. Quantization is reversible client-side to within the specified
+   precision and dramatically reduces replication bandwidth.
+   - **Deps:** F-8.2.1, F-8.2.14
+2. **F-8.2.11** — Per-client replication frequency adapts to measured RTT, packet loss, and
+   congestion state. Low-RTT connections run at full 60 Hz; moderate conditions drop to 30 Hz; high
+   loss reduces rate and adds redundancy; mobile clients cap at a configurable maximum (e.g., 20
+   Hz). The adaptive send rate integrates with the priority scheduler.
+   - **Deps:** F-8.2.5, F-8.1.7
+   - **Platform:** Mobile clients are always tagged for capped send rate.
+3. **F-8.2.12** — Authority transfer between server and client (or between clients) for networked
+   entities uses monotonic AuthorityEpoch counters, AuthorityShard tags, and PhysicsTransferSnapshot
+   full-state snapshots. Transfer flow: request, snapshot, ACK, epoch bump, old authority
+   relinquishes. Epoch-based conflict resolution ensures no state loss even if multiple transfer
+   requests race.
+   - **Deps:** F-8.2.1, F-8.4.1
+4. **F-8.2.13** — Destroyed replicated entities are marked with a Tombstone (destroyed_at,
+   expires_at, epoch) that persists for 2x the maximum connection RTT before the entity handle is
+   recycled. Tombstones prevent stale references from high-latency clients acknowledging or
+   targeting entities that have already been destroyed on the server.
+   - **Deps:** F-8.2.1
+5. **F-8.2.14** — Build-time codegen generates per-component diff() and patch() methods producing
+   field-level delta compression with no runtime reflection overhead. A u64 changed_mask flags which
+   fields were modified since the last baseline, limiting replicated components to a maximum of 64
+   fields per component (larger components must be split into sub-components). The codegen output is
+   pure Rust, inlined by the compiler.
+   - **Deps:** F-8.2.1, F-8.2.2
+6. **F-8.2.15** — Structural replication operations are prioritized over state deltas via a
+   ReplicationOp enum and ReplicationOpPriority ordering: EntityDestroy=0, ComponentRemove=1,
+   ComponentAdd=2, StateDelta=3. Clients process entity lifecycle changes before property updates,
+   ensuring add/remove operations are never reordered past state updates that reference them.
+   - **Deps:** F-8.2.1

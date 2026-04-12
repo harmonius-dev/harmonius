@@ -138,6 +138,7 @@
 |----------|----------------------------------|
 | F-2.2.14 | Render Graph as Task Graph Phase |
 | F-2.2.15 | Safe GPU Command Encoding        |
+| F-2.2.16 | Sub-Graph Templates              |
 
 1. **F-2.2.14** — Render passes compile into `TaskNode` entries within the unified game loop graph
    (F-14.3.14). The render graph compiler emits nodes that the parent `TaskGraph` schedules
@@ -155,3 +156,11 @@
    - **Deps:** F-2.2.14, F-2.1.2, F-14.3.8
    - **Platform:** None. Encoding scope safety is enforced by Rust lifetimes at compile time with no
      runtime cost.
+3. **F-2.2.16** — Reusable sub-graph templates instantiated multiple times within a render graph. A
+   sub-graph template declares a group of passes and their internal resource bindings as a
+   parameterizable unit; the graph builder instantiates the template at one or more call sites with
+   variant slots that resolve to different inputs, outputs, or capability-gated pass variants. Used
+   for repeated pass groups such as per-cascade shadow rendering, per-probe cubemap capture, and
+   per-layer post-process chains without manual duplication.
+   - **Deps:** F-2.2.1, F-2.2.12
+   - **Platform:** None. Sub-graph templates expand at graph-compile time with no runtime overhead.

@@ -57,3 +57,39 @@
    frame rate targets.
    - **Deps:** F-11.1.1, F-1.9.1 (Shared BVH)
    - **Platform:** Mobile platforms use aggressive LOD defaults with lower particle caps.
+
+## Simulation Forces and Outputs
+
+| ID       | Feature                      |
+|----------|------------------------------|
+| F-11.6.6 | Force Field Volumes          |
+| F-11.6.7 | VFX Audio Emission           |
+| F-11.6.8 | VFX Volumetric Density Output |
+
+1. **F-11.6.6** — `ForceField` components expose configurable shapes (sphere, box, capsule,
+   cylinder), force kinds (radial, vortex, directional, drag), strength, and falloff curves. Force
+   fields influence both particle simulation and debris trajectories, applying accumulated
+   accelerations during the GPU particle update step. Multiple overlapping force fields compose
+   additively. Used for wind tunnels, black hole attractors, updrafts, repulsor explosions, and
+   environmental drag zones (water, dense fog).
+   - **Deps:** F-11.1.1, F-11.1.2
+   - **Platform:** Mobile caps concurrent force fields per particle system (4 vs 16 on desktop). All
+     shapes supported on all platforms.
+2. **F-11.6.7** — Effect graph `AudioEmit` output nodes emit spatial audio events triggered by
+   particle lifecycle events: spawn, death, and collision. Each emission carries the particle
+   position, velocity, and surface context (for collision) which parameterize the resulting audio
+   source. Used to play drip sounds at rain puddle formation, sparking hits on metal collisions, and
+   crackle for fire particles. Audio events flow into the spatial audio system for HRTF and
+   occlusion processing.
+   - **Deps:** F-11.6.1, F-5.1.3 (Spatial Audio)
+   - **Platform:** Mobile caps audio event emission rate per emitter to stay within the audio voice
+     budget (16 voices). All platforms share the same emission semantics.
+3. **F-11.6.8** — Effect graph `VolumetricDensity` output nodes inject per-particle density and
+   color into the volumetric fog froxel grid (F-2.7.2), enabling smoke and steam effects to
+   participate in volumetric light scattering and shadow receiving. Density contributions are
+   accumulated per froxel with temporal reprojection for stability. Used for battlefield smoke,
+   magical fog clouds, steam vents, and weather-driven volumetric fog enhancements.
+   - **Deps:** F-11.6.1, F-2.7.2 (Ray-Marched Volumetric Fog)
+   - **Platform:** Mobile: disabled; volumetric fog uses screen-space height fog fallback. Switch:
+     reduced froxel grid resolution. Desktop/High-end: full froxel injection with temporal
+     reprojection.

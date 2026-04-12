@@ -20,6 +20,7 @@
 | F-2.5.14 | Voxel-Based Global Illumination               |
 | F-2.5.15 | Neural Radiance Cache                         |
 | F-2.5.16 | Stochastic Screen-Space Reflections           |
+| F-2.5.17 | Baked Lightmaps as GI Fallback                |
 
 1. **F-2.5.1** — Bottom-level acceleration structure (BLAS) building from meshlet geometry with
    post-build compaction to reduce memory. Top-level acceleration structure (TLAS) rebuilt or refit
@@ -153,3 +154,13 @@
       with simplified sampling (no BRDF importance sampling). Desktop: half-res with full BRDF
       sampling and temporal filter. High-end: half-res with spatial + temporal denoiser and adjacent
       pixel reuse.
+17. **F-2.5.17** — Baked lightmap loading and rendering as the lowest-tier indirect lighting
+    fallback when no ray tracing hardware is present and voxel GI exceeds budget. Offline bakes
+    store directional irradiance in texture atlases UV-mapped onto static geometry; dynamic objects
+    sample irradiance volumes placed alongside the lightmaps. Lightmaps are selected automatically
+    by the GI tier system when higher-tier techniques (RT GI, DDGI, surfel GI, voxel GI) are
+    unavailable, ensuring all platforms receive plausible indirect lighting.
+    - **Deps:** F-2.4.2
+    - **Platform:** Mobile: primary GI path; compressed ASTC lightmap atlases with irradiance volume
+      dynamic lighting. Switch: lightmap atlases with per-probe sampling. Desktop: used as fallback
+      only when RT hardware absent. High-end: never selected; always superseded by higher-tier GI.

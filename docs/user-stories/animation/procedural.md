@@ -157,3 +157,24 @@
 13. **US-9.3.11.3** -- **As an** engine developer (P-26), **I want** a locomotion profiler panel
     showing per-frame IK iterations, foot plant errors, and physics force magnitudes, **so that**
     performance bottlenecks are identifiable.
+
+## Pose Source Composition and Advanced IK
+
+| ID           | Persona                    |
+|--------------|----------------------------|
+| US-9.3.12.1  | character animator (P-11)  |
+| US-9.3.13.1  | game developer (P-15)      |
+| US-9.3.14.1  | character artist (P-9)     |
+| US-9.3.15.1  | engine developer (P-26)    |
+
+1. **US-9.3.12.1** -- **As a** character animator (P-11), **I want** a full-body IK solver with
+   center-of-mass balance and prioritized end-effector targets, **so that** characters hold
+   physically plausible poses when reaching overhead or leaning on objects.
+2. **US-9.3.13.1** -- **As a** game developer (P-15), **I want** motion matching, IK, ragdoll,
+   spring bones, and keyframe clips to compose freely in the animation layer stack, **so that**
+   complex creatures can combine procedural and authored animation without bespoke glue code.
+3. **US-9.3.14.1** -- **As a** character artist (P-9), **I want** spring bones on capes and tails to
+   collide with the character body, **so that** secondary motion never penetrates the mesh.
+4. **US-9.3.15.1** -- **As an** engine developer (P-26), **I want** to load trained neural
+   locomotion policies as an AnimationLayerStack pose source, **so that** research-tier learned
+   motion works inside the standard animation pipeline without forking.

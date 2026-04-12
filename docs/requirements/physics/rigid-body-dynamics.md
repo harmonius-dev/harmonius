@@ -63,6 +63,97 @@
     - **Verification:** Walk over rough terrain. Assert no vibration. Assert smoothing half-life is
       configurable.
 
+## Advanced Forces and Friction
+
+11. **R-4.1.11** -- The engine **SHALL** apply gyroscopic torque `tau = omega x (I * omega)` during
+    integration for rigid bodies with the gyroscopic flag set on `RigidBody`, producing correct
+    precession and nutation under external torques for spinning projectiles, wheels, and tops.
+    - **Rationale:** Omitting gyroscopic torque causes spinning objects to respond incorrectly to
+      external torque and fail to precess, breaking realistic behavior for tops and gyros.
+    - **Verification:** Spin a top under gravity with the gyroscopic flag. Assert the top precesses
+      around the vertical axis. Disable the flag and assert the top falls without precession.
+12. **R-4.1.12** -- The engine **SHALL** apply rolling friction torque opposing angular velocity on
+    contacting bodies, scaled by a `rolling_friction` coefficient on `PhysicsMaterial` and the
+    contact normal force, bringing spheres and wheels to rest on flat surfaces.
+    - **Rationale:** Without rolling friction, spheres and wheels roll indefinitely on flat ground,
+      producing unrealistic billiards, vehicle, and marble behavior.
+    - **Verification:** Roll a sphere on flat ground with non-zero rolling friction. Assert the
+      sphere decelerates to rest within the configured time. Assert zero rolling friction preserves
+      motion.
+13. **R-4.1.13** -- The engine **SHALL** support directional friction on `PhysicsMaterial` with a
+    primary friction axis (`friction_direction`) and a separate `lateral_friction` coefficient,
+    enabling ice surfaces, conveyor belts, rails, skis, and directional grip.
+    - **Rationale:** Isotropic friction cannot represent surfaces where grip differs between
+      travel-aligned and lateral directions.
+    - **Verification:** Slide a body along a rail surface. Assert axis-aligned motion preserves
+      velocity while lateral motion decelerates at the lateral coefficient rate.
+
+## Gravity Models and Multi-Planet
+
+14. **R-4.1.14** -- The engine **SHALL** select per-world gravity via a `GravityMode` ECS resource
+    supporting `Uniform` direction, `Radial { g }` toward world origin, and user-supplied custom
+    gravity functions, with physics simulation continuing in flat planet-local Cartesian space
+    regardless of mode.
+    - **Rationale:** Planet-surface games need radial gravity while flat-world games need uniform
+      gravity; all collision math must remain Cartesian to avoid curved-space physics.
+    - **Verification:** Set `GravityMode::Radial { g: 9.81 }`. Drop bodies at four points around the
+      origin. Assert each accelerates toward the origin. Switch to `Uniform` and assert parallel
+      fall.
+15. **R-4.1.15** -- The engine **SHALL** support multiple planets as separate ECS worlds, each with
+    its own physics BVH and gravity mode, with inter-planetary entity migration that preserves
+    velocity through universe-level Euclidean transforms and breaks joints that span the boundary
+    unless both bodies migrate together.
+    - **Rationale:** Per-planet worlds isolate physics solves and avoid f32 precision loss across
+      interstellar distances.
+    - **Verification:** Create two planet worlds. Migrate a body from planet A to planet B. Assert
+      velocity transforms through universe space correctly. Assert joints spanning worlds emit
+      `JointBroken` events.
+
+## 2D Physics
+
+16. **R-4.1.16** -- The engine **SHALL** provide a 2D rigid body simulation mode with scalar moment
+    of inertia, 2D collider shapes (`Circle`, `Rectangle`, `Capsule2D`, `ConvexPolygon`, `Edge`,
+    `Chain`), a separate 2D physics BVH, and a 2D constraint solver operating on 2 linear plus 1
+    angular degrees of freedom, coexisting with 3D physics in the same ECS world.
+    - **Rationale:** 2D and 2.5D games need specialized scalar-inertia physics while sharing the
+      island, sleeping, CCD, and solver infrastructure with 3D.
+    - **Verification:** Spawn a 2D circle and a 3D box in the same world. Assert the 2D body solves
+      against 2D colliders only. Assert the 3D body ignores the 2D BVH. Verify 2D constraint solver
+      uses 2 linear + 1 angular DoF.
+
+## Character Controller Extensions
+
+17. **R-4.1.17** -- The engine **SHALL** support character controller wall sliding where contact
+    with steep surfaces decomposes velocity into wall-parallel and wall-normal components with
+    configurable wall friction, wall-angle threshold, and corner handling.
+    - **Rationale:** Wall sliding produces smooth traversal in tight corridors and against
+      near-vertical geometry without abrupt stops.
+    - **Verification:** Move a character into a wall at 45 degrees. Assert velocity decomposes into
+      sliding motion along the wall. Assert the wall friction coefficient attenuates parallel
+      velocity.
+18. **R-4.1.18** -- The engine **SHALL** support character controller multi-jump with configurable
+    max jump count, wall jump with configurable horizontal and vertical force and cling window, and
+    pre-land jump buffer with configurable duration.
+    - **Rationale:** Platformer movement feel requires tunable jump counts, wall jumps, and buffered
+      input without code changes per game.
+    - **Verification:** Configure max jump count 2 and verify double jump succeeds. Configure wall
+      jump and verify a wall-held character jumps away from the wall. Configure jump buffer 150 ms
+      and verify a pre-land jump press is consumed on the next ground contact.
+19. **R-4.1.19** -- The engine **SHALL** support character controller crouching via configurable
+    height scale and speed scale, with a ceiling clearance shape cast before uncrouching to prevent
+    clipping into geometry.
+    - **Rationale:** Uncrouching under a low ceiling would otherwise pop the character into solid
+      geometry.
+    - **Verification:** Crouch a character under a low ceiling. Attempt to uncrouch. Assert the
+      controller remains crouched until the ceiling is clear.
+20. **R-4.1.20** -- The engine **SHALL** apply push forces from character controllers to dynamic
+    rigid bodies on contact, with force proportional to controller mass and velocity and a
+    configurable push strength per controller.
+    - **Rationale:** Characters must visibly interact with loose dynamic props rather than treating
+      them as immovable.
+    - **Verification:** Walk a character into a lightweight dynamic box. Assert the box accelerates
+      away from the controller proportional to the configured push strength.
+
 ## Non-Functional Requirements
 
 11. **R-4.1.NF1** -- The engine **SHALL** simulate 2000 active rigid bodies with 4 substeps within 4

@@ -137,3 +137,101 @@
    filtered ground normal for visual tilting on slopes). The smoothed ground state feeds into the
    foot placement IK system (F-9.3.5) for natural-looking locomotion on uneven surfaces.
    - **Deps:** F-4.1.8 (Character Controller), F-4.4.1 (Ray Casts), F-9.3.5 (Foot Placement)
+
+## Advanced Forces and Friction
+
+| ID       | Feature |
+|----------|---------------------- |
+| F-4.1.11 | Gyroscopic Forces |
+| F-4.1.12 | Rolling Friction |
+| F-4.1.13 | Anisotropic Friction |
+
+1. **F-4.1.11** — Apply gyroscopic torque `τ = ω × (I · ω)` during integration for spinning bodies
+   (tops, wheels, gyros, spinning projectiles) so that precession and nutation behave correctly
+   under external torques. A per-body `gyroscopic: bool` flag on `RigidBody` gates the computation,
+   keeping the cost off bodies that do not need it. Without gyroscopic forces, spinning objects
+   respond incorrectly to torque and fail to precess.
+   - **Deps:** F-4.1.1, F-1.1.2
+   - **Platform:** Desktop and high-end PC only by default. Mobile and Switch opt in per-body.
+2. **F-4.1.12** — Apply a rolling friction torque opposing angular velocity on bodies in contact,
+   scaled by a `rolling_friction` coefficient on `PhysicsMaterial` and the contact normal force.
+   Rolling friction brings spheres and wheels to rest on flat surfaces rather than rolling forever
+   and is essential for billiards, vehicles, and marble gameplay.
+   - **Deps:** F-4.1.3, F-4.2.9 (Physics Material Assets)
+3. **F-4.1.13** — Apply directionally-biased friction using an optional
+   `friction_direction: Option<Vec3>` and `lateral_friction` on `PhysicsMaterial`. Static and
+   dynamic friction apply along the configured axis while a separate lateral coefficient governs the
+   perpendicular direction. Enables ice surfaces, conveyor belts, rails, skis, and directional grip.
+   - **Deps:** F-4.1.3, F-4.2.9
+
+## Gravity Models and Multi-Planet
+
+| ID       | Feature |
+|----------|------------------------------- |
+| F-4.1.14 | Configurable Gravity Modes |
+| F-4.1.15 | Multi-Planet Physics Worlds |
+
+1. **F-4.1.14** — A `GravityMode` ECS resource selects the per-world gravity function: `Uniform`
+   (constant direction for flat worlds), `Radial { g }` (acceleration toward world origin for
+   planets), or `Custom(fn(Vec3) -> Vec3)` (user-defined field). The `IntegrationSystem` reads
+   `Res<GravityMode>` and computes per-body gravity each substep. All collision detection and
+   constraint solving continue in flat planet-local Cartesian space regardless of mode.
+   - **Deps:** F-4.1.1, F-1.1.23 (World Resources)
+2. **F-4.1.15** — Each planet is a separate ECS world (F-1.1.34) with its own physics BVH, gravity
+   mode, and active islands. No cross-planet collision detection. Inter-planetary entity migration
+   uses the world migration system (F-1.1.35): physics state is serialized, the entity is moved to
+   the destination world, position and velocity are transformed through universe-level Euclidean
+   space, and physics state is deserialized. Joints spanning the boundary emit `JointBroken` events
+   unless both bodies migrate together.
+   - **Deps:** F-4.1.14, F-1.1.34 (Multiple World Support), F-1.1.35 (Entity Migration Between
+     Worlds)
+   - **Platform:** Mobile: max 2 planet worlds. Switch: max 3. Desktop: configurable, default 8.
+     High-end PC: unlimited.
+
+## 2D Physics
+
+| ID       | Feature |
+|----------|----------------- |
+| F-4.1.16 | 2D Rigid Body Mode |
+
+1. **F-4.1.16** — A 2D rigid body simulation mode for 2D and 2.5D games that reuses the same island,
+   sleeping, CCD, and solver infrastructure specialized to 2D. 2D bodies carry scalar moment of
+   inertia rather than an inertia tensor, and 2D colliders (`Circle`, `Rectangle`, `Capsule2D`,
+   `ConvexPolygon`, `Edge`, `Chain`) live in a separate 2D physics BVH. The 2D constraint solver
+   operates on 2 linear + 1 angular degrees of freedom. 2D and 3D physics can coexist in the same
+   ECS world for 2.5D games mixing 2D gameplay with 3D debris.
+   - **Deps:** F-4.1.1, F-4.1.5, F-4.2.1
+   - **Platform:** 2D physics available on all tiers. Mobile uses SI solver with reduced iteration
+     count; desktop uses TGS with full iterations.
+
+## Character Controller Extensions
+
+| ID       | Feature |
+|----------|----------------------------------- |
+| F-4.1.17 | Wall Sliding and Velocity Decomposition |
+| F-4.1.18 | Multi-Jump, Wall Jump, and Jump Buffer |
+| F-4.1.19 | Crouch with Ceiling Clearance Check |
+| F-4.1.20 | Character-to-Rigid-Body Push Forces |
+
+1. **F-4.1.17** — Wall sliding decomposes character velocity into wall-parallel and wall-normal
+   components when the controller contacts a surface steeper than the slope limit. A `WallSlide`
+   component stores wall friction, wall-angle threshold, and inside-corner handling mode (stop,
+   slide, deflect). The movement system projects desired velocity onto the wall plane each substep,
+   attenuating the parallel component by the wall friction coefficient.
+   - **Deps:** F-4.1.8 (Character Controller), F-4.4.2 (Shape Casting)
+2. **F-4.1.18** — A `JumpController` component stores max jump count, jumps remaining, wall jump
+   force vector, wall-cling window duration, and jump-buffer window duration. The movement system
+   decrements the jump counter on each jump, consumes buffered jump input on ground contact, and
+   applies wall jump impulse when a wall contact exists within the cling window. All values are
+   tunable per character without code changes.
+   - **Deps:** F-4.1.8, F-4.1.17
+3. **F-4.1.19** — A `CrouchController` component stores crouched height scale, crouched speed scale,
+   and a ceiling clearance check distance. Entering crouch immediately scales the controller
+   capsule. Leaving crouch performs an upward shape cast from the current position and remains
+   crouched until the cast clears, preventing the character from clipping into overhead geometry.
+   - **Deps:** F-4.1.8, F-4.4.2
+4. **F-4.1.20** — A `PushStrength` component on the character controller scales the force applied to
+   contacted dynamic rigid bodies. On each contact with a dynamic body, the movement system computes
+   an impulse proportional to controller mass times velocity times push strength and applies it
+   through the contact solver, letting characters visibly push loose props.
+   - **Deps:** F-4.1.8, F-4.1.3 (Contact Resolution)

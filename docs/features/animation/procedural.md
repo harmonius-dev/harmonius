@@ -136,3 +136,39 @@
    magnitudes.
    - **Deps:** F-9.3.8, F-9.3.9, F-15.5.6 (Stat Overlays)
    - **Platform:** Development-only; stripped from shipping builds on all platforms.
+
+## Pose Source Composition and Advanced IK
+
+| ID       | Feature |
+|----------|----------------------------------- |
+| F-9.3.12 | Full Body IK Solver (FBIK) |
+| F-9.3.13 | Composable Animation Pose Sources |
+| F-9.3.14 | Spring Bone Collision with Character Body |
+| F-9.3.15 | Learned Locomotion Policy Pose Source |
+
+1. **F-9.3.12** — A full-body IK solver variant that unifies center-of-mass balance, momentum
+   tracking, and prioritized end-effector targets in a single solve pass. Distinct from per-chain
+   FABRIK, FBIK produces physically plausible reaching, leaning, and counterbalance poses from a
+   sparse set of end-effector targets plus a center-of-mass target.
+   - **Deps:** F-9.3.1 (Two-Bone IK), F-9.3.3 (FABRIK)
+   - **Platform:** FBIK enabled for hero characters on all tiers. Mobile falls back to FABRIK for
+     background characters.
+2. **F-9.3.13** — `AnimationLayerStack` accepts pose sources (`KeyframeClip`, `BlendSpace`,
+   `MotionMatching`, `MotionCapture`, `ProceduralIk`, `Ragdoll`, `SpringBones`, `ProceduralGait`,
+   `LearnedPolicy`) as interchangeable entries composable via override, additive, and multiply blend
+   modes with bone masks. The stack evaluates sources in order, feeding the accumulated pose into
+   the next layer.
+   - **Deps:** F-9.1.4 (Animation Layers), F-9.3.4 (Ragdoll), F-9.3.6 (Motion Matching)
+3. **F-9.3.14** — Spring bones carry a `CollideWith` reference to a character body capsule or signed
+   distance field proxy. Each simulation substep projects spring bone positions out of the proxy
+   volume, preventing capes, tails, and hair chains from clipping into the owning character.
+   Collision cost scales with spring bone count, not mesh triangle count.
+   - **Deps:** F-9.3.13
+   - **Platform:** Collision resolution enabled on all tiers for hero characters; disabled for
+     background characters on mobile.
+4. **F-9.3.15** — A `LearnedPolicy` pose source loads a trained neural-network locomotion model and
+   evaluates it per frame against character movement state, producing joint torques that drive a
+   physics-based locomotion layer. Research-tier feature shipped disabled by default; enables
+   experimentation with learned motion without forking the animation pipeline.
+   - **Deps:** F-9.3.9 (Physics-Based Locomotion), F-9.3.13
+   - **Platform:** Desktop and high-end PC only. Mobile and Switch not supported.
