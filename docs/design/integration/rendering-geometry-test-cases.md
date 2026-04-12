@@ -1,9 +1,14 @@
 # Rendering ↔ World Geometry Integration Test Cases
 
+Companion test cases for [rendering-geometry.md](rendering-geometry.md).
+
 ## Integration Tests
 
 | ID | Test | Input | Expected | Req |
 |----|------|-------|----------|-----|
+| TC-IR-3.2.8.1 | ProxyStore snapshot exposes render instance data | 100 entities with mesh+material components | ProxyStore contains 100 proxy entries with transforms, material IDs, visibility | IR-3.2.8 |
+| TC-IR-3.2.9.1 | HZB resource shared between meshlet and foliage culling | Build HZB once per frame | Both meshlet and foliage culling passes read the same `HzbResource` handle | IR-3.2.9 |
+| TC-IR-3.2.10.1 | Mobile indirect-draw fallback renders mesh | Run on platform without mesh shader support | Meshlets expand to index buffer, `DrawIndexedIndirect` produces equivalent visible triangles | IR-3.2.10 |
 | TC-IR-3.2.1.1 | Meshlet clusters upload to GPU | 1000 meshlet DAG | GPU buffer contains all clusters | IR-3.2.1 |
 | TC-IR-3.2.1.2 | Frustum cull rejects off-screen | 100 clusters, 50 outside frustum | 50 clusters in draw list | IR-3.2.1 |
 | TC-IR-3.2.2.1 | LOD selects coarsest valid cut | Object at 100m, 1-pixel threshold | Coarsest DAG level selected | IR-3.2.2 |
