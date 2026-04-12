@@ -316,6 +316,18 @@ Companion test cases for [particles.md](particles.md).
 1. **#1** — Warm-up duration=2.0, spawn_rate=100/s
    - **Expected:** Alive count approximately 200
 
+### TC-11.1.7.1 Eulerian Fluid Grid Step
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.1.7    |
+| 2 | R-11.1.7    |
+
+1. **#1** — Initialize 64x64x64 grid, inject density at center, advance one fluid step
+   - **Expected:** Density advected per velocity field, total mass conserved within 1%
+2. **#2** — Render volumetric output ray-march
+   - **Expected:** Non-zero output texels in injected region, zero outside fluid bounds
+
 ## Integration Tests
 
 ### TC-11.1.1.I1 Async Compute Overlap
