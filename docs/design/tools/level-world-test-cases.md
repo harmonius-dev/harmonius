@@ -190,6 +190,19 @@ Companion test cases for [level-world.md](level-world.md).
 1. **#1** — `simulate(region, Hydraulic, params)` twice with same params
    - **Expected:** Identical heightmap output both runs
 
+### TC-15.6.3.1 Terrain material weight map paint
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.6.3    |
+| 2 | R-15.6.3    |
+
+1. **#1** — `paint_weight(region, layer_id=2, radius=5.0, strength=1.0)` at center (10, 10)
+   - **Expected:** Weight-map channel 2 at (10, 10) equals 1.0; neighboring cells fall off per brush
+     curve.
+2. **#2** — Sum all layer weights at any cell after paint.
+   - **Expected:** Sum equals 1.0 within tolerance 1e-5 (normalized across layers).
+
 ### TC-15.6.4.1 Water River Spline
 
 | # | Requirement |
@@ -332,6 +345,81 @@ Companion test cases for [level-world.md](level-world.md).
 
 1. **#1** — Load cell (1,1), unload cell (0,0)
    - **Expected:** Cell (1,1) state is `Loaded`, cell (0,0) state is `Unloaded` in overlay
+
+### TC-15.2.1.I2 Place with grid, surface, and vertex snap
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.2.1   |
+
+1. **#1** — Place an entity three times at the same cursor, each with a different `SnapMode`
+   (`Grid { cell_size: 1.0 }`, `Surface`, `Vertex`).
+   - **Expected:** Grid place snaps to `(1,0,1)`; surface place aligns to terrain surface normal;
+     vertex place snaps to nearest mesh vertex within 0.01 m.
+
+### TC-15.2.2.I1 Nested entity template instantiation
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.2.2   |
+
+1. **#1** — Create a parent template containing a nested child template; instantiate the parent
+   twice; mutate the child template.
+   - **Expected:** Both parent instances receive the mutation in the child; hierarchy structure
+     preserved.
+
+### TC-15.2.4.I1 CSG brush blockout to static mesh
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.2.4   |
+
+1. **#1** — Use additive and subtractive brushes to construct a blockout, then convert to static
+   mesh.
+   - **Expected:** Resulting static mesh has closed manifold surface; boolean result matches the
+     visual preview.
+
+### TC-15.2.7.I1 Foliage paint with density and rules
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.2.7   |
+
+1. **#1** — Paint foliage over a 50x50 region with density 10/m^2 and exclusion rule for slopes > 45
+   degrees.
+   - **Expected:** Instances placed only on surfaces with slope <= 45 degrees; average density on
+     valid regions equals 10/m^2 within 10% tolerance.
+
+### TC-15.6.1.I1 Terrain sculpt brush with streaming
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.6.1   |
+
+1. **#1** — Sculpt a raise brush over a region spanning two streaming chunks.
+   - **Expected:** Both chunks updated and written to disk via platform-native I/O; brush stroke
+     visible seamlessly across chunk boundary.
+
+### TC-15.6.2.I1 Hydraulic and thermal GPU erosion
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.6.2   |
+
+1. **#1** — Simulate 100 iterations of hydraulic erosion followed by 50 of thermal on a 1024x1024
+   heightmap via GPU.
+   - **Expected:** Erosion pattern converges to reference within tolerance; runs deterministically
+     for same seed.
+
+### TC-15.6.7.I1 Real-time navmesh regeneration preview
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.6.7   |
+
+1. **#1** — Modify terrain and a placed obstacle; request navmesh regen.
+   - **Expected:** Navmesh preview updates in under 1 s; generated polygons avoid obstacle and
+     respect slope limits.
 
 ## Benchmarks
 
