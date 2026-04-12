@@ -35,6 +35,11 @@ Test case IDs use `TC-16.1.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-16.1.8.3   | `test_stacking_non_stacking`        | R-16.1.8  |
 | TC-16.1.11.1  | `test_condition_and_or_not`         | R-16.1.11 |
 | TC-16.1.11.2  | `test_condition_leaf_dispatch`      | R-16.1.11 |
+| TC-13.9.1.1   | `test_character_stats_from_set`     | R-13.9.1  |
+| TC-13.9.2.1   | `test_hp_mp_stamina_meters_bound`   | R-13.9.2  |
+| TC-13.9.3.1   | `test_buff_equipment_mod_stack`     | R-13.9.3  |
+| TC-13.10.3.1  | `test_dot_hot_effect_periodic`      | R-13.10.3 |
+| TC-13.12.5.1  | `test_faction_rep_tier_thresholds`  | R-13.12.5 |
 
 1. **TC-16.1.1.1** `test_meter_construct_defaults` — Construct a meter with min=0, max=100,
    default=50. Assert initial value is 50 and bounds match.
@@ -175,6 +180,34 @@ Test case IDs use `TC-16.1.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Input: `ConditionExpr::Leaf(ConditionId::HAS_TAG)`, registry maps id → counted function
     - Expected: function called exactly once; result matches function return value
 
+28. **TC-13.9.1.1** `test_character_stats_from_set` — Spawn a character entity composed from an
+    `AttributeSet` schema with `strength`, `agility`, `intellect`. Assert each field is readable and
+    reports the schema default.
+    - Input: schema defaults `{ strength: 10, agility: 8, intellect: 5 }`
+    - Expected: `set.read("strength") == 10`, `agility == 8`, `intellect == 5`
+
+29. **TC-13.9.2.1** `test_hp_mp_stamina_meters_bound` — Bind three meters (HP, MP, stamina) to a
+    character entity. Assert each is independently drained/filled and reports its own bounds.
+    - Input: HP 0..100, MP 0..50, stamina 0..80; drain HP by 20
+    - Expected: HP reads 80; MP and stamina unchanged
+
+30. **TC-13.9.3.1** `test_buff_equipment_mod_stack` — Apply a buff (`FlatAdd +5 strength`) and an
+    equipment modifier (`PctMul 1.1 strength`). Base 10. Assert `(10+5)*1.1 == 16.5`.
+    - Input: base 10; modifiers `[FlatAdd 5, PctMul 0.1]`
+    - Expected: `aggregate() == 16.5` within `f32::EPSILON * 16`
+
+31. **TC-13.10.3.1** `test_dot_hot_effect_periodic` — Apply a DoT effect dealing 5 damage every tick
+    for 3 ticks, and a HoT healing 3 every tick for 3 ticks. Assert net delta over 3 ticks is -15
+    and +9 respectively on each meter.
+    - Input: HP meter at 100; DoT(5, 3 ticks); separate target HP at 50; HoT(3, 3 ticks)
+    - Expected: DoT target HP == 85; HoT target HP == 59
+
+32. **TC-13.12.5.1** `test_faction_rep_tier_thresholds` — Build a faction reputation meter in
+    `[-100, 100]` with tier thresholds at -50, 0, 50. Advance reputation across each threshold
+    upward and assert the correct tier events fire.
+    - Input: reputation 0 → 10 → 60 → 110 (clamped to 100)
+    - Expected: `Rising` threshold events at 50 and 100 (clamp hit); tier reported as top tier
+
 ## Integration Tests
 
 | ID            | Name                              | Req       |
@@ -186,6 +219,18 @@ Test case IDs use `TC-16.1.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-16.1.I.5   | `test_condition_gates_effect`     | R-16.1.11 |
 | TC-16.1.I.6   | `test_attribute_set_hot_reload`   | R-16.1.4  |
 | TC-16.1.I.7   | `test_64_effects_per_entity_tick` | R-16.1.10 |
+| TC-16.1.1.I1  | `test_author_meter_primitive`     | US-16.1.1 |
+| TC-16.1.2.I1  | `test_author_threshold_event`     | US-16.1.2 |
+| TC-16.1.3.I1  | `test_sim_1k_meters_budget`       | US-16.1.3 |
+| TC-16.1.4.I1  | `test_author_attribute_schema`    | US-16.1.4 |
+| TC-16.1.5.I1  | `test_sim_10k_attr_reads`         | US-16.1.5 |
+| TC-16.1.6.I1  | `test_author_modifier_stack`      | US-16.1.6 |
+| TC-16.1.7.I1  | `test_author_effect_types`        | US-16.1.7 |
+| TC-16.1.8.I1  | `test_author_stacking_rule`       | US-16.1.8 |
+| TC-16.1.9.I1  | `test_player_effect_vfx_visible`  | US-16.1.9 |
+| TC-16.1.10.I1 | `test_sim_64_effects_entity`      | US-16.1.10 |
+| TC-16.1.11.I1 | `test_author_condition_expr`      | US-16.1.11 |
+| TC-16.1.12.I1 | `test_author_effect_lifecycle_ev` | US-16.1.12 |
 
 1. **TC-16.1.I.1** `test_meter_threshold_to_effect` — Meter threshold action `ApplyEffect` triggers
    when current crosses threshold. Assert the effect is applied to the entity.
@@ -224,6 +269,65 @@ Test case IDs use `TC-16.1.Z.N` format. Every row links to a specific R-X.Y.Z or
    once. Assert all 64 process correctly and no effect is dropped.
    - Input: 64 effects with mixed types (Duration, Periodic) and unique ids
    - Expected: `active_effects.len() == 64`; modifier stack reflects all 64 contributions
+
+8. **TC-16.1.1.I1** `test_author_meter_primitive` (US-16.1.1) — As a designer, author a "stamina"
+   meter with bounds `[0, 100]`, drain 5/s, fill 2/s. Attach to an entity; advance simulation.
+   Assert stamina decreases while exerting and increases while resting.
+   - Input: editor-authored meter def; exert for 2 s; rest for 2 s
+   - Expected: after exert stamina = 90; after rest stamina = 94 (clamped per rule)
+9. **TC-16.1.2.I1** `test_author_threshold_event` (US-16.1.2) — As a designer, add a rising
+   threshold at 80% on the stamina meter with action `ApplyEffect(Winded)`. Cross threshold in
+   gameplay. Assert `Winded` effect is applied.
+   - Input: meter crossing 80 upward
+   - Expected: `Winded` `ActiveEffect` present; one `ThresholdEvent` emitted
+10. **TC-16.1.3.I1** `test_sim_1k_meters_budget` (US-16.1.3) — As a developer, spawn 1,000 meter
+    entities; tick the simulation one frame. Assert the meter advance pass meets the 0.5 ms budget.
+    - Input: 1k meters with mixed drain/fill rates
+    - Expected: measured pass wall time < 0.5 ms
+11. **TC-16.1.4.I1** `test_author_attribute_schema` (US-16.1.4) — As a designer, author an
+    `AttributeSet` schema in the editor with 6 fields (mixed types and bounds). Spawn an entity;
+    read fields. Assert defaults present and bounds enforced.
+    - Input: editor-authored schema
+    - Expected: all fields readable at defaults; writes outside bounds clamp
+12. **TC-16.1.5.I1** `test_sim_10k_attr_reads` (US-16.1.5) — As a developer, perform 10,000 memoized
+    attribute reads in one frame. Assert the pass meets the 0.1 ms budget.
+    - Input: 10k reads across 100 entities with small modifier stacks
+    - Expected: measured wall time < 0.1 ms
+13. **TC-16.1.6.I1** `test_author_modifier_stack` (US-16.1.6) — As a designer, add layered modifiers
+    to an attribute: FlatAdd, PctAdd, PctMul, Override. Assert the final aggregation follows the
+    documented order with the Override at highest priority winning.
+    - Input: base 100; mods `[FlatAdd 10, PctAdd 0.2, PctMul 0.1, Override 42]`
+    - Expected: aggregate == 42 (override wins at highest priority)
+14. **TC-16.1.7.I1** `test_author_effect_types` (US-16.1.7) — As a designer, author four effects
+    (Instant, Duration, Periodic, Infinite). Apply each to an entity and verify behavior after 10
+    ticks.
+    - Input: 4 effects with distinct kinds
+    - Expected: Instant applied + not stored; Duration still active; Periodic has 10/period
+      applications; Infinite still active
+15. **TC-16.1.8.I1** `test_author_stacking_rule` (US-16.1.8) — As a designer, mark an effect with
+    `stacking: HighestWins`. Apply twice with different magnitudes. Assert only the highest
+    contributes.
+    - Input: two effects same id, magnitudes 20 and 30, HighestWins
+    - Expected: stack length 1; effective magnitude 30
+16. **TC-16.1.9.I1** `test_player_effect_vfx_visible` (US-16.1.9) — As a player, gain a buff with a
+    VFX indicator. Assert the VFX entity spawns parented to the player on apply and despawns on
+    remove.
+    - Input: buff effect with `vfx: Some(handle)`
+    - Expected: VFX entity count goes 0 → 1 → 0 across the lifecycle
+17. **TC-16.1.10.I1** `test_sim_64_effects_entity` (US-16.1.10) — As a developer, apply 64 active
+    effects to one entity; tick simulation. Assert per-entity effect pass meets 0.1 ms budget.
+    - Input: 64 effects on one entity
+    - Expected: measured wall time < 0.1 ms
+18. **TC-16.1.11.I1** `test_author_condition_expr` (US-16.1.11) — As a designer, gate an effect with
+    `And(HasTag("frozen"), HpBelow(50))`. Trigger both conditions; assert the effect applies only
+    when both are true.
+    - Input: two scenarios (both true, one false)
+    - Expected: both-true → Applied; one-false → skipped
+19. **TC-16.1.12.I1** `test_author_effect_lifecycle_ev` (US-16.1.12) — As a gameplay engineer,
+    listen for `EffectEvent` (Applied, Ticked, Expired). Trigger a Periodic effect; assert the event
+    sequence is delivered in order.
+    - Input: Periodic effect with period 1 and duration 2
+    - Expected: events `[Applied, Ticked, Ticked, Expired]` received in order
 
 ## Benchmarks
 
