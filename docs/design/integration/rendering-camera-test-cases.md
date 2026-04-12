@@ -136,3 +136,18 @@ Benchmark rationale:
    memcpy; this bounds the CPU side only.
 5. **TC-IR-3.1.6.B1** -- The PI controller runs once per frame on the render thread and must be
    effectively free relative to the frame budget.
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-13.25.1.1
+- US-13.25.2.1
+- US-13.25.36.1
+- US-2.10.4.1
+- US-2.10.5.1
+- US-2.3.11.1
+- US-2.3.5.1
+- US-2.3.6.1

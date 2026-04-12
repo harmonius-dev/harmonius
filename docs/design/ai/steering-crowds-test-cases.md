@@ -555,3 +555,21 @@ Companion test cases for [steering-crowds.md](steering-crowds.md).
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
 | 1 | 10000 agents, GPU compute dispatch | GPU time | < 1 ms | R-7.7.4 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-7.2.1.12
+- US-7.2.2.12
+- US-7.2.3.9
+- US-7.2.4.12
+- US-7.7.1.12
+- US-7.7.11.4
+- US-7.7.2.12
+- US-7.7.4.12
+- US-7.7.5.11
+- US-7.7.6.12
+- US-7.7.8.4

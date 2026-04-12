@@ -989,3 +989,19 @@ Companion test cases for [effects.md](effects.md).
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
 | 1 | Crack growth compute dispatch | GPU time | < 0.2 ms | R-11.5.4 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-11.2.1.1
+- US-11.2.3.1
+- US-11.2.4.3
+- US-11.2.6.1
+- US-11.3.2.2
+- US-11.3.3.3
+- US-11.4.1.1
+- US-11.5.1.3
+- US-11.5.2.2

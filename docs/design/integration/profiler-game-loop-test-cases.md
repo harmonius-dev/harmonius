@@ -168,3 +168,15 @@ Regressions in any test case below also constitute regressions against the liste
 
 All benchmarks are CI-runnable, require no platform-specific hardware beyond a monotonic timer, and
 are gated on the repository's standard Criterion benchmark runner.
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-15.5.1.1
+- US-15.5.6.1
+- US-5.6.1.1
+- US-5.6.3.1
+- US-5.6.6.1

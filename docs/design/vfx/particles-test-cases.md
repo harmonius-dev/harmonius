@@ -481,3 +481,28 @@ Companion test cases for [particles.md](particles.md).
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
 | 1 | Evaluate LOD for 100 emitters | CPU time | < 50 us | R-11.1.4 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-11.1.1.1
+- US-11.1.1.2
+- US-11.1.1.3
+- US-11.1.2.1
+- US-11.1.2.2
+- US-11.1.2.3
+- US-11.1.3.1
+- US-11.1.3.2
+- US-11.1.3.3
+- US-11.1.4.1
+- US-11.1.4.2
+- US-11.1.4.3
+- US-11.1.5.1
+- US-11.1.5.2
+- US-11.1.6.1
+- US-11.1.6.2
+- US-11.1.7.1
+- US-11.1.7.2

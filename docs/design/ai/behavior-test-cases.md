@@ -729,3 +729,25 @@ Companion test cases for [behavior.md](behavior.md).
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
 | 1 | 1000 agents, mixed BT/Utility/GOAP, parallel | Wall time | < 2 ms | R-7.3.1 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-7.3.1.1
+- US-7.3.1.4
+- US-7.3.1.9
+- US-7.3.4.12
+- US-7.3.7.1
+- US-7.3.7.12
+- US-7.4.1.1
+- US-7.4.1.12
+- US-7.4.1.4
+- US-7.4.2.12
+- US-7.5.1.1
+- US-7.5.1.3
+- US-7.5.2.12
+- US-7.5.2.4
+- US-7.5.4.12

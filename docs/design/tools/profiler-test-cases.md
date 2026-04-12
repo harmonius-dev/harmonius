@@ -443,3 +443,16 @@ Companion test cases for [profiler.md](profiler.md).
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
 | 1 | Stream at `Full` granularity | bandwidth | < 10 Mbps | R-15.5.7 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-15.5.1.5
+- US-15.5.1.8
+- US-15.5.3.5
+- US-15.5.3.6
+- US-15.5.4.1
+- US-15.5.7.5

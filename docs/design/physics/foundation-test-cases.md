@@ -517,3 +517,14 @@ Companion test cases for [foundation.md](foundation.md).
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
 | 1 | Measure memory per rigid body entity | Per-entity memory | <= 256 bytes | R-4.1.NF2 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-4.1.1.9
+- US-4.1.4.5
+- US-4.1.5.5
+- US-4.1.6.5

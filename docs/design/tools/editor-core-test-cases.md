@@ -98,3 +98,51 @@ See those files for the full test case definitions until migration is complete.
 | TC-1.6.B.1 | R-1.6.2 | Plugin load time |
 | TC-15.16.B.1 | US-15.16.5.1 | VR >= 90 fps |
 | TC-15.16.B.2 | US-15.16.5.2 | Motion-to-photon < 20 ms |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-1.6.1.1
+- US-1.6.1.6
+- US-1.6.2.1
+- US-1.6.2.5
+- US-1.6.3.1
+- US-1.6.3.4
+- US-1.6.4.1
+- US-1.6.4.3
+- US-1.6.5.1
+- US-1.6.5.4
+- US-1.6.6.1
+- US-1.6.6.3
+- US-1.6.7.1
+- US-1.6.7.3
+- US-15.1.1.1
+- US-15.1.1.13
+- US-15.1.2.1
+- US-15.1.2.8
+- US-15.1.3.1
+- US-15.1.3.9
+- US-15.1.4.1
+- US-15.1.4.10
+- US-15.1.5.1
+- US-15.1.5.8
+- US-15.1.6.1
+- US-15.1.6.6
+- US-15.1.7.1
+- US-15.1.7.8
+- US-15.1.8.1
+- US-15.1.8.9
+- US-15.1.9.1
+- US-15.1.9.8
+- US-15.16.1.1
+- US-15.16.1.4
+- US-15.16.2.1
+- US-15.16.2.5
+- US-15.16.3.1
+- US-15.16.3.3
+- US-15.16.4.1
+- US-15.16.4.4
+- US-15.16.5.3

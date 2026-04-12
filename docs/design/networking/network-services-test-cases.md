@@ -342,3 +342,26 @@ specific R-X.Y.Z or F-X.Y.Z.
 
 5. **TC-8.9.B.1** — p99 delivery latency for text messages on a 50-member channel over the reliable
    ordered transport channel with 20 ms RTT and 0% loss. Measured over 1,000 messages.
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-8.9.1.1
+- US-8.9.1.6
+- US-8.9.2.1
+- US-8.9.2.7
+- US-8.9.3.1
+- US-8.9.3.7
+- US-8.9.4.1
+- US-8.9.4.7
+- US-8.9.5.1
+- US-8.9.5.8
+- US-8.9.6.1
+- US-8.9.6.6
+- US-8.9.7.1
+- US-8.9.7.6
+- US-8.9.8.1
+- US-8.9.8.8

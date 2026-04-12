@@ -52,3 +52,11 @@ behavior from the design's Failure Modes table. **Dimensionality:** 3D only; 2D/
 | TC-IR-1.1.1.B1 | 1000 param writes | < 0.1 ms | IR-1.1.1 |
 | TC-IR-1.1.2.B1 | 1000 anim queries | < 0.05 ms | IR-1.1.2 |
 | TC-IR-1.1.5.B2 | Budget time-slicing | < 0.2 ms overhead | IR-1.1.5 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-9.4.10.3

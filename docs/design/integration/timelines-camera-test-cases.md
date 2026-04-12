@@ -93,3 +93,13 @@ Regressions in any test case below also constitute regressions against the liste
 | TC-IR-4.8.6.B1 | Blend computation per frame | < 0.02 ms | IR-4.8.6 |
 | TC-IR-4.8.6.B2 | Phase 3->6 alpha lerp | < 0.005 ms | IR-4.8.6 |
 | TC-IR-4.8.7.B1 | Dolly sample + spline eval | < 0.01 ms | IR-4.8.7 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-13.25.26.1
+- US-13.25.35.1
+- US-13.25.8.1

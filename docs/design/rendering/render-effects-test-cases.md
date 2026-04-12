@@ -338,3 +338,43 @@ R-2.4.Z, or F-X.Y.Z.
    time.
 
 6. **TC-2.4.B.2** — Render shadow maps for 4 CSM cascades over 1000 draws. Total GPU pass time.
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-2.5.1.1
+- US-2.5.1.2
+- US-2.5.10.1
+- US-2.5.10.2
+- US-2.5.11.1
+- US-2.5.11.2
+- US-2.5.12.1
+- US-2.5.12.2
+- US-2.5.13.1
+- US-2.5.13.2
+- US-2.5.14.1
+- US-2.5.14.2
+- US-2.5.15.1
+- US-2.5.15.2
+- US-2.5.16.1
+- US-2.5.16.2
+- US-2.5.2.1
+- US-2.5.2.2
+- US-2.5.2.3
+- US-2.5.3.1
+- US-2.5.3.2
+- US-2.5.4.1
+- US-2.5.4.2
+- US-2.5.5.1
+- US-2.5.5.2
+- US-2.5.6.1
+- US-2.5.6.2
+- US-2.5.7.1
+- US-2.5.7.2
+- US-2.5.8.1
+- US-2.5.8.2
+- US-2.5.9.1
+- US-2.5.9.2

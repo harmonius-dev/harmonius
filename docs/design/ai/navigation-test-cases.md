@@ -740,3 +740,47 @@ Companion test cases for [navigation.md](navigation.md).
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
 | 1 | 1000 HPA* queries, server | Total wall time | < 4 ms | R-7.1.14 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-7.1.1.1
+- US-7.1.1.12
+- US-7.1.10.1
+- US-7.1.10.12
+- US-7.1.11.1
+- US-7.1.11.12
+- US-7.1.12.1
+- US-7.1.12.12
+- US-7.1.13.1
+- US-7.1.13.12
+- US-7.1.14.1
+- US-7.1.14.12
+- US-7.1.14.3
+- US-7.1.15.1
+- US-7.1.15.12
+- US-7.1.2.1
+- US-7.1.2.12
+- US-7.1.3.1
+- US-7.1.3.12
+- US-7.1.3.4
+- US-7.1.4.1
+- US-7.1.4.12
+- US-7.1.5.1
+- US-7.1.5.11
+- US-7.1.5.12
+- US-7.1.6.1
+- US-7.1.6.12
+- US-7.1.6.7
+- US-7.1.7.1
+- US-7.1.7.12
+- US-7.1.7.4
+- US-7.1.7.5
+- US-7.1.8.1
+- US-7.1.8.12
+- US-7.1.9.1
+- US-7.1.9.12
+- US-7.1.9.3

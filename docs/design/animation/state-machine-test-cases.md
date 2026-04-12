@@ -647,3 +647,30 @@ Companion test cases for [state-machine.md](state-machine.md).
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
 | 1 | Single montage notify dispatch | CPU time | < 10 us | R-9.4.7 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-9.2.1.1
+- US-9.2.1.2
+- US-9.2.2.1
+- US-9.2.3.1
+- US-9.2.3.2
+- US-9.2.4.1
+- US-9.2.4.2
+- US-9.2.5.1
+- US-9.2.5.2
+- US-9.4.1.1
+- US-9.4.1.2
+- US-9.4.10.1
+- US-9.4.10.2
+- US-9.4.2.1
+- US-9.4.4.1
+- US-9.4.4.2
+- US-9.4.7.1
+- US-9.4.7.3
+- US-9.4.8.1
+- US-9.4.8.2

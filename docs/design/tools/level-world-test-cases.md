@@ -464,3 +464,17 @@ Companion test cases for [level-world.md](level-world.md).
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
 | 1 | Regenerate navmesh for 64m x 64m region | Duration | < 500 ms | R-15.6.7 |
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-15.2.1.1
+- US-15.2.2.3
+- US-15.2.4.3
+- US-15.2.7.1
+- US-15.6.1.6
+- US-15.6.2.5
+- US-15.6.7.3

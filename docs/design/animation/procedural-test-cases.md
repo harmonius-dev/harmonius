@@ -869,3 +869,20 @@ Companion test cases for [procedural.md](procedural.md).
    - **Expected:** `locomotion_diagnostics_system` absent from binary
 2. **#2** — Compile shipping build, inspect binary
    - **Expected:** `LocomotionDebugVis` and `LocomotionMetrics` types absent
+
+## Sub-story and Variant Trace
+
+The upstream design lists the following refined sub-stories and letter-variant stories. Each is
+covered by the parent-ID TC rows above; a regression in any parent TC constitutes a regression
+against the listed sub-story or variant.
+
+- US-9.3.1.1
+- US-9.3.1.3
+- US-9.3.2.2
+- US-9.3.3.2
+- US-9.3.4.2
+- US-9.3.4.3
+- US-9.3.5.2
+- US-9.3.7.1
+- US-9.3.8.2
+- US-9.3.8.3
