@@ -348,6 +348,144 @@ Companion test cases for [steering-crowds.md](steering-crowds.md).
 1. **#1** — 1000 agents, GPU crowd path vs CPU path
    - **Expected:** Positions match within 0.01m tolerance per tick
 
+### TC-7.2.1.I1 Game Designer Avoids Agent Overlap Via ORCA
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.2.1    |
+| 2 | US-7.2.1    |
+
+1. **#1** — Game designer spawns 50 agents in tight corridor, enables ORCA
+   - **Expected:** Agents resolve velocities without overlapping, no agent-agent penetration
+2. **#2** — Cross two agent streams perpendicularly
+   - **Expected:** Streams interleave without deadlock
+
+### TC-7.2.2.I1 Game Designer Uses Feeler Rays For Obstacle Avoidance
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.2.2    |
+| 2 | US-7.2.2    |
+
+1. **#1** — Game designer enables 5 feeler rays on agent approaching static wall
+   - **Expected:** Agent steers around wall without clipping, feeler detection triggers before
+     contact
+2. **#2** — Replace wall with sharp inside corner
+   - **Expected:** Agent navigates corner without getting stuck
+
+### TC-7.2.3.I2 Game Designer Composes Steering Behaviors
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.2.3    |
+| 2 | US-7.2.3    |
+
+1. **#1** — Game designer enables seek + wander + obstacle avoidance on an NPC
+   - **Expected:** All six behaviors execute per tick, producing a combined steering force
+2. **#2** — Disable wander, confirm result
+   - **Expected:** Final velocity reflects only seek and obstacle avoidance
+
+### TC-7.2.4.I1 Game Designer Blends Multiple Steering Layers
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.2.4    |
+| 2 | US-7.2.4    |
+
+1. **#1** — Game designer assigns weights 0.6/0.3/0.1 to three steering layers
+   - **Expected:** Blended force equals weighted sum, resulting motion reflects all layers
+2. **#2** — Enable priority mode
+   - **Expected:** Highest priority non-zero force wins; lower-priority layers contribute only when
+     higher priorities produce zero force
+
+### TC-7.7.1.I1 Game Designer Enables Flocking Behavior
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.7.1    |
+| 2 | US-7.7.1    |
+
+1. **#1** — Game designer enables flocking on 100 agents with separation/alignment/cohesion weights
+   - **Expected:** Agents form coherent flock, no agent-agent overlap, avg heading aligns
+2. **#2** — Scatter agents
+   - **Expected:** Flock re-forms within 2 s simulation
+
+### TC-7.7.2.I1 Engine Developer Generates Flow Field For Crowd
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.7.2    |
+| 2 | US-7.7.2    |
+
+1. **#1** — Engine developer triggers 256x256 flow field generation toward goal
+   - **Expected:** Field produced in under 5 ms budget, every cell points down gradient
+2. **#2** — Sample field at 10K agent positions
+   - **Expected:** Each sample returns a unit vector matching nearest cell
+
+### TC-7.7.4.I3 Engine Developer Ticks Mass Entity Crowd
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.7.4    |
+| 2 | US-7.7.4    |
+
+1. **#1** — Engine developer simulates 10K mass entity crowd for 1 s
+   - **Expected:** Per-agent tick completes within 0.5 us, total crowd tick within frame budget
+2. **#2** — Confirm deterministic state after re-run with same seed
+   - **Expected:** Identical positions across runs
+
+### TC-7.7.5.I1 Engine Developer Assigns LOD To Crowd Agents
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.7.5    |
+| 2 | US-7.7.5    |
+
+1. **#1** — Engine developer enables LOD with 3 tiers, 10K agents across camera frustum
+   - **Expected:** Near agents use full LOD, mid use simplified, far use batched; assignments match
+     distance buckets
+2. **#2** — Force budget cap to 1K full-LOD agents
+   - **Expected:** Cap enforced, overflow downgraded to next tier
+
+### TC-7.7.6.I2 Engine Developer Caps Crowd Density Per Cell
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.7.6    |
+| 2 | US-7.7.6    |
+
+1. **#1** — Engine developer sets density cap of 4 agents per 1 m cell, 100 agents pour into funnel
+   - **Expected:** Density enforcement caps cell occupancy; excess agents redirect around funnel
+2. **#2** — Remove cap
+   - **Expected:** Agents converge without redirection
+
+<!-- THIN: design section lacks detail -->
+### TC-7.7.8.I1 Game Designer Triggers Scatter Reaction In Crowd
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.7.8    |
+| 2 | US-7.7.8    |
+
+1. **#1** — Game designer fires a bird scatter event at a flock of 200 agents
+   - **Expected:** Flock breaks apart with radial scatter velocity, then re-coheres over time
+2. **#2** — Fire event with zero agents
+   - **Expected:** No panic, event consumed cleanly
+
+<!-- THIN: design section lacks detail -->
+### TC-7.7.11.I1 Game Designer Coordinates Pack Hunt Behavior
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-7.7.11   |
+| 2 | US-7.7.11   |
+
+1. **#1** — Game designer spawns 5 wolves with pack-hunt role assignments (flankers + chaser)
+   - **Expected:** Pack coordinates roles, flanking members move to perpendicular positions relative
+     to target
+2. **#2** — Target flees
+   - **Expected:** Pack maintains coordinated pursuit geometry over multiple ticks
+
 ## Benchmarks
 
 ### TC-7.2.3.B1 Steering Behavior Per Agent
