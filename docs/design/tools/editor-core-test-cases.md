@@ -68,6 +68,25 @@ See those files for the full test case definitions until migration is complete.
 | TC-1.6.I.2 | R-1.6.3 | Hot-reload round-trip |
 | TC-1.6.I.3 | R-1.6.7 | Component editor dispatch |
 | TC-15.16.I.1 | R-15.16.1--R-15.16.5 | VR mode full session |
+| TC-1.6.1.I1 | US-1.6.1 | Plugin trait declares types, resources, systems end-to-end |
+| TC-1.6.2.I1 | US-1.6.2 | Named plugin group (DefaultPlugins) registers all members |
+| TC-1.6.3.I1 | US-1.6.3 | Individual plugin disable removes systems without crash |
+| TC-1.6.4.I1 | US-1.6.4 | Plugin declares dependency and loads after dependency |
+| TC-1.6.5.I1 | US-1.6.5 | Init order resolves topologically across 5 plugins |
+| TC-1.6.6.I1 | US-1.6.6 | Missing and circular dependencies produce structured errors |
+| TC-1.6.7.I1 | US-1.6.7 | Hot-reload plugin during running session preserves state |
+| TC-15.1.1.I1 | US-15.1.1 | Dock layout save and restore across sessions |
+| TC-15.1.2.I1 | US-15.1.2 | Viewport camera modes + pick ray via screen click |
+| TC-15.1.4.I1 | US-15.1.4 | Click + marquee + named set selection workflow |
+| TC-15.1.5.I1 | US-15.1.5 | Translate/rotate/scale gizmo with snap and reference frame |
+| TC-15.1.6.I1 | US-15.1.6 | Measurement tool reports distance/angle/area |
+| TC-15.1.7.I1 | US-15.1.7 | Preference edit + migration across editor versions |
+| TC-15.1.8.I1 | US-15.1.8 | Extension ScriptableObject hook fires on editor event |
+| TC-15.1.9.I1 | US-15.1.9 | VR edit mode enter and exit from desktop session |
+| TC-15.16.1.I1 | US-15.16.1 | VR controller + hand gesture input routed to editor panels |
+| TC-15.16.2.I1 | US-15.16.2 | VR spatial panels spawn, anchor, and dismiss |
+| TC-15.16.3.I1 | US-15.16.3 | VR avatar visibility toggled in co-edit session |
+| TC-15.16.4.I1 | US-15.16.4 | Follow-mode attach to another avatar and break on gesture |
 
 ## Benchmarks
 
