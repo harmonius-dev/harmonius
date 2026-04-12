@@ -32,6 +32,25 @@ R-2.4.Z, or F-X.Y.Z.
 | TC-2.4.10.1   | `test_stochastic_light_sampling`  | R-2.4.10  |
 | TC-2.4.11.1   | `test_csm_cascade_split`          | R-2.4.11  |
 | TC-2.4.13.1   | `test_gtao_bent_normal`           | R-2.4.13  |
+| TC-2.9.9.1    | `test_vignette_power_curve`       | R-2.9.9   |
+| TC-2.9.11.1   | `test_local_exposure_tile_bias`   | R-2.9.11  |
+| TC-2.9.14.1   | `test_post_graph_compile`         | R-2.9.14  |
+| TC-2.5.1.1    | `test_blas_build_from_meshlets`   | R-2.5.1   |
+| TC-2.5.2.1    | `test_rt_reflection_hybrid_ssr`   | R-2.5.2   |
+| TC-2.5.3.1    | `test_rt_indirect_diffuse_one`    | R-2.5.3   |
+| TC-2.5.4.1    | `test_ddgi_probe_irradiance`      | R-2.5.4   |
+| TC-2.5.5.1    | `test_path_tracer_accumulation`   | R-2.5.5   |
+| TC-2.5.6.1    | `test_rt_subsurface_transmit`     | R-2.5.6   |
+| TC-2.5.7.1    | `test_surfel_clipmap_update`      | R-2.5.7   |
+| TC-2.5.8.1    | `test_restir_reservoir_merge`     | R-2.5.8   |
+| TC-2.5.9.1    | `test_realtime_pt_tier_select`    | R-2.5.9   |
+| TC-2.5.10.1   | `test_opacity_micromap_build`     | R-2.5.10  |
+| TC-2.5.11.1   | `test_shader_exec_reorder`        | R-2.5.11  |
+| TC-2.5.12.1   | `test_denoiser_psnr_above_30`     | R-2.5.12  |
+| TC-2.5.13.1   | `test_rt_lens_flare_trace`        | R-2.5.13  |
+| TC-2.5.14.1   | `test_voxel_gi_cone_trace`        | R-2.5.14  |
+| TC-2.5.15.1   | `test_neural_radiance_cache_hit`  | R-2.5.15  |
+| TC-2.5.16.1   | `test_stochastic_ssr_brdf`        | R-2.5.16  |
 
 1. **TC-2.9.1.1** `test_bloom_threshold_filter` — Input HDR pixels at luminance 0.5, 1.0, 2.0 with
    threshold 1.0. Assert only the 2.0 pixel contributes; the 0.5 and 1.0 pixels output 0.
@@ -149,6 +168,101 @@ R-2.4.Z, or F-X.Y.Z.
     normal is straight up `(0, 1, 0)` and AO factor ≈ 1.0 (no occlusion).
     - Input: synthetic depth/normal buffer of a flat plane
     - Expected: `bent_normal ≈ Vec3(0, 1, 0)`, `ao >= 0.95`
+
+24. **TC-2.9.9.1** `test_vignette_power_curve` — Sample radial vignette with power curve exponent
+    2.0 at uv `(0.0, 0.0)` and `(0.5, 0.5)`. Assert curve shape.
+    - Input: `Vignette { falloff: Power(2.0), strength: 1.0 }`
+    - Expected: `v(0.0,0.0) < 0.25`, `v(0.5,0.5) == 1.0`, monotonic decrease from center
+
+25. **TC-2.9.11.1** `test_local_exposure_tile_bias` — Per-tile local exposure bias computed from a
+    16x16 tile histogram; tile with high average luminance gets negative EV bias.
+    - Input: 1024x1024 luminance field with bright top-left quadrant
+    - Expected: top-left tile biases negative; bottom-right tiles near zero; center smooth blend
+
+26. **TC-2.9.14.1** `test_post_graph_compile` — Build a 3-node post-process graph via the node
+    editor DSL and compile. Assert compiled pass order matches topological sort.
+    - Input: graph `[A → B → C]` with one forked sampler input
+    - Expected: compiled pass order `[A, B, C]`, fork sampler bound once, no redundant copies
+
+27. **TC-2.5.1.1** `test_blas_build_from_meshlets` — Build a BLAS from a 1k-triangle meshlet cluster
+    with compaction. Assert BLAS is valid and compacted size < raw size.
+    - Input: 1000 triangle mesh, `BlasBuildFlags::COMPACTION`
+    - Expected: valid BLAS handle, `compacted_size < raw_size * 0.75`
+
+28. **TC-2.5.2.1** `test_rt_reflection_hybrid_ssr` — Pixel with SSR hit falls back to RT when SSR
+    occluded. Assert correct source per pixel.
+    - Input: scene with partial occluder in front of reflective surface
+    - Expected: occluded pixels use RT ray, unoccluded use SSR; sum image matches reference
+
+29. **TC-2.5.3.1** `test_rt_indirect_diffuse_one` — Trace one-bounce indirect diffuse on a Cornell
+    box scene. Assert color bleed from red wall onto floor.
+    - Input: Cornell fixture, single bounce
+    - Expected: floor near red wall samples red channel > floor near white wall
+
+30. **TC-2.5.4.1** `test_ddgi_probe_irradiance` — Populate a 4x4x4 DDGI grid and sample irradiance
+    at probe center. Assert radiance roughly matches direct probe integration.
+    - Input: uniform emissive environment, 64 probes
+    - Expected: sampled irradiance within 5% of analytic expected
+
+31. **TC-2.5.5.1** `test_path_tracer_accumulation` — Run 64 samples per pixel on a static scene.
+    Assert variance decreases as 1/N.
+    - Input: fixed seed, static scene, N samples in `[1, 4, 16, 64]`
+    - Expected: measured variance ratio within 20% of theoretical 1/N
+
+32. **TC-2.5.6.1** `test_rt_subsurface_transmit` — Trace subsurface transmission through a 1 cm
+    thick skin slab. Assert transmitted color matches Beer-Lambert expectation.
+    - Input: planar slab, skin material, single point light behind
+    - Expected: exit radiance within 10% of `exp(-sigma_t * 1 cm)` per channel
+
+33. **TC-2.5.7.1** `test_surfel_clipmap_update` — Spawn surfels in view, step the clipmap update
+    pass, verify stale surfels evicted from outer clipmap level.
+    - Input: 1000 surfels, 3 clipmap levels
+    - Expected: outer-level surfels evicted after N frames; inner level stable
+
+34. **TC-2.5.8.1** `test_restir_reservoir_merge` — Merge two spatially adjacent reservoirs with
+    known samples. Assert merged reservoir weight sum is correct.
+    - Input: two reservoirs with `(sample, weight)` pairs
+    - Expected: merged `w_sum == a.w_sum + b.w_sum`, selected sample follows distribution
+
+35. **TC-2.5.9.1** `test_realtime_pt_tier_select` — Quality tier `Ultra` selects 2 bounces + NRD;
+    `Mid` selects 1 bounce + simpler filter. Assert selector picks correct config.
+    - Input: tier in `{Ultra, High, Mid, Low}`
+    - Expected: configs match spec table; Low disables path tracing entirely
+
+36. **TC-2.5.10.1** `test_opacity_micromap_build` — Build opacity micromap for an alpha-tested leaf
+    mesh. Assert opaque/transparent/unknown counts match texture.
+    - Input: leaf quad with known alpha mask
+    - Expected: OMM classification counts match manual grid evaluation
+
+37. **TC-2.5.11.1** `test_shader_exec_reorder` — Trace path with diverging material branches; assert
+    SER reduces effective divergence vs. non-SER baseline.
+    - Input: fixture scene with two materials, traced with SER on/off
+    - Expected: SER-on divergence metric < SER-off metric; visual output identical
+
+38. **TC-2.5.12.1** `test_denoiser_psnr_above_30` — Run neural denoiser on 1 spp input. Assert PSNR
+    vs. reference > 30 dB.
+    - Input: 1 spp noisy image + G-buffer inputs
+    - Expected: `psnr(denoised, reference) > 30.0`
+
+39. **TC-2.5.13.1** `test_rt_lens_flare_trace` — Trace a ray through lens element list for a single
+    bright light source. Assert ghost positions match optical prediction.
+    - Input: 5-element lens list, light at screen center
+    - Expected: ghost positions within 2 px of reference
+
+40. **TC-2.5.14.1** `test_voxel_gi_cone_trace` — Cone trace one cone through a voxelized Cornell
+    box. Assert accumulated radiance is non-zero and matches low-res reference.
+    - Input: 128^3 voxel grid, one 45-degree cone
+    - Expected: cone sample within 15% of brute-force reference
+
+41. **TC-2.5.15.1** `test_neural_radiance_cache_hit` — Query NRC at a point with cached training
+    data. Assert return radiance matches cached prediction.
+    - Input: trained NRC, query point within training distribution
+    - Expected: query result within 10% of oracle; cache hit logged
+
+42. **TC-2.5.16.1** `test_stochastic_ssr_brdf` — Importance sample SSR rays weighted by microfacet
+    BRDF. Assert sample distribution matches BRDF lobe.
+    - Input: rough surface, 256 samples
+    - Expected: sample histogram correlates with `D_ggx(alpha=0.3)` within 10%
 
 ## Integration Tests
 
