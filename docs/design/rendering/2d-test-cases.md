@@ -28,6 +28,7 @@ Test case IDs use `TC-10.5.Z.N` format. Every row links to a specific R-10.5.Z o
 | TC-10.5.10.3  | `test_ccd_no_tunnel`              | R-10.5.10  |
 | TC-10.5.11.1  | `test_polygon_collider_overlap`   | R-10.5.11  |
 | TC-10.5.11.2  | `test_tilemap_edge_chain_reduce`  | R-10.5.11  |
+| TC-10.5.12.1  | `test_joint_revolute_limits`      | R-10.5.12  |
 | TC-10.5.13.1  | `test_2d_raycast_hit`             | R-10.5.13  |
 | TC-10.5.13.2  | `test_2d_overlap_query`           | R-10.5.13  |
 | TC-10.5.14.1  | `test_light2d_radius_falloff`     | R-10.5.14  |
@@ -59,18 +60,18 @@ Test case IDs use `TC-10.5.Z.N` format. Every row links to a specific R-10.5.Z o
    - Input: `SpriteAnimation { mode: Loop, playback_rate: 1.0, .. }`, 0.5 s tick
    - Expected: `frame_index == 1`, `elapsed == 0.1`, no `AnimationFinished` event
 
-6. **TC-10.5.2.2** `test_animation_pingpong_mode` — Clip with 4 frames in ping-pong. Advance through
-   8 frames. Assert sequence is `[0, 1, 2, 3, 2, 1, 0, 1]`.
+6. **TC-10.5.2.2** `test_animation_pingpong_mode` — Clip with 4 frames in ping-pong. Advance 8
+   frames. Assert sequence is `[0, 1, 2, 3, 2, 1, 0, 1]`.
    - Input: `mode: PingPong`, single 100 ms tick repeated 8 times at 10 fps
    - Expected: recorded frame indices match `[0, 1, 2, 3, 2, 1, 0, 1]`
 
-7. **TC-10.5.2.3** `test_animation_oneshot_mode` — Clip with 3 frames in one-shot. Tick beyond end.
+7. **TC-10.5.2.3** `test_animation_oneshot_mode` — Clip with 3 frames in one-shot. Tick past end.
    Assert `state == Finished`, `frame_index == 2`, one `AnimationFinished` event emitted.
    - Input: `mode: OneShot`, total tick time 0.5 s at 10 fps
    - Expected: `state == PlaybackState::Finished`, `events.len() == 1`
 
 8. **TC-10.5.2.4** `test_animation_event_fires` — Clip has event `"footstep"` at frame 2. Tick from
-   frame 0 across frame 2. Assert event fires exactly once with correct name.
+   frame 0 past frame 2. Assert event fires exactly once with correct name.
    - Input: clip events `[{ frame: 2, name: "footstep" }]`, tick spans frames 0..3
    - Expected: events contain one `AnimationEvent { name: "footstep" }`
 
@@ -134,27 +135,33 @@ Test case IDs use `TC-10.5.Z.N` format. Every row links to a specific R-10.5.Z o
     - Input: 10000 solid tiles in a single rectangle region
     - Expected: `colliders.len() <= 1000`, one edge chain encloses the rectangle
 
-21. **TC-10.5.13.1** `test_2d_raycast_hit` — Ray from `(0,0)` direction `(1,0)` length 10. Box at
+21. **TC-10.5.12.1** `test_joint_revolute_limits` — Two bodies connected by `Joint2D::Revolute` with
+    `AngleLimits { lower: -PI/4, upper: PI/4 }`. Apply torque past upper limit.
+    - Input: dynamic A and B with revolute joint, applied torque = 100 N·m for 0.5 s
+    - Expected: relative angle clamped to `PI/4 ± 0.001`, no penetration, joint reaction force
+      non-zero
+
+22. **TC-10.5.13.1** `test_2d_raycast_hit` — Ray from `(0,0)` direction `(1,0)` length 10. Box at
     `x=5`. Assert hit at `x ≈ 5`, normal `(-1, 0)`.
     - Input: `raycast_2d(origin: Vec2(0,0), dir: Vec2(1,0), max: 10.0)`
     - Expected: `Some(RayHit { point.x ≈ 5.0, normal: Vec2(-1, 0), entity: box_id })`
 
-22. **TC-10.5.13.2** `test_2d_overlap_query` — Circle overlap query returns 3 entities inside,
+23. **TC-10.5.13.2** `test_2d_overlap_query` — Circle overlap query returns 3 entities inside,
     excludes 2 outside. Assert returned set matches expected entity IDs.
     - Input: 5 entities at known positions; query `circle_overlap(center, radius=2.0)`
     - Expected: `result == {e1, e2, e3}` (deterministic order)
 
-23. **TC-10.5.14.1** `test_light2d_radius_falloff` — Point light radius 10 with quadratic falloff.
+24. **TC-10.5.14.1** `test_light2d_radius_falloff` — Point light radius 10 with quadratic falloff.
     Sample at distance 0, 5, 10. Assert intensities `[1.0, 0.25, 0.0]` within tolerance.
     - Input: `Light2D { radius: 10.0, falloff: Quadratic }`
     - Expected: sampled intensity vector matches `[1.0, 0.25, 0.0] ± 0.01`
 
-24. **TC-10.5.14.2** `test_shadow_caster_occluder` — Light at `(0,0)`, occluder polygon at `(5,0)`,
+25. **TC-10.5.14.2** `test_shadow_caster_occluder` — Light at `(0,0)`, occluder polygon at `(5,0)`,
     sample point at `(10,0)`. Assert shadow ray hits occluder, sample is in shadow.
     - Input: `ShadowCaster2D` polygon between light and sample
     - Expected: `is_shadowed(sample) == true`
 
-25. **TC-10.5.15.1** `test_particle_z_interleave` — Particle z=0.4, sprite A z=0.3, sprite B z=0.5.
+26. **TC-10.5.15.1** `test_particle_z_interleave` — Particle z=0.4, sprite A z=0.3, sprite B z=0.5.
     Run sort. Assert draw order is `[A, particle, B]`.
     - Input: 1 particle and 2 sprites with the listed z values
     - Expected: sorted draw list is `[sprite_A, particle, sprite_B]`
@@ -170,6 +177,23 @@ Test case IDs use `TC-10.5.Z.N` format. Every row links to a specific R-10.5.Z o
 | TC-10.5.I.5  | `test_physics_determinism`      | R-10.5.10 |
 | TC-10.5.I.6  | `test_lighting_full_scene`      | R-10.5.14 |
 | TC-10.5.I.7  | `test_25d_layer_compose`        | R-10.5.22 |
+| TC-10.5.1.I1  | `test_us_10_5_1_sprite_workflow`     | US-10.5.1  |
+| TC-10.5.2.I1  | `test_us_10_5_2_frame_animation`     | US-10.5.2  |
+| TC-10.5.3.I1  | `test_us_10_5_3_skeletal_animation`  | US-10.5.3  |
+| TC-10.5.8.I1  | `test_us_10_5_8_orthogonal_tilemap`  | US-10.5.8  |
+| TC-10.5.9.I1  | `test_us_10_5_9_iso_hex_tilemap`     | US-10.5.9  |
+| TC-10.5.10.I1 | `test_us_10_5_10_camera_parallax`    | US-10.5.10 |
+| TC-10.5.11.I1 | `test_us_10_5_11_pixel_perfect`      | US-10.5.11 |
+| TC-10.5.13.I1 | `test_us_10_5_13_rigidbody_sim`      | US-10.5.13 |
+| TC-10.5.14.I1 | `test_us_10_5_14_collision_events`   | US-10.5.14 |
+| TC-10.5.15.I1 | `test_us_10_5_15_collider_shapes`    | US-10.5.15 |
+| TC-10.5.16.I1 | `test_us_10_5_16_one_way_platform`   | US-10.5.16 |
+| TC-10.5.17.I1 | `test_us_10_5_17_tilemap_collider`   | US-10.5.17 |
+| TC-10.5.18.I1 | `test_us_10_5_18_joint_constraint`   | US-10.5.18 |
+| TC-10.5.19.I1 | `test_us_10_5_19_spatial_query`      | US-10.5.19 |
+| TC-10.5.20.I1 | `test_us_10_5_20_dynamic_lighting`   | US-10.5.20 |
+| TC-10.5.21.I1 | `test_us_10_5_21_normal_mapped_2d`   | US-10.5.21 |
+| TC-10.5.22.I1 | `test_us_10_5_22_particle_effects`   | US-10.5.22 |
 
 1. **TC-10.5.I.1** `test_10k_sprites_render` — Spawn 10000 sprites across 4 atlas pages with mixed
    blend modes. Run a full frame. Assert batch count equals unique (atlas, blend) pairs.
@@ -205,6 +229,108 @@ Test case IDs use `TC-10.5.Z.N` format. Every row links to a specific R-10.5.Z o
    tilemap background. Assert character pixels are above background but below 2D HUD.
    - Input: `ViewportStack { layers: [tilemap_2d, character_3d, hud_2d] }`
    - Expected: composited frame has correct layer ordering verified at sampled pixels
+
+<!-- THIN: design section lacks detail -->
+8. **TC-10.5.1.I1** `test_us_10_5_1_sprite_workflow` — Author and run an end-to-end sprite scene:
+   load atlas, spawn sprites, render frame, verify pixels.
+   - Input: 50 sprite entities loaded from atlas asset, single-camera scene
+   - Expected: framebuffer matches reference image within 1% pixel diff
+
+<!-- THIN: design section lacks detail -->
+9. **TC-10.5.2.I1** `test_us_10_5_2_frame_animation` — Drive a frame-based sprite animation across a
+   full game frame, verifying clip advancement and rendered output.
+   - Input: 8-frame walk cycle clip at 12 fps, single sprite, 1 s simulation
+   - Expected: frame index sequence matches expected; final framebuffer matches frame 7
+
+<!-- THIN: design section lacks detail -->
+10. **TC-10.5.3.I1** `test_us_10_5_3_skeletal_animation` — Bone-driven 2D skeletal mesh animates a
+    character; verify deformed vertex output.
+    - Input: 20-bone skeleton, 1 clip with rotation keys, 1 s playback
+    - Expected: deformed vertex positions match reference within 0.01 unit
+
+<!-- THIN: design section lacks detail -->
+11. **TC-10.5.8.I1** `test_us_10_5_8_orthogonal_tilemap` — Load and render an orthogonal tilemap
+    end-to-end; assert culling, dispatch, and pixel output.
+    - Input: 100x100 orthogonal tilemap, camera viewport showing 16 chunks
+    - Expected: visible chunks rendered, framebuffer matches reference
+
+<!-- THIN: design section lacks detail -->
+12. **TC-10.5.9.I1** `test_us_10_5_9_iso_hex_tilemap` — Load and render an isometric and a hex
+    tilemap; assert correct projection and tile picking.
+    - Input: 20x20 isometric map and 20x20 hex map
+    - Expected: pixel at known tile center maps back to that tile via screen_to_tile
+
+<!-- THIN: design section lacks detail -->
+13. **TC-10.5.10.I1** `test_us_10_5_10_camera_parallax` — Camera scrolls 1000 px right; 3 parallax
+    layers offset by their factors.
+    - Input: 3 layers with factors `[0.25, 0.5, 1.0]`, camera moves 1000 px
+    - Expected: layer offsets `[250, 500, 1000]` after frame; sampled framebuffer matches
+
+<!-- THIN: design section lacks detail -->
+14. **TC-10.5.11.I1** `test_us_10_5_11_pixel_perfect` — Pixel-perfect camera at fractional position
+    snaps to integer pixels and renders without subpixel artifacts.
+    - Input: camera at `(10.4, 7.8)`, `pixel_perfect = true`, sprite at integer position
+    - Expected: rendered camera position `(10.0, 8.0)`, no subpixel jitter across 60 frames
+
+<!-- THIN: design section lacks detail -->
+15. **TC-10.5.13.I1** `test_us_10_5_13_rigidbody_sim` — End-to-end rigid body scene: drop 50 bodies
+    on static floor; assert all settle without penetration.
+    - Input: 50 dynamic bodies, 1 static floor, 5 s simulation at 60 Hz
+    - Expected: all bodies at rest with `velocity.length() < 0.01`, no penetration
+
+<!-- THIN: design section lacks detail -->
+16. **TC-10.5.14.I1** `test_us_10_5_14_collision_events` — Two bodies collide; ECS observer receives
+    `Collision2DEvent` with correct entity pair and contact data.
+    - Input: dynamic body moving toward static, observer registered for collision events
+    - Expected: 1 collision event emitted with `(a, b)` matching the two entities
+
+<!-- THIN: design section lacks detail -->
+17. **TC-10.5.15.I1** `test_us_10_5_15_collider_shapes` — Bodies with circle, box, polygon, and
+    capsule colliders all collide correctly with each other.
+    - Input: 4 bodies, one of each shape, configured to overlap pairwise
+    - Expected: 6 collision events emitted (one per pair), all contact normals valid
+
+<!-- THIN: design section lacks detail -->
+18. **TC-10.5.16.I1** `test_us_10_5_16_one_way_platform` — Body lands on one-way platform from above
+    and passes through from below.
+    - Input: dynamic body, one-way platform, two scenarios (above and below)
+    - Expected: lands at platform y from above; passes through from below
+
+<!-- THIN: design section lacks detail -->
+19. **TC-10.5.17.I1** `test_us_10_5_17_tilemap_collider` — Tilemap collider auto-generates from
+    solid tiles; bodies collide with the generated edge chain.
+    - Input: 32x32 tilemap with mixed solid tiles, 1 dynamic body
+    - Expected: generated colliders match solid regions; body collides as expected
+
+<!-- THIN: design section lacks detail -->
+20. **TC-10.5.18.I1** `test_us_10_5_18_joint_constraint` — Two bodies linked by a revolute joint
+    with motor; motor drives them through a full revolution.
+    - Input: 2 bodies, `Joint2D::Revolute` with motor speed 2π rad/s, 1 s sim
+    - Expected: relative angle changes by 2π ± 0.05; joint anchors stay attached
+
+<!-- THIN: design section lacks detail -->
+21. **TC-10.5.19.I1** `test_us_10_5_19_spatial_query` — Mixed raycast and overlap queries against a
+    populated 2D world return correct hits.
+    - Input: 100 entities, 10 raycasts and 10 circle overlaps with known answers
+    - Expected: each query result matches the precomputed expected entity set
+
+<!-- THIN: design section lacks detail -->
+22. **TC-10.5.20.I1** `test_us_10_5_20_dynamic_lighting` — Dynamic point and spot lights cast on a
+    2D scene with shadow casters; sample lit and shadowed pixels.
+    - Input: 4 lights, 8 shadow casters, 16 sample positions
+    - Expected: lit samples have non-zero intensity, shadowed samples are zero
+
+<!-- THIN: design section lacks detail -->
+23. **TC-10.5.21.I1** `test_us_10_5_21_normal_mapped_2d` — Sprite with normal map responds to a
+    moving point light; specular highlight tracks light position.
+    - Input: sprite with normal map, point light orbiting at 1 Hz
+    - Expected: highlight pixel position correlates with light angle each frame
+
+<!-- THIN: design section lacks detail -->
+24. **TC-10.5.22.I1** `test_us_10_5_22_particle_effects` — Particle emitter spawns particles that
+    integrate with sprite z sorting and render correctly.
+    - Input: 1 emitter at z=0.5, 100 particles, 2 sprites at z=0.3 and z=0.7
+    - Expected: particles drawn between sprites in z order, all particles visible
 
 ## Benchmarks
 
