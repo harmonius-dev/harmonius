@@ -447,6 +447,104 @@ Companion test cases for [memory-async-io.md](memory-async-io.md).
 2. **#2** — Monitor budget at end
    - **Expected:** Budget never exceeded
 
+### TC-1.7.1.I2 Engine Developer Uses Bump Arena That Resets Per Frame
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.7.1    |
+| 2 | US-1.7.1    |
+
+1. **#1** — Engine developer allocates 50K temporary records from per-frame arena in `Update` phase
+   - **Expected:** All allocations succeed, arena watermark reflects total size
+2. **#2** — End-of-frame system calls `arena.reset()`
+   - **Expected:** Watermark returns to zero, allocator reports zero outstanding allocations
+
+### TC-1.7.2.I1 Engine Tester Benchmarks Per-Frame Arena Allocations
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.7.2    |
+| 2 | US-1.7.2    |
+
+1. **#1** — Engine tester runs criterion bench allocating 100K varying-size records per frame
+   - **Expected:** Benchmark records mean throughput and writes to CI timing report
+2. **#2** — Re-run bench three times on same hardware
+   - **Expected:** Result within 10 % of baseline, confirming benchmark stability
+
+### TC-1.7.5.I1 Engine Developer Uses O(1) Fixed-Size Block Pool
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.7.5    |
+| 2 | US-1.7.5    |
+
+1. **#1** — Engine developer allocates 10K fixed-size blocks from `Pool<T>` during world startup
+   - **Expected:** Every `alloc()` returns a valid handle in constant time
+2. **#2** — Free all 10K blocks then re-allocate 10K
+   - **Expected:** Handles reused from free list, zero memory growth in pool
+
+### TC-1.7.7.I1 Engine Developer Uses Generational Handles
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.7.7    |
+| 2 | US-1.7.7    |
+
+1. **#1** — Engine developer stores 100K entities in `SlotMap<Entity>`, captures handles, then frees
+   half
+   - **Expected:** Reusing freed indices produces handles with incremented generation
+2. **#2** — Validate captured stale handles against current slot map
+   - **Expected:** `get(stale)` returns `None`, validation completes in O(1) per call
+
+### TC-1.7.8.I1 Engine Developer Iterates Dense Slot Map
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.7.8    |
+| 2 | US-1.7.8    |
+
+1. **#1** — Populate `SlotMap` with 1M values, then iterate via `values()`
+   - **Expected:** Iteration visits every live value exactly once with no dead slots skipped
+2. **#2** — Compare iteration time to `Vec<T>` of same length
+   - **Expected:** Time within 1.5x of dense `Vec` iteration, confirming dense storage
+
+### TC-1.8.7.I1 Game Developer Uses Async File Read/Write/Seek/Flush
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.8.7    |
+| 2 | US-1.8.7    |
+
+1. **#1** — Game developer submits `read`, `write`, `seek`, `flush` operations for a save file
+   - **Expected:** Each op issued to platform backend, returns a completion handle
+2. **#2** — Poll reactor and inspect results
+   - **Expected:** All four completions arrive with correct typed results; file contents match
+     expected bytes
+
+### TC-1.8.14.I1 Engine Tester Verifies Scatter-Gather Vectored I/O
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.8.14   |
+| 2 | US-1.8.14   |
+
+1. **#1** — Engine tester submits vectored write with 8 non-contiguous buffers
+   - **Expected:** Single syscall issued, all buffers written in order
+2. **#2** — Inspect syscall count via strace/dtrace probe
+   - **Expected:** Exactly one `writev`/`pwritev` (or platform equivalent), not 8 separate writes
+
+### TC-1.8.19.I1 Engine Developer Uses Pre-Allocated Page-Aligned I/O Buffers
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.8.19   |
+| 2 | US-1.8.19   |
+
+1. **#1** — Engine developer requests 32 registered buffers, each 4 KiB
+   - **Expected:** All buffer base pointers aligned to 4096 bytes, registered once with backend
+2. **#2** — Submit 1000 reads/writes recycling the 32 buffers
+   - **Expected:** No runtime allocation, backend reuses registered buffer IDs for every op
+
 ## Benchmarks
 
 ### TC-1.7.1.B1 Arena Alloc Throughput
