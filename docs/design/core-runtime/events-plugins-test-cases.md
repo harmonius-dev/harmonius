@@ -289,6 +289,19 @@ Companion test cases for [events-plugins.md](events-plugins.md).
 2. **#2** — System branches on "physics" presence (absent)
    - **Expected:** Takes physics-absent branch
 
+### TC-1.1.1.3 Event Channel Preserves SoA Direct Access
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.1.1a    |
+| 2 | R-1.1.1a    |
+
+1. **#1** — Send 10K events referencing component rows without copying data into messages
+   - **Expected:** System still iterates archetype columns by reference, no message-copy of SoA
+     storage
+2. **#2** — Run ThreadSanitizer during send+receive phase
+   - **Expected:** Zero data races, archetype columns borrowed directly as in R-1.1.1a
+
 ## Integration Tests
 
 ### TC-1.5.7.I1 Cross World Bridge
@@ -377,6 +390,31 @@ Companion test cases for [events-plugins.md](events-plugins.md).
 
 1. **#1** — Reload 50-system plugin
    - **Expected:** Total cycle < 2 s
+
+### TC-1.5.3.I1 Events Written Frame N Observed In Frame N Plus One
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.5.3    |
+| 2 | US-1.5.3    |
+
+1. **#1** — Writer system writes 1000 events in frame N
+   - **Expected:** Events visible to reader system starting frame N+1 after buffer swap
+2. **#2** — Reader system iterates buffer in frame N+1
+   - **Expected:** All 1000 events present in insertion order; no events from frame N visible to
+     frame-N readers
+
+### TC-1.5.9.I1 Command Buffer Flush Applies All Commands Once
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.5.9    |
+| 2 | US-1.5.9    |
+
+1. **#1** — Ten parallel systems each push 100 commands into per-worker command buffers
+   - **Expected:** Sync point flushes all 1000 commands in deterministic order, none dropped
+2. **#2** — Repeat flush on empty buffer
+   - **Expected:** No commands re-applied; world state unchanged
 
 ### TC-1.6.5.I4 Hot Reload Migration Failure
 
