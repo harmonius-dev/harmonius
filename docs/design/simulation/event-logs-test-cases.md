@@ -33,6 +33,9 @@ Test case IDs use `TC-17.1.Z.N` format. Every row links to a specific R-17.1.Z o
 | TC-17.1.8.3   | `test_query_filter_event_type`      | R-17.1.1  |
 | TC-17.1.8.4   | `test_query_filter_time_range`      | R-17.1.1  |
 | TC-17.1.8.5   | `test_query_filter_min_accuracy`    | R-17.1.1  |
+| TC-13.19.3a.1 | `test_npc_deed_memory_emotional`    | R-13.19.3a |
+| TC-13.19.3b.1 | `test_gossip_propagation_decay`     | R-13.19.3b |
+| TC-13.19.6.1  | `test_threat_table_modifiers`       | R-13.19.6  |
 
 1. **TC-17.1.1.1** `test_push_under_capacity` — Push 3 entries into an `EventLog` with
    `capacity = 8`. Assert the count is 3 and the entries appear in insertion order.
@@ -173,6 +176,26 @@ Test case IDs use `TC-17.1.Z.N` format. Every row links to a specific R-17.1.Z o
     - Input: 4 entries with given accuracies
     - Expected: result length == 2; both returned entries have accuracy > 0.5
 
+26. **TC-13.19.3a.1** `test_npc_deed_memory_emotional` — Push a `Deed` entry into an NPC's event log
+    with an emotional-weight field. Advance decay for many ticks. Assert the emotional weight drives
+    a slower decay than neutral entries.
+    - Input: `Deed { weight: 0.9 }` and `Deed { weight: 0.1 }` pushed at tick 0; linear decay scaled
+      by weight
+    - Expected: after 50 ticks, the high-weight deed retains significantly more accuracy than the
+      low-weight one
+
+27. **TC-13.19.3b.1** `test_gossip_propagation_decay` — Propagate an NPC rumor from a source log to
+    three neighbors via the propagation rule. Assert each hop decreases accuracy per
+    `accuracy_multiplier`.
+    - Input: source accuracy 1.0; rule with `accuracy_multiplier = 0.8`, `max_hops = 3`
+    - Expected: hop 1 accuracy ≈ 0.8; hop 2 ≈ 0.64; hop 3 ≈ 0.512
+
+28. **TC-13.19.6.1** `test_threat_table_modifiers` — Configure a threat table as an `EventLog` entry
+    stream per ability with per-ability modifiers. Apply 5 ability hits with different modifier
+    values. Assert the aggregated threat reflects the sum of modified damages.
+    - Input: 5 ability hits with base damage 10 and modifiers [1.0, 1.5, 0.5, 2.0, 1.0]
+    - Expected: aggregated threat == 10 * (1.0 + 1.5 + 0.5 + 2.0 + 1.0) == 60
+
 ## Integration Tests
 
 | ID            | Name                                  | Req       |
@@ -185,6 +208,14 @@ Test case IDs use `TC-17.1.Z.N` format. Every row links to a specific R-17.1.Z o
 | TC-17.1.I.6   | `test_save_load_roundtrip`            | R-17.1.8  |
 | TC-17.1.I.7   | `test_propagation_uses_shared_bvh`    | R-17.1.5  |
 | TC-17.1.I.8   | `test_codegen_predicate_hot_reload`   | R-17.1.7  |
+| TC-17.1.1.I1  | `test_author_event_log_primitive`     | US-17.1.1 |
+| TC-17.1.2.I1  | `test_sim_entry_256_budget`           | US-17.1.2 |
+| TC-17.1.3.I1  | `test_author_decay_curves`            | US-17.1.3 |
+| TC-17.1.4.I1  | `test_sim_1k_logs_decay_pass`         | US-17.1.4 |
+| TC-17.1.5.I1  | `test_author_propagation_rule`        | US-17.1.5 |
+| TC-17.1.6.I1  | `test_sim_50_neighbor_propagate`      | US-17.1.6 |
+| TC-17.1.7.I1  | `test_author_threshold_trigger`       | US-17.1.7 |
+| TC-17.1.8.I1  | `test_author_save_load_log`           | US-17.1.8 |
 
 1. **TC-17.1.I.1** `test_decay_pass_1000_logs` — Spawn 1,000 entities each with an `EventLog`
    holding 100 entries. Run one `SimulationDecay` stage tick. Assert wall time under 2 ms and every
@@ -237,6 +268,44 @@ Test case IDs use `TC-17.1.Z.N` format. Every row links to a specific R-17.1.Z o
    - Input: hot-reload the middleman .dylib while a trigger is active
    - Expected: subsequent `check_thresholds` calls dispatch to the new function pointer; no
      stale-pointer crash
+
+9. **TC-17.1.1.I1** `test_author_event_log_primitive` (US-17.1.1) — As a designer, author an
+   `EventLog<CombatEvent>` with capacity 32 in the editor. Spawn an entity using it; push combat
+   events in gameplay. Assert entries appear in insertion order and evict oldest when full.
+   - Input: authored log + 40 events pushed
+   - Expected: final count == 32; earliest 8 entries evicted; newest 32 preserved in order
+10. **TC-17.1.2.I1** `test_sim_entry_256_budget` (US-17.1.2) — As a developer, ensure each
+    `DecayingEntry<T>` stays within the 256 B budget for all shipping event types. Run a static-size
+    assertion pass during build.
+    - Input: representative event types (CombatEvent, DialogueLine, GossipEvent)
+    - Expected: `size_of::<DecayingEntry<T>>() <= 256` for every T
+11. **TC-17.1.3.I1** `test_author_decay_curves` (US-17.1.3) — As a designer, author linear,
+    exponential, and step decay curves for three distinct event logs. Push an entry into each;
+    advance ticks; assert observed accuracy matches the authored curve.
+    - Input: three logs with three curves
+    - Expected: each entry's accuracy over time matches the documented curve formula
+12. **TC-17.1.4.I1** `test_sim_1k_logs_decay_pass` (US-17.1.4) — As a developer, run a decay pass
+    across 1,000 active event logs. Assert the pass meets the 2 ms budget.
+    - Input: 1k logs × 100 entries
+    - Expected: measured pass wall time < 2 ms
+13. **TC-17.1.5.I1** `test_author_propagation_rule` (US-17.1.5) — As a designer, author a
+    propagation rule with `accuracy_multiplier = 0.7`. Propagate an entry once; assert the target
+    receives it at accuracy 0.7.
+    - Input: source accuracy 1.0; rule as above
+    - Expected: target entry accuracy ≈ 0.7; hop count == 1
+14. **TC-17.1.6.I1** `test_sim_50_neighbor_propagate` (US-17.1.6) — As a developer, propagate an
+    entry to 50 neighbors within range; assert the phase meets 0.5 ms budget.
+    - Input: 51 entities in range; one source push
+    - Expected: all 50 neighbors receive the entry; phase wall time < 0.5 ms
+15. **TC-17.1.7.I1** `test_author_threshold_trigger` (US-17.1.7) — As a designer, author a threshold
+    trigger "3 hostile events within 60 ticks → FireEvent('alert')". Push 3 matching entries; assert
+    the action fires exactly once.
+    - Input: trigger + 3 matching pushes
+    - Expected: one `ThresholdFired` event emitted; no duplicate
+16. **TC-17.1.8.I1** `test_author_save_load_log` (US-17.1.8) — As a player, save a game mid-session
+    with populated event logs. Reload; assert each log round-trips bit-identically.
+    - Input: 20 entities with varied logs; save then load
+    - Expected: loaded logs equal saved logs field-for-field
 
 ## Benchmarks
 
