@@ -334,6 +334,279 @@ Companion test cases for [procedural-generation.md](procedural-generation.md).
 2. **#2** — Outer planet (beyond frost line)
    - **Expected:** Classified as gas giant
 
+### TC-3.6.4.1 Mesh Spawn From Points
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.4     |
+| 2 | R-3.6.4     |
+
+1. **#1** — Input PointSet of 100 positions, each with `rotation` and `scale` attributes; spawn mesh
+   node with `tree_oak` asset
+   - **Expected:** 100 mesh instances created, per-instance transform matches point transform
+2. **#2** — Attribute `scale` varies in [0.5, 2.0]
+   - **Expected:** Each instance scale matches its point attribute
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.10.1 Terrain Texture Stamp Blend
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.10    |
+| 2 | R-3.6.10    |
+
+1. **#1** — Stamp 256x256 albedo+normal patch onto 1024x1024 terrain tile at (128, 128) with alpha
+   mask
+   - **Expected:** Tile texture blended within stamp bounds, untouched outside
+2. **#2** — Stamp twice at same location with 50% alpha
+   - **Expected:** Second stamp composites over first
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.13.1 Vegetation Spline Clearing
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.13    |
+| 2 | R-3.6.13    |
+
+1. **#1** — Road spline with 5m clearance, vegetation field with 100 instances on spline
+   - **Expected:** All instances within 5m of spline deleted
+2. **#2** — Instances beyond clearance
+   - **Expected:** Retained
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.14.1 L-System Road Network Growth
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.14    |
+| 2 | R-3.6.14    |
+
+1. **#1** — Seed single axiom, run 5 L-system iterations
+   - **Expected:** Road graph grows, branch count matches rule expansion
+2. **#2** — Apply obstacle mask (water)
+   - **Expected:** Branches skip obstacle cells
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.24.1 Procedural Object Rule Application
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.24    |
+| 2 | R-3.6.24    |
+
+1. **#1** — Apply "chair" rule with material=wood, size=(0.5,0.9,0.5)
+   - **Expected:** Object asset produced with part dimensions matching rule
+2. **#2** — Apply same rule with material=metal
+   - **Expected:** Same geometry, different material assignment
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.25.1 Houdini Engine Procedural Hook
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.25    |
+| 2 | R-3.6.25    |
+
+1. **#1** — Load `hip` asset through Houdini Engine wrapper node, cook with parameter map
+   - **Expected:** Returned point and mesh outputs match cook result
+2. **#2** — Disable wrapper
+   - **Expected:** Node evaluates to empty output without crashing
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.27.1 Interactive Spline Paint Tool
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.27    |
+
+1. **#1** — Simulate paint strokes along terrain, capture emitted spline control points
+   - **Expected:** Spline control points match stroke samples; real-time preview produces same
+     result as deferred preview
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.28.1 Constraint Authoring By Artist
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.28    |
+
+1. **#1** — Artist adds "no trees within 10m of road" constraint, runs vegetation placement
+   - **Expected:** Solver output respects constraint, zero violations
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.29.1 AI-Driven Content Generation Hook
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.29    |
+
+1. **#1** — Invoke AI content node with prompt="forest clearing", seed=42
+   - **Expected:** Deterministic layout returned; two invocations with same seed produce identical
+     output
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.34.1 Planetary Terrain Generation End To End
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.34    |
+| 2 | R-3.6.34    |
+
+1. **#1** — Generate planet with seed=42, radius=6000 km
+   - **Expected:** Heightmap spans full sphere, plate boundaries and biome regions visible
+2. **#2** — Regenerate with same seed
+   - **Expected:** Byte-identical result
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.37.1 Procedural Quest Generation Validity
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.37    |
+
+1. **#1** — Generate 100 quests against world state with 5 factions
+   - **Expected:** Every quest references valid faction, location, reward; dependency graph acyclic
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.40.1 Creature Placement Biome Match
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.40    |
+| 2 | R-3.6.40    |
+
+1. **#1** — Place 1000 creatures across desert + tundra biomes
+   - **Expected:** Each creature in its species-matching biome
+2. **#2** — Inspect density
+   - **Expected:** Matches per-biome density curve
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.41.1 Loot Distribution By Region Tier
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.41    |
+| 2 | R-3.6.41    |
+
+1. **#1** — Generate loot for region tier=1 (novice) and tier=5 (end-game)
+   - **Expected:** Tier-1 drops common items, tier-5 drops rare items per weight tables
+2. **#2** — Economy balance check
+   - **Expected:** Total value scales with tier
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.51.1 Planetary Giant Impact Simulation
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.51    |
+
+1. **#1** — Collide Mars-sized body with proto-Earth at 10 km/s
+   - **Expected:** Simulation produces debris disk and resulting merged planet with mass ~sum of
+     inputs
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.52.1 Gas Giant Atmosphere Generation
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.52    |
+| 2 | R-3.6.52    |
+
+1. **#1** — Generate gas giant with mass=318 earth masses
+   - **Expected:** Atmosphere composition H2+He dominant, no solid surface
+2. **#2** — Generate ice giant mass=17 earth masses
+   - **Expected:** Atmosphere has higher CH4, different tint
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.53.1 Moon And Ring System Generation
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.53    |
+| 2 | R-3.6.53    |
+
+1. **#1** — Generate gas giant with moon count=50
+   - **Expected:** 50 moons with unique orbits, no orbit collisions
+2. **#2** — Configure ring density=0.8
+   - **Expected:** Ring particles spawn in disk around planet equator
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.55.1 Galaxy Structure Spiral Arms
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.55    |
+
+1. **#1** — Generate spiral galaxy with 4 arms, seed=100
+   - **Expected:** Stars concentrated along arm logarithmic spirals, central bulge density highest
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.56.1 Supermassive Black Hole Rendering
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.56    |
+
+1. **#1** — Place SMBH at galactic center, render viewport
+   - **Expected:** Event horizon visible; gravitational lensing distorts background stars within
+     photon sphere
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.57.1 Dark Matter Large Scale Web
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.57    |
+
+1. **#1** — Generate 100 Mpc region at z=2
+   - **Expected:** Filamentary cosmic web visible, void regions sparsely populated
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.58.1 Stellar Collision Simulation
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.58    |
+
+1. **#1** — Two 1 solar-mass stars collide at 100 km/s
+   - **Expected:** Merged star produced, merged mass ~2 solar, temporary luminosity spike logged
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.59.1 Black Hole Formation And Merger
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.59    |
+
+1. **#1** — Collapse 20 solar-mass star into stellar BH
+   - **Expected:** BH mass=20 solar, horizon radius computed from Schwarzschild formula within 1%
+     tolerance
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.61.1 Planetary Mineralogy Distribution
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.61    |
+
+1. **#1** — Generate terrestrial planet, sample mineral composition at crust, mantle, core
+   - **Expected:** Iron enriched in core, silicates dominant in mantle/crust, rare minerals
+     distributed per geological simulation
+
+<!-- THIN: design section lacks detail -->
+### TC-3.6.62.1 Server-Side Universe Generation Shard
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.6.62    |
+| 2 | R-3.6.62    |
+
+1. **#1** — Generate galactic shard on server instance A
+   - **Expected:** Shard cached with shard key, reproducible on reload
+2. **#2** — Generate same shard on server B with same seed
+   - **Expected:** Shard state byte-identical to server A
+
 ## Integration Tests
 
 ### TC-3.6.1.I1 Graph End-to-End
