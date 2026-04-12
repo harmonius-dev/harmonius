@@ -32,6 +32,12 @@ Test case IDs use `TC-16.2.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-16.2.9.1   | `test_transfer_capacity_check`      | R-16.2.9  |
 | TC-16.2.9.2   | `test_transfer_weight_check`        | R-16.2.9  |
 | TC-16.2.9.3   | `test_transfer_tag_check`           | R-16.2.9  |
+| TC-13.8.1.1   | `test_inventory_grid_layout`        | R-13.8.1  |
+| TC-13.8.2.1   | `test_stackable_resource_merge`     | R-13.8.2  |
+| TC-13.8.3.1   | `test_gem_socket_attach`            | R-13.8.3  |
+| TC-13.8.4.1   | `test_equipment_slot_constraint`    | R-13.8.4  |
+| TC-13.8.5.1   | `test_drag_drop_validator_routed`   | R-13.8.5  |
+| TC-13.10.3.1  | `test_stat_propagate_flat_add`      | R-13.10.3 |
 
 1. **TC-16.2.1.1** `test_container_construct_capacity` — Construct a container with capacity 8;
    assert empty state and reported capacity.
@@ -157,6 +163,42 @@ Test case IDs use `TC-16.2.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Input: container `required_tags = ["consumable"]`; item tags `["weapon"]`
     - Expected: `Err(TransferError::TagMismatch { .. })`
 
+25. **TC-13.8.1.1** `test_inventory_grid_layout` — Construct a 10×4 grid inventory container using
+    the generic `GridContainer`. Insert 3 items with distinct footprints. Assert each is placed
+    within bounds without overlap.
+    - Input: grid 10×4; items with footprints `(2,2)`, `(3,1)`, `(1,4)`
+    - Expected: all three `insert` calls return `Ok`; occupancy mask has no overlapping cells
+
+26. **TC-13.8.2.1** `test_stackable_resource_merge` — Create a stackable ammo item with max stack
+    30. Insert a stack of 10, then another 15 of the same type. Assert merged into one stack of
+    25.
+    - Input: slot 0 `(ammo, 10)`; insert `(ammo, 15)`
+    - Expected: slot 0 becomes `(ammo, 25)`; only one slot occupied
+
+27. **TC-13.8.3.1** `test_gem_socket_attach` — Create a weapon with one
+    `Socket { required_tags: ["gem"] }`. Attach a gem item tagged `gem`; assert the socket's
+    occupant is the gem.
+    - Input: weapon entity with socket list; gem entity tagged `"gem"`
+    - Expected: `socket.occupant == Some(gem_entity)`; gem removed from source container
+
+28. **TC-13.8.4.1** `test_equipment_slot_constraint` — Character with
+    `EquipmentSlots { helmet, chest, legs, weapon }`. Attempt to equip a `weapon`-tagged item into
+    the `helmet` slot. Assert rejection with `SlotConstraintMismatch`.
+    - Input: helmet slot with `allowed_tags: ["helmet"]`; weapon item with tag `"weapon"`
+    - Expected: `Err(TransferError::SlotConstraintMismatch { .. })`; slot remains empty
+
+29. **TC-13.8.5.1** `test_drag_drop_validator_routed` — Issue a drag-drop from UI through the
+    transfer validator. Assert the request is routed through the full validator (capacity, weight,
+    tags) and a mutation event is produced exactly once on success.
+    - Input: UI `DragDropRequest { source, target, item }`; all checks pass
+    - Expected: one `ItemTransferred` event; source and target reflect the move atomically
+
+30. **TC-13.10.3.1** `test_stat_propagate_flat_add` — Parent has `AttributeSet { strength: 50 }`.
+    Socket a gem with modifier `FlatAdd(+10 -> strength)`. Assert the parent's reported strength
+    becomes 60 and reverts to 50 on unsocket.
+    - Input: parent `strength: 50`; gem socketed then unsocketed
+    - Expected: `strength.read() == 60` while socketed; `== 50` after unsocket
+
 ## Integration Tests
 
 | ID            | Name                              | Req       |
@@ -168,6 +210,16 @@ Test case IDs use `TC-16.2.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-16.2.I.5   | `test_drag_drop_full_pipeline`    | R-16.2.9  |
 | TC-16.2.I.6   | `test_grid_pickup_loot_burst`     | R-16.2.2  |
 | TC-16.2.I.7   | `test_nested_bag_serialization`   | R-16.2.4  |
+| TC-16.2.1.I1  | `test_author_container_capacity`  | US-16.2.1 |
+| TC-16.2.2.I1  | `test_author_grid_inventory`      | US-16.2.2 |
+| TC-16.2.3.I1  | `test_author_stackable_resource`  | US-16.2.3 |
+| TC-16.2.4.I1  | `test_author_nested_container`    | US-16.2.4 |
+| TC-16.2.5.I1  | `test_player_sort_container`      | US-16.2.5 |
+| TC-16.2.6.I1  | `test_author_socket_attach`       | US-16.2.6 |
+| TC-16.2.7.I1  | `test_socket_stats_propagation`   | US-16.2.7 |
+| TC-16.2.8.I1  | `test_socket_visual_binding_flow` | US-16.2.8 |
+| TC-16.2.9.I1  | `test_player_drag_drop`           | US-16.2.9 |
+| TC-16.2.10.I1 | `test_crafting_consume_flow`      | US-16.2.10 |
 
 1. **TC-16.2.I.1** `test_socket_propagates_stats` — Socket an item granting `+10` to the parent
    "strength" attribute. Assert parent shows the modifier; unsocket; assert removed.
@@ -208,6 +260,66 @@ Test case IDs use `TC-16.2.Z.N` format. Every row links to a specific R-X.Y.Z or
    - Input: bag A contains bag B contains bag C contains 3 items
    - Expected: after save+load, parent-child links match original; item ids preserved; depth count
      == 3
+
+8. **TC-16.2.1.I1** `test_author_container_capacity` (US-16.2.1) — As a designer, author a
+   `ContainerDef` with capacity 12 and weight limit 60 in the editor. Spawn an entity using it; fill
+   to capacity. Assert the 13th insert is rejected and the 60 kg weight limit enforced.
+   - Input: editor-authored `ContainerDef { capacity: 12, weight_limit: 60.0 }`
+   - Expected: 12 items fit; 13th returns `ContainerFull`; overweight insert returns `OverWeight`
+
+9. **TC-16.2.2.I1** `test_author_grid_inventory` (US-16.2.2) — As a designer, author a 10×4 grid
+   container. In-game, drop several irregularly-shaped items into it. Assert auto bin-packing places
+   all items without overlap and the inventory UI reflects positions.
+   - Input: 6 items with mixed footprints; 10×4 grid
+   - Expected: all fit; no overlap; UI shows each at correct cell coordinates
+
+10. **TC-16.2.3.I1** `test_author_stackable_resource` (US-16.2.3) — As a designer, mark an item type
+    stackable with max 99. Pick up 150 of that item. Assert the inventory contains one full stack of
+    99 and one stack of 51.
+    - Input: item with `max_stack: 99`; pickup of 150
+    - Expected: two slots occupied: `(item, 99)` and `(item, 51)`
+
+11. **TC-16.2.4.I1** `test_author_nested_container` (US-16.2.4) — As a designer, author a bag
+    containing another bag. Assert the engine allows nesting up to `max_depth` and rejects beyond.
+    - Input: max_depth=3; nest 3 bags; attempt a 4th
+    - Expected: 3 levels accepted; 4th rejected with `NestingTooDeep`
+
+12. **TC-16.2.5.I1** `test_player_sort_container` (US-16.2.5) — As a player, trigger a "sort by
+    weight" action on an inventory. Assert the slot order updates deterministically and no items are
+    lost or duplicated.
+    - Input: 20-slot container with random items; `SortRequest { criterion: Weight }`
+    - Expected: slot order ascending by weight; same entity set; no events for spawn/despawn
+
+13. **TC-16.2.6.I1** `test_author_socket_attach` (US-16.2.6) — As a designer, author an item with a
+    socket that requires tag `"rune"`. Attach a rune item in-game. Assert success and reject a
+    non-rune attachment.
+    - Input: socket `required_tags: ["rune"]`; rune item; non-rune item
+    - Expected: rune attach returns `Ok`; non-rune attach returns `TagMismatch`
+
+14. **TC-16.2.7.I1** `test_socket_stats_propagation` (US-16.2.7) — As a gameplay engineer, attach a
+    gem that grants `+10 strength` to a character's weapon socket. Assert the character's strength
+    attribute increases by 10. Detach; assert it reverts.
+    - Input: character with strength 50; gem grants `+10`
+    - Expected: strength reads 60 while socketed; 50 after detach
+
+15. **TC-16.2.8.I1** `test_socket_visual_binding_flow` (US-16.2.8) — As a character artist, attach a
+    mesh item to a socket with a defined offset. Assert the rendered mesh follows the parent
+    transform with the configured offset on every frame for 5 frames.
+    - Input: parent transform animates; socket offset `(0, 1, 0)`; mesh attached
+    - Expected: over 5 frames, mesh world transform equals parent × offset each frame
+
+16. **TC-16.2.9.I1** `test_player_drag_drop` (US-16.2.9) — As a player, drag an item from one
+    inventory slot to another container. Assert the drag-drop UI triggers validation, mutation
+    event, and both containers update with a single `ItemTransferred` event.
+    - Input: source slot with item A; target container with space
+    - Expected: source empty at that slot; target contains A; one `ItemTransferred` emitted
+
+17. **TC-16.2.10.I1** `test_crafting_consume_flow` (US-16.2.10) — As a crafting designer, author a
+    recipe that consumes 2 iron + 1 wood and produces 1 sword. Trigger craft; assert atomic
+    consumption and output.
+    - Input: container with `(iron, 5)`, `(wood, 3)`; recipe as above
+    - Expected: container ends with `(iron, 3)`, `(wood, 2)`, `(sword, 1)`; one `CraftCompleted`
+      event
 
 ## Benchmarks
 
