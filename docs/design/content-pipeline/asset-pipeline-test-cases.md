@@ -47,6 +47,11 @@ Test case IDs use `TC-12.{group}.Z.N` format. Every row links to a specific R-X.
 | TC-12.7.4.1   | `test_three_way_merge_disjoint`   | R-12.7.4  |
 | TC-12.7.5.1   | `test_auto_resolve_lww`           | R-12.7.5  |
 | TC-12.7.5.2   | `test_auto_resolve_union`         | R-12.7.5  |
+| TC-12.2.8.1   | `test_dep_graph_pipeline_cycle`   | R-12.2.8  |
+| TC-12.6.25.1  | `test_material_mapper_gltf_pbr`   | R-12.6.25 |
+| TC-12.6.26.1  | `test_headless_batch_identical`   | R-12.6.26 |
+| TC-12.7.6.1   | `test_data_table_editor_cell_edit`| R-12.7.6  |
+| TC-12.7.7.1   | `test_visual_inspector_fields`    | R-12.7.7  |
 
 1. **TC-12.1.1.1** `test_native_format_magic_valid` — Import a native binary file with magic
    `b"HAST"` and version 1. Assert importer accepts and registers the asset.
@@ -251,6 +256,38 @@ Test case IDs use `TC-12.{group}.Z.N` format. Every row links to a specific R-X.
     - Input: ancestor `tags=[a]`; ours `tags=[a,b]`; theirs `tags=[a,c]`
     - Expected: `AutoResolved { merged: tags=[a,b,c], resolutions: [Union] }`
 
+40. **TC-12.2.8.1** `test_dep_graph_pipeline_cycle` — Build a processing dep graph with edges
+    `A→B, B→A` passed to the pipeline. Assert the pipeline returns `PipelineError::DependencyCycle`
+    naming both assets.
+    - Input: 2 assets with mutual dep edges
+    - Expected: `Err(PipelineError::DependencyCycle { path: [A, B, A] })`, no partial outputs
+      written to CAS
+
+41. **TC-12.6.25.1** `test_material_mapper_gltf_pbr` — Translate a glTF PBR material to the engine's
+    `HarMaterialDesc`. Assert base-color maps to `BaseColor`, metallic-roughness maps to the
+    expected slot, and a missing emissive channel falls back to configured default.
+    - Input: glTF PBR material with base_color, metallic-roughness, no emissive
+    - Expected: `HarMaterialDesc { base_color: _, mr: _, emissive: fallback }`, `warnings` empty
+
+42. **TC-12.6.26.1** `test_headless_batch_identical` — Run the headless batch importer twice on the
+    same source tree. Assert all BLAKE3 asset hashes are byte-identical across both runs.
+    - Input: fixed source tree with 50 assets, deterministic seed
+    - Expected: every `asset_id → hash` entry equal across runs; metadata store hashes equal
+
+43. **TC-12.7.6.1** `test_data_table_editor_cell_edit` — Open a `.hat` data table in the spreadsheet
+    editor, edit one cell, and save. Assert the saved file contains the edited value and structural
+    diff shows exactly one changed cell.
+    - Input: 100-row data table, edit `row 42 col "damage" = 55`
+    - Expected: saved bytes contain new value; `structural_diff` returns one change at that
+      coordinate
+
+44. **TC-12.7.7.1** `test_visual_inspector_fields` — Load a `.har` asset in the universal visual
+    inspector. Assert every reflected field of the root struct is rendered as a widget matching the
+    field type.
+    - Input: asset with `{ name: String, count: u32, color: Rgba }`
+    - Expected: inspector contains a text field, an integer spinner, and a color picker; widget
+      types match field types
+
 ## Integration Tests
 
 | ID           | Name                              | Req        |
@@ -264,6 +301,9 @@ Test case IDs use `TC-12.{group}.Z.N` format. Every row links to a specific R-X.
 | TC-12.4.I.3  | `test_editor_sync_roundtrip`      | R-12.4.7   |
 | TC-12.7.I.1  | `test_git_merge_driver`           | R-12.7.8   |
 | TC-12.7.I.2  | `test_versioning_full_history`    | R-12.3.10  |
+| TC-12.1.I.3  | `us_audio_designer_loop_points`   | US-12.1.7  |
+| TC-12.4.I.4  | `us_artist_partial_subasset_reimp`| US-12.4.9  |
+| TC-12.4.I.5  | `us_eng_editor_runtime_bidir_sync`| US-12.4.10 |
 
 1. **TC-12.1.I.1** `test_batch_import_100_files` — Import 100 mixed-format assets (50 PNG, 30 glTF,
    20 WAV) in one batch. Assert all complete with `Imported` status and the database has 100
@@ -318,6 +358,28 @@ Test case IDs use `TC-12.{group}.Z.N` format. Every row links to a specific R-X.
    is non-empty.
    - Input: 6 sequential imports of the same asset
    - Expected: `version_store.list(asset_id).len() == 6`, restore matches, diff non-empty
+
+10. **TC-12.1.I.3** `us_audio_designer_loop_points` — As an audio designer, import a WAV with a
+    looping region marked via `smpl`/`cue` chunks. Assert the loop start/end sample positions are
+    preserved in the processed asset metadata.
+    - Input: 2 s looping WAV with `smpl` chunk `(loop_start: 512, loop_end: 48000)`
+    - Expected: processed asset metadata has `loop_start == 512`, `loop_end == 48000`; runtime
+      playback loops between those samples
+
+11. **TC-12.4.I.4** `us_artist_partial_subasset_reimp` — As a technical artist, modify one texture
+    inside a glTF bundle. Assert only the touched sub-asset is re-imported and its siblings remain
+    cached.
+    - Input: glTF with mesh + 3 textures, modify texture 2 on disk
+    - Expected: importer invoked once for texture 2; meshes and other textures report cache hits;
+      runtime handles for siblings unchanged
+
+12. **TC-12.4.I.5** `us_eng_editor_runtime_bidir_sync` — As an engine developer, connect an editor
+    and runtime via the bidirectional sync channel. Mutate a component in the editor, then in the
+    runtime. Assert both sides observe the other within 100 ms and no message loss under 200 msg/s
+    load.
+    - Input: `EditorSync` session, 1,000 alternating edits, 200 msg/s
+    - Expected: both sides converge after each edit within 100 ms; 0 messages dropped; channel order
+      preserved
 
 ## Benchmarks
 
