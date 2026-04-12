@@ -17,6 +17,10 @@
 | TC-IR-2.2.5.2 | Gossip accuracy degrades | 2-hop propagation | accuracy *= 0.7^2 | IR-2.2.5 |
 | TC-IR-2.2.6.1 | AI writes decision event | BT selects "flee" | Log entry with flee data | IR-2.2.6 |
 | TC-IR-2.2.6.2 | AI decision recalled later | Flee event + 30 ticks | BT reads own flee memory | IR-2.2.6 |
+| TC-IR-2.2.FM4 | Predicate mismatch empty | Wrong predicate vs log | Empty SmallVec, no panic | FM-4 |
+| TC-IR-2.2.FM3 | Propagation overflow FIFO | Full log + propagation | Oldest evicted, new kept | FM-3 |
+| TC-IR-2.2.FM5 | Unconsumed threshold drop | ThresholdFired, no AI | Events drained, warn logged | FM-5 |
+| TC-IR-2.2.FM6 | Channel overflow drop | 65+ ThresholdFired/tick | 64 delivered, 1+ dropped | FM-6 |
 
 ## Benchmarks
 

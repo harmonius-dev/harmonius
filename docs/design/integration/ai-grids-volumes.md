@@ -37,10 +37,16 @@
 |------|-----------|-------------|---------|
 | `UniformGrid<f32>` | Grids | AI Behavior | Influence map |
 | `UniformGrid<Vec2>` | Grids | AI Behavior | Flow field |
-| `UniformGrid<FogState>` | Grids | AI Behavior | Visibility |
+| `UniformGrid<T>` | Grids | AI Behavior | Visibility (1) |
 | `CellCoord` | Grids | AI Behavior | Grid position |
-| `PropagationKernel<f32>` | Grids | AI Behavior | Influence spread |
-| `Blackboard` | AI Behavior | AI Behavior | Agent state |
+| `Blackboard` | AI Behavior | AI Behavior | Agent state (2) |
+
+1. Fog of war cell type `T` (e.g., `FogState`) is user-defined and codegen'd into the middleman
+   .dylib. The engine treats it as an opaque `T`. See grids-volumes.md section 12 for codegen
+   details.
+2. `Blackboard` uses `BTreeMap<BlackboardKey, BlackboardValue>` (not `HashMap`) because every agent
+   samples grids and writes results to its blackboard each frame, making this a hot path. See
+   behavior.md `BlackboardScope`.
 
 ```rust
 /// BT leaf that samples an influence map at the
@@ -70,6 +76,51 @@ pub struct FlowFieldSample {
     pub direction: Vec2,
     /// Whether the cell is valid (reachable).
     pub valid: bool,
+}
+
+/// BT leaf that writes an influence value back to
+/// a grid cell at the agent's position (IR-2.3.6).
+/// Sends an InfluenceWriteMsg through an MPSC
+/// channel so concurrent AI systems never race on
+/// grid mutation.
+pub struct BtInfluenceWrite {
+    /// Entity holding the UniformGrid<f32>.
+    /// Generational index -- stale handles are
+    /// safely rejected (see ecs.md Entity).
+    pub grid_entity: Entity,
+    /// Blackboard key holding the value to write.
+    pub value_key: BlackboardKey,
+    /// Write mode: additive or overwrite.
+    pub mode: InfluenceWriteMode,
+}
+
+/// How an influence write merges with the existing
+/// cell value.
+pub enum InfluenceWriteMode {
+    /// New value = old + written.
+    Additive,
+    /// New value = written (last writer wins within
+    /// the batch).
+    Overwrite,
+}
+
+/// Message sent through the per-grid MPSC channel.
+/// AI systems in Phase 4 enqueue writes; a single
+/// drain system applies them sequentially before
+/// Phase 3 propagation of the next frame.
+///
+/// Channel buffering: bounded to
+/// `MAX_WRITES_PER_GRID` (default 4096). If the
+/// channel is full the write is dropped and logged
+/// as a warning. The drain system processes all
+/// pending messages in one batch.
+pub struct InfluenceWriteMsg {
+    /// Cell to write to.
+    pub cell: CellCoord,
+    /// Value to write.
+    pub value: f32,
+    /// Write mode.
+    pub mode: InfluenceWriteMode,
 }
 ```
 
@@ -137,3 +188,58 @@ rendering overlays is handled by the grids/volumes system independently of AI re
 ## Test Plan
 
 See companion [ai-grids-volumes-test-cases.md](ai-grids-volumes-test-cases.md).
+
+## Review Feedback
+
+1. `[CONFIDENT]` `FogState` is referenced in the Data Contracts table and pseudocode (IR-2.3.3) but
+   is not defined in either the grids-volumes or AI behavior design documents. It needs to be
+   defined in `grids-volumes.md` or documented here as a user-defined cell type `T`.
+
+2. `[CONFIDENT]` The document covers only `UniformGrid<T>` (2D). The grids-volumes design also
+   defines `VoxelVolume<T>` (3D) and `HierarchicalGrid` (2D LOD). The engine requires 2D/2.5D/3D
+   support in every subsystem, but this integration has no coverage of AI reading 3D voxel volumes
+   (e.g., 3D influence or fog in a voxel world).
+
+3. `[CONFIDENT]` IR-2.3.6 (AI writes influence to grids) has no Rust pseudocode in the Data
+   Contracts section. There is no struct or function signature showing how AI systems write values
+   back. Add a write-back data contract (e.g., `BtInfluenceWrite` or a system function signature).
+
+4. `[CONFIDENT]` The sequence diagram does not show the IR-2.3.6 write-back flow. AI writing
+   influence back to grids is described in prose but absent from the Mermaid diagram. Add a sequence
+   showing AI writing to the grid and the next propagation tick picking it up.
+
+5. `[CONFIDENT]` Test cases are missing benchmarks for IR-2.3.4 (utility scoring from grid cells)
+   and IR-2.3.5 (GOAP world state from grid queries). Every other IR has a benchmark entry.
+
+6. `[UNCERTAIN]` IR-2.3.6 states AI writes happen in Phase 4 and are "picked up by the next
+   propagation tick" in Phase 3. If multiple AI systems write to the same grid cells concurrently
+   within Phase 4 (parallel ECS systems), the document does not specify ordering or conflict
+   resolution. Should writes be atomic, additive, or last-writer-wins?
+
+7. `[UNCERTAIN]` The Timing table shows AI Behavior runs on "Variable" timestep while Grids
+   propagation runs on "Fixed" timestep. When multiple variable-rate AI ticks occur between fixed
+   propagation ticks, the document does not clarify whether grid reads return interpolated data or
+   the last fixed-tick snapshot.
+
+8. `[CONFIDENT]` The `Blackboard` design in `behavior.md` uses
+   `HashMap<BlackboardKey, BlackboardValue>` for `BlackboardScope`. The engine forbids `HashMap` on
+   hot paths. Since every AI agent samples grids and writes results to its blackboard every frame,
+   this is a hot path. The blackboard should use `BTreeMap` or sorted `Vec`.
+
+9. `[CONFIDENT]` The `PropagationKernel<f32>` appears in the Data Contracts table as "Consumed by:
+   AI Behavior" but no pseudocode or integration requirement references AI systems configuring or
+   reading propagation kernels. Either remove it from the table or add an IR describing the
+   interaction.
+
+10. `[CONFIDENT]` The `GridCellConsideration` struct stores `grid_entity: Entity` as a direct entity
+    reference. The engine prefers generational indices over raw entity references for safety.
+    Clarify whether `Entity` here is a generational index (as in the custom ECS design) or a raw ID.
+
+11. `[CONFIDENT]` The Failure Modes table lists "Grid not yet propagated" with recovery "Use last
+    frame data," but does not explain how last frame data is accessed. The immutable-first data
+    pattern suggests double-buffering. If grids are double-buffered, state that AI reads the front
+    buffer; if not, document why stale reads are safe.
+
+12. `[CONFIDENT]` The `FlowFieldSample` struct in Data Contracts uses `Vec2` for direction, limiting
+    it to 2D. For 3D games with vertical movement (flying AI, multi-floor buildings), a `Vec3`
+    variant or a generic approach is needed to satisfy the 2D/3D requirement.

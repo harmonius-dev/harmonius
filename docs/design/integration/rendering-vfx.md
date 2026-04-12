@@ -140,3 +140,76 @@ sequenceDiagram
 ## Test Plan
 
 See companion [rendering-vfx-test-cases.md](rendering-vfx-test-cases.md).
+
+## Review Feedback
+
+1. [CONFIDENT] The term "async compute queue" (IR-3.7.1) and "Render (async)" in Timing are
+   ambiguous given the hard constraint "No async/await in engine runtime." Clarify this refers to
+   GPU async compute (a hardware queue), not Rust async/await.
+
+2. [CONFIDENT] Missing `classDiagram` Mermaid diagram. Per `docs/design/CLAUDE.md`, every design
+   MUST have a classDiagram covering all types, enums, traits, and relationships.
+
+3. [CONFIDENT] No mention of 2D or 2.5D VFX support. The engine requires first-class 2D/2.5D; the
+   design must address how particle rendering, decals, and screen effects operate in orthographic
+   and 2.5D projections.
+
+4. [CONFIDENT] No mention of rkyv, zero-copy serialization, or mmap for any data contract types.
+   Clarify whether `ParticleRenderPassDesc`, `FroxelInjection`, and the data contract types are
+   rkyv-archived or purely transient GPU structs.
+
+5. [CONFIDENT] `FroxelInjection` uses `Vec3` for `scattering` and `absorption`, and `Aabb` for
+   `world_aabb`. These types are not defined or sourced. Specify whether they come from a math crate
+   or are engine-defined, and ensure they are `#[repr(C)]` for GPU upload compatibility.
+
+6. [CONFIDENT] The VFX graph is specified as "declarative composable effects" but the design never
+   references the effect graph, declarative composition, or how render passes are spawned from graph
+   evaluation. The integration should show how a VFX graph node triggers render graph pass
+   registration.
+
+7. [CONFIDENT] No HashMap/hot-path analysis. Particle light injection (IR-3.7.5) selects the "100
+   brightest" from 1000 candidates, and decal sorting by priority (IR-3.7.4) implies a collection
+   lookup. Specify the data structures used and confirm no HashMap on hot paths.
+
+8. [CONFIDENT] `GpuBufferView` in `ParticleRenderPassDesc` may wrap a shared reference internally.
+   The engine forbids Arc/Rc/Cell/RefCell; confirm this is a generational index or typed handle, not
+   a ref-counted wrapper.
+
+9. [CONFIDENT] The Data Contracts table lists `EmitterLodComponent` and `EffectBudget` but neither
+   appears in the Rust pseudocode. All data contract types should have struct definitions showing
+   their fields.
+
+10. [CONFIDENT] Timing table shows EmitterManager, LOD evaluation, and Budget scaling in Phase
+    "3-Simulation" but does not specify which thread owns these. Per the three-thread model, clarify
+    whether these run on worker threads or the main thread.
+
+11. [CONFIDENT] Companion test cases have no benchmarks for IR-3.7.6 (screen effects) or IR-3.7.7
+    (LOD evaluation). Every IR should have at least one benchmark target.
+
+12. [CONFIDENT] No test cases cover failure modes. The design lists six failure scenarios (budget
+    exceeded, sort OOM, froxel overflow, decal atlas full, light overflow, async compute stall) but
+    no companion test case exercises any of them.
+
+13. [CONFIDENT] The Froxel 3D texture in the Data Contracts table shows "Defined in: Rendering,
+    Consumed by: VFX" but IR-3.7.3 says VFX writes to the froxel texture. The producer/consumer
+    direction appears inverted; VFX produces density data and Rendering consumes it.
+
+14. [UNCERTAIN] Platform Considerations lists "Mobile: Async compute = None (inline)" and "Froxel =
+    Disabled." If froxels are disabled on mobile, IR-3.7.3 is partially unsatisfied on that
+    platform. Document whether fog volumes degrade to a simpler technique or are simply absent.
+
+15. [CONFIDENT] The design references `F-11.1.6` in IR-3.7.5 but does not include a Requirements
+    Trace table mapping IRs back to source requirements and features. Add a trace table per the
+    design template.
+
+16. [CONFIDENT] Missing sections per `docs/design/CLAUDE.md`: Requirements Trace, Overview,
+    Architecture, API Design, and Open Questions. While integration designs use a lighter template,
+    the design rules require these sections for every design file.
+
+17. [UNCERTAIN] `SortKey` and `BlendMode` enums are used in `ParticleRenderPassDesc` but never
+    defined. Show their variants in the Rust pseudocode or reference the design where they are
+    defined.
+
+18. [CONFIDENT] The sequence diagram does not show the RenderFrame snapshot boundary (Phase 7)
+    separating simulation-thread data from render-thread data. Per the three-thread model, all data
+    crossing from workers to the render thread must be snapshotted; show this handoff explicitly.

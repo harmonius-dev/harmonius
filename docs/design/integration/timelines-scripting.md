@@ -173,3 +173,39 @@ native codegen'd Rust in the middleman .dylib.
 ## Test Plan
 
 See companion [timelines-scripting-test-cases.md](timelines-scripting-test-cases.md).
+
+## Review Feedback
+
+1. `[CONFIDENT]` `WaitCondition::Seconds` uses `f64` but engine timing uses fixed-timestep ticks;
+   prefer `u32` frame count or `FixedTime` to avoid float drift.
+2. `[CONFIDENT]` `TimelineSeekEvent.target_time` is `f64`; all other engine time values should use a
+   consistent `FixedTime` or tick-based representation, not raw f64.
+3. `[CONFIDENT]` Missing classDiagram -- design CLAUDE.md requires every design to have a Mermaid
+   `classDiagram` covering ALL types, enums, traits, and relationships.
+4. `[CONFIDENT]` Data Contracts table lists `ExecutionContext` as "Consumed by: Scripting" but graph
+   nodes writing `PlaybackState` (IR-4.9.2) means Timelines also consumes it; update the table.
+5. `[CONFIDENT]` No Rust pseudocode for `TimelineEventKind` enum variants -- the Data Contracts
+   table lists it but the code block only defines `WaitCondition`, `TimelineSeekEvent`, and
+   `TrackVariableBinding`.
+6. `[CONFIDENT]` `SmallVec<TimelineEvent>` in the sequence diagram implies a `smallvec` dependency;
+   confirm this is an approved dependency or use a fixed-size array or arena-allocated slice.
+7. `[CONFIDENT]` `TrackVariableBinding` has `track_id: TrackId` and `slot_id: SlotId` but these
+   types are not defined or cross-referenced in the Data Contracts table.
+8. `[CONFIDENT]` Test cases do not cover IR-4.9.2 `stop()` -- only `play()`, `pause()`, and `seek()`
+   are tested despite `stop()` being listed in the IR-4.9.2 description.
+9. `[CONFIDENT]` No test case covers the hot-reload failure mode ("drain-then-swap preserves vars")
+   listed in the Failure Modes table.
+10. `[CONFIDENT]` No test case covers the variable slot type mismatch failure mode ("validate at
+    bind time").
+11. `[UNCERTAIN]` The coroutine timeout (Failure Modes row 3, test TC-IR-4.9.3.3) says "timeout
+    after N seconds" but does not specify a default N or how it is configured; this may need a
+    component field or constant.
+12. `[CONFIDENT]` `event_id: u64` in `WaitCondition::Event` uses a raw integer; prefer a newtype
+    wrapper (e.g., `EventId(u64)`) for type safety consistent with `TrackId` and `SlotId`.
+13. `[CONFIDENT]` Design is missing the "Overview" section expected by the integration design
+    template (PROMPT.md phase 3 lists Overview as a required section).
+14. `[CONFIDENT]` No "Thread Ownership" or "Frame-boundary handoff" discussion despite the PROMPT.md
+    template requiring them; all systems here run on workers but this should be stated explicitly.
+15. `[UNCERTAIN]` The branching cutscene flow shows `GraphInstance` directly calling `UI` to show a
+    choice dialog, but graph execution is codegen'd native code on workers -- the mechanism for
+    spawning UI entities from a graph node is not specified.

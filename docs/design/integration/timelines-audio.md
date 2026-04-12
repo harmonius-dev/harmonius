@@ -173,3 +173,74 @@ None -- timeline-to-audio integration is identical across all platforms. The aud
 ## Test Plan
 
 See companion [timelines-audio-test-cases.md](timelines-audio-test-cases.md).
+
+## Review Feedback
+
+1. [CONFIDENT] The design defines a custom `TimelineAudioCommand` enum instead of reusing the
+   canonical `AudioCommand` from the audio design (`audio.md` L1054-1123). The audio design already
+   provides `Play`, `SetBusParam`, `MusicPlay`, `MusicTransition`, and `TriggerStinger` variants
+   that cover every use case here. Defining a parallel command enum creates a maintenance burden and
+   type duplication; the integration should send `AudioCommand` variants directly into the existing
+   SPSC queue.
+
+2. [CONFIDENT] The `PlayOneShot` variant is missing `voice_id: VoiceId`, `priority: VoicePriority`,
+   and `timestamp: AudioTimestamp` fields that the canonical `AudioCommand::Play` requires. Without
+   `voice_id` the audio thread cannot track or stop the voice; without `priority` voice-stealing
+   cannot work.
+
+3. [CONFIDENT] The `MusicCue` variant takes `cue_entity: Entity` and a `MusicTransitionKind` enum,
+   but the audio design uses `SegmentId` (not `Entity`) and separate command variants (`MusicPlay`,
+   `MusicTransition`, `TriggerStinger`). The types and decomposition do not match the canonical
+   audio API.
+
+4. [CONFIDENT] The design invents `AudioBusId` and `AudioBusParam` types, but the audio design
+   defines `BusId` and `BusParam`. These should use the canonical names to avoid type aliasing
+   confusion.
+
+5. [CONFIDENT] `BeatClock` lives on the audio thread inside `MusicStateMachine` (audio.md L1505).
+   The beat-sync sequence diagram shows `BeatClock` sending `BeatEvent` directly to
+   `TimelineAdvanceSystem` on the simulation thread, but there is no cross-thread transport
+   mechanism described. A reverse SPSC queue (audio-to-game) or a shared atomic beat counter is
+   needed to bridge the thread boundary.
+
+6. [CONFIDENT] `SubtitleEvent` is referenced in IR-4.7.6 and TC-IR-4.7.6.1 but is never defined in
+   the Data Contracts table, never given a Rust struct definition, and does not appear in any other
+   design document. It needs a type definition and a contract entry.
+
+7. [CONFIDENT] The design document is missing a `classDiagram` Mermaid diagram. Per the design
+   CLAUDE.md rules, every design must have a class diagram covering all types, enums, traits, type
+   aliases, and their relationships.
+
+8. [CONFIDENT] The Timing and Ordering table places `BeatClock` in the "Audio thread" row with
+   timestep "Per buffer", but the beat-sync sequence diagram shows it feeding
+   `TimelineAdvanceSystem` synchronously. The table and diagram are inconsistent about which thread
+   owns the beat-time data consumed by the timeline system.
+
+9. [CONFIDENT] IR-4.7.5 says `TrackId` is "bound to a bus entity's `AudioBusGain` or
+   `AudioBusFilter` component", but these component types are not defined in either the audio design
+   or this document. The audio design uses `BusParam` enum variants (`Gain`, `LowPassCutoff`, etc.)
+   on the `SetBusParam` command rather than separate components.
+
+10. [CONFIDENT] The test case companion file has no coverage for three of the five failure modes:
+    "SPSC queue full" (dropped command), "BeatClock drift" (resync), and "Music transition overlap"
+    (queue/cancel). Only "audio asset not loaded" (TC-IR-4.7.3.3) and "seek past cue"
+    (TC-IR-4.7.1.4) have test cases.
+
+11. [UNCERTAIN] IR-4.7.4 describes `BeatClock` publishing "beat and bar events" that a timeline
+    consumes to advance in beat-time. The audio design's `BeatEvent` is a simple enum (`Beat | Bar`)
+    with no phase or fractional-beat information. The sequence diagram shows
+    `BeatEvent(bar, beat, phase)` with fields that do not exist on the canonical `BeatEvent` type.
+
+12. [CONFIDENT] The Data Contracts table lists `AudioEngine (SPSC)` as both "Defined in: Audio" and
+    "Consumed by: Audio". Since the timeline system is the producer that enqueues commands, the
+    "Consumed by" column should list both Timelines (producer) and Audio (consumer), or the row
+    should clarify the direction.
+
+13. [CONFIDENT] No 2D/2.5D considerations are mentioned. The `PlayOneShot` variant uses
+    `Option<Vec3>` for position, but 2D games would need `Vec2` spatial positioning. The design
+    should address how timeline-triggered audio works in 2D mode, per the engine's first-class
+    2D/2.5D support constraint.
+
+14. [CONFIDENT] The `MusicTransitionKind::Stinger` variant carries an `asset: AssetId`, but the
+    audio design's stinger API uses `StingerRequest` (audio.md L1109). The type name and contents do
+    not match the canonical API.

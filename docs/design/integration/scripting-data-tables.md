@@ -159,3 +159,72 @@ None -- identical across all platforms. Formula functions are pure Rust compiled
 ## Test Plan
 
 See companion [scripting-data-tables-test-cases.md](scripting-data-tables-test-cases.md).
+
+## Review Feedback
+
+1. `FormulaFnTable.fns` uses `Vec<FormulaFnEntry>` indexed by `FormulaId`. If `FormulaId` is a
+   sparse integer, this is correct only if it is a dense index. If it is a hash or handle, `Vec`
+   indexing silently produces wrong results. Clarify that `FormulaId` is a dense generational index
+   or add bounds checking. [CONFIDENT]
+
+2. `FormulaFnEntry.fn_ptr` returns `Value`, which is a type-erased enum. This requires a runtime
+   match to downcast, which contradicts the zero-reflection and static-codegen-only constraint. The
+   codegen should emit monomorphized `FormulaFn<T>` per column type so the caller never type-erases.
+   [CONFIDENT]
+
+3. The `FormulaFn<T>` signature takes `&Row` and `&TableRegistry`. The document does not show what
+   `Row` contains. If `Row` holds dynamically-typed `Value` cells, every column access requires a
+   runtime type check, again contradicting static codegen. The codegen should emit struct accessors
+   with concrete types. [CONFIDENT]
+
+4. No `Arc`, `Rc`, `Cell`, or `RefCell` appear in the data contracts -- this is correct per
+   constraints. [CONFIDENT]
+
+5. No async/await appears anywhere -- correct per constraints. [CONFIDENT]
+
+6. The document references `TableReloaded` as an ECS event but does not describe its payload or how
+   the scripting system observes it. Is it an entity event with capture/bubble, a resource-change
+   event, or a channel message? The mechanism must be specified. [CONFIDENT]
+
+7. The Timing and Ordering table places hot-reload in "Phase 1-Input". Hot-reload involves loading a
+   new .dylib (I/O + dlopen), which should happen on the main thread per the three-thread model. The
+   document does not state which thread performs the .dylib load and symbol resolution. [CONFIDENT]
+
+8. The sequence diagram shows `FFT->>TR: formula_fn(row, registry)` but the actual call site is the
+   DataTable baking code calling the fn pointer, not FFT calling TR. The arrow direction implies FFT
+   initiates a call to TableRegistry, but the fn pointer is invoked by the baking system and merely
+   receives TR as an argument. [UNCERTAIN]
+
+9. The document has no Mermaid `classDiagram`. Per `docs/design/CLAUDE.md` rule 3, every design MUST
+   have a class diagram covering all types, enums, traits, and relationships. [CONFIDENT]
+
+10. `FormulaFnTable` and `FormulaFnEntry` do not use rkyv for serialization. Since formula fn
+    pointers are loaded from a .dylib (not serialized), this is acceptable. However, the document
+    should explicitly note that `FormulaId`, `ColumnType::Formula`, and `TableLookupNode` are baked
+    into asset data and must derive `rkyv::Archive` -- no serde. [CONFIDENT]
+
+11. The Failure Modes table lists "Formula compile error -- keep previous version" but does not
+    explain how the previous .dylib version is retained. If the new .dylib replaces the old one on
+    disk, the fallback path must be documented (e.g., shadow copy, versioned filenames). [CONFIDENT]
+
+12. `RowSource::EntityBinding` says "read from entity's DatabaseRow" but does not define what
+    `DatabaseRow` is or where it is documented. This component should be cross-referenced to the
+    Data Tables design. [CONFIDENT]
+
+13. The test cases cover all six IRs (IR-2.9.1 through IR-2.9.6) with at least two test cases each,
+    plus four benchmarks. Coverage is complete. [CONFIDENT]
+
+14. The document is missing a dedicated "Architecture" section with a Mermaid diagram showing the
+    static relationships between Scripting and Data Tables subsystems (beyond the sequence diagram).
+    The PROMPT template calls for overview, data exchanged, direction, mechanism, game loop phase,
+    frame-boundary handoff, thread ownership, error handling, performance budget, and test cases.
+    Several of these (direction, mechanism, frame-boundary handoff, thread ownership, performance
+    budget) are absent or only partially addressed. [CONFIDENT]
+
+15. No HashMap usage on hot paths -- the design uses `Vec`-indexed lookup by `FormulaId`, which is
+    correct per constraints. [CONFIDENT]
+
+16. The immutable-first pattern is partially followed: `TableRegistry` and `Row` are passed by
+    shared reference. However, the bake step mutates `DataTable` cells in place. The document should
+    clarify whether baking produces a new immutable table snapshot or mutates in place, and justify
+    the choice. [UNCERTAIN]

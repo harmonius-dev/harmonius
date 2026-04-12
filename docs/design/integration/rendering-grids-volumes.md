@@ -118,3 +118,75 @@ sequenceDiagram
 ## Test Plan
 
 See companion [rendering-grids-volumes-test-cases.md](rendering-grids-volumes-test-cases.md).
+
+## Review Feedback
+
+1. **Missing classDiagram.** Design CLAUDE.md requires a Mermaid `classDiagram` covering all types,
+   but this document only has a sequence diagram. `FogGpuTexture`, `VolumeGpuTexture`,
+   `GpuGridSync`, `DirtyRegion`, `UniformGrid<T>`, `VoxelVolume<T>`, and their relationships are not
+   diagrammed. [CONFIDENT]
+
+2. **No rkyv derives on data contracts.** `FogGpuTexture` and `VolumeGpuTexture` lack
+   `#[derive(Archive, ...)]`. The constraints mandate rkyv-only binary serialization with zero-copy
+   mmap. If these structs cross a snapshot boundary, they must use rkyv. [CONFIDENT]
+
+3. **`GpuTexture` ownership unclear -- potential Arc/Rc.** The `texture: GpuTexture` field is
+   opaque. The constraints forbid `Arc`, `Rc`, `Cell`, and `RefCell`. The design should specify
+   whether `GpuTexture` is a generational handle/index or an owned resource, and how it avoids
+   reference counting. [CONFIDENT]
+
+4. **No crossbeam-channel in data flow.** The three-thread model requires all inter-thread
+   communication via crossbeam-channel. The sequence diagram shows `DR -> EX: Phase 7 snapshot` and
+   `EX -> GPU: Partial texture upload` without specifying the channel boundary between worker
+   threads and the render thread. [CONFIDENT]
+
+5. **No 2D/2.5D considerations.** The constraints require first-class 2D/2.5D support. Fog of war,
+   tactical grids, and voxel GI all have 2D analogs. The document does not discuss how these
+   features adapt for 2D or 2.5D games (e.g., fog of war on a tilemap, 2D lighting instead of voxel
+   GI). [CONFIDENT]
+
+6. **Dirty region data structure unspecified.** The design references `DirtyRegion` but does not
+   specify its internal representation. The constraints forbid `HashMap` on hot paths. If dirty
+   regions are tracked per-cell in a map, this violates the constraint. A bitfield or region list
+   should be specified explicitly. [CONFIDENT]
+
+7. **Missing Open Questions section.** The design template requires an Open Questions section. This
+   document omits it entirely. [CONFIDENT]
+
+8. **Missing Overview and Requirements Trace sections.** The standard design template requires a
+   Requirements Trace table (mapping R-X.Y.Z / F-X.Y.Z to design elements) and an Overview section.
+   Neither is present.
+   [UNCERTAIN -- integration designs may follow a lighter template, but the design CLAUDE.md does not exempt them.]
+
+9. **No immutable-first pattern documented.** The constraints prefer immutable data with mutable
+   containers. The design does not clarify whether `UniformGrid<FogCell>` is mutated in place or
+   rebuilt immutably each frame. The dirty-region approach implies mutation, which should be
+   justified per the constraints. [CONFIDENT]
+
+10. **`world_origin` and `voxel_size` on `VolumeGpuTexture` may belong in ECS.** Per the ECS-primary
+    constraint, per-volume spatial metadata (origin, voxel size) should be ECS components rather
+    than fields on a GPU-side struct. The GPU struct should hold only GPU resource handles; spatial
+    data should live in the ECS world. [UNCERTAIN]
+
+11. **No platform-specific upload strategy.** The Platform Considerations table lists texture
+    formats and resolutions but does not address platform-specific upload mechanisms (DirectStorage
+    on Windows, Metal I/O on Apple, staging buffers on Vulkan). The constraints require
+    platform-native I/O for GPU assets. [CONFIDENT]
+
+12. **Test cases lack a 2D/2.5D scenario.** The companion test file covers 3D fog, voxel GI, and SDF
+    shadows but has no test case for 2D fog of war on a tilemap or 2D tactical overlays. Given the
+    2D/2.5D constraint, at least one 2D-specific test case per IR should exist. [CONFIDENT]
+
+13. **No failure test cases.** The design lists five failure modes (upload exceed, OOM, stale SDF,
+    grid resize, NaN) but the companion test file has no test cases for any of them. Each failure
+    mode should have a corresponding test verifying the recovery behavior. [CONFIDENT]
+
+14. **Benchmark target mismatch.** TC-IR-3.3.1.B1 benchmarks "full 256x256 upload at < 1 ms" but
+    IR-3.3.4 exists specifically to avoid full uploads via dirty regions. The benchmark should also
+    cover worst-case partial upload scenarios at realistic grid sizes (e.g., 1024x1024 with 5%
+    dirty). [UNCERTAIN]
+
+15. **No render-graph pass registration detail.** The Data Contracts table lists "Render graph pass"
+    as a contract but the Rust pseudocode only shows texture structs. The fog overlay pass, voxel GI
+    pass, and SDF shadow pass should each have a struct or registration signature in the pseudocode.
+    [CONFIDENT]

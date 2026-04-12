@@ -246,12 +246,13 @@ at each phase.
 
 ## Thread Ownership Map
 
-Three thread roles own disjoint data. No shared mutable state. All communication via
-crossbeam-channel or triple buffer.
+Four thread roles own disjoint data. No shared mutable state. All communication via
+crossbeam-channel, SPSC queue, or triple buffer. Core-type labels (E-core, P-core) are QoS
+scheduling hints, not core pinning. The OS scheduler maps QoS classes to appropriate cores.
 
 ```mermaid
 flowchart LR
-    subgraph MT["Main Thread (E-core)"]
+    subgraph MT["Main Thread (low QoS · E-core)"]
         MT1[OS Event Loop]
         MT2[Platform I/O Drain]
         MT3[Input → SPSC]
@@ -259,7 +260,7 @@ flowchart LR
         MT5[Save Writes]
     end
 
-    subgraph WK["Workers (N on P-cores)"]
+    subgraph WK["Workers (high QoS · P-cores)"]
         WK1[Game Loop Driver]
         WK2[ECS Systems]
         WK3[Physics Broadphase]
@@ -267,20 +268,28 @@ flowchart LR
         WK5[Visibility Culling]
     end
 
-    subgraph RT["Render Thread (E-core)"]
+    subgraph RT["Render Thread (low QoS · E-core)"]
         RT1[Acquire RenderFrame]
         RT2[GPU Cull + Sort]
         RT3[Render Graph Execute]
         RT4[GPU Submit + Present]
     end
 
+    subgraph AT["Audio RT (real-time QoS)"]
+        AT1[Mix Graph Eval]
+        AT2[Spatial Processing]
+        AT3[Output Buffer Fill]
+    end
+
     MT -->|"SPSC (input, packets)"| WK
     WK -->|"Triple Buffer (RenderFrame)"| RT
+    WK -->|"SPSC (audio commands)"| AT
     WK -->|"Channel (I/O requests)"| MT
 
     style MT fill:#4a9eff,color:#fff
     style WK fill:#69db7c,color:#000
     style RT fill:#ff6b6b,color:#fff
+    style AT fill:#ffd43b,color:#000
 ```
 
 ### Subsystem thread assignments
@@ -297,13 +306,20 @@ flowchart LR
 ### Data ownership rules
 
 1. **Main thread** owns all OS handles (windows, sockets, file descriptors). Workers never call OS
-   APIs.
+   APIs directly; they enqueue I/O requests via channel. If the main thread is unresponsive,
+   requests queue until the next event loop iteration -- no fallback bypass exists.
 2. **Workers** own all ECS World data. The game loop driver runs on one worker; others execute
-   parallel tasks via work-stealing (crossbeam-deque).
+   parallel tasks via work-stealing (crossbeam-deque). If work-stealing finds no tasks, the worker
+   spins briefly then parks.
 3. **Render thread** owns GPU resources (command buffers, descriptor heaps, swap chain). It reads
-   only the immutable `RenderFrame` snapshot.
+   only the immutable `RenderFrame` snapshot. If no new frame is available in the triple buffer, the
+   render thread re-presents the previous frame.
 4. **Audio RT thread** owns the audio device and mix graph. It reads commands from a lock-free SPSC
-   queue written by the game loop at Phase 7.
+   queue written by the game loop at Phase 7. If the SPSC queue is empty, the audio thread continues
+   mixing with the last received parameters (no silence).
+5. **`Arc` usage** is permitted only for shared immutable data (e.g., baked asset lookup tables,
+   font atlases). `Arc` must never wrap mutable state. `Rc`, `Cell`, and `RefCell` are prohibited.
+   All mutable cross-thread data uses channels or triple buffers with owned values.
 
 ## Frame-Boundary Handoff
 
@@ -575,3 +591,57 @@ All 50 per-pair integration designs in this directory.
 | Document | Pair |
 |----------|------|
 | [save-system-serialization](save-system-serialization.md) | Save ↔ Serialization |
+
+## Review Feedback
+
+1. [APPLIED] The subsystem integration map diagram is thorough and covers all major subsystems
+   across six layers. No subsystem from the architecture appears missing.
+
+2. [APPLIED] The per-frame data flow section covers all 8 game loop phases with producer/consumer
+   tables. Phase ordering and timestep annotations are correct.
+
+3. [APPLIED] Audio RT thread added to the Mermaid thread ownership diagram alongside main, workers,
+   and render.
+
+4. [APPLIED] Frame-boundary handoff is well-specified with sequence diagram and RenderFrame contents
+   table.
+
+5. [APPLIED] Codegen/middleman .dylib section has a comprehensive Mermaid flowchart covering all
+   visual editors, compiler tooling, and output artifacts.
+
+6. [APPLIED] Performance budgets sum correctly with reasonable headroom for all three thread roles.
+
+7. [APPLIED] No async/await/Future anywhere. All communication uses channels and triple buffers.
+
+8. [APPLIED] Serialization uses rkyv only. No serde.
+
+9. [APPLIED] No reflection, no dyn Reflect, no TypeId. Codegen is the sole type registration
+   mechanism.
+
+10. [APPLIED] No HashMap. All data structures are index-based or flat.
+
+11. [APPLIED] Arc permitted for shared immutable data only (e.g., asset lookup tables). No Rc, Cell,
+    or RefCell. All mutable cross-thread data uses channels or triple buffers with owned values.
+
+12. [APPLIED] ECS-primary constraint respected. Documented exceptions match constraints.md exactly.
+
+13. [DISMISSED] 2D/2.5D data paths use the same subsystem edges and phases. No separate paths needed
+    at this architecture level.
+
+14. [APPLIED] E-core/P-core labels clarified as QoS hints, not core pinning. Diagram labels updated.
+
+15. [APPLIED] Audio RT thread handoff added to the frame-boundary sequence diagram with SPSC command
+    queue.
+
+16. [APPLIED] Template consistency note added to the integration document index section.
+
+17. [APPLIED] 2D-specific fields (sprite draw list, tilemap chunks, 2D light list) added to the
+    RenderFrame contents table.
+
+18. [APPLIED] HLSL through dxc and metal-shaderconverter as CLI subprocesses matches shader pipeline
+    constraints.
+
+19. [APPLIED] Platform-native I/O correctly assigned to main thread. Workers never call OS APIs.
+
+20. [APPLIED] Mermaid classDiagram added covering all key data types referenced in the per-frame
+    data flow.

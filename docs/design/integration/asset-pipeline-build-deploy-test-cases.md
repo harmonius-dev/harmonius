@@ -15,7 +15,12 @@
 | TC-IR-5.1.5.1 | Shader variants compiled per platform | 1 shader graph, 3 platforms | 3 distinct bytecode artifacts | IR-5.1.5 |
 | TC-IR-5.1.5.2 | Shader cache hit avoids recompile | Same shader, second build | Cache hit, zero dxc invocations | IR-5.1.5 |
 | TC-IR-5.1.6.1 | Delta patch uses BLAKE3 diff | v1 and v2 bundles | Patch bundle smaller than v2 | IR-5.1.6 |
+| TC-IR-5.1.6.2 | Identical content zero-byte patch | v1 and v2 identical | Patch size is 0 bytes | IR-5.1.6 |
+| TC-IR-5.1.6.3 | Corrupted v1 bundle fails gracefully | Corrupted v1, valid v2 | Error result, no crash | IR-5.1.6 |
 | TC-IR-5.1.7.1 | Shared CAS cache hit on CI | Pre-warmed cache, clean checkout | Zero processing, all cache hits | IR-5.1.7 |
+| TC-IR-5.1.7.2 | Cache miss falls back to cook | Empty cache, 10 assets | All 10 cooked, stored in CAS | IR-5.1.7 |
+| TC-IR-5.1.7.3 | Concurrent CI writes same key | 2 agents, same asset | Exactly 1 CAS entry, no corruption | IR-5.1.7 |
+| TC-IR-5.1.7.4 | Cache eviction under pressure | Cache at capacity, new entry | LRU entry evicted, new stored | IR-5.1.7 |
 
 ## Benchmarks
 
