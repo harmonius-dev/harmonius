@@ -294,6 +294,108 @@ Companion test cases for [world-geometry.md](world-geometry.md).
 |---|----------|--------|--------|-------------|
 | 1 | Feedback pass + CPU readback | GPU + readback time | < 0.2 ms | R-3.1.6 |
 
+### TC-3.1.1.I3 Meshlet Pipeline Decomposition End To End
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.1.1.1  |
+| 2 | US-3.1.1.2  |
+| 3 | US-3.1.1.4  |
+
+1. **#1** — Import a 100K-triangle mesh, run meshlet partitioner
+   - **Expected:** All output meshlets have <=64 verts and <=124 tris; DAG parents/children linked
+2. **#2** — Traverse DAG to coarsest LOD level
+   - **Expected:** Reachable meshlet count decreases monotonically
+3. **#3** — Inspect per-meshlet cone and bounding sphere
+   - **Expected:** Every meshlet encloses its triangles; normal cone half-angle >= max triangle
+     deviation
+
+### TC-3.1.2.I2 Occlusion Two-Phase With Dense Occluders
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.1.2.1  |
+| 2 | US-3.1.2.2  |
+| 3 | US-3.1.2.3  |
+
+1. **#1** — Scene with 10,000 meshlet clusters, 1,000 occluders in front
+   - **Expected:** Phase-1 HZB culls >90% of occluded clusters
+2. **#2** — Rotate camera by 15 degrees
+   - **Expected:** Phase-2 reprojection recovers newly-visible clusters within one frame
+3. **#3** — Measure GPU draw count vs naive pipeline
+   - **Expected:** Draw count reduced by >=5x
+
+### TC-3.1.3.I3 Task And Mesh Shader Path With Fallback
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.1.3.1  |
+| 2 | US-3.1.3.2  |
+| 3 | US-3.1.3.3  |
+
+1. **#1** — Run meshlet render on hardware with task/mesh shader support
+   - **Expected:** Task shader performs per-cluster cull, sub-pixel clusters discarded by mesh
+     shader
+2. **#2** — Disable mesh shader feature, re-run
+   - **Expected:** Compute+vertex fallback produces bitwise-matching visibility
+
+### TC-3.1.4.I2 Indirect Draw Compaction Fallback
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.1.4.1  |
+| 2 | US-3.1.4.2  |
+| 3 | US-3.1.4.3  |
+
+1. **#1** — Dispatch 10,000 meshlet indirect cull, compact surviving clusters
+   - **Expected:** Compacted indirect buffer contiguous, count matches visible cluster total
+2. **#2** — Execute fallback rasterize with compacted buffer
+   - **Expected:** Rendered image matches mesh shader path within 1 pixel tolerance
+
+### TC-3.1.5.I1 LOD Projected Error Selection
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.1.5.1  |
+| 2 | US-3.1.5.3  |
+| 3 | US-3.1.5.4  |
+
+1. **#1** — Place meshlet mesh 5m from camera, pixel-error threshold=1.0
+   - **Expected:** Finest LOD selected
+2. **#2** — Move to 50m
+   - **Expected:** Coarser LOD used, dither-crossfade active for two frames during transition
+3. **#3** — Change threshold to 2.0, re-evaluate
+   - **Expected:** LOD shifts coarser by at least one level
+
+### TC-3.1.6.I4 Streaming Page Prioritization By Visibility
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.1.6.1  |
+| 2 | US-3.1.6.2  |
+| 3 | US-3.1.6.3  |
+| 4 | US-3.1.6.4  |
+
+1. **#1** — Scene requests 100 unloaded meshlet pages, 20 visible on screen
+   - **Expected:** Visible pages enqueued with higher priority, loaded first
+2. **#2** — Trigger async page load via platform-native I/O
+   - **Expected:** Page data decoded and residency map updated within budgeted frames
+
+### TC-3.1.7.I2 Visibility Buffer Scaling To 4K
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.1.7.1  |
+| 2 | US-3.1.7.2  |
+| 3 | US-3.1.7.3  |
+
+1. **#1** — Render at 3840x2160 with 64-bit visibility buffer
+   - **Expected:** All primitives encoded without ID collision
+2. **#2** — Run fullscreen material pass
+   - **Expected:** Per-pixel material resolution matches reference forward pass within 2 LSBs
+3. **#3** — Measure GPU cost
+   - **Expected:** Scales sub-linearly with pixel count vs forward shading
+
 ---
 
 ## Terrain
@@ -865,6 +967,192 @@ Companion test cases for [world-geometry.md](world-geometry.md).
 |---|----------|--------|--------|-------------|
 | 1 | 1000-tile radius, residency calculation | Wall time | < 200 us | R-3.2.1 |
 
+### TC-3.2.8.1 Portal Visibility Room Chain
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-3.2.8     |
+| 2 | R-3.2.8     |
+
+1. **#1** — Build 5-room interior, place camera in room A; rooms B and C connected via portals, D
+   and E hidden behind closed walls
+   - **Expected:** Portal traversal yields {A, B, C}; draw list excludes D and E
+2. **#2** — Move camera so portal to B is backfacing
+   - **Expected:** Draw list includes only room A
+
+### TC-3.2.1.I5 Terrain Tile Streaming Data Source
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.1.1  |
+| 2 | US-3.2.1.3  |
+| 3 | US-3.2.1.4  |
+
+1. **#1** — Move camera from tile (0,0) to (5,0) across 10 frames
+   - **Expected:** Tiles enter residency in distance order, platform-native I/O backend used
+2. **#2** — Inspect in-memory tile format
+   - **Expected:** 16-bit heights with known min/max scaling, 8-bit normals
+3. **#3** — Residency manager state
+   - **Expected:** Reports pending + loaded counts, enforces budget
+
+### TC-3.2.2.I2 Virtual Texture Memory Bound
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.2.1  |
+| 2 | US-3.2.2.2  |
+| 3 | US-3.2.2.3  |
+
+1. **#1** — Author 8k x 8k terrain atlas at virtual-texture tier
+   - **Expected:** Page feedback identifies on-screen pages, VRAM cap enforced regardless of author
+     resolution
+2. **#2** — Pan camera across full atlas
+   - **Expected:** Pages stream in/out continuously, VRAM usage stays under cap throughout
+
+### TC-3.2.3.I2 Clipmap Vertex Density Screen Target
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.3.1  |
+| 2 | US-3.2.3.2  |
+| 3 | US-3.2.3.3  |
+
+1. **#1** — Render clipmap with target 8px/vertex
+   - **Expected:** Far rings use coarser spacing, near rings finer; measured screen-space error
+     within target
+2. **#2** — Scale ring count per platform tier
+   - **Expected:** Mobile uses fewer rings, desktop more
+
+### TC-3.2.4.I2 Terrain Hole Mask Discards Draws
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.4.1  |
+| 2 | US-3.2.4.2  |
+
+1. **#1** — Paint hole mask over tile center, render
+   - **Expected:** Mesh shader discards clusters in hole region; depth not written
+2. **#2** — Inspect on-disk mask
+   - **Expected:** Packed as per-cluster bits, not per-vertex
+
+### TC-3.2.5.I1 Splatmap Layers Across Platforms
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.5.1  |
+| 2 | US-3.2.5.2  |
+
+1. **#1** — Terrain with 16 PBR layers, desktop tier
+   - **Expected:** Shader samples all 16, per-pixel weights sum to 1.0
+2. **#2** — Same terrain on mobile tier
+   - **Expected:** Active layers reduced to platform cap, most-weighted retained
+
+### TC-3.2.6.I1 Terrain Physics Collider Mirror
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.6.1  |
+| 2 | US-3.2.6.2  |
+
+1. **#1** — Stream terrain tiles, raycast into collider
+   - **Expected:** Hit points match rendered heightfield within 0.01m
+2. **#2** — Edit terrain height, advance one frame
+   - **Expected:** Collider mesh reflects edit before next physics step
+
+### TC-3.2.7.I1 Large World Coordinate Rebase
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.7.1  |
+| 2 | US-3.2.7.2  |
+
+1. **#1** — Place entity at 100 km world origin, render
+   - **Expected:** No positional jitter; pixel-stable across frames
+2. **#2** — Verify multiplayer position delta
+   - **Expected:** Client and host positions agree within floating precision
+
+### TC-3.2.8.I1 Portal Room Rendering And Lighting
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.8.1  |
+| 2 | US-3.2.8.2  |
+| 3 | US-3.2.8.3  |
+
+1. **#1** — Place 6 rooms with portals, each with own lightmap
+   - **Expected:** Only visible rooms draw, each uses its own lightmap
+2. **#2** — Traverse through 5 rooms from one viewpoint
+   - **Expected:** Portal traversal depth capped per platform, visible set pruned when cap reached
+
+### TC-3.2.9.I1 Voxel Sparse Octree Zero Cost Empty
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.9.1  |
+| 2 | US-3.2.9.2  |
+
+1. **#1** — Build voxel volume of 1024^3 cells, 95% empty
+   - **Expected:** Sparse octree memory cost scales with non-empty cells, not total cells
+2. **#2** — Sample SDF and material at populated cells
+   - **Expected:** Correct values returned
+
+### TC-3.2.10.I2 Hybrid Heightmap Voxel Selection
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.10.1 |
+| 2 | US-3.2.10.2 |
+
+1. **#1** — Build scene with open ground and tunnel entrance
+   - **Expected:** Ground region uses heightmap, tunnel volume uses voxel
+2. **#2** — Player walks from surface into tunnel
+   - **Expected:** Boundary stitching produces seamless mesh and continuous collision
+
+### TC-3.2.11.I1 Planetary Sphere Walk Around
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.11.1 |
+| 2 | US-3.2.11.2 |
+
+1. **#1** — Planet radius=1000km, walk 500 km along surface
+   - **Expected:** Gravity always toward center, heightmap detail active near camera, voxel only
+     near tunnels
+2. **#2** — Round-trip world point through spherical coords
+   - **Expected:** Result equals input within 0.01m
+
+### TC-3.2.12.I1 Voxel Meshing Algorithms Incremental
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.12.1 |
+| 2 | US-3.2.12.2 |
+
+1. **#1** — Mesh voxel region with MarchingCubes, DualContouring, Transvoxel
+   - **Expected:** All three produce watertight meshes, Transvoxel has no LOD seams
+2. **#2** — Edit single voxel in region
+   - **Expected:** Incremental remesh touches only affected chunk, remainder unchanged
+
+### TC-3.2.13.I4 Voxel SDF Edit Tunnel Cycle
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.13.1 |
+
+1. **#1** — Apply subtract edit along path to carve tunnel
+   - **Expected:** Voxel SDF updated, meshing produces tunnel geometry, edit delta logged for
+     undo/replication
+
+### TC-3.2.14.I1 Voxel Streaming Compression Round-Trip
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.2.14.1 |
+
+1. **#1** — Save region with RLE+LZ4, clear, reload
+   - **Expected:** Reloaded voxel data bit-identical to saved; compression ratio >=2x on typical
+     region
+
 ---
 
 ## Environment Systems
@@ -1423,3 +1711,293 @@ Companion test cases for [world-geometry.md](world-geometry.md).
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
 | 1 | 200K grass blades, mesh shader generation | GPU time | < 1.5 ms | R-3.3.6 |
+
+### TC-3.3.1.I4 Foliage Indirect GPU Pipeline
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.3.1.1  |
+| 2 | US-3.3.1.2  |
+| 3 | US-3.3.1.3  |
+| 4 | US-3.3.1.4  |
+| 5 | US-3.3.1.5  |
+
+1. **#1** — Populate 1,000,000 foliage instances with per-instance seeds and LOD bits
+   - **Expected:** Structure-of-arrays buffer packed contiguously
+2. **#2** — Run GPU cull pass (frustum + distance + occlusion)
+   - **Expected:** Culled survivors compacted; draw via single indirect call
+
+### TC-3.3.2.I2 Procedural Placement Evaluates Per Frame
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.3.2.1  |
+| 2 | US-3.3.2.2  |
+| 3 | US-3.3.2.3  |
+| 4 | US-3.3.2.4  |
+
+1. **#1** — Define density map + biome rules + slope/altitude constraints
+   - **Expected:** Placement evaluation runs per tile at stream-in time
+2. **#2** — Inspect placed instances
+   - **Expected:** Constraints respected, instances fed to GPU buffer without disk persistence of
+     generated instances
+
+### TC-3.3.3.I1 Foliage Impostor Crossfade
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.3.3.1  |
+| 2 | US-3.3.3.2  |
+| 3 | US-3.3.3.3  |
+| 4 | US-3.3.3.4  |
+
+1. **#1** — Place tree, move camera from 10m to 200m
+   - **Expected:** Transition from mesh to impostor via dither crossfade over configured distance
+2. **#2** — Inspect impostor atlas for species
+   - **Expected:** Pre-rendered sprite atlas, resolution set per platform tier
+
+### TC-3.3.4.I1 Foliage Wind Shared Field
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.3.4.1  |
+| 2 | US-3.3.4.2  |
+| 3 | US-3.3.4.3  |
+| 4 | US-3.3.4.4  |
+
+1. **#1** — Foliage samples WindField in vertex shader
+   - **Expected:** Per-species response curves applied, deformation computed GPU-side only
+2. **#2** — Introduce moving wind gust
+   - **Expected:** Gust propagates spatially as wave across foliage field
+
+### TC-3.3.5.I1 Grass Interaction Displacement Decay
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.3.5.1  |
+| 2 | US-3.3.5.2  |
+| 3 | US-3.3.5.3  |
+| 4 | US-3.3.5.4  |
+
+1. **#1** — Walk character through grass, emit interaction impulses
+   - **Expected:** Impulses written to GPU buffer sampled by grass shader
+2. **#2** — Stop moving, advance time
+   - **Expected:** Displacement decays toward zero over configured duration
+
+### TC-3.3.6.I1 Grass Mesh Shader Blade Generation
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.3.6.1  |
+| 2 | US-3.3.6.2  |
+| 3 | US-3.3.6.3  |
+| 4 | US-3.3.6.4  |
+
+1. **#1** — Generate grass in 100m x 100m patch via mesh shader
+   - **Expected:** Blade shape, height, curvature parameters produce dense field; density scales
+     down with distance
+2. **#2** — Remove density drop
+   - **Expected:** All tiles populated at max density
+
+### TC-3.3.7.I1 Tree Pipeline Canopy Subsurface
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.3.7.1  |
+| 2 | US-3.3.7.2  |
+| 3 | US-3.3.7.3  |
+| 4 | US-3.3.7.4  |
+
+1. **#1** — Render tree with authored bark + leaf assets
+   - **Expected:** Canopy uses two-sided shading with subsurface transmission, wind response per
+     species
+2. **#2** — Use procedurally generated tree
+   - **Expected:** Same pipeline renders correctly, LOD transitions stable
+
+### TC-3.4.1.I2 Ocean Gerstner FFT Seamless Tiling
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.4.1.1  |
+| 2 | US-3.4.1.2  |
+| 3 | US-3.4.1.3  |
+| 4 | US-3.4.1.4  |
+
+1. **#1** — Render ocean with Gerstner near, FFT far, multiple cascades
+   - **Expected:** No visible seams at tile boundaries; FFT resolution scales per platform
+2. **#2** — Sample displacement at tile border
+   - **Expected:** Continuity within 0.001m across boundary
+
+### TC-3.4.2.I1 Shoreline Blend Foam Mask
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.4.2.1  |
+| 2 | US-3.4.2.2  |
+| 3 | US-3.4.2.3  |
+
+1. **#1** — Beach with water meeting sand
+   - **Expected:** Water alpha fades smoothly toward zero at shoreline, depth-driven foam mask
+     visible
+2. **#2** — Change foam mask resolution per platform
+   - **Expected:** Visible frequency adapts, blend parameters configurable
+
+### TC-3.4.3.I1 Underwater Pipeline Swap
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.4.3.1  |
+| 2 | US-3.4.3.2  |
+| 3 | US-3.4.3.3  |
+
+1. **#1** — Submerge camera
+   - **Expected:** Underwater rendering path active, god rays visible on desktop
+2. **#2** — Switch to mobile tier
+   - **Expected:** Path degrades gracefully, fewer effects
+
+### TC-3.4.4.I1 Caustics Projection Shallow Deep
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.4.4.1  |
+| 2 | US-3.4.4.2  |
+| 3 | US-3.4.4.3  |
+
+1. **#1** — Project caustics on submerged geometry shallow <5m
+   - **Expected:** Real-time refracted caustics active, pattern visible
+2. **#2** — Submerge to >50m
+   - **Expected:** Fallback to pre-baked cubemap caustics to save cost
+
+### TC-3.4.5.I1 Water Reflection Refraction Hierarchy
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.4.5.1  |
+| 2 | US-3.4.5.2  |
+| 3 | US-3.4.5.3  |
+
+1. **#1** — Render water with planar + SSR + probe hierarchy
+   - **Expected:** Planar reflections for close geometry, SSR for screen coverage, probe fallback
+     otherwise; combined result has no visible seam
+2. **#2** — Sample refraction at underwater scene
+   - **Expected:** View distorted by wave normals
+
+### TC-3.4.6.I2 River Flow Maps And Ocean Join
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.4.6.1  |
+| 2 | US-3.4.6.2  |
+| 3 | US-3.4.6.3  |
+
+1. **#1** — Author river spline with flow map, connect to ocean
+   - **Expected:** Flow UVs advance with speed, mesh seam with ocean invisible
+2. **#2** — Inspect wave scale at river
+   - **Expected:** Flow speed modulates wave amplitude
+
+### TC-3.4.7.I1 Foam Coverage From Whitecaps
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.4.7.1  |
+| 2 | US-3.4.7.2  |
+| 3 | US-3.4.7.3  |
+
+1. **#1** — Ocean with high wind, inspect foam coverage map
+   - **Expected:** Whitecap detection from surface Jacobian produces foam footprints; coverage map
+     modulates shader lightness
+2. **#2** — Change foam map resolution
+   - **Expected:** Feature density scales accordingly
+
+### TC-3.5.1.I1 Analytical Sky With Turbidity
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.5.1.1  |
+| 2 | US-3.5.1.2  |
+| 3 | US-3.5.1.3  |
+
+1. **#1** — Render analytical sky with sun at elevation=30deg, turbidity=4
+   - **Expected:** Physically-motivated luminance distribution, turbidity changes tint continuously
+2. **#2** — Use sky as IBL source for material preview
+   - **Expected:** Material diffuse lit consistently with sky color
+
+### TC-3.5.2.I1 Atmosphere LUT Recompute And AP
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.5.2.1  |
+| 2 | US-3.5.2.2  |
+| 3 | US-3.5.2.3  |
+| 4 | US-3.5.2.4  |
+
+1. **#1** — Change sun direction, trigger LUT rebuild
+   - **Expected:** Multi-scattering + transmittance LUTs recomputed within one frame
+2. **#2** — Render scene at 10 km distance
+   - **Expected:** Aerial perspective applied via fullscreen pass with distance-dependent tint
+
+### TC-3.5.3.I1 Cloud Ray March With Temporal Reproj
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.5.3.1  |
+| 2 | US-3.5.3.2  |
+| 3 | US-3.5.3.3  |
+| 4 | US-3.5.3.4  |
+
+1. **#1** — Render volumetric clouds driven by noise + density textures
+   - **Expected:** Clouds march with configured step count, temporal reprojection combines 4-frame
+     samples
+2. **#2** — Set coverage pattern for cumulus
+   - **Expected:** Cloud morphology matches coverage input
+
+### TC-3.5.4.I3 Cloud Shadow Modulates Direct Lighting
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.5.4.1  |
+| 2 | US-3.5.4.2  |
+
+1. **#1** — Enable cloud shadow projection, render terrain below clouds
+   - **Expected:** Terrain shadowed where cloud density high, resolution configurable
+2. **#2** — Move cloud over time
+   - **Expected:** Shadow pattern moves in lockstep with cloud volume
+
+### TC-3.5.5.I2 Time Of Day Controller Full Cycle
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.5.5.1  |
+| 2 | US-3.5.5.2  |
+| 3 | US-3.5.5.3  |
+
+1. **#1** — Advance TOD from 06:00 to 18:00 via time_scale=60 (1s per game minute)
+   - **Expected:** Sun arc covers east-to-west, smooth dawn-day-dusk transitions, no lighting pop
+2. **#2** — Inspect latitude support
+   - **Expected:** Configurable latitude changes sun elevation
+
+### TC-3.5.6.I1 Celestial Bodies And Star Catalog
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.5.6.1  |
+| 2 | US-3.5.6.2  |
+| 3 | US-3.5.6.3  |
+
+1. **#1** — Render sun, moon, stars, planets at current TOD
+   - **Expected:** All celestial positions astronomically correct for configured latitude/time
+2. **#2** — Compare star brightness near horizon vs zenith
+   - **Expected:** Horizon extinction reduces brightness correctly
+
+### TC-3.5.7.I2 Sky Cubemap Drives IBL
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-3.5.7.1  |
+| 2 | US-3.5.7.2  |
+| 3 | US-3.5.7.3  |
+
+1. **#1** — Capture sky into cubemap each frame
+   - **Expected:** Cubemap resolution configured per platform; all 6 faces rendered from sky model
+2. **#2** — Feed cubemap into ambient diffuse + specular IBL probes
+   - **Expected:** Scene ambient lighting tracks sky changes
