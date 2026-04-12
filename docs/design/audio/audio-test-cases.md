@@ -42,6 +42,12 @@ Test case IDs use `TC-5.G.Z.N` format where G is the group (1=engine, 2=spatial,
 | TC-5.5.3.1    | `test_vad_speech_onset_20ms`        | R-5.5.3     |
 | TC-5.5.6.1    | `test_dialogue_priority_interrupt`  | R-5.5.6     |
 | TC-5.5.7.1    | `test_dialogue_branch_gated_edge`   | R-5.5.7     |
+| TC-5.3.6.1    | `test_delay_chorus_flanger_variants`| R-5.3.6     |
+| TC-5.4.3.1    | `test_music_transition_edge_modes`  | R-5.4.3     |
+| TC-5.5.1.1    | `test_mic_capture_opus_encode`      | R-5.5.1     |
+| TC-5.5.4.1    | `test_tts_synthesis_routes_to_bus`  | R-5.5.4     |
+| TC-5.5.5.1    | `test_phoneme_viseme_mapping`       | R-5.5.5     |
+| TC-5.5.8.1    | `test_voice_channel_routing`        | R-5.5.8     |
 
 1. **TC-5.1.1.1** `test_audio_source_size_budget` — Allocate `AudioSource` with each emitter shape;
    assert `size_of::<AudioSource>() <= 128` bytes for each variant.
@@ -227,6 +233,44 @@ Test case IDs use `TC-5.G.Z.N` format where G is the group (1=engine, 2=spatial,
     `quest_progress == 0`, `1`, and `2`. Set state to `1` and traverse.
     - Input: dialogue graph rooted at `node_0` with three condition-gated edges
     - Expected: traversal selects the `quest_progress == 1` branch; non-matching edges skipped
+
+34. **TC-5.3.6.1** `test_delay_chorus_flanger_variants` — Build an effect chain containing
+    `AudioEffect::Delay`, `AudioEffect::Chorus`, and `AudioEffect::Flanger` enum variants and
+    process an impulse through each in isolation.
+    - Input: each variant with default configuration, impulse input
+    - Expected: delay output has a secondary impulse at configured delay time; chorus and flanger
+      outputs exhibit expected modulated delay taps, all three dispatched via enum (no `Box<dyn>`)
+
+35. **TC-5.4.3.1** `test_music_transition_edge_modes` — Configure segment graph edges for each
+    transition mode (immediate cut, timed crossfade, beat-synced crossfade, next-bar switch, custom
+    curve) and trigger each.
+    - Input: edges `A->B` configured with each of the 5 modes, trigger mid-bar
+    - Expected: switch timing matches mode rule: immediate=same sample, timed=configured ms,
+      beat-synced=next beat, next-bar=next bar boundary, custom=follows supplied curve
+
+36. **TC-5.5.1.1** `test_mic_capture_opus_encode` — Capture 2 s of microphone input via platform
+    backend and encode via Opus at 32 kbps.
+    - Input: platform mic input stream, `OpusEncoder { bitrate: 32_000 }`
+    - Expected: encoded frame stream produced; decoded output within perceptual tolerance of input;
+      platform API used matches selected backend (WASAPI/CoreAudio/PipeWire)
+
+37. **TC-5.5.4.1** `test_tts_synthesis_routes_to_bus` — Submit text "hello world" to TTS with voice
+    id, verify output routes into `DialogueBus`.
+    - Input: `TtsRequest { text: "hello world", voice: default }`
+    - Expected: synthesized PCM lands on `DialogueBus`, platform-native backend used, voice
+      lifecycle ends `Stopped` after synthesis completes
+
+38. **TC-5.5.5.1** `test_phoneme_viseme_mapping` — Analyze a pre-recorded clip with known phonemes
+    and capture the phoneme-to-viseme timeline.
+    - Input: reference clip with hand-labeled phonemes
+    - Expected: phoneme timestamps within 20 ms of reference; viseme ids mapped to expected set for
+      both pre-recorded and live voice paths
+
+39. **TC-5.5.8.1** `test_voice_channel_routing` — Configure proximity, party, guild, raid,
+    broadcast, and custom channels and send a voice packet on each.
+    - Input: six channel types with distinct volumes and route masks
+    - Expected: each packet appears on its channel bus only; per-speaker volume setters take effect
+      per channel independently
 
 ## Integration Tests
 
