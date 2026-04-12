@@ -1,7 +1,4 @@
 #!/bin/bash
-# Stop hook: format and lint all Rust code in the workspace
-MANIFEST="Cargo.toml"
-[ -f "$MANIFEST" ] || exit 0
 command -v cargo >/dev/null 2>&1 || exit 0
 cargo fmt --manifest-path "$MANIFEST" 2>/dev/null
 CLIPPY_OUT=$(cargo clippy \

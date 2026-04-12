@@ -2295,82 +2295,594 @@ authoring mental model. The multi-user gaps exist.
 
 ### RF-1: Remove all async/await [APPLIED]
 
+Replace all 10+ `async fn` with synchronous APIs using the request/handle pattern. Submit I/O via
+crossbeam-channel to main thread, platform-native I/O (IOCP/GCD/io_uring). Return handles, react on
+completion at frame boundaries.
+
 ### RF-2: Replace Tokio with platform-native I/O [APPLIED]
+
+Remove all 12 Tokio references. Linux: io_uring via rustix. macOS: GCD dispatch_io via dispatch2.
+Windows: IOCP via windows-rs. Multi-user transport: QUIC (quinn-proto / Networking.framework /
+MsQuic), not "Tokio TCP".
 
 ### RF-3: Replace TypeId with codegen'd ComponentTypeId [APPLIED]
 
+`HashMap<TypeId, ComponentData>` in EntityTemplate uses TypeId-based dispatch. Replace with
+codegen'd `ComponentTypeId` from the middleman .dylib. Use sorted
+`Vec<(ComponentTypeId, ComponentData)>` for deterministic lookup.
+
 ### RF-4: Codegen pipeline for templates and user types [APPLIED]
+
+Add a "Codegen integration" section: entity templates, custom component types, biome rules, and
+placement rules compile to Rust via the codegen pipeline into the middleman .dylib. Hot-reload
+recompiles when templates change.
 
 ### RF-5: Replace HashMap on hot paths [APPLIED]
 
+`HashMap<TypeId, ComponentData>` to sorted Vec with binary search.
+`HashMap<PropertyPath, OverrideValue>` to BTreeMap or sorted Vec. Template propagation to 1000
+instances must be deterministic.
+
 ### RF-6: rkyv serialization [APPLIED]
+
+Resolve open question #6: rkyv for zero-copy binary. No RON. Entity templates, terrain tiles,
+foliage data all use rkyv.
 
 ### RF-7: Game loop phase [APPLIED]
 
+Identify when editor tool systems execute: after input processing, before rendering. Specify
+frame-boundary handoff for streaming I/O completions, terrain tile loads, and template propagation.
+
 ### RF-8: Cross-subsystem integration table [APPLIED]
+
+| Subsystem | Direction | Data | Mechanism |
+|-----------|-----------|------|-----------|
+| Spatial index | bidirectional | BVH queries, entity registration | Shared BVH API |
+| Asset pipeline | bidirectional | load/save terrain, templates | AssetDatabase API |
+| Render graph | produces | GPU compute passes (erosion, foliage) | Render graph nodes |
+| Input system | consumes | brush input, placement tools | Input actions |
+| ECS world | bidirectional | entity spawn/despawn, components | World API |
+| Physics | consumes | CSG collision, terrain collider | Physics API |
+| Navmesh | produces | navigation data from terrain | AI navigation API |
+| VFX | produces | wind for foliage, weather | Wind field texture |
+| Grids/volumes | bidirectional | heightmap, voxel terrain | Grid API |
+| Networking | bidirectional | multi-user cell locks | QUIC transport |
+| UI framework | consumes | tool panels, brush UI | Widget API |
+| Save system | produces | world state persistence | Save API |
+| Streaming | produces | cell load/unload requests | Asset pipeline |
 
 ### RF-9: Algorithm reference URLs [APPLIED]
 
+Add URLs for: CSG booleans (Bernstein and Fussell or BSP approach), hydraulic erosion (Musgrave or
+GPU particle method), Catmull-Rom/Bezier spline evaluation, navmesh generation (Recast), tetrahedral
+probe placement, Poisson-disk foliage distribution, world partitioning (quadtree/octree).
+
 ### RF-10: Complete platform considerations [APPLIED]
+
+| Platform | I/O | Compute | Transport |
+|----------|-----|---------|-----------|
+| Windows | IOCP | D3D12 compute | MsQuic |
+| macOS | GCD dispatch_io | Metal compute | Networking.framework |
+| Linux | io_uring | Vulkan compute | quinn-proto |
+| iOS | GCD dispatch_io | Metal compute | Networking.framework |
+| Android | io_uring | Vulkan compute | quinn-proto |
+| Consoles | Platform SDK | Platform SDK | Platform SDK |
 
 ### RF-11: 2D/2.5D support [APPLIED]
 
+1. **2D entity placement** — entities use `Transform2D` (Vec2 position, f32 rotation, Vec2 scale).
+   Z-order replaces depth. Placement tools operate on the XY plane.
+2. **Tilemap editing** — terrain equivalent for 2D. Tile palette, paint tool, auto-tiling rules
+   (Wang tiles). Cross-reference rendering/2d.md.
+3. **2D world partitioning** — grid-based streaming for large 2D worlds (RTS maps, open-world 2D).
+   Same streaming system with 2D cells.
+4. **Isometric** — isometric grid placement with snap. Support for isometric and hex grids
+   (rendering/2d.md GridType).
+5. **Parallax layer placement** — for 2D platformers, place background/ foreground layers at
+   different parallax rates.
+6. **2D foliage** — scatter 2D sprites (grass, flowers) on a surface with density brushes. Same
+   foliage system adapted for 2D.
+
 ### RF-12: Custom job system [APPLIED]
+
+Identify parallelized operations: `propagate_changes` over 1000+ instances via `par_iter`,
+`auto_populate` over large regions via `scope()`, navmesh regeneration via job system. Reference
+crossbeam-deque.
 
 ### RF-13: Justify dyn EditorCommand [APPLIED]
 
+`Box<dyn EditorCommand>` is editor-only cold path for heterogeneous undo stack. Acceptable per
+constraints. Document justification.
+
 ### RF-14: SmallVec [APPLIED]
+
+`EntityTemplate::children` to `SmallVec<[TemplateId; 4]>`. `nested_templates` to
+`SmallVec<[TemplateRef; 4]>`. `material_layers` to `SmallVec<[MaterialLayer; 4]>`.
 
 ### RF-15: Per-thread arenas [APPLIED]
 
+Brush stroke temporaries, foliage placement buffers, raycast results, and template propagation
+scratch use per-thread arenas. Reset at frame boundaries.
+
 ### RF-16: Frame-boundary handoff [APPLIED]
+
+Main thread polls I/O completions at frame boundary. Terrain tile loads become available next frame.
+Dirty tile flushes submitted at end of frame. Template propagation committed atomically.
 
 ### RF-17: World streaming data flow [APPLIED]
 
+Camera distance triggers cell load. Asset pipeline request submitted via channel. Platform I/O reads
+cell. Spatial index updated on load. Entities spawned. Unload: entities despawned, spatial index
+entries removed, memory budget enforced.
+
 ### RF-18: LOD system [APPLIED]
+
+Terrain LOD: mesh decimation by distance. Foliage LOD: full mesh to billboard to hidden by distance.
+Entity LOD: mesh LOD chain authored per asset. LOD distances configurable per quality tier.
 
 ### RF-19: Scene hierarchy management [APPLIED]
 
+Add APIs: reparent entity, create group entity (empty transform parent), flatten hierarchy, scene
+outliner drag-and-drop. Clarify how outliner hierarchy maps to ECS ChildOf relationships.
+
 ### RF-20: Multi-scene editing [APPLIED]
+
+Sub-scenes loaded as entity references. Edits to sub-scene propagate to all worlds. Scene outliner
+shows nested scenes collapsible. Cross-scene entity references resolved at load time.
 
 ### RF-21: VR editing considerations [APPLIED]
 
+VR preview mode for scale validation. Hand-tracked placement interactions. VR-specific grid and
+measurement tools.
+
 ### RF-22: "Everything compiles to Rust" [APPLIED]
+
+Biome rules, placement rules, and template definitions authored visually compile to Rust via the
+codegen pipeline into the middleman .dylib.
 
 ### RF-23: Deep ECS integration [APPLIED]
 
+The level/world editor operates directly on the ECS world. Every edit is an ECS mutation:
+
+1. **Entity lifecycle** — every placed object is an entity. "Place" = `spawn_entity` via command
+   buffer. "Delete" = `despawn` via command buffer. "Duplicate" = clone all components to a new
+   entity. All mutations go through command buffers for deferred execution and undo.
+2. **Component editing** — the inspector reads and writes components via codegen'd accessors. Level
+   editor tools write to specific components:
+   - Transform gizmo writes `Transform` / `Transform2D`
+   - Terrain brush writes `TerrainChunk` heightmap
+   - Foliage painter writes `FoliageInstance` buffer
+   - Material swap writes `MaterialOverride`
+   - CSG tool writes `CsgBrush`
+3. **Query-driven tools** — editor tools query the ECS world:
+   - Selection picking: `Query<(Entity, &Transform, &Selectable)>`
+   - Terrain painting: `Query<(Entity, &TerrainChunk, &Transform)>`
+   - Foliage scatter: `Query<(Entity, &FoliageRegion)>`
+   - Spatial search: shared BVH query returns entity results
+4. **System scheduling** — editor tool systems run in a dedicated editor phase of the game loop
+   (between input and game update). They must not conflict with game systems. The ECS scheduler
+   tracks editor system access sets separately.
+5. **Live preview** — in play-in-editor mode, level edits apply to the game world in real time. The
+   editor's command buffer merges with the game's command buffer at the same sync point.
+6. **Archetype awareness** — the entity template system must understand ECS archetypes. When a
+   template defines a set of components, all instances share the same archetype for cache
+   efficiency.
+7. **Batch operations** — bulk entity operations use the job system's `par_iter` over query results.
+   The command buffer collects all mutations and applies them atomically.
+8. **Change detection** — the editor uses `Changed<T>` filters to detect which entities were
+   modified during play-in-editor, so it can highlight them and offer to apply or revert changes on
+   exit.
+
 ### RF-24: Scene and transform system integration [APPLIED]
+
+1. **Transform hierarchy** — entities form parent-child hierarchy via `ChildOf` relationships. Scene
+   outliner displays this. Drag-drop changes `ChildOf`. Transform system propagates `LocalTransform`
+   to `GlobalTransform` automatically.
+2. **Local vs global editing** — gizmo operates in: Local space, Global space, Parent space, Custom
+   pivot. Gizmo writes to `LocalTransform`; transform system updates `GlobalTransform`. Inspector
+   shows both.
+3. **Transform snapping** — grid snap writes quantized values to `LocalTransform`. Surface snap
+   raycasts, then converts hit position from global to local space relative to parent.
+4. **Transform propagation** — moving a parent moves all children. Undo command only stores parent's
+   transform change.
+5. **2D transforms** — entities with `Transform2D` use Vec2 position and f32 rotation. Gizmo
+   switches to 2D mode (XY only). Inspector shows 2D fields. Outliner shows z-order instead of
+   depth.
+6. **Mixed 2D/3D** — a 2.5D game may have both `Transform` and `Transform2D`. The viewport handles
+   both. Gizmo adapts per entity.
+7. **Transform precision** — for large open worlds, warn when placing beyond configurable distance
+   threshold (e.g., 10 km). Consider origin-rebasing workflow.
 
 ### RF-25: Pen tablet support [APPLIED]
 
+1. **Pressure sensitivity** — terrain sculpt, foliage paint, texture paint, vertex paint all respond
+   to pen pressure. Pressure maps to brush strength (0.0 at light touch, 1.0 at full pressure).
+   Configurable mapping curve (linear, ease-in, ease-out, custom).
+2. **Tilt** — maps to brush angle or shape elongation. Terrain sculpt: tilt controls ridge
+   direction. Texture paint: tilt controls footprint shape.
+3. **Barrel button** — configurable (default: eyedropper/sample material). Second button: undo last
+   stroke.
+4. **Eraser end** — flip pen to eraser mode (lower terrain, erase foliage, erase paint). Automatic
+   mode switching.
+5. **Platform input APIs:**
+   - macOS: `NSEvent` pressure/tilt via objc2
+   - Windows: Windows Ink (`WM_POINTER*`) via windows-rs
+   - Linux: libinput tablet events via evdev
+6. **Brush dynamics** — all brushes support: size, strength, falloff (linear/smooth/sharp/custom
+   curve), spacing (% of brush size), jitter, flow vs opacity (like Photoshop).
+7. **Stroke smoothing** — Catmull-Rom or Bezier smoothing on input path. Configurable strength (0 =
+   raw, 1 = heavy).
+8. **Undo per stroke** — each complete stroke (pen down to pen up) is one undo step.
+
 ### RF-26: Terrain painting depth [APPLIED]
+
+1. **Height painting** — raise, lower, smooth, flatten, noise, ramp (linear gradient between two
+   points), stamp (apply heightmap image as brush shape). All respond to pen pressure.
+2. **Texture splatmap painting** — paint material layers onto terrain. Up to 8 layers per tile
+   (mobile: 4). Auto-painting rules: slope > threshold = rock, altitude > threshold = snow.
+3. **Foliage painting** — paint/erase vegetation instances. Density brush. Per-foliage-type: mesh,
+   scale range, random rotation, alignment to surface normal, collision avoidance distance.
+4. **Hole painting** — paint holes in terrain for caves, tunnels, building foundations. Per-triangle
+   visibility flag.
+5. **Water painting** — paint water volume regions. Water level per region. Flow direction painting
+   for rivers.
+6. **Road/path painting** — spline-based roads that cut into terrain (auto-flatten) and apply road
+   material.
 
 ### RF-27: Entity placement and manipulation depth [APPLIED]
 
+1. **Placement modes:**
+   - Click to place at cursor (raycast to surface)
+   - Drag to place and orient simultaneously
+   - Paint mode (continuous placement along cursor path)
+   - Scatter mode (random placement within brush radius)
+   - Line mode (place along a line between two points)
+   - Grid mode (place at regular grid intervals)
+   - Spline mode (place along a spline path)
+2. **Randomization** — per-placement random: position jitter, rotation (full random, align to
+   surface, constrained axis), scale (uniform or per-axis within range).
+3. **Replace** — select entity, "Replace With" another asset. Preserves transform, hierarchy,
+   overrides.
+4. **Align to surface** — up vector aligns to surface normal. Configurable: full, Y-up only, or
+   custom blend.
+5. **Physics drop** — place above surface, simulate physics for N frames to settle. "Simulate then
+   freeze" workflow.
+6. **Selection tools:**
+   - Click select (single)
+   - Box select (marquee drag)
+   - Lasso select (freeform polygon)
+   - Paint select (brush paints selection mask)
+   - Volume select (3D box or sphere)
+   - By type (select all instances of a prefab)
+   - By component (select all with a specific component)
+   - By data table query (select all whose health > 100)
+
 ### RF-28: Debug visualizations and gizmos [APPLIED]
+
+All overlays toggleable per category and filtered by render layer bitmask:
+
+1. **Physics debug:** collider wireframes (color by type), contact points and normals, joint
+   connections, raycast debug lines, physics BVH visualization (bounding boxes per level)
+2. **Navigation debug:** navmesh overlay (triangles with walkability coloring), agent paths,
+   off-mesh links (arcs), navigation obstacles
+3. **Spatial index debug:** shared BVH bounding boxes, grid cell boundaries, streaming cell
+   boundaries with load state colors
+4. **AI debug:** sense volumes (vision cones, hearing spheres), awareness state icons, behavior tree
+   current node, influence map heat overlay, flow field direction arrows
+5. **Audio debug:** sound source spheres, attenuation falloff rings, listener position,
+   occlusion/obstruction ray lines
+6. **Lighting debug:** light source wireframes, shadow cascade frustums, light probe positions,
+   reflection probe volumes
+7. **Performance debug:** overdraw heat map, draw call count per region, triangle density heat map,
+   LOD level coloring
+8. **Custom gizmos via logic graphs** — plugins define custom gizmos as logic graphs (scripting.md
+   RF-20 section 9). The graph outputs draw commands rendered in the debug overlay.
 
 ### RF-29: Voxel editing tools [APPLIED]
 
+1. **Block placement** — place/remove individual voxel blocks. Cursor snaps to voxel grid. Face
+   selection determines attachment face.
+2. **Block painting** — paint block types (materials) onto existing voxels.
+3. **Region fill** — select 3D region (box), fill with block type. Hollow option (shell only).
+4. **Copy/paste volumes** — select 3D region, copy voxel data, paste at another location. Rotation
+   and mirroring.
+5. **SDF sculpting** — for smooth voxel terrain (marching cubes / dual contouring): add material
+   (sphere stamp), remove (sphere carve), smooth (blur SDF), sharpen. Pen pressure controls
+   strength.
+6. **Voxel palette** — block type selector from data table. Search and filter by category.
+7. **Chunk visualization** — chunk boundaries as wireframe. Color by dirty state, LOD level,
+   streaming state.
+8. **Cross-reference** — voxel data in grids-volumes.md VoxelChunk.
+
 ### RF-30: CSG modeling tools [APPLIED]
+
+1. **Primitives** — box, sphere, cylinder, cone, wedge, arch, stairs. Each is a `CsgBrush` entity
+   with `CsgShape` component.
+2. **Boolean operations:** additive (walls, pillars), subtractive (rooms, doorways), intersection
+   (overlap only).
+3. **Brush manipulation** — select faces, edges, vertices and move. Extrude faces. Scale faces.
+4. **Texture mapping** — per-face material. UV auto-projection (planar, box, cylindrical). UV
+   offset/scale/rotation per face.
+5. **CSG evaluation** — boolean ops evaluated on edit. Result is triangle mesh for rendering and
+   collision. Source brushes remain editable.
+6. **Convert to mesh** — "Finalize CSG" converts to static mesh asset.
+7. **Performance** — < 100 ms for 50 brushes.
+8. **Algorithm** — BSP-based or half-edge mesh boolean. Reference URL.
 
 ### RF-31: Custom viewport tools via logic graphs [APPLIED]
 
+1. **Custom tool registration** — logic graph implements `ViewportTool` trait (codegen'd):
+   `on_activate()`, `on_deactivate()`, `on_input(event)`, `on_draw_gizmos()`, `on_apply()`. Appears
+   in viewport toolbar.
+2. **Input handling** — tool receives viewport input events (mouse, click, drag, scroll, keyboard).
+3. **Gizmo drawing** — `on_draw_gizmos()` draws lines, shapes, text, interactive handles.
+4. **Examples:** road spline tool, river tool, fence/wall tool, scatter tool, measurement tool.
+5. **Tool settings panel** — widget tree produced by the tool's logic graph. Persisted in user
+   preferences.
+
 ### RF-32: Viewport statistics overlay [APPLIED]
+
+Toggleable stats overlay in the viewport corner:
+
+1. **Frame timing:** FPS (current + average + 1% low), frame time (ms), GPU frame time, CPU
+   breakdown (simulation, render, UI)
+2. **Geometry:** triangles, meshlets, vertices, draw calls, dispatches
+3. **Culling:** entities submitted vs culled, meshlet ratio, LOD distribution
+4. **Memory:** GPU VRAM used/total, texture memory, buffer memory, CPU arena usage
+5. **Scene:** total entities, entities in view, lights, particles, audio
+6. **Streaming:** cells loaded/total, cells loading, bandwidth, cache hit rate
+7. **Rendering passes:** per-pass timing, pass count, barriers, transitions
+8. **Display modes:** compact (one line), detailed (multi-line), graph (rolling frame time), off
+9. **Integration** — stats from render graph profiler, GPU timestamps, ECS world stats, streaming
+   system. UI widget respecting dirty-based rendering.
 
 ### RF-33: Non-destructive procedural level generation [APPLIED]
 
+#### Procedural generation pipeline
+
+1. **Generator stack** — ordered stack of generator nodes evaluated top-to-bottom. Changing any node
+   re-evaluates downstream.
+2. **Generator node types:**
+   - **Terrain generator** — noise-based heightmap (Perlin, Simplex, Worley, FBM) with octaves,
+     scale, seed
+   - **Erosion pass** — hydraulic/thermal erosion. Non-destructive: adjusting params regenerates
+     from pre-erosion heightmap
+   - **Biome painter** — rule-based biome assignment (altitude + slope
+     - noise to biome ID). Rules are logic graph expressions
+   - **Foliage scatter** — Poisson-disk distribution per biome
+   - **Structure placer** — place prefabs at rule-determined locations
+   - **Road network** — connect structures with spline roads
+   - **River generator** — trace water flow from high to low elevation
+   - **Wall/fence generator** — auto-place along region boundaries
+
+#### Spline-based generation
+
+3. **Spline input** — user draws splines in viewport. Road follows spline, river follows spline,
+   entities scatter along spline.
+4. **Spline parameters** — per-control-point: width, material blend, foliage density, height offset.
+   Interpolated along spline.
+5. **Non-destructive spline editing** — moving a control point regenerates only the affected region.
+
+#### Painted area generation
+
+6. **Paint masks** — user paints areas. Areas serve as generator input: scatter trees in painted
+   area, flatten terrain, apply material.
+7. **Mask layers** — multiple (forestation, urbanization, danger zones).
+
+#### Modified procedural assets
+
+8. **Override layer** — after generation, manual edits stored as override layer separate from
+   procedural output. Generator re-evaluates, override re-applied on top.
+9. **Override resolution** — conflict between regenerated result and override: editor highlights
+   conflict, offers keep/discard/adjust.
+10. **Lock regions** — prevent regeneration from affecting locked areas.
+
+#### Non-destructive workflow guarantees
+
+11. **Parameter history** — in undo tree (editor-core.md RF-37).
+12. **Seed control** — per-generator random seed. Undoable, saveable.
+13. **Preview before commit** — wireframe/transparent overlay while adjusting parameters.
+14. **Incremental regeneration** — only affected region. Spatial partitioning determines which
+    chunks need re-evaluation.
+15. **Export to static** — "Bake Procedural" converts to static entities and terrain. Generator
+    stack preserved for future re-evaluation.
+
 ### RF-34: Scene diffing [APPLIED]
+
+1. **Diff model** — compare two scene states (current vs saved, current vs last commit, branch A vs
+   B). Entity/component level: added, removed, modified (per-field delta).
+2. **Diff visualization in viewport** — green outline = added, yellow = modified, red = deleted,
+   ghosted/transparent = deleted reference.
+3. **Diff visualization in outliner** — badges: green +, yellow ~, red -. Filter to show only
+   changed entities.
+4. **Component diff** — inspector shows per-field diff: old value (dimmed) next to new value. Revert
+   button per field.
+5. **Diff source** — configurable: last save, Git HEAD, named branch, specific commit. Integrates
+   with VCS adapter (team-tools.md).
+6. **Merge** — three-way merge for scene files. Per-entity conflicts. Accept ours/theirs/manual
+   merge. Non-conflicting auto-merge.
 
 ### RF-35: Scene outliner tree [APPLIED]
 
+1. **Tree structure** — mirrors ECS `ChildOf` hierarchy. Root entities at top. Children indented.
+   Expand/collapse per node.
+2. **Entity display** — expand arrow, visibility toggle (eye), lock toggle (lock), entity icon (by
+   component type), entity name, component badge count.
+3. **Selection sync** — click in outliner selects in viewport and vice versa. Multi-select with
+   Ctrl+click, Shift+click. Drag to reparent.
+4. **Search and filter** — search by name. Filter by type, component.
+5. **Drag and drop:** reparent, reorder siblings, drag from asset browser to add as child.
+6. **Context menu** — rename, duplicate, delete, group, ungroup, create prefab, focus in viewport,
+   show in content browser, add component, copy/paste.
+7. **Diff badges** — when scene diffing active (RF-34), show diff status per entity.
+8. **Prefab indicators** — prefab instances show icon. Overridden properties bold. Click to open
+   prefab edit mode.
+
 ### RF-36: Focus and frame selected [APPLIED]
+
+1. **Focus selected** — F key snaps viewport camera to frame selection bounding box. Camera orbits
+   around selection center.
+2. **Focus hierarchy** — Shift+F frames entity plus all children.
+3. **Double-click focus** — double-click in outliner to focus.
+4. **Zoom extents** — Home key frames entire scene.
+5. **Focus maintains orbit** — after focusing, camera orbits around focused entity. First-person
+   navigation exits orbit.
+6. **2D focus** — centers and zooms camera to frame 2D bounds.
 
 ### RF-37: Viewport navigation modes [APPLIED]
 
+#### Orbit/pivot mode (default)
+
+1. **Orbit** — middle mouse drag (or Alt+left) orbits around pivot.
+2. **Pan** — Shift+middle mouse (or Alt+middle) pans perpendicular.
+3. **Zoom** — scroll wheel toward/away from pivot. Smooth, configurable.
+4. **Maya-style** — Alt+Left=orbit, Alt+Middle=pan, Alt+Right=dolly.
+
+#### First-person mode
+
+5. **Activate** — hold right mouse button. WASD moves. Mouse rotates.
+6. **Speed** — scroll while in first-person adjusts speed. Shift=fast, Ctrl=slow. Persists across
+   sessions.
+7. **Fly mode** — Q down, E up (world-relative).
+
+#### Cursor locking
+
+8. **Lock on right-click** — cursor locked to viewport center, hidden. Mouse deltas drive rotation.
+   On release, cursor returns. Prevents hitting monitor edges during look-around.
+9. **Lock on middle-click orbit** — optional (configurable).
+10. **Platform implementation:**
+    - macOS: `CGAssociateMouseAndMouseCursorPosition(false)` + `CGDisplayHideCursor` via objc2
+    - Windows: `SetCursorPos` + `ShowCursor(false)` + `ClipCursor` via windows-rs
+    - Linux: `XGrabPointer` / `wl_pointer.set_cursor(null)` + relative motion events
+
+#### Touch device navigation (Android/iPad)
+
+11. **One-finger drag** — pan (same as middle mouse).
+12. **Two-finger pinch** — zoom (same as scroll).
+13. **Two-finger rotate** — orbit (angle between fingers).
+14. **Three-finger drag** — first-person fly mode.
+15. **Double-tap entity** — select. Double-tap empty = deselect.
+16. **Long press** — context menu.
+17. **Touch toolbar** — floating toolbar with large buttons: select, move, rotate, scale, play,
+    undo. Touch devices only.
+18. **No cursor locking on touch** — gesture-based, no edge issues.
+
 ### RF-38: Engine-wide non-destructive editing [APPLIED]
+
+#### Where non-destructive applies
+
+| System | Non-destructive? | Mechanism |
+|--------|-----------------|-----------|
+| Terrain sculpt | Yes | Override layers on procedural base |
+| Terrain painting | Yes | Splatmap layers with masks |
+| Foliage scatter | Yes | Density map + override layer |
+| Procedural placement | Yes | Generator stack + overrides (RF-33) |
+| Prefab instances | Yes | Sparse overrides on prefab base |
+| Material parameters | Yes | Instance overrides on material asset |
+| Animation | Yes | Non-linear layers (see below) |
+| CSG brushes | Yes | Source brushes preserved until bake |
+| Voxel edits | Partial | Delta from procedural base |
+| Logic graphs | No | Direct editing (undo tree for safety) |
+| Data tables | No | Direct editing (undo tree for safety) |
+
+#### Non-destructive animation workflow
+
+1. **Animation layers** — multiple layers stack on entity. Each has: clip, blend weight, blend mode
+   (additive/override), mask (which bones/properties). Layers compose non-destructively.
+2. **Non-linear editing** — `CompositeAnimation` stacks: base pose -> mocap clip -> correction layer
+   -> procedural IK -> runtime blend. Each layer independently editable.
+3. **Timeline scrubber integration** — viewport shows entities at scrubber time. Moving scrubber
+   moves all timeline-driven entities in real time. Enables:
+   - Scrub cutscene and see actors in correct positions
+   - Scrub day/night and see lighting change
+   - Scrub NPC schedule and see NPCs at scheduled locations
+   - Scrub property animation and see material/light changes
+4. **Scrubber-aware editing** — moving entity while scrubber is at time T creates keyframe at T (if
+   entity is timeline-driven).
+5. **Override on animated entity** — manual position takes priority at current scrubber time.
+   Timeline continues for other times. "Bake override to keyframe" makes it permanent.
+
+#### Non-destructive stack model
+
+6. **Layer stack per entity:**
+   - Base: prefab or template definition
+   - Procedural: generator output
+   - Manual override: user edits
+   - Animation: timeline/property animation at current time
+   - Runtime: gameplay modifications (play mode only)
+   Each layer inspectable, enable/disable, revertable.
+7. **Override indicators** — inspector shows which layer each property comes from. Bold = manual
+   override. Italic = procedural. Normal = base. Animated = pulsing.
+8. **Revert per layer** — right-click -> "Revert to Base", "Revert to Procedural", "Remove Animation
+   Override."
 
 ### RF-39: Scene merging and Git conflict resolution [APPLIED]
 
+1. **Scene file format** — entity-per-block text format. Git line-based merge works for
+   non-overlapping entity edits. Binary assets are Git LFS.
+2. **Automatic merge** — branch A edits entity 1, branch B edits entity 2: auto-merge (different
+   text blocks).
+3. **Entity-level conflict** — both branches edit same entity: merge resolution dialog with
+   per-entity/per-component/per-field accept ours/theirs/manual. Three-way diff.
+4. **Structural conflicts** — branch A deletes entity that branch B modified: dialog shows options
+   to keep or delete.
+5. **Prefab merge** — prefab asset modified on both branches: operate on prefab definition. Instance
+   overrides merge automatically.
+6. **Merge preview** — viewport with diff coloring (RF-34) before committing merge.
+7. **Merge tool integration** — editor registers as external Git merge tool for scene files.
+
 ### RF-40: Git LFS locking and read-only assets [APPLIED]
 
+1. **Lock on edit** — auto-acquire Git LFS lock when opening binary asset for editing.
+2. **Lock indicator** — lock badge in content browser with owner name. Red = someone else's lock,
+   green = your lock.
+3. **Read-only mode** — locked-by-other assets: inspector fields disabled, gizmos disabled, banner
+   "Locked by [user] — read only."
+4. **Lock request** — notification to lock holder if you need to edit.
+5. **Auto-unlock on save** — configurable: release on save+commit, or keep until manual release.
+6. **Force unlock** — admin privilege for stale locks.
+7. **Lock scope:**
+   - Scene files: per-scene or per-cell (multi-user cell locking)
+   - Binary assets: per-file (Git LFS granularity)
+   - Data tables: per-table or per-row (configurable)
+8. **Offline support** — warn if unreachable. On reconnect, attempt lock. If another user locked
+   while offline, flag conflict.
+
 ### RF-41: Expanded debug visualizations [APPLIED]
+
+#### Physics debug (expanded)
+
+1. **Hitbox wireframes** — every Collider/Collider2D as colored wireframe. Filter by collision
+   layer, body type, sensor vs solid.
+2. **Broadphase BVH** — physics-private BVH bounding boxes at configurable depth levels. Color by
+   depth.
+3. **Contact manifold** — contact points as red dots with normals. Penetration depth as line length.
+   Filter by force magnitude.
+4. **Continuous collision** — CCD sweep volumes as extruded shapes.
+5. **Constraint visualization** — joints as lines/arcs. Show limits, motor direction, spring rest
+   length.
+
+#### Ray tracing debug
+
+6. **BVH traversal heat map** — color per pixel by BVH nodes traversed. Red = expensive, green =
+   cheap.
+7. **Ray count per pixel** — for reflections, GI, shadows. Heat map.
+8. **Denoiser input/output** — toggle noisy vs denoised.
+9. **Acceleration structure** — BLAS/TLAS bounding boxes. Color by BLAS instance count.
+
+#### Navigation debug (expanded)
+
+10. **Navmesh detail** — polygon IDs, area classification, cost multiplier as color, edge types.
+11. **Pathfinding debug** — A* open/closed sets animated during search.
+12. **Crowd simulation** — avoidance volumes, desired velocity vectors, density heat map.
+13. **Navigation obstacle preview** — navmesh cut regions from dynamic obstacles.
+
+#### Additional spatial debug
+
+14. **Streaming cell boundaries** — wireframe boxes. Color by state: loaded (green), loading
+    (yellow), unloaded (gray), queued (blue).
+15. **Audio occlusion rays** — green = unobstructed, red = obstructed. Material absorption
+    coefficient at hit points.
+16. **Networking relevancy grid** — cells colored by player count, entity count, bandwidth usage.
+17. **Influence map overlay** — transparent colored overlay on terrain. Toggle per-faction.
+18. **Wind field arrows** — direction arrows on grid. Length = speed. Color = turbulence.

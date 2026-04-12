@@ -754,6 +754,7 @@ GPU abstraction, render graph, core rendering, lighting, post-processing, and ma
 | [rendering-core.md](design/rendering/rendering-core.md) | [rendering-core-test-cases.md](design/rendering/rendering-core-test-cases.md) |
 | [render-effects.md](design/rendering/render-effects.md) | [render-effects-test-cases.md](design/rendering/render-effects-test-cases.md) |
 | [render-styles.md](design/rendering/render-styles.md) | [render-styles-test-cases.md](design/rendering/render-styles-test-cases.md) |
+| [2d.md](design/rendering/2d.md) | — |
 
 #### Features
 
@@ -1251,7 +1252,6 @@ Widget framework, HUD, 2D games, and accessibility.
 | Design | Test Cases |
 |--------|------------|
 | [ui-framework.md](design/ui/ui-framework.md) | [ui-framework-test-cases.md](design/ui/ui-framework-test-cases.md) |
-| [ui-specialized.md](design/ui/ui-specialized.md) | [ui-specialized-test-cases.md](design/ui/ui-specialized-test-cases.md) |
 
 #### Features
 
@@ -1542,8 +1542,8 @@ graph TB
 | networking | 3 |
 | physics | 3 |
 | platform | 3 |
-| rendering | 4 |
+| rendering | 5 |
 | tools | 7 |
-| ui | 2 |
+| ui | 1 |
 | vfx | 2 |
-| **Total** | **42** |
+| **Total** | **55** |

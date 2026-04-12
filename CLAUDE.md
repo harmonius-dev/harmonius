@@ -29,12 +29,12 @@ designing systems in the associated language.
 
 | Skill | Scope |
 |-------|-------|
-| `rust-standard` | Primary engine language (`.rs`) |
-| `hlsl-standard` | Shader IL / DXC pipeline (`.hlsl`, `.hlsli`) |
-| `markdown-standard` | Documentation / rumdl (`.md`) |
-| `json-standard` | Configuration files (`.json`) |
-| `toml-standard` | Cargo.toml, .rumdl.toml (`.toml`) |
-| `yaml-standard` | GitHub Actions workflows (`.yml`, `.yaml`) |
+| `rust` | Primary engine language (`.rs`) |
+| `hlsl` | Shader IL / DXC pipeline (`.hlsl`, `.hlsli`) |
+| `markdown` | Documentation / rumdl (`.md`) |
+| `json` | Configuration files (`.json`) |
+| `toml` | Cargo.toml, .rumdl.toml (`.toml`) |
+| `yaml` | GitHub Actions workflows (`.yml`, `.yaml`) |
 
 ## Testing policy
 
@@ -49,6 +49,12 @@ designing systems in the associated language.
 - **Pure functions** — maximize pure functions that take input and return output with no side
   effects
 - **Immutable test data** — use constants for test fixtures; never mutate shared test state
+
+## Philosophy
+
+The engine's design philosophy — composition over inheritance, generic primitives, platform-native
+harmony — is in the [README.md](README.md#philosophy) Philosophy section. Read it to understand
+the "why" behind every design decision.
 
 ## Architecture
 
@@ -84,6 +90,57 @@ starting any design or implementation work.
   code simultaneously. Separate design, design iteration, design review, implementation planning,
   test planning, test-driven implementation, verification, documentation, and release into distinct
   phases. Do not start implementation until the design is approved and finalized.
+
+## Workflow plugin
+
+Always use the workflow plugin's agents and skills when
+performing any part of the software development cycle:
+ideation, design, testing, implementation, review, or
+release. Do not perform these tasks manually.
+
+### Lifecycle
+
+1. **Specify** — generate features, requirements, and
+   user stories (`ideate` skill)
+2. **Design** — author design documents from templates
+   (`document-author` agent)
+3. **TDD** — write failing tests then implement code
+   (`coding-supervisor` agent)
+4. **Ship** — review, document, and release
+   (`release-supervisor` agent)
+
+Use the `workflow-supervisor` agent to orchestrate all
+phases automatically.
+
+### Agents
+
+Supervisors orchestrate phases and spawn workers.
+
+| Agent | Role |
+|-------|------|
+| `workflow-supervisor` | Full lifecycle orchestration |
+| `coding-supervisor` | TDD red-green-refactor cycle |
+| `review-supervisor` | Code review orchestration |
+| `release-supervisor` | Release and quality gates |
+
+Workers are spawned by supervisors for focused tasks.
+
+| Agent | Role |
+|-------|------|
+| `document-author` | Guided template filling |
+| `test-writer` | Write failing tests from TC entries |
+| `implementer` | Implement code to pass tests |
+| `correctness-reviewer` | Check code vs design |
+| `standards-reviewer` | Check coding standards |
+| `architecture-reviewer` | Check engine constraints |
+
+### Workflow skills
+
+| Skill | Purpose |
+|-------|---------|
+| `workflow` | Development lifecycle phases |
+| `ideate` | Generate features, requirements, stories |
+| `document-templates` | Templates for all document types |
 
 ## Markdown linting
 

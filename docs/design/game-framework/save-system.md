@@ -1444,48 +1444,305 @@ All tests use real objects — no mocks. Codegen functions tested via the actual
 
 ### RF-1: Remove all Reflect derives and TypeRegistry [APPLIED]
 
+Remove `Reflect` from all 17+ types. Remove `&TypeRegistry` parameters from `SaveSerializer`,
+`SaveDeserializer`, and all `SaveManager` methods. Replace with codegen'd serialization functions in
+the middleman .dylib.
+
 ### RF-2: Remove all async/await [APPLIED]
+
+Replace all `async fn` with synchronous APIs using the request/handle pattern. Submit I/O via
+crossbeam-channel, return handles. Fire-and-forget writes (save, log, network). Completion events
+delivered at frame boundaries. Methods: `trigger_save`, `trigger_incremental_save`, `load`,
+`autosave`, `quicksave`, `checkpoint_save`, `delete_slot`, `copy_slot`, `export_slot`,
+`import_slot`, `CloudSyncAdapter::sync`/`upload`/`download`.
 
 ### RF-3: Replace Tokio with platform-native I/O [APPLIED]
 
+Remove all Tokio references. Replace with:
+
+- Linux: io_uring via `rustix`
+- macOS: GCD `dispatch_io` via `dispatch2`
+- Windows: IOCP (already correct)
+- iOS: GCD `dispatch_io`
+- Android: io_uring
+- Consoles: platform SDK I/O APIs
+
 ### RF-4: Codegen pipeline for component serialization [APPLIED]
+
+Add a "Codegen integration" section: the codegen pipeline generates
+`serialize_component`/`deserialize_component` functions for all `Saveable` components into the
+middleman .dylib. `SaveSerializer` calls codegen'd functions via static dispatch. No runtime type
+lookup.
 
 ### RF-5: rkyv for save files [APPLIED]
 
+Replace DynamicValue-based serialization with rkyv. Components derive
+`rkyv::Archive`/`Serialize`/`Deserialize` via codegen. Save files are rkyv archives that can be
+mmap'd for zero-copy access on load. Same format as baked assets.
+
 ### RF-6: Create companion test cases file [APPLIED]
+
+Create `save-system-test-cases.md` with TC-IDs in `TC-13.3.X.N` format.
 
 ### RF-7: Replace DynamicValue with typed rkyv buffers [APPLIED]
 
+`ComponentSnapshot::data` and `MigrationTransform` variants use `DynamicValue` (runtime type
+erasure). Replace with raw rkyv byte buffers. Migration transforms operate on byte offsets generated
+by the codegen pipeline, or use codegen'd migration functions.
+
 ### RF-8: Remove raw pointer in SavePipeline [APPLIED]
+
+`SavePipeline` stores `vfs: *const VirtualFileSystem`. Replace with an owned reference or pass
+`&VirtualFileSystem` as a method parameter.
 
 ### RF-9: Codegen for extensible enums [APPLIED]
 
+`SaveContext` variants and `MigrationTransform::Custom` are codegen'd from user definitions in the
+middleman .dylib. Custom migration functions are codegen'd Rust, not raw fn pointers.
+
 ### RF-10: No HashMap on hot paths [APPLIED]
+
+Explicitly state that no HashMap is used for entity/component lookups during serialization. Document
+the lookup strategy (sorted Vec, index-based, BTreeMap).
 
 ### RF-11: Game loop phase [APPLIED]
 
+Specify exact phase where save triggers are processed, dirty tracking runs, and autosave timers tick
+(e.g., PostUpdate or FrameEnd).
+
 ### RF-12: Frame-boundary handoff [APPLIED]
+
+I/O submitted at end of frame N. Main thread polls completions at frame boundary.
+SaveComplete/LoadComplete events delivered at start of frame N+M. Document the ring-buffer or
+channel mechanism.
 
 ### RF-13: Cross-subsystem integration table [APPLIED]
 
+| Subsystem | Direction | Data | Mechanism |
+|-----------|-----------|------|-----------|
+| ECS | produces/consumes | all Saveable components | codegen'd serialize/deserialize |
+| Event logs | produces/consumes | ring buffer state | rkyv serialization of log |
+| Containers | produces/consumes | inventory/equipment state | Saveable components |
+| Directed graphs | produces/consumes | GraphTraversalState | Saveable component |
+| Attributes/effects | produces/consumes | meters, active effects | Saveable components |
+| Timelines | produces/consumes | PlaybackState | Saveable component |
+| Networking | bidirectional | server-auth save | server validates + stores |
+| UI | consumes | save/load menu | SaveSlotMeta query |
+| Camera | produces/consumes | active camera state | Saveable components |
+| Spatial awareness | produces/consumes | AwarenessState (NPC memory) | Saveable component |
+| Data tables | consumes | schema version for migration | version tag in save header |
+| Platform I/O | produces/consumes | file read/write | platform-native I/O |
+| Cloud services | produces/consumes | cloud sync | platform SDK upload/download |
+
 ### RF-14: Saveable component map per subsystem [APPLIED]
+
+Add a table showing which component types from each subsystem are tagged `Saveable` and participate
+in save/load serialization.
 
 ### RF-15: VR and console platform save paths [APPLIED]
 
+Add Meta Quest (Android path), PSVR2 (PS5 path), Apple Vision Pro (visionOS, same as iOS). Add
+`Nintendo` and `GooglePlay` to `CloudPlatform` enum.
+
 ### RF-16: Algorithm reference URLs [APPLIED]
+
+Add URLs for: AES-256-GCM (NIST SP 800-38D), LZ4 frame format, Zstd (RFC 8878), CRC-32, atomic
+rename crash safety pattern.
 
 ### RF-17: Everything compiles to Rust [APPLIED]
 
+All save/load logic, including custom migrations, compiles to Rust through the codegen pipeline. No
+interpreted or dynamic logic. Custom migration functions are codegen'd into the middleman .dylib.
+
 ### RF-18: Per-thread arenas for serialization buffers [APPLIED]
+
+Serialization buffers (`Vec<u8>` payloads, `Vec<EntitySnapshot>`, `Vec<ComponentSnapshot>`) allocate
+from per-thread arenas. Reset after each save operation.
 
 ### RF-19: SmallVec for EntitySnapshot components [APPLIED]
 
+Change `components: Vec<ComponentSnapshot>` to `SmallVec<[ComponentSnapshot; 8]>`. Most entities
+have fewer than 8 saveable components.
+
 ### RF-20: Note 2D/2.5D/3D agnosticism [APPLIED]
+
+The save system serializes all component types uniformly regardless of whether the game uses 2D,
+2.5D, or 3D transforms. No dimension-specific save logic.
 
 ### RF-21: Fix F-13.3.1 description [APPLIED]
 
+Change "Reflection-based save serialization" to "Codegen-based save serialization with partial
+dirty-field writes."
+
 ### RF-22: Saving runtime-generated procedural assets [APPLIED]
+
+The design assumes all saveable data is ECS components. But many game types generate assets at
+runtime that must persist across save/load:
+
+1. **Voxel terrain edits** — player digs tunnels, places blocks. The modified `VoxelChunk` data is a
+   GPU buffer (per grids-volumes.md RF-3). Saving requires GPU to CPU readback of dirty chunks, then
+   rkyv serialization of the chunk delta (only changed blocks, not the full volume). On load, deltas
+   are applied on top of the base terrain asset.
+2. **Player-built structures** — buildings, bases, furniture placement. These are entity hierarchies
+   with transforms, not raw mesh data. The entity save path handles them. But custom-shaped
+   structures (free- form building, terrain sculpting) produce modified mesh data that must be saved
+   as an asset blob alongside the entity state.
+3. **Procedural map generation** — roguelike dungeons, procedural worlds. Two approaches: (a) save
+   the seed + generation parameters (compact, deterministic regeneration on load), or (b) save the
+   generated world state (large, but handles post-generation modifications). The save system must
+   support both — seed-based for unmodified regions, delta-based for modified regions.
+4. **Painted textures** — terrain painting (splatmap edits), decal placement, graffiti/tag systems.
+   These are texture modifications stored as GPU textures. Save requires readback of dirty texture
+   regions. Store as rkyv-serialized image patches (position + pixel data) applied on top of base
+   textures on load.
+5. **Deformed meshes** — destruction damage, cloth state, soft body deformation. These are vertex
+   buffer modifications. Save the delta (displaced vertices relative to rest pose) as a compact rkyv
+   blob.
+6. **Generated audio** — procedural music state, audio parameter snapshots. These are small
+   (parameter values only, not audio buffers).
+
+**Architecture:**
+
+- Each procedural asset type registers a `ProceduralSaveHandler` in the middleman .dylib (codegen'd)
+  that knows how to:
+  - **Snapshot:** GPU to CPU readback of dirty data into an rkyv buffer
+  - **Restore:** apply the rkyv buffer back to GPU resources on load
+  - **Delta:** compute minimal diff against the base asset
+- The save file stores procedural asset blobs alongside entity snapshots. Each blob is keyed by
+  (entity, asset type) and stored as a raw rkyv byte section in the save archive.
+- The `Saveable` component on entities with procedural data includes a
+  `procedural_assets: SmallVec<[ProceduralAssetRef; 2]>` field listing which procedural blobs to
+  save alongside the entity.
+- GPU readback is asynchronous (submitted via platform I/O, completed at frame boundary). The save
+  pipeline waits for all readbacks to complete before finalizing the save file. This adds latency
+  but ensures consistency.
+
+**Size budget:**
+
+| Asset type | Typical size | Strategy |
+|------------|-------------|----------|
+| Voxel chunk delta | 1-100 KB | Delta only changed blocks |
+| Splatmap patch | 10-500 KB | Dirty region rect + pixels |
+| Mesh deformation | 1-50 KB | Displaced vertex indices + deltas |
+| Structure layout | 1-10 KB | Entity hierarchy (normal save) |
+| Seed + params | < 1 KB | Regenerate on load |
+| Total per save | < 50 MB | LZ4 compressed |
 
 ### RF-23: Expanded save metadata and screenshots [APPLIED]
 
+`SaveSlotMeta` has basic fields (`character_name`, `level`, `playtime_seconds`, `zone_name`,
+`thumbnail`) but is missing significant metadata that save/load UI and cloud platforms need:
+
+1. **Progress data:**
+   - `completion_percentage: f32` — overall game completion (0.0-1.0)
+   - `chapter: Option<LocalizedStringId>` — current story chapter/act
+   - `difficulty: Option<u32>` — difficulty setting ID
+   - `quest_summary: SmallVec<[LocalizedStringId; 4]>` — names of active quests (displayed in save
+     slot list)
+   - `deaths: u32` — total death count (souls-like games display this)
+   - `currency: u64` — primary currency amount (RPGs display gold)
+
+2. **Character data:**
+   - `character_class: Option<u32>` — class/archetype ID
+   - `character_appearance: Option<Handle<ThumbnailAsset>>` — pre- rendered character portrait for
+     save slot display
+   - `party_members: SmallVec<[LocalizedStringId; 4]>` — party member names
+
+3. **Session data:**
+   - `real_world_date: i64` — UTC timestamp of save creation
+   - `engine_version: SchemaVersion` — engine version that created the save
+   - `platform: PlatformId` — which platform created the save (for cross-platform cloud sync
+     conflict resolution)
+   - `save_type: SaveType` — enum: Manual, Autosave, Quicksave, Checkpoint, CloudSync
+
+4. **Screenshot/thumbnail:**
+   - `thumbnail` should be `Handle<ThumbnailAsset>` not `Vec<u8>` — stored as a separate file
+     alongside the save, not embedded in metadata (keeps metadata reads fast for save slot list)
+   - Thumbnail format: JPEG or WebP at configurable resolution (default 480x270, 16:9). Compressed
+     to < 50 KB.
+   - Capture timing: framebuffer readback submitted one frame before save. The readback completion
+     triggers the save finalization. Avoids synchronous GPU stall.
+   - Screenshot vs thumbnail: optionally store a full-resolution screenshot (1920x1080) alongside
+     the thumbnail for share/export. Stored as a separate asset file, not in the save archive.
+
+5. **Custom game metadata:**
+   - `custom_fields: SmallVec<[(StringId, Value); 8]>` — game-specific metadata defined by the
+     designer in data tables. The save system does not know what these are — it stores them
+     opaquely. Examples: current biome, active season, multiplayer mode, mod list.
+   - Custom fields are codegen'd into the middleman .dylib from the game's save metadata schema.
+
+6. **Metadata is readable without loading the save:**
+   - `SaveSlotMeta` is stored as a separate small rkyv file alongside the main save archive (e.g.,
+     `slot_01.meta` + `slot_01.save`)
+   - The save slot list UI reads only `.meta` files for fast display (< 1 ms per slot) without
+     touching the large save archives
+   - Thumbnail is a separate file (`slot_01.thumb`) loaded on-demand when the save slot is scrolled
+     into view
+
 ### RF-24: Save migration without losing progress [APPLIED]
+
+The design has `MigrationRegistry` with `MigrationStep` and `MigrationTransform` (AddField,
+RemoveField, RenameField, Custom) but this is insufficient for real-world save migration across game
+updates. The system operates on `DynamicValue` (flagged for removal in RF-7) and only handles
+individual field transforms. Missing:
+
+1. **Per-component version tracking** — each component type has its own `SchemaVersion`
+   (major.minor), not just a global save version. When the game updates, only changed components
+   need migration. The codegen pipeline generates the current schema version for each component
+   type. The save header stores a version table mapping component type to version at save time.
+
+2. **Ordered migration chain** — migrations are ordered steps: `v1 -> v2 -> v3 -> ... -> current`.
+   The registry builds the shortest chain from saved version to current version. Each step is a
+   codegen'd Rust function in the middleman .dylib (not a `DynamicValue` transform). Steps are
+   transitive — loading a v1 save on v5 runs all 4 migration steps in order.
+
+3. **Structural migrations beyond field ops:**
+   - **Split component** — one component becomes two (e.g., `CharacterStats` splits into
+     `HealthComponent` + `ManaComponent`)
+   - **Merge components** — two components merge into one
+   - **Reparent entity** — entity hierarchy changes (child moves to a different parent)
+   - **Entity creation** — migration creates new entities that didn't exist in the old save (e.g.,
+     adding a new quest tracking entity)
+   - **Entity deletion** — migration removes entities that are obsolete
+   - **Cross-component migration** — one component's field is moved to another component on the same
+     or different entity
+   - **Data table re-keying** — item/ability IDs change between versions; a mapping table converts
+     old IDs to new IDs
+
+4. **Migration testing infrastructure:**
+   - Maintain a repository of golden save files from every shipped version (resolve open question
+     #3)
+   - CI runs migration tests: load each golden save with the current engine, verify migration
+     succeeds, verify game state is correct
+   - Migration functions have unit tests: input v(N) data to output v(N+1) data with explicit
+     assertions
+
+5. **Migration safety:**
+   - Migrations are atomic: if any step fails, the original save is untouched (already stated in the
+     design, but enforce it)
+   - Pre-migration backup: copy the save file before migration so the player can revert
+   - Migration log: record which steps ran, which components migrated, any data loss warnings. Saved
+     as a `.migration_log` alongside the save file.
+   - Data loss warnings: if a migration removes a field that had non-default data, log a warning.
+     Never silently discard player data.
+
+6. **Lazy migration** — for large saves (open-world with millions of entities), migrating everything
+   at load time is too slow. Support lazy migration: entities are migrated on first access rather
+   than all at once. The save file stores a mix of old and new format components. Each component
+   read checks its version and migrates on-the-fly if needed. Migrated components are written back
+   to the save on the next save operation. This amortizes migration cost.
+
+7. **Cross-platform migration** — saves created on one platform and loaded on another (via cloud
+   sync) must handle: endianness (rkyv handles this), path separators (VFS normalizes), platform-
+   specific asset references (resolved via asset ID not path), and different default values per
+   platform.
+
+8. **Forward compatibility** — a save from a newer engine version loaded on an older version. The
+   system should detect this (saved version > current version) and either refuse with a clear error
+   message or support limited forward compat by ignoring unknown component types and preserving them
+   as opaque blobs for round-trip.
+
+9. **Codegen integration** — all migration functions are codegen'd Rust in the middleman .dylib. The
+   designer defines migrations in the editor (visual field mapping from old schema to new schema).
+   The codegen pipeline produces: `fn migrate_<component>_v<N>_to_v<M>(old: &[u8]) -> Vec<u8>`
+   Operating on raw rkyv byte buffers, not DynamicValue.

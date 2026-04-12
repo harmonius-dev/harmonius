@@ -5,6 +5,7 @@ exclude = [
   ".git",
   ".github",
   "**/CLAUDE.md",
+  "**/templates/*.md",
   "build",
   "node_modules",
   "vendor",
@@ -22,4 +23,4 @@ paragraphs = true
 reflow = true
 reflow-mode = "normalize"
 strict = false
-tables = true
+tables = false

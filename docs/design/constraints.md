@@ -181,10 +181,11 @@ Three thread roles communicate via crossbeam-channel. No shared mutable state.
 
 - **Zero reflection.** No runtime type registry, no `dyn Reflect`, no TypeId-based dispatch. All
   type metadata is generated statically by the codegen pipeline.
-- **Zero-copy binary via rkyv.** Baked assets and save files use rkyv for zero-copy mmap access
-  without deserialization.
-- **Git-friendly scene text format.** Custom format designed for line-based diffing and merge
-  conflict resolution. Deterministic output, stable entity IDs, flat structure.
+- **Binary serialization via rkyv only.** Baked assets and save files use rkyv for zero-copy mmap
+  access without deserialization. No serde. No other binary serialization libraries.
+- **Custom scene text format.** A custom text format designed for line-based diffing and merge
+  conflict resolution. Not BSN, not RON — a Harmonius-specific format. Deterministic output, stable
+  entity IDs, flat structure.
 - **Mixed textual+binary serialization.** Text scene files may reference binary content stored in
   separate companion `.bin` files.
 
@@ -205,16 +206,25 @@ Three thread roles communicate via crossbeam-channel. No shared mutable state.
   modify components, materials, shading models, blueprints, or any other type-level content, the
   engine generates Rust code, compiles it, and hot-reloads it. No runtime interpretation, no
   reflection, no dynamic dispatch for user-defined types. If something can be codegen'd, it must be.
+- **Visual graph nodes codegen Rust source.** All visual graph nodes (logic graphs, material graphs,
+  blueprints) generate actual Rust source code. The bundled `rustc` compiles that source into the
+  middleman `.dylib`. No bytecode VM, no interpreter.
+- **`include_bytes!` scope.** `include_bytes!` is only for inline data directly embedded in tables
+  and logic graphs. Large assets (meshes, textures, audio) remain on disk and are loaded via the
+  asset pipeline.
 - **Static linking for shipping.** Middleman + all plugins are statically linked into a single
   binary with LTO. No .dylibs shipped. Dead code elimination removes unused plugin code.
-- **Bytecode obfuscation for plugin logic.** Visual logic (blueprints, material graphs) is compiled
-  to an obfuscated custom bytecode in shipping builds to protect plugin IP. Authors can opt out for
-  performance-critical systems.
 
 ## User-Facing Authoring
 
 - **No-code engine.** All user-facing authoring surfaces are visual (logic graphs, material editors,
   animation editors). Users never write code.
+
+## Localization
+
+- **Localization is a core-runtime service, not a UI feature.** All user-visible strings use
+  `LocalizedStringId`. The localization table is resolved at runtime by the core-runtime service. No
+  hardcoded strings anywhere in the engine, editor, or game runtime.
 
 ## Networking
 
@@ -233,13 +243,18 @@ Three thread roles communicate via crossbeam-channel. No shared mutable state.
   drain.
 - **TiKV sole database.** TiKV is the only database. Replaces PostgreSQL, Redis, Valkey, and
   DynamoDB. Provides distributed KV with transactions, range queries, and multi-region replication.
-- **Full OSS stack.** No proprietary cloud services:
+- **Full OSS stack.** All engine services are fully open source. Console SDK builds run on shared
+  build servers (server-side only). The marketplace, analytics, audit, and AI routing are all OSS
+  components deployable by anyone. No proprietary cloud services:
   - TiKV — database
   - Garage — S3-compatible object storage (replaces MinIO)
   - Pingora — CDN / reverse proxy (replaces CloudFlare)
   - Vector — log/metric collection
   - Prometheus + Grafana — monitoring and dashboards
   - Loki — log aggregation
+- **Customer-owned AI API keys.** Cloud AI uses the customer's own API keys. The engine is a thin
+  client. No Harmonius proxy for billing. Supported providers (OpenAI, Anthropic, etc.) are
+  configured per-project.
 - **Game-aware GitOps.** Custom Rust K8s operator replaces ArgoCD. Understands game server state:
   graceful player drain before pod termination, canary validation with production metrics, automatic
   rollback on metric regression.

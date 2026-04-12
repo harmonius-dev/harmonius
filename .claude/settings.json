@@ -1,4 +1,15 @@
 {
+  "enabledPlugins": {
+    "workflow@cjhowe-us-workflow": true
+  },
+  "extraKnownMarketplaces": {
+    "cjhowe-us-workflow": {
+      "source": {
+        "repo": "cjhowe-us/workflow",
+        "source": "github"
+      }
+    }
+  },
   "hooks": {
     "PostToolUse": [
       {

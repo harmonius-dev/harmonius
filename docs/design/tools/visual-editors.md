@@ -1562,54 +1562,490 @@ Test cases are in [visual-editors-test-cases.md](visual-editors-test-cases.md).
 
 ### RF-1: Remove all Reflect derives [APPLIED]
 
+Remove `Reflect` from all 6 types. Replace `&TypeRegistry` params on `TypeInferenceEngine`,
+`GraphValidator`, `EcsCompiler` with a codegen'd static type table from the middleman .dylib.
+
 ### RF-2: Codegen pipeline and middleman .dylib [APPLIED]
+
+Add an "Architecture — codegen pipeline" subsection:
+
+1. Visual graph -> codegen emits `.rs` source -> bundled rustc compiles -> middleman .dylib ->
+   engine hot-reloads
+2. Material graph -> codegen emits HLSL source -> DXC + MSC CLI
+3. Custom enum variants -> codegen'd in middleman
+4. Resolve open question #1: compiled graphs produce Rust code in the middleman .dylib, not
+   relocatable object files
 
 ### RF-3: Explicit .rs generation in compilation pipeline [APPLIED]
 
+Amend the compilation pipeline flowchart: "Emit ECS Systems" becomes "Emit Rust Source (.rs)" ->
+"Compile via bundled rustc" -> "Link into middleman .dylib" -> "Hot-reload .dylib".
+
 ### RF-4: Classify enums for codegen [APPLIED]
+
+| Enum | Extensible? | Codegen? |
+|------|-------------|----------|
+| GraphDomain | Yes (plugins add domains) | Middleman |
+| NodeKind | Yes (plugins add nodes) | Middleman |
+| PinType | Yes (user types) | Middleman |
+| ColumnType | Yes (user types) | Middleman |
+| TickPhase | No (engine-fixed) | Engine binary |
+| SystemTrigger | No (engine-fixed) | Engine binary |
+| TangentMode | No (engine-fixed) | Engine binary |
+| Severity | No (engine-fixed) | Engine binary |
 
 ### RF-5: Benchmark numeric targets [APPLIED]
 
+Add to companion test cases file:
+
+| Benchmark | Target |
+|-----------|--------|
+| 500-node graph compile | < 200 ms |
+| Type inference per edit | < 2 ms |
+| HLSL generation | < 50 ms |
+| Material param update | < 1 ms |
+| Animation timeline scrub | < 16 ms |
+| State machine validation | < 10 ms |
+| Graph load (500 nodes) | < 20 ms |
+
 ### RF-6: Cross-subsystem integration table [APPLIED]
+
+| Subsystem | Direction | Data | Mechanism |
+|-----------|-----------|------|-----------|
+| Scripting runtime | produces | compiled system fns | Middleman .dylib |
+| Render graph | produces | shader + pass registration | HLSL + codegen'd node |
+| Animation runtime | produces | compiled clips, state machines | rkyv assets |
+| Audio engine | produces | audio graph configuration | rkyv assets |
+| Asset pipeline | bidirectional | import/export, hot-reload | AssetDatabase API |
+| ECS scheduler | produces | system registration | Middleman .dylib |
+| UI framework | consumes | editor widget primitives | Widget tree composition |
+| Undo/redo system | bidirectional | edit commands | EditorCommand |
+| Middleman .dylib | produces | codegen'd types + fns | Codegen pipeline |
+| Data tables | bidirectional | table schema + row data | rkyv assets |
+| Localization | bidirectional | string tables | LocalizationManager |
+| Timelines | produces | keyframe data | rkyv assets |
 
 ### RF-7: Algorithm reference URLs [APPLIED]
 
+Add URLs for: Hindley-Milner type inference, SSA dead code elimination, constant folding, De
+Casteljau Bezier evaluation, three-way merge (Khanna et al.), Kahn's topological sort for graph
+compilation order.
+
 ### RF-8: Complete platform considerations [APPLIED]
+
+| Platform | Shader target | AOT target | Notes |
+|----------|--------------|------------|-------|
+| Windows | DXIL via DXC | x86_64 | Full editor + runtime |
+| macOS | MSL via MSC | arm64/x86_64 | Full editor + runtime |
+| Linux | SPIR-V via DXC | x86_64 | Full editor + runtime |
+| iOS | MSL via MSC | arm64 | Runtime only, AOT compile on desktop |
+| Android | SPIR-V via DXC | arm64 | Runtime only, AOT compile on desktop |
+| Consoles | Platform SDK | Platform SDK | Cross-compile from desktop editor |
+
+Editor-only features (live preview, debugging) are desktop-only. Compiled outputs must target all
+platforms.
 
 ### RF-9: 2D and 2.5D support [APPLIED]
 
+Add a "2D and 2.5D" subsection:
+
+1. **2D animation timeline** — sprite sheet keyframes, flip-book sequences, 2D skeletal animation
+   (Spine-style bones per rendering/2d.md RF-28)
+2. **2D material nodes** — sprite shaders, 2D lighting, UV scroll, palette swap. Material editor
+   preview mode switches to 2D sprite quad
+3. **2D logic graph nodes** — tilemap queries, 2D physics (raycast, overlap), 2D spatial queries,
+   Camera2D control
+4. **2D blend spaces** — 1D blend for directional sprites (idle/walk/run by speed), 2D blend for
+   directional + angle
+
 ### RF-10: Expand logic graph editor depth [APPLIED]
+
+The logic graph editor is the most important tool. Add subsections:
+
+1. **Node library** — categorized catalog of all built-in nodes (math, ECS, events, flow control,
+   data tables, physics, audio, UI, AI, networking). Plugin nodes appear in a separate category.
+2. **Variable system** — local variables (scope = this graph), graph variables (scope = all
+   instances of this graph), entity variables (scope = the entity's component), and blackboard
+   variables (scope = shared AI blackboard).
+3. **Quick-add palette** — Ctrl+Space / right-click opens a type-to- search palette. Fuzzy matching
+   on node name and category. Most recently used nodes at top. Auto-connects to the dragged pin.
+4. **Incremental compilation** — on each edit (node add, edge connect, value change), the compiler
+   incrementally updates only the affected subgraph. Full recompilation only when structural changes
+   affect the entry point. Compilation runs on a worker thread; the editor remains responsive.
+5. **Error reporting UX** — type errors show red squiggly edges. Missing connections show yellow
+   warning icons. Compilation errors show in a panel below the graph canvas with click-to-navigate.
+   Suggested fixes offered inline (auto-insert cast, connect default).
+6. **Debugging workflow** — set breakpoints on nodes (click gutter). Play in editor -> execution
+   pauses at breakpoint -> inspect variable values -> step forward (next node) / step over (skip
+   subgraph) / continue. Watch panel shows selected variables. Call stack shows the graph execution
+   path.
+7. **Undo/redo** — every graph edit produces an EditorCommand. Undo restores the previous graph
+   state. The undo tree (editor-core.md RF-37) applies to graph editing.
+8. **Copy/paste** — select nodes + edges, copy to clipboard, paste into same or different graph.
+   Dangling connections highlighted.
+9. **Subgraph encapsulation** — select nodes, "Extract to Subgraph." Creates a new graph asset with
+   the selected nodes, replaces them with a single subgraph call node. Inputs/outputs auto-created.
+10. **Minimap** — small overview of the entire graph in a corner of the canvas. Click to navigate.
 
 ### RF-11: Cross-reference runtime designs [APPLIED]
 
+| Editor | Runtime design |
+|--------|---------------|
+| Logic graph | scripting.md |
+| Material | rendering/render-styles.md |
+| Animation timeline | timelines.md |
+| Animation state machine | animation/state-machine.md |
+| VFX graph | vfx/effects.md, vfx/particles.md |
+| Audio | audio/spatial-audio.md |
+| Data tables | data-systems/data-tables.md |
+| Localization | (core-runtime localization, per ui-framework.md RF-31) |
+| UI layout | ui/ui-framework.md |
+
 ### RF-12: SmallVec for small collections [APPLIED]
+
+`Vec<Pin>` -> `SmallVec<[Pin; 8]>`. `Vec<AnimTrack>` blend samples -> `SmallVec`.
+`Vec<AnimTransition>` per state -> `SmallVec<[AnimTransition; 4]>`.
 
 ### RF-13: Per-thread arenas for compilation [APPLIED]
 
+The compilation pipeline (parse, type-check, optimize, emit) allocates heavily. Use per-thread
+arenas for IR nodes, type inference scratch, and optimization working sets. Reset after each
+compilation pass.
+
 ### RF-14: Clarify HashMap usage [APPLIED]
+
+`TypeInferenceEngine` HashMap is editor-only cold path (acceptable). `MaterialInstance::overrides` —
+if accessed per-frame during preview, replace with sorted Vec or index-based lookup.
 
 ### RF-15: rkyv serialization [APPLIED]
 
+All visual editor assets (`.logicgraph`, `.material`, `.animclip`, `.statemachine`, `.blendspace`)
+use rkyv for binary storage. The engine's custom text format for git-friendly source control. No
+serde, no RON.
+
 ### RF-16: Complete test cases file [APPLIED]
+
+Complete migration to explicit input/output format. Add missing unit tests and integration tests to
+match design counts.
 
 ### RF-17: Game loop phase for editor operations [APPLIED]
 
+Validation and incremental compilation run on worker threads triggered by editor edits. Compiled
+results are committed at the next frame boundary (PreUpdate). Preview updates synchronize with the
+render frame.
+
 ### RF-18: Frame-boundary handoff [APPLIED]
+
+Compiled systems registered at next frame boundary. Shader compilation results committed at
+PreUpdate. Material preview updates sync with render extraction.
 
 ### RF-19: HLSL pipeline cross-reference [APPLIED]
 
+Material editor's `compile() -> HlslSource` feeds into DXC (DXIL for D3D12/Vulkan via SPIR-V) and
+metal-shaderconverter (MSL for Metal) as CLI subprocesses. Cross-reference the HLSL coding standard
+skill.
+
 ### RF-20: State engine UI framework dependency [APPLIED]
+
+Explicitly state that `GraphEditorWidget`, `TableEditorWidget`, and all editor panels are composed
+from the engine's UI widget primitives (ui-framework.md). Add dependency arrow in architecture
+diagram.
 
 ### RF-21: Missing editor sections [APPLIED]
 
+Add sections or cross-references for: terrain editor, audio mixer/editor, data table editor
+(cross-ref data-tables.md RF-19), localization editor (cross-ref F-15.13.1-3), UI layout editor
+(WYSIWYG widget placement).
+
 ### RF-22: Fix heading case [APPLIED]
+
+"Gameplay Graph Execution" -> "Gameplay graph execution". "Pin Type Compatibility" -> "Pin type
+compatibility".
 
 ### RF-23: Shared graph editor framework [APPLIED]
 
+Most visual editors are graph-based. Factor out a shared `GraphEditorFramework` that all graph
+editors build upon. This reuses the directed graph primitives (data-systems/directed-graphs.md) and
+adds visual editing capabilities:
+
+1. **Core graph canvas widget** — a pannable, zoomable infinite canvas rendered via the UI
+   framework. Nodes are widget subtrees positioned on the canvas. Edges are bezier curves drawn
+   between pin positions. Minimap in corner. Grid background with snap.
+2. **Node widget** — configurable per domain. Each node has:
+   - Title bar (node name, icon, collapse toggle)
+   - Input pins (left side, typed, named, colored by type)
+   - Output pins (right side, typed, named, colored by type)
+   - Inline data inputs (property fields inside the node body: sliders, text inputs, dropdowns,
+     color pickers, asset pickers)
+   - Preview thumbnail (optional: material preview, waveform, etc.)
+   - Status indicators (error badge, breakpoint dot, execution highlight)
+3. **Edge interaction:**
+   - Drag from output pin to input pin to create edge
+   - Drag from input pin to disconnect and reconnect
+   - Right-click edge to delete or insert node mid-edge
+   - Edge color matches the pin type color
+   - Animated flow indicator on edges during execution (debug mode)
+   - Multi-edge selection and deletion
+4. **Pin type compatibility** — the framework queries type compatibility when the user drags an
+   edge. Incompatible pins dim or show a prohibition indicator. Compatible pins highlight. The type
+   system uses the codegen'd type table from the middleman .dylib.
+5. **Quick-add palette** — right-click canvas or Ctrl+Space to open. Fuzzy search over node names
+   and categories. Auto-filters to nodes compatible with the dragged pin. Most recently used at top.
+6. **Selection** — click to select node, Shift+click to multi-select, marquee drag to box-select,
+   Ctrl+A to select all. Selected nodes show resize handles and can be dragged together.
+7. **Drag and drop:**
+   - Drag assets from asset browser onto canvas to create reference nodes (e.g., drag a mesh asset
+     to create a "Load Mesh" node)
+   - Drag nodes between graphs (copy semantics)
+   - Drag to reposition nodes freely on the canvas
+8. **Copy/paste** — Ctrl+C/V copies selected nodes + edges. Paste creates duplicates with new IDs.
+   Dangling edges highlighted.
+9. **Grouping** — select nodes, "Group" to create a visual container (macro node / comment box).
+   Groups can be collapsed to a single node with exposed input/output pins. Groups can be promoted
+   to subgraph assets for reuse.
+10. **Undo/redo** — every operation produces an EditorCommand. Full undo tree support
+    (editor-core.md RF-37).
+11. **Algorithms integration** — the framework uses directed graph primitives for: topological sort
+    (execution order preview), cycle detection (error on cyclic data flow), reachability (dead node
+    highlighting), dead pass elimination (grayed-out unused nodes). Cross-reference
+    directed-graphs.md.
+12. **Domain customization** — each graph editor domain provides:
+    - Node palette (which nodes are available)
+    - Pin types and colors
+    - Validation rules (domain-specific constraints)
+    - Compilation backend (Rust or HLSL or both)
+    - Preview mode (inline preview per domain)
+    - Custom node widgets (domain-specific inline UI)
+
+**Graph editors that use this framework:**
+
+| Editor | Domain | Compilation target |
+|--------|--------|-------------------|
+| Logic graph | Gameplay, AI, formulas | Rust -> middleman .dylib |
+| Material graph | Shading | HLSL -> DXC + MSC |
+| VFX graph | Particle compute | HLSL -> compute shaders |
+| Animation state machine | State transitions | Rust -> middleman .dylib |
+| Animation blend tree | Blend weights | Rust -> middleman .dylib |
+| Audio graph | Audio routing | Rust -> middleman .dylib |
+| Quest graph | Quest flow | Rust -> middleman .dylib |
+| Dialogue graph | Conversation flow | Rust -> middleman .dylib |
+| Story progress graph | Narrative branching | Rust -> middleman .dylib |
+| Character progression | Talent/skill trees | Rust -> middleman .dylib |
+| Technology tree | Research/unlock | Rust -> middleman .dylib |
+| Render graph (advanced) | Pass composition | Rust + HLSL |
+| Custom user graphs | User-defined domains | Rust -> middleman .dylib |
+
 ### RF-24: Viewport capabilities [APPLIED]
+
+The viewport is the primary scene interaction surface. It must support a comprehensive set of
+manipulation and visualization tools:
+
+#### Transform manipulation
+
+1. **Move** — translate selected entities on a plane or axis. Gizmo with X/Y/Z axis handles +
+   XY/XZ/YZ plane handles + free-move center handle. Mouse drag or numeric input.
+2. **Rotate** — rotate around X/Y/Z axes. Gizmo with three rings + free rotation trackball. Angle
+   snapping (15 deg default).
+3. **Scale** — uniform or per-axis. Gizmo with axis handles + uniform center handle. Scale snapping.
+4. **Keyboard input** — type exact values: press G (grab/move), then type "X 10 Enter" to move 10
+   units on X. Same for R and S.
+5. **Space modes** — World, Local, Parent, Custom pivot.
+6. **Multi-selection transform** — transform multiple entities. Pivot: median point, active entity,
+   world origin, or cursor position.
+
+#### Snapping
+
+7. **Grid snap** — configurable increments (0.25, 0.5, 1.0, custom).
+8. **Surface snap** — snap to surface below (raycast + align normal).
+9. **Vertex snap** — snap pivot to nearest vertex of another mesh.
+10. **Edge snap** — snap to nearest edge midpoint or endpoint.
+11. **Increment snap** — move in fixed increments relative to current.
+
+#### Alignment and distribution
+
+12. **Align** — align by min/max/center X/Y/Z.
+13. **Distribute** — distribute evenly along an axis.
+14. **Match transform** — copy position/rotation/scale from one entity.
+
+#### Grid and reference
+
+15. **Infinite 3D grid** — ground plane grid extending to horizon. Major/minor lines. Plane
+    selectable: XZ, XY, YZ.
+16. **Ruler/measurement** — click two points to show distance.
+17. **Axis indicator** — colored XYZ gizmo in viewport corner.
+
+#### Terrain and modeling
+
+18. **Terrain painting** — paint heightmap, splatmap, foliage.
+19. **CSG modeling** — union, intersection, subtraction on primitives.
+20. **Vertex editing** — select/move vertices, edges, faces.
+
+#### MCP integration
+
+21. **Screenshot for AI** — MCP captures viewport for AI analysis.
+22. **AI-driven placement** — MCP issues transform commands.
+
+#### 2D viewport mode
+
+23. **2D canvas** — orthographic top-down. 2D pixel grid. XY gizmos.
+24. **Tilemap painting** — paint tiles, auto-tiling, eraser, fill.
+25. **Sprite placement** — drag sprites, pixel-perfect snap.
+
+#### Animation in viewport
+
+26. **Animation preview** — play animations in viewport with scrub.
+27. **Bone manipulation** — select/move bones, set keyframes.
+28. **Animation recording** — record mode auto-creates keyframes.
+29. **Blend space preview** — 2D grid overlay, move blend point.
+30. **Root motion preview** — toggle root motion, show path line.
+
+#### Prefab editing and instancing
+
+31. **Prefab definition** — select entities, "Create Prefab."
+32. **Prefab instancing** — drag prefab to viewport to place instance.
+33. **Instance overrides** — modify properties without affecting prefab. Bold in inspector. "Revert
+    to Prefab" / "Apply to Prefab."
+34. **Nested prefabs** — prefab contains instances of other prefabs.
+35. **Prefab variants** — variant inherits, overrides specific props.
+36. **Batch instancing** — scatter tool paints instances with randomized transform. GPU instancing
+    for rendering.
+37. **Instance editing modes:**
+    - Open prefab (isolate, edit asset)
+    - Edit in context (see surrounding scene grayed)
+    - Instance only (edit overrides only)
+38. **Prefab serialization** — rkyv binary. Instance overrides as sparse delta.
 
 ### RF-25: Content browser [APPLIED]
 
+The content browser is the central asset management panel.
+
+#### Navigation and display
+
+1. **Folder tree** — project directory tree. Create/rename/move/delete.
+2. **Asset grid** — thumbnails or list view. Configurable size.
+3. **Breadcrumb bar** — clickable path navigation.
+4. **Search** — full-text across names, types, tags, metadata. Filters by type, tag, date, size.
+5. **Favorites** — star assets/folders for quick access.
+6. **Recent** — recently opened/modified assets.
+7. **Collections** — virtual folders referencing assets from anywhere.
+
+#### Asset type integration
+
+Every asset type has: thumbnail, preview, double-click action, context menu.
+
+| Asset type | Thumbnail | Preview | Opens in |
+|-----------|-----------|---------|----------|
+| Scene | Viewport capture | 3D preview | Scene viewport |
+| Prefab | Rendered preview | 3D preview | Prefab edit mode |
+| Mesh | Rendered wireframe | 3D orbit preview | Mesh viewer |
+| Texture | Image thumbnail | Full image + channels | Texture inspector |
+| Material | Sphere preview | Sphere + param sliders | Material editor |
+| Logic graph | Node layout mini | — | Logic graph editor |
+| Animation clip | Skeleton pose | Playback on skeleton | Animation editor |
+| State machine | State diagram mini | — | State machine editor |
+| Blend space | Grid visualization | — | Blend space editor |
+| VFX effect | Particle thumbnail | Particle preview | VFX editor |
+| Audio clip | Waveform | Audio playback | Audio preview |
+| Music cue | Stem layout | Playback | Music editor |
+| Font | Sample text render | Sample text | Font inspector |
+| Data table | Column headers | Table view | Data table editor |
+| Tilemap | Rendered chunk | 2D preview | Tilemap editor |
+| Timeline | Track layout mini | — | Timeline editor |
+| Shader | Code icon | — | Shader source viewer |
+| Localization | String count badge | — | Localization editor |
+| UI layout | Widget tree mini | UI preview | UI editor |
+| Terrain | Heightmap preview | 3D preview | Terrain editor |
+| Quest graph | Graph layout mini | — | Quest graph editor |
+| Dialogue tree | Tree layout mini | — | Dialogue editor |
+| Spline asset | Curve preview | 3D preview | Spline editor |
+| Script (codegen) | Code icon | — | Logic graph editor |
+| Folder | Folder icon | — | Navigate into |
+
+#### Asset operations
+
+8. **Create** — right-click -> New -> asset type submenu.
+9. **Rename** — F2. Validates naming. Updates all references.
+10. **Move** — drag between folders. Updates references.
+11. **Duplicate** — Ctrl+D. Deep or shallow configurable.
+12. **Delete** — with confirmation showing reference count. Undoable.
+13. **Reimport** — re-run import pipeline with current settings.
+14. **Import settings** — view/edit import configuration.
+
+#### Drag and drop integration
+
+15. **To viewport** — drag mesh/prefab onto viewport to place.
+16. **To inspector** — drag asset onto property field to assign.
+17. **To graph editor** — drag onto canvas to create reference node.
+18. **To data table** — drag onto AssetRef cell.
+19. **From OS** — drag files from file explorer to trigger import.
+20. **To OS** — drag assets to file explorer to export.
+
+#### Thumbnails
+
+21. **Async thumbnail generation** — background, placeholder until ready.
+22. **Thumbnail cache** — on disk, invalidated by content hash change.
+23. **Custom thumbnails** — user-assigned override.
+
+#### Version control integration
+
+24. **Status indicators** — VCS badges (modified, added, deleted, conflict, locked).
+25. **Lock/unlock** — Git LFS lock with owner display.
+26. **Diff** — structural diff for binary assets.
+
 ### RF-26: Unified search index for nodes and assets [APPLIED]
 
+A single search system serves both the graph editor node palette and the content browser.
+
+#### Node search (graph editors)
+
+1. **Unified node index** — all node types across all graph domains indexed: engine, plugin,
+   user-defined. Contains name, category, description, pin types, tags.
+2. **Quick-add search** — Ctrl+Space palette queries this index. Fuzzy matching. Ranked by pin
+   compatibility, MRU, match score.
+3. **Custom node discovery** — new nodes from middleman recompilation automatically appear in index.
+4. **Contextual filtering** — narrows by domain. "Show All" toggle.
+5. **Node preview** — hover shows tooltip: description, pins, mini example, documentation link.
+
+#### Project-wide search (content browser)
+
+6. **Full-text index** — all assets indexed by name, type, path, tags, metadata, component names,
+   table values, graph node names, material params. Incremental on import/save.
+7. **Global search bar** — Ctrl+Shift+F. Results grouped by type.
+8. **Filter chips** — type, tag, size, date filters.
+9. **Saved searches** — named queries in sidebar.
+
+#### Semantic search via LLM
+
+10. **Semantic indexing** — LLM generates embeddings per asset (text + vision). Local vector index.
+    Customer's own API key.
+11. **Natural language search** — "red brick wall texture", "enemy that shoots fireballs". Cosine
+    similarity ranking.
+12. **Semantic recommendations** — "similar textures", "materials using this texture", "prefabs
+    using this mesh".
+13. **"Find similar"** — right-click -> Find Similar. Embedding match.
+14. **AI-generated descriptions** — one-line from asset content. Stored as metadata. Editable.
+15. **Offline fallback** — no API key = semantic disabled, full-text works. No internet required for
+    core functionality.
+16. **Privacy** — embeddings via customer's API key. No data sent to third parties without opt-in.
+    Engine is thin client.
+
 ### RF-27: Content browser marketplace integration [APPLIED]
+
+The content browser integrates with the marketplace so users browse, preview, and install
+marketplace assets alongside project assets:
+
+1. **Marketplace tab** — alongside project folder tree. Multiple marketplaces (official + private)
+   as sub-tabs.
+2. **Unified search** — global search bar searches project AND marketplace simultaneously.
+   Marketplace results show badge + price.
+3. **Preview before install** — same preview as project assets. Data streamed from server, not full
+   download.
+4. **Per-asset download** — browse package contents, install individual assets without full package.
+   Partial download via QUIC byte ranges.
+5. **Installed assets in project** — appear under `marketplace/<package_name>/`. Regular project
+   assets. Origin tracked in metadata.
+6. **Update badges** — installed packages with updates show badge. Diff view before confirm.
+7. **License display** — per-asset license in inspector. License Report aggregates all marketplace
+   licenses.
+8. **Drag from marketplace** — drag directly from marketplace tab onto viewport or graph editor.
+   Downloads and installs on-the-fly.
