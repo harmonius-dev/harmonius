@@ -15,6 +15,7 @@ specific R-X.Y.Z or F-X.Y.Z.
 | TC-8.5.2.2    | `test_matchmaker_widens_over_time`      | R-8.5.2   |
 | TC-8.5.3.1    | `test_party_role_assignment`            | R-8.5.3   |
 | TC-8.5.3.2    | `test_party_ready_check`                | R-8.5.3   |
+| TC-8.5.4.1    | `test_dedicated_server_cluster_spawn`   | R-8.5.4   |
 | TC-8.5.5.1    | `test_reconnect_within_grace`           | R-8.5.5   |
 | TC-8.5.5.2    | `test_reconnect_after_grace`            | R-8.5.5   |
 | TC-8.5.7.1    | `test_login_queue_position`             | R-8.5.7   |
@@ -30,7 +31,10 @@ specific R-X.Y.Z or F-X.Y.Z.
 | TC-8.6.3.1    | `test_replay_seek_to_midpoint`          | R-8.6.3   |
 | TC-8.6.5.1    | `test_kill_cam_rolling_buffer`          | R-8.6.5   |
 | TC-8.9.1.1    | `test_channel_create_and_join`          | R-8.9.1   |
+| TC-8.9.2.1    | `test_text_chat_persist_and_search`     | R-8.9.2   |
+| TC-8.9.2.2    | `test_text_chat_delivery_p99`           | R-8.9.2a  |
 | TC-8.9.3.1    | `test_text_message_mention`             | R-8.9.3   |
+| TC-8.9.5.1    | `test_moderation_mute_block_report`     | R-8.9.5   |
 | TC-8.9.6.1    | `test_voice_proximity_attenuation`      | R-8.9.6   |
 | TC-8.9.8.1    | `test_dm_e2e_encrypted`                 | R-8.9.8   |
 
@@ -169,6 +173,31 @@ specific R-X.Y.Z or F-X.Y.Z.
     - Expected: wire payload != `"hi"`; decryption with B's session-derived key returns `"hi"`;
       decryption with a third party's key fails
 
+25. **TC-8.5.4.1** `test_dedicated_server_cluster_spawn` — `ClusterManager::spawn_instance(...)`
+    allocates a dedicated game server from the pool, registers it with the service registry, and
+    returns its address for clients to join.
+    - Input: `ClusterPool { warm: 4, target_region: "us-east" }`, `spawn_instance(session_spec)`
+    - Expected: returned `InstanceId` resolves to a running process; registry entry exists with
+      `status == Ready`; warm pool size decrements by 1; shutdown of the instance removes the
+      registry entry
+
+26. **TC-8.9.2.1** `test_text_chat_persist_and_search` — Text messages sent into a channel are
+    persisted and full-text searchable after the session.
+    - Input: 100 messages sent to `Channel::Guild`, search query `"loot"` matching 7 messages
+    - Expected: `chat.search(guild, "loot")` returns the 7 matching messages in chronological order
+      with IDs and timestamps; search runs after cold-start restart of the chat service
+
+27. **TC-8.9.2.2** `test_text_chat_delivery_p99` — End-to-end delivery latency on a channel stays
+    within the documented 100 ms p99 target under nominal load.
+    - Input: 20-member channel, 1,000 messages at 10 msg/s, 20 ms RTT, 0% loss
+    - Expected: p99 send-to-receive latency < 100 ms; zero drops; ordering preserved per receiver
+
+28. **TC-8.9.5.1** `test_moderation_mute_block_report` — Moderation APIs mute, block, and report
+    another player with correct effect on message delivery.
+    - Input: player A mutes B; player A blocks C; player A reports D with reason `Toxic`
+    - Expected: A no longer receives messages from B or C; block list contains C; report emitted to
+      moderation queue with D as target; self-mute/self-block rejected
+
 ## Integration Tests
 
 | ID            | Name                                  | Req       |
@@ -181,6 +210,14 @@ specific R-X.Y.Z or F-X.Y.Z.
 | TC-8.6.I.1    | `test_spectator_1k_relay`             | R-8.6.4   |
 | TC-8.9.I.1    | `test_text_chat_50_member_p99`        | R-8.9.4   |
 | TC-8.9.I.2    | `test_voice_mouth_to_ear_latency`     | R-8.9.7   |
+| TC-8.9.I.3    | `us_admin_global_channel`             | US-8.9.1  |
+| TC-8.9.I.4    | `us_player_auto_team_channel`         | US-8.9.2  |
+| TC-8.9.I.5    | `us_player_channel_membership_persist`| US-8.9.3  |
+| TC-8.9.I.6    | `us_game_dev_channel_api_2d_3d`       | US-8.9.4  |
+| TC-8.9.I.7    | `us_player_send_party_message`        | US-8.9.5  |
+| TC-8.9.I.8    | `us_player_chat_mention`              | US-8.9.6  |
+| TC-8.9.I.9    | `us_player_chat_keyword_search`       | US-8.9.7  |
+| TC-8.9.I.10   | `us_qa_chat_cross_platform`           | US-8.9.8  |
 
 1. **TC-8.5.I.1** `test_oauth_5k_concurrent_logins` — Submit 5,000 concurrent OAuth logins; verify
    all complete within 5 seconds.
@@ -232,6 +269,51 @@ specific R-X.Y.Z or F-X.Y.Z.
      output
    - Expected: total mouth-to-ear latency < 150 ms; jitter buffer expands during 30 ms induced
      jitter and contracts when stable
+
+9. **TC-8.9.I.3** `us_admin_global_channel` — As a server administrator, provision a persistent
+   global channel at service startup. Assert every player connected to the shard is auto-joined and
+   can post/read.
+   - Input: server startup with `ChannelKind::Global { name: "shard-1" }`
+   - Expected: every connected player's channel list contains the global channel; posting is
+     delivered to all; admin can moderate
+
+10. **TC-8.9.I.4** `us_player_auto_team_channel` — As a player, be auto-joined to a team channel
+    when matched into a team. Assert the channel is created on demand and destroyed when the team
+    dissolves.
+    - Input: 5-player team matched into a session; team channel lifecycle
+    - Expected: all 5 auto-join on match start; channel removed within 10 s of last member leaving;
+      no stale references
+
+11. **TC-8.9.I.5** `us_player_channel_membership_persist` — As a player, move between zones without
+    losing channel memberships.
+    - Input: player subscribed to `Global`, `Guild`, `Party`; teleport across 3 zones
+    - Expected: all three memberships persist across transitions; no dropped messages; no duplicate
+      rejoin events
+
+12. **TC-8.9.I.6** `us_game_dev_channel_api_2d_3d` — As a game developer, use the same `ChannelsApi`
+    in a 2D and a 3D project. Assert identical semantics and no 3D-only dependencies leaked.
+    - Input: same test suite run against a 2D and a 3D sample app
+    - Expected: both apps pass the suite; no Vec3-only types referenced by the 2D build
+
+13. **TC-8.9.I.7** `us_player_send_party_message` — As a player, type a message into a 4-player
+    party channel. Assert all 3 other members receive it with p99 latency < 100 ms.
+    - Input: 4-player party, 100 sequential messages
+    - Expected: each of 3 receivers gets every message; p99 send-to-receive latency < 100 ms
+
+14. **TC-8.9.I.8** `us_player_chat_mention` — As a player, @-mention another player. Assert the
+    target receives a mention notification in addition to the message.
+    - Input: message `"hi @playerB"` in a 10-member channel
+    - Expected: B receives `Message` + `MentionNotification`; others receive only `Message`
+
+15. **TC-8.9.I.9** `us_player_chat_keyword_search` — As a player, search chat history for a keyword.
+    Assert matching messages are returned sorted by timestamp.
+    - Input: 500 messages, search `"raid"` returning 12 matches
+    - Expected: search returns exactly 12 results ordered by timestamp ascending; latency < 500 ms
+
+16. **TC-8.9.I.10** `us_qa_chat_cross_platform` — As a QA tester, run the same chat test harness on
+    Windows and macOS client builds. Assert identical results and protocol behavior.
+    - Input: scripted harness, two client builds
+    - Expected: harness passes on both; no platform-specific protocol divergence observed
 
 ## Benchmarks
 
