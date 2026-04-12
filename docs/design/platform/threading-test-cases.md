@@ -133,6 +133,54 @@ Companion test cases for [threading.md](threading.md).
    sends render data to render thread
    - **Expected:** Data flows through all 3 threads correctly with no blocking
 
+<!-- THIN: design section lacks detail -->
+### TC-14.3.10.I1 Platform IO Poll 100 Completions
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-14.3.10  |
+
+1. **#1** — Issue 100 read completions via platform I/O backend; poll once
+   - **Expected:** All 100 completions delivered in a single poll, total time < 50 us
+2. **#2** — Verify per-completion delivery callback executed exactly once
+   - **Expected:** Callback counter == 100, no duplicates
+
+<!-- THIN: design section lacks detail -->
+### TC-14.3.11.I1 Job Dispatch End To End
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-14.3.11  |
+
+1. **#1** — From a game system, dispatch a job that writes to a result component
+   - **Expected:** Result component populated within next frame, no data races
+2. **#2** — Repeat 1000 dispatches, measure mean per-dispatch wall time
+   - **Expected:** Mean < 1 us amortized
+
+<!-- THIN: design section lacks detail -->
+### TC-14.3.20.I1 Small Stack Tasks For Loading
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-14.3.20  |
+
+1. **#1** — Spawn 10,000 loading tasks with 64 KiB stacks
+   - **Expected:** All tasks complete; total stack memory ≈ 640 MiB, not 80 GiB
+2. **#2** — Spawn deep-recursion task with default 8 MiB stack
+   - **Expected:** Task uses standard stack and completes without overflow
+
+<!-- THIN: design section lacks detail -->
+### TC-14.6.11.I1 IO Throughput Disk Bandwidth
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-14.6.11  |
+
+1. **#1** — Sequentially read a 1 GiB file via platform I/O on a known SSD
+   - **Expected:** Effective throughput >= 80% of measured raw disk bandwidth
+2. **#2** — Repeat with 64 concurrent 16 MiB reads
+   - **Expected:** Aggregate throughput maintains >= 80% raw
+
 ## Benchmarks
 
 ### TC-14.3.1.B1 Job System Dispatch Overhead
