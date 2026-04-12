@@ -567,6 +567,57 @@ Companion test cases for [reflection-serialization.md](reflection-serialization.
 2. **#2** — Access fields
    - **Expected:** Zero allocation beyond mmap
 
+### TC-1.3.3.I1 Engine Developer Queries Type Descriptors
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.3.3    |
+| 2 | US-1.3.3    |
+
+1. **#1** — Engine developer calls `type_info::<Transform>()` and reads size, alignment, field list
+   - **Expected:** Returns descriptor with correct `size`, `align`, and field name/offset/type
+     tuples
+2. **#2** — Use descriptor to walk fields via property path for every registered component
+   - **Expected:** Every field accessible without panics across 1K types
+
+### TC-1.3.6.I1 Engine Developer Exposes Dynamic Collections Via Reflection
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.3.6    |
+| 2 | US-1.3.6    |
+
+1. **#1** — Engine developer calls `push`/`pop`/`len`/`get(i)` on a reflected `Vec<f32>`
+   - **Expected:** All operations mutate the underlying vector through the reflection trait
+2. **#2** — Reflect a `HashMap<String, i32>` and iterate entries
+   - **Expected:** Iterator yields all key-value pairs, insertion/removal work through reflection
+
+### TC-1.3.10.I1 Game Developer Attaches Metadata To Reflected Types
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.3.10   |
+| 2 | US-1.3.10   |
+
+1. **#1** — Game developer attaches `("category", "gameplay")` metadata to `Health` component via
+   attribute macro
+   - **Expected:** `type_info::<Health>().metadata().get("category")` returns `"gameplay"`
+2. **#2** — Attach 5 metadata keys to a field and query them
+   - **Expected:** All 5 keys returned, keys lexicographically retrievable
+
+<!-- THIN: design section lacks detail -->
+### TC-1.3.19.I1 Editor Reads Reflection For Inspector Panel
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.3.19   |
+| 2 | US-1.3.19   |
+
+1. **#1** — Editor selects entity and walks `type_info` for every attached component
+   - **Expected:** Inspector panel renders field widgets for each field of each component
+2. **#2** — Edit a field in inspector, commit value
+   - **Expected:** Reflection write applies mutation, next read returns edited value
+
 ## Benchmarks
 
 ### TC-1.4.1.B1 Binary Serialize Throughput
