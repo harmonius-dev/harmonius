@@ -55,6 +55,20 @@ See those files for the full test case definitions until migration is complete.
 | TC-15.15.1.2 | R-15.15.1 | Graph widget connect |
 | TC-15.15.2.1 | R-15.15.2 | Table widget add row |
 | TC-15.15.2.2 | R-15.15.2 | Table widget sort |
+| TC-15.8.6.1 | R-15.8.6 | Render graph config node compiles to pass list |
+| TC-15.8.7.1 | R-15.8.7 | Animation logic graph lowers to anim ECS systems |
+| TC-15.8.8.1 | R-15.8.8 | Audio logic graph lowers to mixer events |
+| TC-15.8.9.1 | R-15.8.9 | Custom tool graph compiles and registers tool action |
+| TC-15.8.10.1 | R-15.8.10 | Node library enumerates all registered node types |
+| TC-15.3.3.1 | R-15.3.3 | Material live preview split-view updates on param edit |
+| TC-15.4.4.1 | R-15.4.4 | Animation preview shows debug overlays (bones, velocity) |
+| TC-15.5.1.1 | R-15.5.1 | VFX graph editor connects emitter to initializer node |
+| TC-15.13.2.1 | R-15.13.2 | AI state machine editor compiles to runtime FSM |
+| TC-15.14.1.1 | R-15.14.1 | Quest editor compiles objective chain to graph IR |
+| TC-15.15.3.1 | R-15.15.3 | Equipment stat table sort and comparison view |
+| TC-15.15.4.1 | R-15.15.4 | Price ledger inflation simulation step |
+| TC-15.1.4.1 | R-15.1.4 | Entity hierarchy panel shows selection and templates |
+| TC-15.2.1.1 | R-15.2.1 | Entity template override badge displayed in inspector |
 
 ## Integration Tests
 
