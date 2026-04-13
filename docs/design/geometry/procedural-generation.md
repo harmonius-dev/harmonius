@@ -3,9 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/geometry/](../../features/), [requirements/geometry/](../../requirements/),
-> and [user-stories/geometry/](../../user-stories/). The table below traces design elements to
-> those definitions.
+> [features/geometry/](../../features/), [requirements/geometry/](../../requirements/), and
+> [user-stories/geometry/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature  | Requirement |
 |----------|-------------|

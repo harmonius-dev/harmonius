@@ -470,15 +470,13 @@ Requires specific Wave 5 nodes. 18 feature-groups can proceed concurrently.
    [remote-editing](../requirements/tools/remote-editing.md),
    [ai-assistant](../requirements/tools/ai-assistant.md),
    [ai-governance](../requirements/tools/ai-governance.md),
-   [deployment](../requirements/tools/deployment.md),
-   [launcher](../requirements/tools/launcher.md),
+   [deployment](../requirements/tools/deployment.md), [launcher](../requirements/tools/launcher.md),
    [localization-editor](../requirements/tools/localization-editor.md),
    [mod-support](../requirements/tools/mod-support.md),
    [shared-cache](../requirements/tools/shared-cache.md)
    - **Features:** [version-control](../features/tools/version-control.md),
      [remote-editing](../features/tools/remote-editing.md),
-     [deployment](../features/tools/deployment.md),
-     [launcher](../features/tools/launcher.md),
+     [deployment](../features/tools/deployment.md), [launcher](../features/tools/launcher.md),
      [localization-editor](../features/tools/localization-editor.md),
      [mod-support](../features/tools/mod-support.md)
    - **Prereqs:** ToolsEditor.EditorFramework, Networking.Replication
@@ -613,10 +611,9 @@ Candidate feature-group mappings:
     GameFramework.GameplayPrimitives.
 15. [game-framework/block-voxel](../requirements/game-framework/block-voxel.md) —
     GeometryWorld.TerrainVoxel or GameFramework.GenreSpecific.
-16. [tools/level-editor](../requirements/tools/level-editor.md) —
-    ToolsEditor.EditorFramework or ToolsEditor.WorldBuilding.
-17. [tools/asset-store](../requirements/tools/asset-store.md) —
-    ToolsEditor.AdvancedTools.
+16. [tools/level-editor](../requirements/tools/level-editor.md) — ToolsEditor.EditorFramework or
+    ToolsEditor.WorldBuilding.
+17. [tools/asset-store](../requirements/tools/asset-store.md) — ToolsEditor.AdvancedTools.
 18. [tools/server-infrastructure](../requirements/tools/server-infrastructure.md) —
     ToolsEditor.AdvancedTools.
 19. [ui/common-widgets](../requirements/ui/common-widgets.md) — UI2D.WidgetFramework.
