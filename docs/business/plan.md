@@ -209,11 +209,11 @@ Requires specific Wave 2 nodes. 12 feature-groups can proceed concurrently.
    - **Features:** [state-replication](../features/networking/state-replication.md)
    - **Prereqs:** Networking.Transport, CoreRuntime.ReflectionSerialization,
      CoreRuntime.SpatialIndex
-10. **28** — [meshlet-pipeline](../requirements/geometry-world/meshlet-pipeline.md)
-    - **Features:** [meshlet-pipeline](../features/geometry-world/meshlet-pipeline.md)
+10. **28** — [meshlet-pipeline](../requirements/geometry/meshlet-pipeline.md)
+    - **Features:** [meshlet-pipeline](../features/geometry/meshlet-pipeline.md)
     - **Prereqs:** Rendering.GPUAbstraction, CoreRuntime.ECS
-11. **29** — [widget-framework](../requirements/ui-2d/widget-framework.md)
-    - **Features:** [widget-framework](../features/ui-2d/widget-framework.md)
+11. **29** — [widget-framework](../requirements/ui/widget-framework.md)
+    - **Features:** [widget-framework](../features/ui/widget-framework.md)
     - **Prereqs:** CoreRuntime.ECS, Input.DeviceAbstraction
 12. **30** — [particles](../requirements/vfx/particles.md)
     - **Features:** [particles](../features/vfx/particles.md)
@@ -301,11 +301,11 @@ Requires specific Wave 3 nodes. 19 feature-groups can proceed concurrently.
 12. **42** — [camera-system](../requirements/game-framework/camera-system.md)
     - **Features:** [camera-system](../features/game-framework/camera-system.md)
     - **Prereqs:** CoreRuntime.SceneTransforms, Physics.SpatialQueries
-13. **43** — [ui-rendering](../requirements/ui-2d/ui-rendering.md)
-    - **Features:** [ui-rendering](../features/ui-2d/ui-rendering.md)
+13. **43** — [ui-rendering](../requirements/ui/ui-rendering.md)
+    - **Features:** [ui-rendering](../features/ui/ui-rendering.md)
     - **Prereqs:** UI2D.WidgetFramework, Rendering.RenderGraph, Rendering.GPUAbstraction
-14. **44** — [hud-and-game-ui](../requirements/ui-2d/hud-and-game-ui.md)
-    - **Features:** [hud-and-game-ui](../features/ui-2d/hud-and-game-ui.md)
+14. **44** — [hud-and-game-ui](../requirements/ui/hud-and-game-ui.md)
+    - **Features:** [hud-and-game-ui](../features/ui/hud-and-game-ui.md)
     - **Prereqs:** UI2D.WidgetFramework, UI2D.UIRendering
 15. **45** — [decals](../requirements/vfx/decals.md)
     - **Features:** [decals](../features/vfx/decals.md)
@@ -313,11 +313,11 @@ Requires specific Wave 3 nodes. 19 feature-groups can proceed concurrently.
 16. **46** — [screen-effects](../requirements/vfx/screen-effects.md)
     - **Features:** [screen-effects](../features/vfx/screen-effects.md)
     - **Prereqs:** Rendering.CoreRendering
-17. **47** — [terrain](../requirements/geometry-world/terrain.md)
-    - **Features:** [terrain](../features/geometry-world/terrain.md)
+17. **47** — [terrain](../requirements/geometry/terrain.md)
+    - **Features:** [terrain](../features/geometry/terrain.md)
     - **Prereqs:** Rendering.CoreRendering, ContentPipeline.Streaming, Physics.RigidBody
-18. **48** — [foliage](../requirements/geometry-world/foliage.md)
-    - **Features:** [foliage](../features/geometry-world/foliage.md)
+18. **48** — [foliage](../requirements/geometry/foliage.md)
+    - **Features:** [foliage](../features/geometry/foliage.md)
     - **Prereqs:** Rendering.CoreRendering, CoreRuntime.SpatialIndex, ContentPipeline.Streaming
 19. **49** — [gestures](../requirements/input/gestures.md)
     - **Features:** [gestures](../features/input/gestures.md)
@@ -372,18 +372,18 @@ Requires specific Wave 4 nodes. 20 feature-groups can proceed concurrently.
      [anti-aliasing-upscaling](../features/rendering/anti-aliasing-upscaling.md),
      [stylized-effects](../features/rendering/stylized-effects.md)
    - **Prereqs:** Rendering.Lighting
-2. **51** — [editor-framework](../requirements/tools-editor/editor-framework.md)
-   - **Features:** [editor-framework](../features/tools-editor/editor-framework.md)
+2. **51** — [editor-framework](../requirements/tools/editor-framework.md)
+   - **Features:** [editor-framework](../features/tools/editor-framework.md)
    - **Prereqs:** UI2D.WidgetFramework, CoreRuntime.ReflectionSerialization,
      ContentPipeline.HotReload, Rendering.CoreRendering, Input.ActionsMapping
-3. **52** — [logic-graph](../requirements/tools-editor/logic-graph.md)
-   - **Features:** [logic-graph](../features/tools-editor/logic-graph.md)
+3. **52** — [logic-graph](../requirements/tools/logic-graph.md)
+   - **Features:** [logic-graph](../features/tools/logic-graph.md)
    - **Prereqs:** CoreRuntime.ECS, CoreRuntime.EventsPlugins, ContentPipeline.HotReload
-4. **53** — [material-editor](../requirements/tools-editor/material-editor.md)
-   - **Features:** [material-editor](../features/tools-editor/material-editor.md)
+4. **53** — [material-editor](../requirements/tools/material-editor.md)
+   - **Features:** [material-editor](../features/tools/material-editor.md)
    - **Prereqs:** Rendering.Lighting, ContentPipeline.HotReload
-5. **54** — [profiling-tools](../requirements/tools-editor/profiling-tools.md)
-   - **Features:** [profiling-tools](../features/tools-editor/profiling-tools.md)
+5. **54** — [profiling-tools](../requirements/tools/profiling-tools.md)
+   - **Features:** [profiling-tools](../features/tools/profiling-tools.md)
    - **Prereqs:** CoreRuntime.ECS, Platform.Threading
 6. **55** — [save-system](../requirements/game-framework/save-system.md)
    - **Features:** [save-system](../features/game-framework/save-system.md)
@@ -406,8 +406,8 @@ Requires specific Wave 4 nodes. 20 feature-groups can proceed concurrently.
 12. **61** — [destruction-and-fracture](../requirements/physics/destruction-and-fracture.md)
     - **Features:** [destruction-and-fracture](../features/physics/destruction-and-fracture.md)
     - **Prereqs:** Physics.RigidBody, Physics.Constraints
-13. **62** — [water](../requirements/geometry-world/water.md)
-    - **Features:** [water](../features/geometry-world/water.md)
+13. **62** — [water](../requirements/geometry/water.md)
+    - **Features:** [water](../features/geometry/water.md)
     - **Prereqs:** Rendering.CoreRendering, Physics.RigidBody
 14. **63** — [music-system](../requirements/audio/music-system.md)
     - **Features:** [music-system](../features/audio/music-system.md)
@@ -426,8 +426,8 @@ Requires specific Wave 4 nodes. 20 feature-groups can proceed concurrently.
 18. **67** — [effect-graph](../requirements/vfx/effect-graph.md)
     - **Features:** [effect-graph](../features/vfx/effect-graph.md)
     - **Prereqs:** VFX.Particles, ToolsEditor.LogicGraph
-19. **68** — [2d-games](../requirements/ui-2d/2d-games.md)
-    - **Features:** [2d-games](../features/ui-2d/2d-games.md)
+19. **68** — [2d-games](../requirements/ui/2d-games.md)
+    - **Features:** [2d-games](../features/ui/2d-games.md)
     - **Prereqs:** UI2D.WidgetFramework, Physics.RigidBody, Rendering.CoreRendering
 20. **69** — [anti-cheat](../requirements/networking/anti-cheat.md)
     - **Features:** [anti-cheat](../features/networking/anti-cheat.md)
@@ -460,27 +460,27 @@ Requires specific Wave 5 nodes. 18 feature-groups can proceed concurrently.
 | 86 | UI2D.Accessibility                 | Not started | Not started |
 | 87 | Input.VRInput                      | Not started | Not started |
 
-1. **70** — [animation-editor](../requirements/tools-editor/animation-editor.md)
-   - **Features:** [animation-editor](../features/tools-editor/animation-editor.md)
+1. **70** — [animation-editor](../requirements/tools/animation-editor.md)
+   - **Features:** [animation-editor](../features/tools/animation-editor.md)
    - **Prereqs:** ToolsEditor.EditorFramework, Animation.StateMachine
-2. **71** — [world-building](../requirements/tools-editor/world-building.md)
-   - **Features:** [world-building](../features/tools-editor/world-building.md)
+2. **71** — [world-building](../requirements/tools/world-building.md)
+   - **Features:** [world-building](../features/tools/world-building.md)
    - **Prereqs:** ToolsEditor.EditorFramework, GeometryWorld.Terrain, GeometryWorld.Foliage
-3. **72** — [version-control](../requirements/tools-editor/version-control.md),
-   [remote-editing](../requirements/tools-editor/remote-editing.md),
-   [ai-assistant](../requirements/tools-editor/ai-assistant.md),
-   [ai-governance](../requirements/tools-editor/ai-governance.md),
-   [deployment](../requirements/tools-editor/deployment.md),
-   [launcher](../requirements/tools-editor/launcher.md),
-   [localization-editor](../requirements/tools-editor/localization-editor.md),
-   [mod-support](../requirements/tools-editor/mod-support.md),
-   [shared-cache](../requirements/tools-editor/shared-cache.md)
-   - **Features:** [version-control](../features/tools-editor/version-control.md),
-     [remote-editing](../features/tools-editor/remote-editing.md),
-     [deployment](../features/tools-editor/deployment.md),
-     [launcher](../features/tools-editor/launcher.md),
-     [localization-editor](../features/tools-editor/localization-editor.md),
-     [mod-support](../features/tools-editor/mod-support.md)
+3. **72** — [version-control](../requirements/tools/version-control.md),
+   [remote-editing](../requirements/tools/remote-editing.md),
+   [ai-assistant](../requirements/tools/ai-assistant.md),
+   [ai-governance](../requirements/tools/ai-governance.md),
+   [deployment](../requirements/tools/deployment.md),
+   [launcher](../requirements/tools/launcher.md),
+   [localization-editor](../requirements/tools/localization-editor.md),
+   [mod-support](../requirements/tools/mod-support.md),
+   [shared-cache](../requirements/tools/shared-cache.md)
+   - **Features:** [version-control](../features/tools/version-control.md),
+     [remote-editing](../features/tools/remote-editing.md),
+     [deployment](../features/tools/deployment.md),
+     [launcher](../features/tools/launcher.md),
+     [localization-editor](../features/tools/localization-editor.md),
+     [mod-support](../features/tools/mod-support.md)
    - **Prereqs:** ToolsEditor.EditorFramework, Networking.Replication
 4. **73** — [cloth-hair](../requirements/animation/cloth-hair.md)
    - **Features:** [cloth-hair](../features/animation/cloth-hair.md)
@@ -523,13 +523,13 @@ Requires specific Wave 5 nodes. 18 feature-groups can proceed concurrently.
       [selection-system](../features/game-framework/selection-system.md)
     - **Prereqs:** GameFramework.GameplayPrimitives, GameFramework.Abilities, Physics.RigidBody,
       AI.Navigation
-12. **82** — [terrain](../requirements/geometry-world/terrain.md) (voxel section)
-    - **Features:** [terrain](../features/geometry-world/terrain.md) (voxel section)
+12. **82** — [terrain](../requirements/geometry/terrain.md) (voxel section)
+    - **Features:** [terrain](../features/geometry/terrain.md) (voxel section)
     - **Prereqs:** GeometryWorld.Terrain, Physics.Destruction
 13. **83** —
-    [procedural-generation](../requirements/geometry-world/procedural-generation.md)
+    [procedural-generation](../requirements/geometry/procedural-generation.md)
     - **Features:**
-      [procedural-generation](../features/geometry-world/procedural-generation.md)
+      [procedural-generation](../features/geometry/procedural-generation.md)
     - **Prereqs:** GeometryWorld.Terrain, Rendering.AdvancedRendering, ContentPipeline.Streaming
 14. **84** —
     [fluid-simulation](../requirements/physics/fluid-simulation.md)
@@ -541,8 +541,8 @@ Requires specific Wave 5 nodes. 18 feature-groups can proceed concurrently.
     - **Features:**
       [mmo-infrastructure](../features/networking/mmo-infrastructure.md)
     - **Prereqs:** Networking.Replication, GameFramework.WorldManagement, GameFramework.SaveSystem
-16. **86** — [accessibility](../requirements/ui-2d/accessibility.md)
-    - **Features:** [accessibility](../features/ui-2d/accessibility.md)
+16. **86** — [accessibility](../requirements/ui/accessibility.md)
+    - **Features:** [accessibility](../features/ui/accessibility.md)
     - **Prereqs:** UI2D.WidgetFramework, Audio.Engine, Input.ActionsMapping
 17. **87** — [vr-input](../requirements/input/vr-input.md)
     - **Features:** [vr-input](../features/input/vr-input.md)
@@ -566,7 +566,7 @@ above. They should be folded into existing groups or promoted to new groups.
 | 5 | networking/remote-procedure-calls | (see below) |
 | 6 | networking/replay-system | (see below) |
 | 7 | content-pipeline/asset-versioning | (see below) |
-| 8 | geometry-world/sky-atmosphere | (see below) |
+| 8 | geometry/sky-atmosphere | (see below) |
 | 9 | game-framework/inventory | (see below) |
 | 10 | game-framework/quest-dialogue | (see below) |
 | 11 | game-framework/character-customization | (see below) |
@@ -574,10 +574,10 @@ above. They should be folded into existing groups or promoted to new groups.
 | 13 | game-framework/scripting | (see below) |
 | 14 | game-framework/gameplay-databases | (see below) |
 | 15 | game-framework/block-voxel | (see below) |
-| 16 | tools-editor/level-editor | (see below) |
-| 17 | tools-editor/asset-store | (see below) |
-| 18 | tools-editor/server-infrastructure | (see below) |
-| 19 | ui-2d/common-widgets | (see below) |
+| 16 | tools/level-editor | (see below) |
+| 17 | tools/asset-store | (see below) |
+| 18 | tools/server-infrastructure | (see below) |
+| 19 | ui/common-widgets | (see below) |
 | 20 | ai/non-functional | (see below) |
 | 21 | networking/non-functional | (see below) |
 | 22 | rendering/gpu-abstraction | (see below) |
@@ -597,7 +597,7 @@ Candidate feature-group mappings:
    Networking.PredictionRollback (replay is a rollback byproduct).
 7. [content-pipeline/asset-versioning](../requirements/content-pipeline/asset-versioning.md) —
    ContentPipeline.AssetDatabase.
-8. [geometry-world/sky-atmosphere](../requirements/geometry-world/sky-atmosphere.md) —
+8. [geometry/sky-atmosphere](../requirements/geometry/sky-atmosphere.md) —
    Rendering.AdvancedRendering (sky is a rendering feature) or new GeometryWorld group.
 9. [game-framework/inventory](../requirements/game-framework/inventory.md) —
    GameFramework.GenreSpecific or GameFramework.GameplayPrimitives.
@@ -613,13 +613,13 @@ Candidate feature-group mappings:
     GameFramework.GameplayPrimitives.
 15. [game-framework/block-voxel](../requirements/game-framework/block-voxel.md) —
     GeometryWorld.TerrainVoxel or GameFramework.GenreSpecific.
-16. [tools-editor/level-editor](../requirements/tools-editor/level-editor.md) —
+16. [tools/level-editor](../requirements/tools/level-editor.md) —
     ToolsEditor.EditorFramework or ToolsEditor.WorldBuilding.
-17. [tools-editor/asset-store](../requirements/tools-editor/asset-store.md) —
+17. [tools/asset-store](../requirements/tools/asset-store.md) —
     ToolsEditor.AdvancedTools.
-18. [tools-editor/server-infrastructure](../requirements/tools-editor/server-infrastructure.md) —
+18. [tools/server-infrastructure](../requirements/tools/server-infrastructure.md) —
     ToolsEditor.AdvancedTools.
-19. [ui-2d/common-widgets](../requirements/ui-2d/common-widgets.md) — UI2D.WidgetFramework.
+19. [ui/common-widgets](../requirements/ui/common-widgets.md) — UI2D.WidgetFramework.
 20. AI non-functional requirements — integrated into individual AI topic files.
 21. Networking non-functional requirements — integrated into individual Networking topic files.
 22. [rendering/gpu-abstraction](../requirements/rendering/gpu-abstraction.md) —
@@ -665,8 +665,8 @@ Candidate feature-group mappings:
    [networking/replay-system](../features/networking/replay-system.md)
 6. **[content-pipeline/asset-versioning](../features/content-pipeline/asset-versioning.md)** —
    [content-pipeline/asset-versioning](../features/content-pipeline/asset-versioning.md)
-7. **[geometry-world/sky-atmosphere](../features/geometry-world/sky-atmosphere.md)** —
-   [geometry-world/sky-atmosphere](../features/geometry-world/sky-atmosphere.md)
+7. **[geometry/sky-atmosphere](../features/geometry/sky-atmosphere.md)** —
+   [geometry/sky-atmosphere](../features/geometry/sky-atmosphere.md)
 8. **[game-framework/inventory](../features/game-framework/inventory.md)** —
    [game-framework/inventory](../features/game-framework/inventory.md)
 9. **[game-framework/quest-dialogue](../features/game-framework/quest-dialogue.md)** —
@@ -682,20 +682,20 @@ Candidate feature-group mappings:
     [game-framework/gameplay-databases](../features/game-framework/gameplay-databases.md)
 14. **[game-framework/block-voxel](../features/game-framework/block-voxel.md)** —
     [game-framework/block-voxel](../features/game-framework/block-voxel.md)
-15. **[tools-editor/level-editor](../features/tools-editor/level-editor.md)** —
-    [tools-editor/level-editor](../features/tools-editor/level-editor.md)
-16. **[tools-editor/asset-store](../features/tools-editor/asset-store.md)** —
-    [tools-editor/asset-store](../features/tools-editor/asset-store.md)
-17. **[tools-editor/server-infrastructure](../features/tools-editor/server-infrastructure.md)** —
-    [tools-editor/server-infrastructure](../features/tools-editor/server-infrastructure.md)
-18. **[tools-editor/ai-assistant](../features/tools-editor/ai-assistant.md)** —
-    [tools-editor/ai-assistant](../features/tools-editor/ai-assistant.md)
-19. **[tools-editor/ai-governance](../features/tools-editor/ai-governance.md)** —
-    [tools-editor/ai-governance](../features/tools-editor/ai-governance.md)
-20. **[tools-editor/shared-cache](../features/tools-editor/shared-cache.md)** —
-    [tools-editor/shared-cache](../features/tools-editor/shared-cache.md)
-21. **[ui-2d/common-widgets](../features/ui-2d/common-widgets.md)** —
-    [ui-2d/common-widgets](../features/ui-2d/common-widgets.md)
+15. **[tools/level-editor](../features/tools/level-editor.md)** —
+    [tools/level-editor](../features/tools/level-editor.md)
+16. **[tools/asset-store](../features/tools/asset-store.md)** —
+    [tools/asset-store](../features/tools/asset-store.md)
+17. **[tools/server-infrastructure](../features/tools/server-infrastructure.md)** —
+    [tools/server-infrastructure](../features/tools/server-infrastructure.md)
+18. **[tools/ai-assistant](../features/tools/ai-assistant.md)** —
+    [tools/ai-assistant](../features/tools/ai-assistant.md)
+19. **[tools/ai-governance](../features/tools/ai-governance.md)** —
+    [tools/ai-governance](../features/tools/ai-governance.md)
+20. **[tools/shared-cache](../features/tools/shared-cache.md)** —
+    [tools/shared-cache](../features/tools/shared-cache.md)
+21. **[ui/common-widgets](../features/ui/common-widgets.md)** —
+    [ui/common-widgets](../features/ui/common-widgets.md)
 22. **[audio/dsp-and-effects](../features/audio/dsp-and-effects.md)** —
     [audio/dsp-and-effects](../features/audio/dsp-and-effects.md)
 23. **[audio/music-system](../features/audio/music-system.md)** —

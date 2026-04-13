@@ -1,96 +1,73 @@
 # Harmonius
 
-A modern cross-platform game engine for real-time 2D, 3D, and XR games. Written in Rust with
-platform-native I/O, GPU-driven rendering, and static codegen for zero-reflection performance.
+An open-source, cross-platform game engine for real-time 2D, 3D, and XR games. Built in Rust around
+a single ECS, a single spatial index, and a single job system — because harmony is what emerges when
+every part composes cleanly into every other part.
 
-## Key Features
+## Who Harmonius Is For
 
-- **No-code visual authoring** — all gameplay logic, formulas, materials, VFX, animations, and UI
-  are authored in visual editors. Users never write code.
-- **Everything compiles to Rust** — all visual graphs (gameplay logic, formulas, AI behavior, quest
-  conditions, dialogue branching) codegen actual Rust source. Bundled rustc compiles it into the
-  middleman `.dylib`. Inline data in tables and graphs uses `include_bytes!`. Shipped games
-  statically link all code into one binary; assets stay on disk. One language, one compiler, one
-  type system.
-- **Rust expression semantics** — every visual node maps to a Rust expression. Case analysis
-  (`match`), let-binding, Option/Result handling, explicit `as` casts, iterator chains. No implicit
-  coercion. This is part of being Harmonius.
-- **Custom ECS** — archetype-based with AoSoA tiled storage, compiled query plans, bloom filter
-  cache, parallel iteration, and zero reflection
-- **Composition over inheritance** — generic primitives (directed graphs, data tables, attributes,
-  containers, timelines, spatial indices) compose into any game mechanic. The engine has no concept
-  of "quest" or "inventory" — only graphs, tables, and conditions.
-- **GPU-driven rendering** — Nanite-style cluster LOD, mesh shaders, compute culling, indirect draw,
-  render graph with automatic barrier insertion, per-frame ring-buffered resources
-- **2D and 3D in one engine** — sprites, tilemaps, 2D physics, 2D lighting, skeletal 2D animation,
-  vector graphics, and full 3D rendering share the same ECS, render graph, and spatial index
-- **Platform-native I/O** — io_uring (Linux), IOCP + DirectStorage (Windows), GCD + Metal I/O
-  (Apple). Main thread polls completions. Zero async runtimes.
-- **Static codegen pipeline** — visual editor schemas compile to Rust structs, typed accessors, ECS
-  binding functions, and validation logic in the middleman `.dylib`. Hot-reload in editor, static
-  linking for shipping.
-- **Zero reflection** — no `dyn Reflect`, no `TypeRegistry`, no `TypeId` dispatch. All type metadata
-  generated statically by the codegen pipeline.
-- **Full accessibility** — screen reader bridges (NSAccessibility, UI Automation, AT-SPI),
-  colorblind filters, WCAG compliance, TTS, subtitles, input remapping, high contrast, reduced
-  motion
-- **Engine-wide localization** — `LocalizedStringId` replaces all hardcoded strings. Locale
-  detection, plural rules, message interpolation, time zones, per-locale asset bundles. Localization
-  is a core-runtime service, not a UI feature.
-- **HLSL shader pipeline** — all shaders authored in HLSL, compiled via DXC + Metal Shader Converter
-  CLI. No GLSL, no WGSL.
-- **Custom windowing** — NSWindow, Win32, X11/Wayland directly. No winit.
-- **All game genres** — puzzle, 2D platformer, 3D RPG, RTS, FPS, co-op, local multiplayer, VR. One
-  engine, one set of primitives.
-- **57 design documents** — features, requirements, user stories, and test cases written before
-  implementation begins
+### Artists
 
-## Goals
+Author everything visually. Materials, VFX, animations, UI, lighting, and characters have dedicated
+node-based editors with real-time previews and hot reload. Import via industry formats (glTF,
+Alembic, PNG, EXR, KTX2) — no DCC plugins required. Mesh shaders, ray tracing, dynamic global
+illumination, and a GPU-driven render pipeline are baseline, not premium features.
 
-1. **Universal game engine** — support every genre (puzzle, 2D, 3D, RPG, RTS, FPS, co-op, local
-   multiplayer, VR) in a single engine
-2. **No-code-first** — all user-facing authoring is visual; users never write code
-3. **Production-grade Rust** — stable Rust only, zero nightly, modern GPU graphics
-4. **Open source** — Apache 2.0 license with open asset store and community marketplace
-5. **Self-hosted infrastructure** — all services open source with 1-click AWS deployment; customers
-   pay AWS directly, no vendor lock-in
-6. **Privacy-respecting AI** — cloud AI backends (Claude, Cursor, Copilot) use customer's own API
-   keys; engine is a thin client, never a proxy
+### Game Designers
 
-## Objectives
+Build gameplay without writing code. Quests, dialogue, abilities, inventory, and AI behavior are
+composed in visual graphs and data tables, then compiled to native Rust via a bundled toolchain.
+Hot-reload in the editor lets you iterate without restarting. The engine ships with generic
+primitives (directed graphs, data tables, attributes/effects, containers/slots, timelines, event
+logs) — not opinionated "quest systems" you have to fight. Every genre is supported: puzzle, 2D
+platformer, 3D RPG, RTS, FPS, co-op, local multiplayer, and VR.
 
-1. **Replace legacy engines** — deliver a credible alternative to Unity and Unreal for creators who
-   value open-source infrastructure and no-code authoring
-2. **Minimize integration friction** — import via intermediate formats (glTF, Alembic, PNG, EXR,
-   KTX2); no DCC plugins required
-3. **Maximize parallelism** — custom ECS with AoSoA tiled storage, custom job system with
-   work-stealing, and data-parallel primitives to saturate all cores every frame
-4. **Modern GPU baseline** — require mesh shaders + ray tracing (Metal 4, D3D12, Vulkan 1.4); no
-   legacy fallback to maintain
-5. **Platform-native I/O** — io_uring, IOCP, GCD with DirectStorage and Metal I/O for disk-to-GPU
-   DMA; no third-party async runtime
-6. **Zero reflection** — all type metadata generated statically via codegen; no runtime type
-   registry, no `dyn Reflect`
-7. **Full design coverage** — 57 design documents with features, requirements, and user stories
-   before implementation begins
+### Game Developers
 
-## Key Technical Highlights
+Stable Rust, zero reflection, static codegen, custom ECS with AoSoA tiled storage, custom job system
+with work-stealing, and platform-native I/O (io_uring, IOCP, GCD). Mesh shaders and ray tracing are
+required — no legacy pipeline to support. Every subsystem has a design document, test plan, and
+pair-wise integration spec written before any code. Apache 2.0, no royalties, no seat fees, no
+vendor lock-in.
+
+## What Makes Harmonius Different
+
+- **Everything compiles to Rust** — visual graphs (logic, materials, AI, animation, VFX) become real
+  Rust source, compiled via bundled rustc into a shared middleman `.dylib` for editor hot-reload and
+  statically linked into ship builds. One language, one compiler, one type system.
+- **Composition over inheritance** — the engine has no "quest" or "inventory" subsystem, only
+  generic primitives that compose into any mechanic. Puzzle games and MMO shooters built from the
+  same blocks.
+- **2D and 3D share one engine** — sprites, tilemaps, 2D physics, 2D lighting, skeletal 2D
+  animation, vector graphics, and full 3D rendering share the same ECS, render graph, and spatial
+  index.
+- **Zero reflection, zero async runtimes** — no `dyn Reflect`, no `TypeRegistry`, no tokio, no
+  `Future`. Static dispatch everywhere; platform-native I/O with the main thread polling
+  completions.
+- **Design-first** — 1,200+ features, 1,500+ requirements, pair-wise integration specs, and test
+  cases written before implementation begins.
+- **Accessibility and localization are core** — screen reader bridges, colorblind filters, WCAG
+  compliance, TTS, subtitles, input remapping, and `LocalizedStringId` replacing hardcoded strings
+  are core runtime services, not UI add-ons.
+
+## Under The Hood
 
 - **Custom ECS** — archetype-based with AoSoA tiled storage for SIMD, compiled query plans with
-  bloom filters, zero reflection
+  bloom filters, parallel iteration
 - **Custom job system** — Chase-Lev work-stealing deques via crossbeam, data-parallel primitives
-  (par_iter, join, scope, par_sort), QoS-based core scheduling for hybrid CPUs
-- **Static codegen** — visual editor schemas compile to Rust via bundled toolchain; plugins are data
-  packages, not DLLs; all dispatch is static
+  (par_iter, join, scope, par_sort), QoS-based scheduling for hybrid CPUs
+- **GPU-driven rendering** — Nanite-style cluster LOD, compute culling, HZB occlusion, indirect
+  draw, render graph with automatic barriers, per-frame ring buffers
 - **Platform-native I/O** — io_uring (Linux), IOCP + DirectStorage (Windows), GCD + Metal I/O
-  (Apple); main thread polls I/O completions; zero blocking operations
-- **GPU-driven rendering** — Nanite-style cluster LOD, compute shader culling, indirect draw; CPU
-  BVH for gameplay queries only
+  (Apple); main thread polls completions; zero blocking operations
 - **Custom windowing** — NSWindow, Win32, X11/Wayland directly; no winit
-- **Mesh shaders + ray tracing required** — no legacy pipeline fallback
-- **No-code authoring** — all user logic via visual graphs compiled to native Rust; all assets via
-  visual editors
-- **Spatial indices** — BVH for AI/gameplay, separate BVH for physics, grid for networking
+- **HLSL shader pipeline** — all shaders authored in HLSL, compiled via DXC + Metal Shader Converter
+  CLI
+- **Deterministic fixed timestep** — 30/60/120 fps tiers with rollback-friendly semantics for
+  replays, netcode, and testing
+- **Per-frame performance budget** — per-subsystem and per-thread allocations documented in
+  [docs/design/performance-budget.md](docs/design/performance-budget.md)
+- **Pair-wise integration specs** — 50 subsystem-pair contracts define every cross-domain edge
 
 ## Supported Platforms
 
@@ -106,41 +83,74 @@ platform-native I/O, GPU-driven rendering, and static codegen for zero-reflectio
 
 ## Philosophy
 
-**Harmonius is about composition.** Complex things emerge from simple parts working together:
+**Harmonius is about composition.** An engine should not impose structure on games — it should
+provide primitives that harmonize and compose into whatever the creator imagines.
 
 - **Generic primitives, not game mechanics** — graphs, tables, attributes, and containers compose
   into quests, inventory, dialogue, and progression. The engine does not know what a "quest" is. It
   knows what a directed graph with conditional edges is.
-- **ECS everywhere** — entities are IDs, components are data, systems are functions. Composition
-  replaces inheritance.
-- **Visual graphs compile to native code** — users compose behavior visually; the engine compiles it
-  to optimized machine code through the middleman `.dylib`.
-- **No-code means no barriers** — the engine bridges the gap between creator intent and machine
-  execution.
-- **Platform-native everything** — rather than fighting platforms with abstraction layers, we
-  harmonize with each platform's strengths (GCD, io_uring, IOCP, Metal, D3D12).
-
-An engine should not impose structure on games. It should provide **primitives that harmonize** —
-that naturally compose into whatever the creator imagines. Puzzle games and MMO shooters built from
-the same building blocks, because the blocks are generic enough and the composition model is
-powerful enough.
+- **ECS everywhere** — entities are IDs, components are data, systems are functions.
+- **No-code means no barriers** — creators compose behavior visually; the engine compiles it to
+  optimized native code through the middleman `.dylib`.
+- **Platform-native everything** — harmonize with each platform's strengths (GCD, io_uring, IOCP,
+  Metal, D3D12) rather than fighting them with abstraction layers.
 
 **Harmonius = the harmony of systems.** 15 subsystems, one spatial index, one ECS, one job system,
 one frame. Everything in concert.
 
+## Goals
+
+1. **Universal game engine** — support every genre in a single engine
+2. **No-code-first** — all user-facing authoring is visual
+3. **Production-grade Rust** — stable Rust only, zero nightly, modern GPU graphics
+4. **Open source** — Apache 2.0 with open asset store and community marketplace
+5. **Self-hosted infrastructure** — all services open source with 1-click AWS deployment; customers
+   pay AWS directly, no vendor lock-in
+6. **Privacy-respecting AI** — cloud AI backends (Claude, Cursor, Copilot) use the customer's own
+   API keys; engine is a thin client, never a proxy
+
 ## Architecture
 
-The engine has 15 subsystems across 6 layers. See [docs/architecture.md](docs/architecture.md) for
-clickable diagrams, frame data flow, and links to every design document, test case, feature spec,
-requirement, and user story per module.
+15 subsystems across 6 layers. See [docs/architecture.md](docs/architecture.md) for clickable
+diagrams, frame data flow, and links to every design document, test case, feature, requirement, and
+user story per module.
 
 ## Documentation
 
 | Directory | Contents |
 |-----------|----------|
 | [docs/architecture.md](docs/architecture.md) | Engine overview with Mermaid diagrams |
+| [docs/glossary.md](docs/glossary.md) | Harmonius-specific terminology |
 | [docs/design/](docs/design/) | Design documents with API pseudocode and test cases |
+| [docs/design/constraints.md](docs/design/constraints.md) | Project-wide design constraints |
+| [docs/design/performance-budget.md](docs/design/performance-budget.md) | Per-frame budgets |
+| [docs/design/integration/](docs/design/integration/) | Pair-wise subsystem integration specs |
 | [docs/features/](docs/features/) | Feature definitions organized by domain |
 | [docs/requirements/](docs/requirements/) | Functional and non-functional requirements |
 | [docs/user-stories/](docs/user-stories/) | User stories across personas |
-| [docs/design/constraints.md](docs/design/constraints.md) | Project-wide design constraints |
+| [docs/business/](docs/business/) | Domain decomposition, GTM, monetization |
+
+### Reading Order
+
+For a complete picture, read in this order:
+
+1. **Orientation** — this README, then [architecture.md](docs/architecture.md) and
+   [glossary.md](docs/glossary.md)
+2. **Ground rules** — [constraints.md](docs/design/constraints.md) and
+   [performance-budget.md](docs/design/performance-budget.md)
+3. **Core runtime** — [core-runtime/](docs/design/core-runtime/): ECS, game loop, spatial index,
+   memory/IO, change detection, serialization
+4. **Platform & infrastructure** — [platform/](docs/design/platform/),
+   [rendering/](docs/design/rendering/), [physics/](docs/design/physics/),
+   [audio/](docs/design/audio/), [input/](docs/design/input/)
+5. **Generic primitives** — [data-systems/](docs/design/data-systems/) (graphs, tables, attributes,
+   containers) and [simulation/](docs/design/simulation/) (grids, awareness, timelines, events)
+6. **Domain systems** — [animation/](docs/design/animation/), [ai/](docs/design/ai/),
+   [vfx/](docs/design/vfx/), [ui/](docs/design/ui/), [networking/](docs/design/networking/)
+7. **Application layer** — [game-framework/](docs/design/game-framework/),
+   [tools/](docs/design/tools/), [content-pipeline/](docs/design/content-pipeline/)
+8. **Integration** — [high-level.md](docs/design/integration/high-level.md), then pair-wise specs
+   between subsystem pairs
+9. **Audits** — [design-review.md](docs/design/design-review.md),
+   [test-case-coverage-audit.md](docs/design/test-case-coverage-audit.md)
+10. **Business** — [business/](docs/business/): domain decomposition, go-to-market, monetization

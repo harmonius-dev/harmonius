@@ -68,7 +68,7 @@
    synthesis plus localized displacement from nearby `FluidVolume` entities. The `WaterSurface`
    component produces seamless tiling across streaming zones and supports river flow fields and
    shoreline wave breaking through the `WaveConfig` parameters. The visual representation of water
-   surfaces is handled by geometry-world/water.md (F-3.4.1).
+   surfaces is handled by geometry/water.md (F-3.4.1).
    - **Deps:** F-4.8.3, F-1.1.1, F-3.4.1 (Water Surface Rendering)
    - **Platform:** Mobile: Gerstner waves only (no FFT), max 4 wave layers, no flow maps. Switch:
      Gerstner with 8 layers, simple flow maps. Desktop: FFT ocean with 16+ layers, full flow maps.

@@ -1166,34 +1166,34 @@ World geometry, terrain, meshlets, environment rendering, and procedural generat
 
 | Feature |
 |---------|
-| [terrain.md](features/geometry-world/terrain.md) |
-| [foliage.md](features/geometry-world/foliage.md) |
-| [water.md](features/geometry-world/water.md) |
-| [sky-atmosphere.md](features/geometry-world/sky-atmosphere.md) |
-| [meshlet-pipeline.md](features/geometry-world/meshlet-pipeline.md) |
-| [procedural-generation.md](features/geometry-world/procedural-generation.md) |
+| [terrain.md](features/geometry/terrain.md) |
+| [foliage.md](features/geometry/foliage.md) |
+| [water.md](features/geometry/water.md) |
+| [sky-atmosphere.md](features/geometry/sky-atmosphere.md) |
+| [meshlet-pipeline.md](features/geometry/meshlet-pipeline.md) |
+| [procedural-generation.md](features/geometry/procedural-generation.md) |
 
 #### Requirements
 
 | Requirement |
 |-------------|
-| [terrain.md](requirements/geometry-world/terrain.md) |
-| [foliage.md](requirements/geometry-world/foliage.md) |
-| [water.md](requirements/geometry-world/water.md) |
-| [sky-atmosphere.md](requirements/geometry-world/sky-atmosphere.md) |
-| [meshlet-pipeline.md](requirements/geometry-world/meshlet-pipeline.md) |
-| [procedural-generation.md](requirements/geometry-world/procedural-generation.md) |
+| [terrain.md](requirements/geometry/terrain.md) |
+| [foliage.md](requirements/geometry/foliage.md) |
+| [water.md](requirements/geometry/water.md) |
+| [sky-atmosphere.md](requirements/geometry/sky-atmosphere.md) |
+| [meshlet-pipeline.md](requirements/geometry/meshlet-pipeline.md) |
+| [procedural-generation.md](requirements/geometry/procedural-generation.md) |
 
 #### User Stories
 
 | User Story |
 |------------|
-| [terrain.md](user-stories/geometry-world/terrain.md) |
-| [foliage.md](user-stories/geometry-world/foliage.md) |
-| [water.md](user-stories/geometry-world/water.md) |
-| [sky-atmosphere.md](user-stories/geometry-world/sky-atmosphere.md) |
-| [meshlet-pipeline.md](user-stories/geometry-world/meshlet-pipeline.md) |
-| [procedural-generation.md](user-stories/geometry-world/procedural-generation.md) |
+| [terrain.md](user-stories/geometry/terrain.md) |
+| [foliage.md](user-stories/geometry/foliage.md) |
+| [water.md](user-stories/geometry/water.md) |
+| [sky-atmosphere.md](user-stories/geometry/sky-atmosphere.md) |
+| [meshlet-pipeline.md](user-stories/geometry/meshlet-pipeline.md) |
+| [procedural-generation.md](user-stories/geometry/procedural-generation.md) |
 
 ---
 
@@ -1257,34 +1257,34 @@ Widget framework, HUD, 2D games, and accessibility.
 
 | Feature |
 |---------|
-| [widget-framework.md](features/ui-2d/widget-framework.md) |
-| [common-widgets.md](features/ui-2d/common-widgets.md) |
-| [hud-and-game-ui.md](features/ui-2d/hud-and-game-ui.md) |
-| [ui-rendering.md](features/ui-2d/ui-rendering.md) |
-| [2d-games.md](features/ui-2d/2d-games.md) |
-| [accessibility.md](features/ui-2d/accessibility.md) |
+| [widget-framework.md](features/ui/widget-framework.md) |
+| [common-widgets.md](features/ui/common-widgets.md) |
+| [hud-and-game-ui.md](features/ui/hud-and-game-ui.md) |
+| [ui-rendering.md](features/ui/ui-rendering.md) |
+| [2d-games.md](features/ui/2d-games.md) |
+| [accessibility.md](features/ui/accessibility.md) |
 
 #### Requirements
 
 | Requirement |
 |-------------|
-| [widget-framework.md](requirements/ui-2d/widget-framework.md) |
-| [common-widgets.md](requirements/ui-2d/common-widgets.md) |
-| [hud-and-game-ui.md](requirements/ui-2d/hud-and-game-ui.md) |
-| [ui-rendering.md](requirements/ui-2d/ui-rendering.md) |
-| [2d-games.md](requirements/ui-2d/2d-games.md) |
-| [accessibility.md](requirements/ui-2d/accessibility.md) |
+| [widget-framework.md](requirements/ui/widget-framework.md) |
+| [common-widgets.md](requirements/ui/common-widgets.md) |
+| [hud-and-game-ui.md](requirements/ui/hud-and-game-ui.md) |
+| [ui-rendering.md](requirements/ui/ui-rendering.md) |
+| [2d-games.md](requirements/ui/2d-games.md) |
+| [accessibility.md](requirements/ui/accessibility.md) |
 
 #### User Stories
 
 | User Story |
 |------------|
-| [widget-framework.md](user-stories/ui-2d/widget-framework.md) |
-| [common-widgets.md](user-stories/ui-2d/common-widgets.md) |
-| [hud-and-game-ui.md](user-stories/ui-2d/hud-and-game-ui.md) |
-| [ui-rendering.md](user-stories/ui-2d/ui-rendering.md) |
-| [2d-games.md](user-stories/ui-2d/2d-games.md) |
-| [accessibility.md](user-stories/ui-2d/accessibility.md) |
+| [widget-framework.md](user-stories/ui/widget-framework.md) |
+| [common-widgets.md](user-stories/ui/common-widgets.md) |
+| [hud-and-game-ui.md](user-stories/ui/hud-and-game-ui.md) |
+| [ui-rendering.md](user-stories/ui/ui-rendering.md) |
+| [2d-games.md](user-stories/ui/2d-games.md) |
+| [accessibility.md](user-stories/ui/accessibility.md) |
 
 ---
 
@@ -1309,82 +1309,82 @@ and content services.
 
 | Feature |
 |---------|
-| [editor-framework.md](features/tools-editor/editor-framework.md) |
-| [editor-plugins.md](features/tools-editor/editor-plugins.md) |
-| [level-editor.md](features/tools-editor/level-editor.md) |
-| [world-building.md](features/tools-editor/world-building.md) |
-| [material-editor.md](features/tools-editor/material-editor.md) |
-| [animation-editor.md](features/tools-editor/animation-editor.md) |
-| [logic-graph.md](features/tools-editor/logic-graph.md) |
-| [profiling-tools.md](features/tools-editor/profiling-tools.md) |
-| [version-control.md](features/tools-editor/version-control.md) |
-| [shared-cache.md](features/tools-editor/shared-cache.md) |
-| [ai-governance.md](features/tools-editor/ai-governance.md) |
-| [ai-assistant.md](features/tools-editor/ai-assistant.md) |
-| [deployment.md](features/tools-editor/deployment.md) |
-| [launcher.md](features/tools-editor/launcher.md) |
-| [asset-store.md](features/tools-editor/asset-store.md) |
-| [server-infrastructure.md](features/tools-editor/server-infrastructure.md) |
-| [localization-editor.md](features/tools-editor/localization-editor.md) |
-| [documentation.md](features/tools-editor/documentation.md) |
-| [mod-support.md](features/tools-editor/mod-support.md) |
-| [vr-editor.md](features/tools-editor/vr-editor.md) |
-| [remote-editing.md](features/tools-editor/remote-editing.md) |
-| [specialized-editors.md](features/tools-editor/specialized-editors.md) |
+| [editor-framework.md](features/tools/editor-framework.md) |
+| [editor-plugins.md](features/tools/editor-plugins.md) |
+| [level-editor.md](features/tools/level-editor.md) |
+| [world-building.md](features/tools/world-building.md) |
+| [material-editor.md](features/tools/material-editor.md) |
+| [animation-editor.md](features/tools/animation-editor.md) |
+| [logic-graph.md](features/tools/logic-graph.md) |
+| [profiling-tools.md](features/tools/profiling-tools.md) |
+| [version-control.md](features/tools/version-control.md) |
+| [shared-cache.md](features/tools/shared-cache.md) |
+| [ai-governance.md](features/tools/ai-governance.md) |
+| [ai-assistant.md](features/tools/ai-assistant.md) |
+| [deployment.md](features/tools/deployment.md) |
+| [launcher.md](features/tools/launcher.md) |
+| [asset-store.md](features/tools/asset-store.md) |
+| [server-infrastructure.md](features/tools/server-infrastructure.md) |
+| [localization-editor.md](features/tools/localization-editor.md) |
+| [documentation.md](features/tools/documentation.md) |
+| [mod-support.md](features/tools/mod-support.md) |
+| [vr-editor.md](features/tools/vr-editor.md) |
+| [remote-editing.md](features/tools/remote-editing.md) |
+| [specialized-editors.md](features/tools/specialized-editors.md) |
 
 #### Requirements
 
 | Requirement |
 |-------------|
-| [editor-framework.md](requirements/tools-editor/editor-framework.md) |
-| [editor-plugins.md](requirements/tools-editor/editor-plugins.md) |
-| [level-editor.md](requirements/tools-editor/level-editor.md) |
-| [world-building.md](requirements/tools-editor/world-building.md) |
-| [material-editor.md](requirements/tools-editor/material-editor.md) |
-| [animation-editor.md](requirements/tools-editor/animation-editor.md) |
-| [logic-graph.md](requirements/tools-editor/logic-graph.md) |
-| [profiling-tools.md](requirements/tools-editor/profiling-tools.md) |
-| [version-control.md](requirements/tools-editor/version-control.md) |
-| [shared-cache.md](requirements/tools-editor/shared-cache.md) |
-| [ai-governance.md](requirements/tools-editor/ai-governance.md) |
-| [ai-assistant.md](requirements/tools-editor/ai-assistant.md) |
-| [deployment.md](requirements/tools-editor/deployment.md) |
-| [launcher.md](requirements/tools-editor/launcher.md) |
-| [asset-store.md](requirements/tools-editor/asset-store.md) |
-| [server-infrastructure.md](requirements/tools-editor/server-infrastructure.md) |
-| [localization-editor.md](requirements/tools-editor/localization-editor.md) |
-| [documentation.md](requirements/tools-editor/documentation.md) |
-| [mod-support.md](requirements/tools-editor/mod-support.md) |
-| [vr-editor.md](requirements/tools-editor/vr-editor.md) |
-| [remote-editing.md](requirements/tools-editor/remote-editing.md) |
-| [specialized-editors.md](requirements/tools-editor/specialized-editors.md) |
+| [editor-framework.md](requirements/tools/editor-framework.md) |
+| [editor-plugins.md](requirements/tools/editor-plugins.md) |
+| [level-editor.md](requirements/tools/level-editor.md) |
+| [world-building.md](requirements/tools/world-building.md) |
+| [material-editor.md](requirements/tools/material-editor.md) |
+| [animation-editor.md](requirements/tools/animation-editor.md) |
+| [logic-graph.md](requirements/tools/logic-graph.md) |
+| [profiling-tools.md](requirements/tools/profiling-tools.md) |
+| [version-control.md](requirements/tools/version-control.md) |
+| [shared-cache.md](requirements/tools/shared-cache.md) |
+| [ai-governance.md](requirements/tools/ai-governance.md) |
+| [ai-assistant.md](requirements/tools/ai-assistant.md) |
+| [deployment.md](requirements/tools/deployment.md) |
+| [launcher.md](requirements/tools/launcher.md) |
+| [asset-store.md](requirements/tools/asset-store.md) |
+| [server-infrastructure.md](requirements/tools/server-infrastructure.md) |
+| [localization-editor.md](requirements/tools/localization-editor.md) |
+| [documentation.md](requirements/tools/documentation.md) |
+| [mod-support.md](requirements/tools/mod-support.md) |
+| [vr-editor.md](requirements/tools/vr-editor.md) |
+| [remote-editing.md](requirements/tools/remote-editing.md) |
+| [specialized-editors.md](requirements/tools/specialized-editors.md) |
 
 #### User Stories
 
 | User Story |
 |------------|
-| [editor-framework.md](user-stories/tools-editor/editor-framework.md) |
-| [editor-plugins.md](user-stories/tools-editor/editor-plugins.md) |
-| [level-editor.md](user-stories/tools-editor/level-editor.md) |
-| [world-building.md](user-stories/tools-editor/world-building.md) |
-| [material-editor.md](user-stories/tools-editor/material-editor.md) |
-| [animation-editor.md](user-stories/tools-editor/animation-editor.md) |
-| [logic-graph.md](user-stories/tools-editor/logic-graph.md) |
-| [profiling-tools.md](user-stories/tools-editor/profiling-tools.md) |
-| [version-control.md](user-stories/tools-editor/version-control.md) |
-| [shared-cache.md](user-stories/tools-editor/shared-cache.md) |
-| [ai-governance.md](user-stories/tools-editor/ai-governance.md) |
-| [ai-assistant.md](user-stories/tools-editor/ai-assistant.md) |
-| [deployment.md](user-stories/tools-editor/deployment.md) |
-| [launcher.md](user-stories/tools-editor/launcher.md) |
-| [asset-store.md](user-stories/tools-editor/asset-store.md) |
-| [server-infrastructure.md](user-stories/tools-editor/server-infrastructure.md) |
-| [localization-editor.md](user-stories/tools-editor/localization-editor.md) |
-| [documentation.md](user-stories/tools-editor/documentation.md) |
-| [mod-support.md](user-stories/tools-editor/mod-support.md) |
-| [vr-editor.md](user-stories/tools-editor/vr-editor.md) |
-| [remote-editing.md](user-stories/tools-editor/remote-editing.md) |
-| [specialized-editors.md](user-stories/tools-editor/specialized-editors.md) |
+| [editor-framework.md](user-stories/tools/editor-framework.md) |
+| [editor-plugins.md](user-stories/tools/editor-plugins.md) |
+| [level-editor.md](user-stories/tools/level-editor.md) |
+| [world-building.md](user-stories/tools/world-building.md) |
+| [material-editor.md](user-stories/tools/material-editor.md) |
+| [animation-editor.md](user-stories/tools/animation-editor.md) |
+| [logic-graph.md](user-stories/tools/logic-graph.md) |
+| [profiling-tools.md](user-stories/tools/profiling-tools.md) |
+| [version-control.md](user-stories/tools/version-control.md) |
+| [shared-cache.md](user-stories/tools/shared-cache.md) |
+| [ai-governance.md](user-stories/tools/ai-governance.md) |
+| [ai-assistant.md](user-stories/tools/ai-assistant.md) |
+| [deployment.md](user-stories/tools/deployment.md) |
+| [launcher.md](user-stories/tools/launcher.md) |
+| [asset-store.md](user-stories/tools/asset-store.md) |
+| [server-infrastructure.md](user-stories/tools/server-infrastructure.md) |
+| [localization-editor.md](user-stories/tools/localization-editor.md) |
+| [documentation.md](user-stories/tools/documentation.md) |
+| [mod-support.md](user-stories/tools/mod-support.md) |
+| [vr-editor.md](user-stories/tools/vr-editor.md) |
+| [remote-editing.md](user-stories/tools/remote-editing.md) |
+| [specialized-editors.md](user-stories/tools/specialized-editors.md) |
 
 ---
 

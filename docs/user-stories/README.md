@@ -65,12 +65,12 @@ See [personas.md](personas.md) for the complete persona catalog.
 
 | File | Stories |
 |------|-------:|
-| [procedural-generation.md](geometry-world/procedural-generation.md) | 66 |
-| [terrain.md](geometry-world/terrain.md) | 33 |
-| [foliage.md](geometry-world/foliage.md) | 29 |
-| [meshlet-pipeline.md](geometry-world/meshlet-pipeline.md) | 24 |
-| [sky-atmosphere.md](geometry-world/sky-atmosphere.md) | 22 |
-| [water.md](geometry-world/water.md) | 22 |
+| [procedural-generation.md](geometry/procedural-generation.md) | 66 |
+| [terrain.md](geometry/terrain.md) | 33 |
+| [foliage.md](geometry/foliage.md) | 29 |
+| [meshlet-pipeline.md](geometry/meshlet-pipeline.md) | 24 |
+| [sky-atmosphere.md](geometry/sky-atmosphere.md) | 22 |
+| [water.md](geometry/water.md) | 22 |
 
 ## 4. Physics
 
@@ -149,12 +149,12 @@ See [personas.md](personas.md) for the complete persona catalog.
 
 | File | Stories |
 |------|-------:|
-| [hud-and-game-ui.md](ui-2d/hud-and-game-ui.md) | 18 |
-| [2d-games.md](ui-2d/2d-games.md) | 17 |
-| [widget-framework.md](ui-2d/widget-framework.md) | 14 |
-| [accessibility.md](ui-2d/accessibility.md) | 10 |
-| [common-widgets.md](ui-2d/common-widgets.md) | 10 |
-| [ui-rendering.md](ui-2d/ui-rendering.md) | 7 |
+| [hud-and-game-ui.md](ui/hud-and-game-ui.md) | 18 |
+| [2d-games.md](ui/2d-games.md) | 17 |
+| [widget-framework.md](ui/widget-framework.md) | 14 |
+| [accessibility.md](ui/accessibility.md) | 10 |
+| [common-widgets.md](ui/common-widgets.md) | 10 |
+| [ui-rendering.md](ui/ui-rendering.md) | 7 |
 
 ## 11. VFX
 
@@ -227,30 +227,30 @@ See [personas.md](personas.md) for the complete persona catalog.
 
 | File | Stories |
 |------|-------:|
-| [logic-graph.md](tools-editor/logic-graph.md) | 29 |
-| [remote-editing.md](tools-editor/remote-editing.md) | 28 |
-| [specialized-editors.md](tools-editor/specialized-editors.md) | 24 |
-| [world-building.md](tools-editor/world-building.md) | 24 |
-| [ai-assistant.md](tools-editor/ai-assistant.md) | 22 |
-| [asset-store.md](tools-editor/asset-store.md) | 20 |
-| [editor-plugins.md](tools-editor/editor-plugins.md) | 20 |
-| [server-infrastructure.md](tools-editor/server-infrastructure.md) | 20 |
-| [deployment.md](tools-editor/deployment.md) | 18 |
-| [editor-framework.md](tools-editor/editor-framework.md) | 18 |
-| [ai-cloud-backend.md](tools-editor/ai-cloud-backend.md) | 16 |
-| [ai-governance.md](tools-editor/ai-governance.md) | 16 |
-| [shared-cache.md](tools-editor/shared-cache.md) | 16 |
-| [version-control.md](tools-editor/version-control.md) | 16 |
-| [animation-editor.md](tools-editor/animation-editor.md) | 14 |
-| [cloud-build.md](tools-editor/cloud-build.md) | 14 |
-| [documentation.md](tools-editor/documentation.md) | 14 |
-| [level-editor.md](tools-editor/level-editor.md) | 14 |
-| [profiling-tools.md](tools-editor/profiling-tools.md) | 14 |
-| [launcher.md](tools-editor/launcher.md) | 12 |
-| [material-editor.md](tools-editor/material-editor.md) | 12 |
-| [mod-support.md](tools-editor/mod-support.md) | 12 |
-| [vr-editor.md](tools-editor/vr-editor.md) | 12 |
-| [localization-editor.md](tools-editor/localization-editor.md) | 6 |
+| [logic-graph.md](tools/logic-graph.md) | 29 |
+| [remote-editing.md](tools/remote-editing.md) | 28 |
+| [specialized-editors.md](tools/specialized-editors.md) | 24 |
+| [world-building.md](tools/world-building.md) | 24 |
+| [ai-assistant.md](tools/ai-assistant.md) | 22 |
+| [asset-store.md](tools/asset-store.md) | 20 |
+| [editor-plugins.md](tools/editor-plugins.md) | 20 |
+| [server-infrastructure.md](tools/server-infrastructure.md) | 20 |
+| [deployment.md](tools/deployment.md) | 18 |
+| [editor-framework.md](tools/editor-framework.md) | 18 |
+| [ai-cloud-backend.md](tools/ai-cloud-backend.md) | 16 |
+| [ai-governance.md](tools/ai-governance.md) | 16 |
+| [shared-cache.md](tools/shared-cache.md) | 16 |
+| [version-control.md](tools/version-control.md) | 16 |
+| [animation-editor.md](tools/animation-editor.md) | 14 |
+| [cloud-build.md](tools/cloud-build.md) | 14 |
+| [documentation.md](tools/documentation.md) | 14 |
+| [level-editor.md](tools/level-editor.md) | 14 |
+| [profiling-tools.md](tools/profiling-tools.md) | 14 |
+| [launcher.md](tools/launcher.md) | 12 |
+| [material-editor.md](tools/material-editor.md) | 12 |
+| [mod-support.md](tools/mod-support.md) | 12 |
+| [vr-editor.md](tools/vr-editor.md) | 12 |
+| [localization-editor.md](tools/localization-editor.md) | 6 |
 
 ## 16. Data Systems
 

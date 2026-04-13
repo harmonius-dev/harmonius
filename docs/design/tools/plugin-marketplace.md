@@ -48,7 +48,7 @@ rebuilds the middleman `.dylib` that contains every installed plugin's types. Th
 new `.dylib` at next editor launch (or hot-reload when available).
 
 The marketplace protocol is the transport and trust layer. It does **not** define the UI of the
-store — that is [F-15.17.1](../../features/tools-editor/asset-store.md) — it defines the on-wire
+store — that is [F-15.17.1](../../features/tools/asset-store.md) — it defines the on-wire
 formats, signing rules, CAS layout, and dependency resolution algorithm.
 
 ### Design Principles
