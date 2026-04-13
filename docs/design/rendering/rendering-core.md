@@ -179,6 +179,102 @@ graph TD
     AO --> DEF
 ```
 
+### Material System
+
+`Material` is the canonical runtime handle bundling a material graph, its compiled shader
+permutations, descriptor layout, and parameter block. `MaterialComponent` references a
+`Handle<Material>`; `MaterialGraph` (authoring, owned by [render-styles.md](render-styles.md)) is
+the source; `CompiledMaterial` (implementation, owned by [render-pipeline.md](render-pipeline.md))
+is the codegen output. This section is the **single canonical definition** that unifies the three.
+
+```rust
+pub struct MaterialId(pub u32);
+
+pub struct Material {
+    pub id: MaterialId,
+    pub graph: Handle<MaterialGraph>,
+    pub compiled_shaders: Handle<ShaderPermutationCache>,
+    pub descriptor_layout: DescriptorLayout,
+    pub parameters: MaterialParameterBlock,
+}
+
+pub struct MaterialParameterBlock {
+    pub uniform_buffer: GpuBufferView,
+    pub texture_bindings: SmallVec<[TextureBinding; 8]>,
+    pub sampler_bindings: SmallVec<[SamplerBinding; 4]>,
+}
+```
+
+Ownership contract:
+
+1. `MaterialManager` (lives on the render thread) owns all `Material` instances via a
+   `SlotMap<Material>` and exposes `Handle<Material>` to ECS.
+2. `MaterialManager` subscribes to the hot-reload protocol (see
+   [../core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md)) for
+   `MaterialGraph` and shader source changes. On reload:
+   - The manager drains any in-flight frame references via `poll_fence`.
+   - It rebuilds `compiled_shaders` through the `ShaderPermutationCache` keyed by `PermutationKey`
+     (see [shader-variants.md](shader-variants.md)).
+   - It rebuilds `descriptor_layout` from the new shader bytecode via `ShaderCompiler::reflect` (see
+     [render-pipeline.md](render-pipeline.md) descriptor layout inference).
+   - The new `Material` is swapped atomically in the slot map; the old entry is retired after the
+     in-flight fence completes.
+3. On successful rebuild, `MaterialManager` broadcasts `MaterialChangeEvent { id }` via the shared
+   event bus so dependents (PSO cache, draw list, editor preview) can respond. Failure keeps the
+   previous `Material` live and surfaces a `CompileError` to the editor.
+4. The `Material::descriptor_layout` is the authoritative binding shape for draw submission; the PSO
+   cache key incorporates its hash so layout changes invalidate stale PSOs (see
+   [pipeline-state-cache.md](pipeline-state-cache.md)).
+5. `MaterialParameterBlock` is the only mutable piece across frames and is written to a
+   ring-buffered GPU upload slice; the rest of `Material` is immutable between reloads.
+
+Cross-reference: `ShadingModel` (the unified name for the per-shading-model enum) is defined in this
+document (see the Core Class Diagram and `PermutationKey`). `ShadingModelId` in
+[render-styles.md](render-styles.md) is an alias that will be deleted; consumers should read
+`ShadingModel` here.
+
+### Transform Interpolation
+
+Phase 7 (Extract) receives an `InterpolatedTransform` per renderable from the scene-transforms
+subsystem. The per-frame interpolation factor `alpha` = `(elapsed - last_fixed_tick) / fixed_dt` is
+computed once in `game-loop.md::FrameContext` and broadcast to extract workers;
+`ProxyStore::interp_transforms` holds `lerp(prev_transform, current_transform, alpha)` per proxy and
+is the value uploaded to GPU instance buffers.
+
+```rust
+pub struct InterpolatedTransform {
+    pub matrix: Mat4,
+}
+
+pub fn extract_transforms(
+    prev: &GlobalTransform,
+    curr: &GlobalTransform,
+    alpha: f32,
+) -> InterpolatedTransform {
+    InterpolatedTransform { matrix: lerp_transforms(prev, curr, alpha) }
+}
+```
+
+`InterpolatedTransform` is defined canonically in
+[../core-runtime/scene-transforms.md](../core-runtime/scene-transforms.md); rendering consumes it
+read-only during extract. 2D rendering uses the parallel `PreviousGlobalTransform2D` path from the
+same doc (see [2d.md](2d.md)).
+
+### MeshletProxy Reference
+
+Meshlet geometry is not redefined here. Per-instance meshlet data is carried as `MeshletProxy` (see
+the Core Class Diagram); the asset format, builder, GPU layout, and BLAS integration live in
+[meshlets.md](meshlets.md). `MeshComponent::mesh_handle` is always a `Handle<MeshletAsset>`, and
+`ProxyStore` records a `MeshletProxy` per visible instance so the GPU culling pipeline can read
+bounds and cones without touching ECS.
+
+### RenderFrame Cross-Reference
+
+The per-frame immutable snapshot type is `RenderFrame`, owned and defined by
+[../core-runtime/game-loop.md](../core-runtime/game-loop.md). This document consumes `RenderFrame`
+as the input to extract/prepare/render; see RF-3 in Review Feedback below for the reconciliation
+between `RenderWorld` (render-thread persistent state) and the immutable per-frame `RenderFrame`.
+
 ### Extract-Prepare-Render Pipeline
 
 ```mermaid
@@ -257,13 +353,33 @@ classDiagram
         +render_path RenderPath
         +clear_color LinearColor
         +render_order i32
+        +layer_mask RenderLayerMask
     }
 
     class VisibilityComponent {
         +visible bool
-        +render_layers RenderLayerMask
+        +layer_mask RenderLayerMask
         +cast_shadows bool
         +two_sided bool
+    }
+
+    class RenderLayerMask {
+        +bits u32
+        +ALL RenderLayerMask
+        +DEFAULT RenderLayerMask
+        +layer(n) RenderLayerMask
+        +with(n) RenderLayerMask
+        +without(n) RenderLayerMask
+        +intersects(other) bool
+    }
+
+    class MeshletProxy {
+        +mesh_handle Handle~MeshletAsset~
+        +lod_group u8
+        +bounds Sphere
+        +cone_apex Vec3
+        +cone_axis Vec3
+        +cone_angle f32
     }
 
     class DynamicResolutionState {
@@ -298,11 +414,12 @@ classDiagram
     class ProxyStore {
         -transforms Vec~Mat4~
         -prev_transforms Vec~Mat4~
+        -interp_transforms Vec~Mat4~
         -mesh_ids Vec~MeshId~
         -material_ids Vec~MaterialId~
         -bounds Vec~Aabb~
         -flags Vec~ProxyFlags~
-        -entity_map HashMap
+        -entity_map SortedVecMap~Entity, ProxyIndex~
         +insert(entity, ...) ProxyIndex
         +update_transform(index, transform)
         +remove(entity) Option~ProxyIndex~
@@ -872,30 +989,33 @@ can exploit.
 
 ### RF-14: Render layers
 
-Add a bitmask-based render layer system. Each renderable entity, camera, and light has a
-`RenderLayers` component (u32 bitmask, 32 layers). An entity is visible to a camera only if their
-layer masks overlap (bitwise AND != 0). A light affects an entity only if their masks overlap.
+Add a bitmask-based render layer system. `RenderLayerMask` is the **canonical newtype** used by
+`CameraComponent`, `VisibilityComponent`, `LightComponent`, and their 2D analogues. An entity is
+visible to a camera only if their layer masks overlap (bitwise AND != 0). A light affects an entity
+only if their masks overlap.
 
 ```rust
-#[derive(Component, Clone, Copy)]
-pub struct RenderLayers(pub u32);
+/// u32 bitmask representing up to 32 render layers. Canonical newtype shared by 2D and 3D
+/// rendering; both paths reference `RenderLayerMask` (no separate `RenderLayers` /
+/// `Layer2DMask` types).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct RenderLayerMask(pub u32);
 
-impl RenderLayers {
+impl RenderLayerMask {
     pub const DEFAULT: Self = Self(1);
     pub const ALL: Self = Self(u32::MAX);
 
     pub fn layer(n: u32) -> Self { Self(1 << n) }
-    pub fn with(self, n: u32) -> Self {
-        Self(self.0 | (1 << n))
-    }
-    pub fn without(self, n: u32) -> Self {
-        Self(self.0 & !(1 << n))
-    }
-    pub fn intersects(self, other: Self) -> bool {
-        (self.0 & other.0) != 0
-    }
+    pub fn with(self, n: u32) -> Self { Self(self.0 | (1 << n)) }
+    pub fn without(self, n: u32) -> Self { Self(self.0 & !(1 << n)) }
+    pub fn intersects(self, other: Self) -> bool { (self.0 & other.0) != 0 }
 }
 ```
+
+`CameraComponent::layer_mask` and `VisibilityComponent::layer_mask` both hold a `RenderLayerMask`
+(see the Core Class Diagram). `Light2D::render_layer` in [2d.md](2d.md) and `Sprite::render_layer`
+also resolve to `RenderLayerMask` (the `u32` field is a raw-access convenience; the typed wrapper is
+the public API).
 
 Use cases:
 
@@ -910,8 +1030,8 @@ Use cases:
 The same object can be in multiple layers simultaneously. Layer membership is a bitmask, not an
 exclusive assignment.
 
-The GPU culling pipeline checks `camera.layers.intersects(entity.layers)` during instance culling.
-Lights check `light.layers.intersects(entity.layers)` during light assignment.
+The GPU culling pipeline checks `camera.layer_mask.intersects(entity.layer_mask)` during instance
+culling. Lights check `light.layer_mask.intersects(entity.layer_mask)` during light assignment.
 
 ### RF-15: 2D rendering path
 

@@ -1,5 +1,8 @@
 # Editor ↔ Animation Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |

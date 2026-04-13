@@ -1,5 +1,28 @@
 # Network Infrastructure Design
 
+## Scope and Constraint Compliance
+
+This document describes **Kubernetes-hosted backend services** (matchmaker, GameDb, control panel,
+K8s operator, cross-shard services, auto-scaler, anti-cheat analytics). Tokio and async/await are
+permitted in this scope per [constraints.md](../constraints.md) "CPU Parallelism" exception for
+Kubernetes workloads:
+
+> Backend services (GameDb, matchmaking, control panel, K8s operator) may use Tokio and async/await.
+> These are standard server workloads that benefit from async I/O. The game server communicates with
+> backend services via QUIC — the game side is synchronous, the backend side is async.
+
+The **game engine client side** — including the headless game server, game runtime, editor, and
+tools — is strictly synchronous. The full game-side design lives in
+[network-transport.md](./network-transport.md) and [network-services.md](./network-services.md). It
+talks to backend services exclusively over QUIC streams driven by the sync request/handle pattern.
+
+Every major section below is annotated with its scope:
+
+- **Backend (async allowed)** — runs inside the backend service pod; may use Tokio and
+  `tikv-client`'s async APIs. Never imported by the game engine client.
+- **Engine client (sync only)** — runs inside the game engine, headless server, editor, or tools;
+  must use sync request/handle APIs with no async runtime.
+
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
@@ -51,14 +74,21 @@ layered anti-cheat security system that protects them.
 
 ### MMO Infrastructure
 
+> **Mixed scope.** Zone servers are **Engine clients (sync only)** — they run the game engine in
+> headless mode and obey the no-async rule. The mesh controller, cross-shard services, GameDb, and
+> inter-server bus are **Backend services (async allowed)** running on Kubernetes and may use Tokio
+> and `tikv-client`.
+
 The MMO subsystem partitions the game world into shards and zones, runs a dynamic server mesh that
 scales spatially based on entity density, migrates players seamlessly between zone servers, persists
-world state through an async database layer, and provides cross-shard services for economy and
-social features.
+world state through the GameDb backend, and provides cross-shard services for economy and social
+features.
 
 All components are ECS-primary (~90%)-based. Zone servers run the full ECS simulation in headless
-mode. The server mesh controller, cross-shard services, and inter-server bus run as independent
-microservices on self-hosted AWS infrastructure (Kubernetes). All I/O is async.
+mode and speak to backend services exclusively through sync QUIC streams defined in
+[network-transport.md](./network-transport.md). The server mesh controller, cross-shard services,
+and inter-server bus run as independent microservices on Kubernetes infrastructure (see the K8s
+operator in RF-5).
 
 ### Anti-Cheat
 
@@ -267,25 +297,33 @@ sequenceDiagram
 
 ### Persistence Layer
 
+> Sync game server talks to the **async GameDb backend** over a QUIC stream. The game server never
+> blocks on an async database call directly.
+
 ```mermaid
 sequenceDiagram
-    participant GS as Game Server
-    participant DAL as DatabaseAccessLayer
-    participant TXN as TransactionManager
-    participant DB as PostgreSQL
+    participant GS as Zone Server (sync)
+    participant Q as QUIC stream
+    participant DB as GameDb service (async, Tokio)
+    participant TXN as TransactionManager (async)
+    participant TiKV as TiKV cluster
 
-    GS->>DAL: save_character(char_data).await
-    DAL->>DB: async INSERT/UPDATE
-    DB-->>DAL: ok
-    DAL-->>GS: saved
+    GS->>Q: save_character_request (IoRequestId)
+    Q->>DB: QUIC reliable ordered stream
+    DB->>TiKV: async PUT (tikv-client, Tokio)
+    TiKV-->>DB: ok
+    DB-->>Q: save_character_response
+    Q-->>GS: IoResponse::StreamData (next frame)
 
     Note over GS: Trade request (atomic)
-    GS->>TXN: begin()
-    GS->>TXN: debit(player_a, gold)
-    GS->>TXN: credit(player_b, gold)
-    GS->>TXN: transfer_item(a_to_b, item)
-    GS->>TXN: commit().await
-    TXN->>DB: COMMIT
+    GS->>Q: trade_request
+    Q->>DB: QUIC reliable ordered
+    DB->>TXN: begin_pessimistic (async)
+    DB->>TXN: debit / credit / transfer_item
+    DB->>TXN: commit (async)
+    TXN->>TiKV: 2PC commit
+    DB-->>Q: trade_response
+    Q-->>GS: IoResponse::StreamData
 ```
 
 ### Inter-Server Bus Topology
@@ -440,14 +478,16 @@ classDiagram
     }
 
     class DatabaseAccessLayer {
-        -pool: ConnectionPool
-        +query~T~(sql, params) Future~Vec~T~~
-        +execute(sql, params) Future~u64~
-        +transaction() TransactionHandle
+        <<Backend async allowed>>
+        -pool: TikvClient
+        +query~T~(key_range, params) Vec~T~ async
+        +execute(key, value) u64 async
+        +transaction() TransactionHandle async
     }
 
     class InterServerBus {
-        -connections: HashMap~ServerId, TcpStream~
+        <<Backend async allowed>>
+        -connections: SortedVecMap~ServerId, QuicStream~
         +publish(channel, msg)
         +send(target, msg)
         +subscribe(channel, handler)
@@ -514,7 +554,8 @@ classDiagram
     }
 
     class ViolationScorer {
-        -scores: HashMap~AccountId, PlayerScore~
+        <<Engine client sync only>>
+        -scores: SortedVecMap~AccountId, PlayerScore~
         -decay_rate: f32
         +report(account, violation)
         +current_score(account) f32
@@ -568,10 +609,11 @@ classDiagram
     }
 
     class AutoScaler {
+        <<Backend async allowed>>
         -config: ScalerConfig
         +evaluate(metrics) Vec~ScaleAction~
-        +provision() Future~ServerId~
-        +drain_and_terminate(id) Future~Result~
+        +provision() ServerId async
+        +drain_and_terminate(id) Result async
     }
 
     class ServerMetrics {
@@ -1154,24 +1196,31 @@ Occasional false detections do not accumulate to thresholds.
 
 ### Server Deployment
 
-| Component | Deployment |
-|-----------|------------|
-| ZoneServer | AWS ECS / Kubernetes pod |
-| MeshController | AWS ECS Fargate |
-| AutoScaler | AWS Lambda + CloudWatch |
-| LoadBalancer | AWS NLB |
-| InterServerBus | In-process (per server) |
-| Cross-shard services | AWS ECS Fargate |
-| PostgreSQL | AWS RDS (Multi-AZ) |
-| DynamoDB | Session directory |
+All components below are **Backend services (async allowed)**, managed by the Harmonius K8s operator
+(see RF-5).
+
+| Component | Deployment | Scope |
+|-----------|------------|-------|
+| ZoneServer | K8s pod (engine-as-server) | Engine client (sync only) |
+| MeshController | K8s deployment | Backend (async allowed) |
+| AutoScaler | kube-rs controller | Backend (async allowed) |
+| LoadBalancer | K8s Service / MetalLB | Backend (async allowed) |
+| InterServerBus | K8s deployment | Backend (async allowed) |
+| Cross-shard services | K8s deployment | Backend (async allowed) |
+| GameDb | K8s deployment wrapping `tikv-client` | Backend (async allowed) |
+| TiKV cluster | K8s statefulset | Backend (async allowed) |
 
 ### Database I/O per Platform
 
-| Platform | Async Backend |
-|----------|---------------|
-| Windows | Tokio (IOCP) |
-| macOS | Tokio (kqueue) |
-| Linux | Tokio (epoll) |
+GameDb is a **Backend service (async allowed)**: it runs on Kubernetes pods with a full Tokio
+runtime. The game server talks to GameDb over a sync QUIC stream only.
+
+| Layer | Implementation |
+|-------|----------------|
+| Game server → GameDb | Sync QUIC stream (see network-transport.md) |
+| GameDb runtime | Tokio, `tikv-client` async APIs |
+| GameDb → TiKV | `tikv-client` over TCP (async inside pod) |
+| TiKV → disk | RocksDB (native) |
 
 ### Anti-Cheat Deployment
 
@@ -1212,6 +1261,85 @@ Occasional false detections do not accumulate to thresholds.
 | Overlap sync interval | 2 ticks | 4 ticks |
 | Entity budget per zone | 2,000 | 500 |
 
+## Engine Client Integration
+
+> **Engine client (sync only).** This section defines how the game engine client — zone server,
+> headless server, editor, tools — talks to the async backend services without importing Tokio and
+> without violating constraints.md.
+
+Every backend interaction follows the same three-hop pattern:
+
+```mermaid
+sequenceDiagram
+    participant Sys as Worker system (sync)
+    participant Tc as TransportClient (sync)
+    participant Main as Main thread (drain)
+    participant Q as QUIC stream
+    participant BE as Backend service (async, Tokio)
+
+    Sys->>Tc: request(body) -> IoRequestId
+    Tc->>Main: TransportCmd::SendStream
+    Main->>Q: QUIC reliable-ordered send
+    Q->>BE: request bytes
+    BE->>BE: Tokio handles request, hits TiKV
+    BE-->>Q: response bytes
+    Q-->>Main: IoResponse::StreamData
+    Main->>Sys: RpcEvent<Response> (next tick)
+```
+
+The rules:
+
+1. **One sync RPC client per backend service.** `GameDbClient`, `MatchmakerClient`, `AuthClient`,
+   `SessionDirectoryClient`, `LeaderboardClient`, `CloudSaveClient`, `TelemetryClient`,
+   `ControlPanelClient` — each is a thin wrapper around a reliable-ordered `StreamRole` defined in
+   [network-transport.md](./network-transport.md).
+2. **Requests return `IoRequestId`.** Every method returns a handle immediately. The engine never
+   blocks on the backend.
+3. **Responses arrive as ECS events.** The main thread decodes the QUIC stream payload via a
+   codegen-generated `RpcCodec::decode` and publishes an ECS event matching the request's expected
+   reply type. Worker systems read the event via `EventReader<RpcResponse<T>>`.
+4. **Failure is a value, not a panic.** Backend errors (auth denied, quota exceeded, TiKV conflict)
+   are returned as `RpcError` in the reply frame and become ECS events.
+5. **No async runtime is linked into the engine binary.** The backend service is a separate
+   container image with its own `Cargo.toml` and its own Tokio dependency. The engine binary and the
+   backend binary share only the wire-format definitions, generated from a common `.proto`-style
+   schema into both sync (engine) and async (backend) bindings.
+6. **Latency budgeting.** The engine frame budget (0.5 ms for networking at 60 fps) covers request
+   decoding and ECS event publishing only. Round-trip time to the backend is measured separately via
+   `NetStatsResource::rtt` and exposed as an ECS resource.
+
+Example: submit a leaderboard score.
+
+```rust
+// Worker system (sync, runs inside the game loop):
+fn submit_score(
+    mut leaderboard: ResMut<LeaderboardClient>,
+    mut pending: ResMut<PendingSubmits>,
+    score_events: EventReader<ScoreSubmitted>,
+) {
+    for ev in score_events.read() {
+        let req_id = leaderboard.submit_score(ev.board_id, ev.value);
+        pending.inflight.push(req_id);
+    }
+}
+
+// A later system reacts to the reply:
+fn handle_score_reply(
+    mut replies: EventReader<RpcResponse<LeaderboardSubmitResponse>>,
+    mut toast: EventWriter<ToastEvent>,
+) {
+    for reply in replies.read() {
+        match &reply.payload {
+            Ok(r) => toast.send(ToastEvent::new("rank", r.new_rank)),
+            Err(e) => toast.send(ToastEvent::new("error", e.to_string())),
+        }
+    }
+}
+```
+
+Neither function is `async`. Neither touches Tokio. The reply arrives via the standard ECS event
+channel.
+
 ## Test Plan
 
 Test cases are in the companion file
@@ -1245,11 +1373,20 @@ Test cases are in the companion file
 
 ## Review Feedback
 
-### RF-1: Replace all Tokio/async with platform-native I/O
+### RF-1: Scoped Tokio to backend services (resolved)
 
-Replace all Future return types, .await calls, and Tokio references. Database I/O table should show
-platform-native (io_uring/IOCP/GCD). All APIs synchronous with request/handle pattern via
-crossbeam-channel.
+**Status: Resolved.** The previous "Replace all `Future` return types" TODO note was
+self-contradictory — TiKV access inside backend services **must** remain async, because
+`tikv-client` is an async-only Rust library. The resolution is:
+
+- **Game engine client (sync only)** — zone servers, editor, tools, and headless game servers talk
+  to GameDb exclusively over sync QUIC streams. See [network-transport.md](./network-transport.md)
+  and [network-services.md](./network-services.md).
+- **GameDb backend service (async allowed)** — runs in its own Kubernetes pod with a full Tokio
+  runtime and `tikv-client`. The scope annotation on each class, diagram, and table in this document
+  makes the split explicit.
+- **Engine Client Integration section below** documents how the sync game side talks to the async
+  backend without leaking async into the game runtime.
 
 ### RF-2: Remove all Reflect derives
 
@@ -2004,8 +2141,11 @@ container image in the Helm chart. Customer accesses via their configured domain
 
 ### RF-20: TiKV Rust client and transaction model
 
+> **Backend service; Tokio allowed per constraints.md exception for Kubernetes workloads.**
+
 Backend services use `tikv-client` (pure Rust, Apache-2.0) with Tokio — permitted for backend
-services per constraints.md.
+services per constraints.md. This code lives inside the GameDb service pod and is **never** compiled
+into the engine binary.
 
 **Transaction modes:**
 

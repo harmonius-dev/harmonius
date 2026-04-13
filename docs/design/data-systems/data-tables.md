@@ -1,5 +1,11 @@
 # Data Tables Design
 
+> **Cross-references.** Gameplay composition walkthroughs (quest rewards, ability tables, inventory
+> item rows, crafting recipes) live in [composition.md](composition.md). Hot-reload wire protocol,
+> `ReloadBarrier` semantics, and `StateMigrationFn` for schema changes are owned by
+> [../core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md) and referenced
+> from the "Schema Versioning" section below.
+
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
@@ -997,8 +1003,8 @@ pub struct Handle<DataTable>(u32);
    via `rkyv::archived_root`, zero deserialization cost. JSON and CSV for import from external tools
    only.
 2. **I/O backend** -- `import_table` submits read requests via crossbeam-channel to the main thread.
-   The main thread dispatches using io_uring (Linux), IOCP (Windows), or GCD dispatch_io (Apple). No
-   Tokio, no blocking.
+   The main thread dispatches using io_uring (Linux), IOCP (Windows), or GCD dispatch_io (Apple).
+   Synchronous request/handle pattern; no async runtime, no blocking on the calling thread.
 3. **Codegen** -- No runtime reflection. ECS binding functions, typed row accessor structs, and
    validation logic are all codegen'd into the middleman .dylib by the codegen pipeline.
 4. **Memory** -- `DataTable.rows` is a `Vec<Row>` sorted by `RowId` (binary-search primary key).
@@ -1359,6 +1365,262 @@ The formula graph maps directly to Rust expressions. Every node codegens to a Ru
 - Clicking a formula cell opens the logic graph editor with the formula pre-loaded.
 - The cell displays the computed result (read-only). A formula icon distinguishes formula cells.
 - The editor can display the generated Rust source for debugging.
+
+## Query and Index API
+
+The query and secondary-index layer extends the `SecondaryIndex` primitive with multi-column
+indices, filtered/partial indices, and join queries. All index backing stores are deterministic
+(sorted `Vec` or `BTreeMap`) — `HashMap` is **not** used on hot paths. This section gathers the full
+index and query API into one place; cross-table operations continue in
+[Cross-Table Queries](#cross-table-queries) below.
+
+### Index Backing Stores
+
+| Index kind          | Backing store              | Deterministic | Hot-path OK |
+|---------------------|----------------------------|---------------|-------------|
+| Sorted exact lookup | Sorted `Vec<(K, RowId)>`   | Yes           | Yes         |
+| Range lookup        | `BTreeMap<K, Vec<RowId>>`  | Yes           | Yes         |
+| Full-text search    | Editor-only FST index      | Yes (sorted)  | No (editor) |
+| `HashMap`           | Not used                   | No            | No          |
+
+1. **Sorted `Vec<(K, RowId)>`** — O(log n) exact lookup, O(n) insert. Default for single-column
+   exact-match indices. Deterministic iteration, no hash randomization.
+2. **`BTreeMap<K, Vec<RowId>>`** — O(log n) range queries and ordered iteration. Used for numeric
+   range filters and ordered enumeration.
+3. **`HashMap` is forbidden on hot paths.** Any secondary index that is evaluated during the
+   `GameLogic` or `FixedUpdate` phases must use `BTreeMap` or sorted `Vec`. Editor-side indices
+   (full-text search, author-time preview) are allowed to use `hashbrown::HashMap` because they are
+   never evaluated in the game loop.
+
+### Multi-Column Composite Indices
+
+A `CompositeIndex` keys rows by a tuple of column values. Used when a query filters on two or more
+columns together (for example, filtering items by `rarity` + `type` simultaneously).
+
+```rust
+/// Secondary index keyed by a tuple of column values.
+/// Columns are listed in priority order; lookup matches
+/// a tuple prefix.
+pub struct CompositeIndex {
+    pub columns: SmallVec<[ColumnId; 4]>,
+    pub index_type: IndexType,
+}
+
+impl CompositeIndex {
+    /// Exact-tuple lookup. Returns rows whose values
+    /// match `key` on every column of the index.
+    pub fn lookup(
+        &self,
+        key: &[Value],
+    ) -> Option<&[RowId]>;
+
+    /// Prefix lookup. Returns rows whose leading N
+    /// column values match `prefix`. For example, a
+    /// (rarity, type) index can answer "all epic items"
+    /// with a 1-tuple prefix.
+    pub fn prefix_lookup(
+        &self,
+        prefix: &[Value],
+    ) -> &[RowId];
+
+    /// Range query on the last column of the index,
+    /// given fixed prefix values on earlier columns.
+    pub fn range(
+        &self,
+        prefix: &[Value],
+        min: &Value,
+        max: &Value,
+    ) -> Vec<RowId>;
+}
+```
+
+The index is persisted inside the baked rkyv archive as a sorted
+`Vec<(SmallVec<[Value; 4]>, RowId)>`. Lookup is O(log n) binary search on the tuple ordering. Range
+queries require a `BTreeMap` backing store and are only permitted when the schema marks the index
+`index_type: IndexType::BTree`.
+
+### Filtered and Partial Indices
+
+Filtered indices store only rows matching a precomputed predicate. Used when most rows are
+uninteresting and a full index would waste space (for example, an index on "legendary items only"
+across a 10k-row item table).
+
+```rust
+/// Index that only stores rows matching `predicate`.
+/// Evaluated once at bake time; baked into the archive.
+pub struct FilteredIndex {
+    pub column: ColumnId,
+    pub predicate: FilterExpr,
+    pub index_type: IndexType,
+}
+
+impl FilteredIndex {
+    /// Lookup over the filtered row set. Returns
+    /// None if the row is not in the filter set.
+    pub fn lookup(
+        &self,
+        value: &Value,
+    ) -> Option<&[RowId]>;
+}
+```
+
+Partial indices cover a subset of rows. The `predicate` is evaluated at bake time against every row;
+only matching rows are written to the index. The runtime never re-evaluates the predicate — it
+simply searches the filtered row set.
+
+### Join Queries
+
+Join queries combine rows from two tables across a foreign key. The API mirrors the inner/left
+distinction in relational algebra:
+
+```rust
+#[derive(Copy, Clone)]
+pub enum JoinKind {
+    /// Emits a row only when both sides match.
+    Inner,
+    /// Emits every left row; right is `None` when no
+    /// match exists.
+    Left,
+}
+
+pub struct JoinRow<'a> {
+    pub left: &'a Row,
+    pub right: Option<&'a Row>,
+}
+
+/// Join `left` with `right` on `fk_column`. The
+/// join kind controls whether unmatched left rows
+/// are kept (`Left`) or dropped (`Inner`).
+pub fn join_query_kind<'a>(
+    registry: &'a TableRegistry,
+    left: TableId,
+    fk_column: ColumnId,
+    right: TableId,
+    kind: JoinKind,
+    filter: Option<&FilterExpr>,
+    arena: &'a Arena,
+) -> &'a [JoinRow<'a>];
+```
+
+Join queries are implemented as a sorted-merge join when both sides are sorted by the FK column (the
+default for primary keys) and as a nested-loop join otherwise. The reverse-FK index accelerates the
+nested-loop variant.
+
+### Query Planner Sketch
+
+The query planner chooses an execution strategy from the available indices:
+
+```mermaid
+flowchart TD
+    Q[Query] --> P{Planner}
+    P -->|exact match +<br/>single-column index| SVX[SortedVec lookup]
+    P -->|range +<br/>BTree index| BT[BTree range scan]
+    P -->|multi-column + <br/>composite index| CI[CompositeIndex lookup]
+    P -->|filtered subset<br/>available| FI[FilteredIndex]
+    P -->|no index available| FS[Full scan]
+    SVX --> ARENA[Arena-allocated<br/>result slice]
+    BT --> ARENA
+    CI --> ARENA
+    FI --> ARENA
+    FS --> ARENA
+```
+
+1. **Index selection.** The planner iterates the table's index set in order of selectivity (most
+   selective first) and picks the first index that covers every column in the filter.
+2. **Prefix matches.** A composite index `(rarity, type, level)` can answer queries filtering on
+   `rarity`, `rarity + type`, or `rarity + type + level`. It cannot answer `type`-only queries
+   (wrong prefix).
+3. **Fallback.** If no index applies, the planner falls back to a full table scan. The scan is still
+   deterministic because `rows` is stored in `RowId` order.
+4. **Determinism.** The planner's choice is deterministic given the same schema; it never depends on
+   row statistics or query history.
+
+## Schema Versioning
+
+Data-table schemas evolve over the life of a project. Columns are added, removed, renamed, and
+reordered. Hot-reload of a schema must preserve the in-memory state of already-loaded rows wherever
+possible and emit a clear error when no migration is possible.
+
+> **Protocol reference.** The wire format for reload requests, `ReloadBarrier` semantics,
+> `StateMigrationFn` signatures, and rollback rules are owned by
+> [../core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md). This section
+> documents only the data-table-specific migration rules that plug into that protocol.
+
+### Schema Version Field
+
+Every `TableSchema` carries a `schema_version: u32` field. The version is bumped whenever a
+backwards-incompatible change is made (column removed, type changed, default removed). The baked
+archive also carries the version, so load-time validation can detect mismatches.
+
+```rust
+pub struct TableSchema {
+    // ... existing fields ...
+    pub schema_version: u32,
+}
+```
+
+### Supported Migrations
+
+| Change               | Compatibility         | Migration                           |
+|----------------------|-----------------------|-------------------------------------|
+| Add column           | Forward compatible    | Fill with `ColumnDef::default`      |
+| Remove column        | Break                 | Drop column from every row          |
+| Rename column        | Transparent           | Schema rename; row data unchanged   |
+| Reorder columns      | Transparent           | Schema reorder; row data unchanged  |
+| Change column type   | Break (usually)       | Explicit migration fn required      |
+| Change default value | Forward compatible    | New default applies to new rows    |
+| Add constraint       | May invalidate rows   | Validation error on failing rows    |
+
+1. **Add column.** The new column gets its `ColumnDef::default` value for every existing row. No
+   migration function needed. Forward-compatible — old baked archives load into the new schema.
+2. **Remove column.** A `StateMigrationFn` drops the column from every row. Old archives load, but
+   the column disappears.
+3. **Rename column.** Rename only touches the schema entry; row data is unchanged because
+   `Row::values` is indexed by `ColumnId`, not by name.
+4. **Reorder columns.** Columns carry a stable `ColumnId`; reorder changes only the display ordering
+   and the position inside `Row::values`. The migration function reorders the row vector.
+5. **Change column type.** Breaks by default; the migration function must specify an explicit
+   conversion (for example `I32 -> F32` allowed, `String -> I32` requires parse).
+6. **Add constraint.** Rows that violate the new constraint emit a validation error; the table fails
+   to load until the rows are repaired or the constraint is loosened.
+
+### Fallback Defaults
+
+When a column is added to an existing table, the `ColumnDef::default` is used as the fallback value
+for every row that was baked before the column existed. Fallback defaults must match the column type
+and satisfy all constraints; the codegen pipeline validates this at schema authoring time.
+
+```rust
+/// Column migration descriptor. Plugged into a
+/// `StateMigrationFn` for the hot-reload protocol.
+pub struct ColumnMigration {
+    pub from_schema_version: u32,
+    pub to_schema_version: u32,
+    pub kind: ColumnMigrationKind,
+}
+
+pub enum ColumnMigrationKind {
+    /// Add a column with a fallback default.
+    Add { column: ColumnDef, default: Value },
+    /// Drop a column from every row.
+    Remove { column_id: ColumnId },
+    /// Rename (no data change).
+    Rename { column_id: ColumnId, new_name: SmolStr },
+    /// Change the column type via a conversion fn.
+    Retype {
+        column_id: ColumnId,
+        new_type: ColumnType,
+        converter: fn(&Value) -> Option<Value>,
+    },
+}
+```
+
+### Rollback on Migration Failure
+
+If any step in the migration chain fails (type conversion rejects a value, new constraint violated,
+fallback default invalid), the hot-reload protocol's `ReloadBarrier` rolls back to the previous
+schema version. The table registry never enters an inconsistent state. See the hot-reload protocol
+doc for the rollback wire format.
 
 ## Cross-Table Queries
 

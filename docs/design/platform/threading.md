@@ -17,14 +17,23 @@
 1. **F-14.3.1** — Work-stealing thread pool sized to performance cores
 2. **F-14.3.2** — Thread affinity and OS-level priority classes
 3. **F-14.3.3** — DAG-based task graph with fan-out, fan-in, continuations, nested sub-graphs
-4. **F-14.3.5** — Platform async I/O bridge dispatching completions as task graph continuations
+4. **F-14.3.5** — Platform I/O completion bridge dispatching completions as task graph continuations
+   (synchronous polling; see [../core-runtime/io.md](../core-runtime/io.md) for the request/handle
+   pattern)
 
 ## Overview
 
 The threading subsystem is the execution backbone of the Harmonius engine. It provides a custom
 work-stealing job system, a DAG-based task graph, platform-native I/O, and channel-based
 inter-thread communication. No shared mutable state, no mutexes, no `Arc`. All platform-specific
-code is selected via `cfg` attributes -- no trait objects, no dynamic dispatch.
+code is selected via `cfg` attributes -- no trait objects, no dynamic dispatch. No `async`, no
+`await`, no `Future` — every job is synchronous.
+
+Shared cache-aligned atomics and sorted key-value containers used by worker-local state come from
+[../core-runtime/primitives.md](../core-runtime/primitives.md) (`CachePadded`, `SortedVecMap`). The
+worker I/O request/handle pattern used to submit and poll platform I/O from worker threads is
+defined in [../core-runtime/io.md](../core-runtime/io.md); threading consumes those primitives
+without redefining them.
 
 The engine uses three thread roles:
 
@@ -171,7 +180,7 @@ sequenceDiagram
 
     GL->>CH: send I/O request (read file)
     CH->>MT: receive I/O request
-    MT->>OS: submit async read (io_uring/IOCP/GCD)
+    MT->>OS: submit non-blocking read (io_uring/IOCP/GCD)
     Note over GL: Worker continues other jobs
 
     Note over OS: Kernel completes read
@@ -954,7 +963,7 @@ loop {
 2. The main thread submits the request to the platform I/O backend (`io_uring` / IOCP / GCD
    `dispatch_io`).
 3. The main thread polls for completions in its event loop.
-4. The OS kernel completes the operation asynchronously.
+4. The OS kernel completes the operation out-of-band (no Rust `async`).
 5. The main thread posts an `IoResult` back to the worker pool via `crossbeam-channel`.
 6. The game loop drains `IoResult` messages at the start of the next frame.
 
@@ -1040,7 +1049,7 @@ pool.scope(|scope| {
 |----------|-------------|-------------|
 | iOS | Custom (shared) | GCD dispatch_io |
 | Android | Custom (shared) | io_uring via rustix |
-| Consoles | Platform thread API | Platform async I/O |
+| Consoles | Platform thread API | Platform non-blocking I/O |
 
 1. **iOS** -- QoS classes for thermal throttling. UIKit owns the OS main thread (`UIApplicationMain`
    / `CFRunLoop`), which also handles I/O polling via GCD dispatch sources. Input events (touch,
@@ -1219,8 +1228,8 @@ dependencies (`crossbeam-deque`, `crossbeam-channel`, `crossbeam-utils`, `rustix
 4. **GPU fence integration** -- GPU present/fence wait on the render thread. Need to define how GPU
    completion events (Vulkan timeline semaphores, Metal command buffer completion handlers, D3D12
    fence) integrate with the render thread's event loop.
-5. **io_uring kernel version** -- io_uring requires Linux 5.1+. Some operations (async DNS, OPENAT)
-   require 5.19+. Determine minimum kernel version and fallback strategy.
+5. **io_uring kernel version** -- io_uring requires Linux 5.1+. Some operations (non-blocking DNS,
+   OPENAT) require 5.19+. Determine minimum kernel version and fallback strategy.
 
 ## Review feedback
 
@@ -1287,8 +1296,9 @@ Timer events flow to the game loop via the input channel.
 
 ### GameLoopGraph simplification
 
-All graph nodes are synchronous CPU work dispatched to Rayon. No async/mixed node types. I/O results
-arrive via channels and are drained at frame start.
+All graph nodes are synchronous CPU work dispatched to the worker pool. No mixed node types, no
+`async`, no `await`. I/O results arrive via channels and are drained at frame start using the
+pattern from [../core-runtime/io.md](../core-runtime/io.md).
 
 ```text
 Game Loop Thread (one frame):
@@ -1402,7 +1412,7 @@ Every traditionally blocking operation has a non-blocking platform alternative:
 
 | Blocking Op | Non-Blocking Alternative |
 |-------------|-------------------------|
-| DNS | io_uring (Linux 5.19+), Networking.framework (Apple), async DNS (Windows) |
+| DNS | io_uring (Linux 5.19+), Networking.framework (Apple), `GetAddrInfoExW` (Windows) |
 | File stat | io_uring STATX, IOCP, GCD dispatch_io |
 | File open | io_uring OPENAT, IOCP overlapped, GCD |
 | Directory listing | io_uring GETDENTS, platform equivalents |

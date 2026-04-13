@@ -1,5 +1,8 @@
 # AI Behavior ↔ Event Logs Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -90,25 +93,12 @@ does not require rkyv.
 
 ### Blackboard hot-path constraint
 
-`Blackboard` is a hot path: BT leaves, Utility considerations, and GOAP sensors query it every fixed
-tick, thousands-to-millions of reads per simulation step. `BlackboardScope::entries` MUST NOT use
-`HashMap`. Per the project blackboard constraint, it MUST use either:
-
-1. `BTreeMap<BlackboardKey, BlackboardValue>` (preferred for stable key ordering), or
-2. `Vec<(BlackboardKey, BlackboardValue)>` kept sorted by key, queried via `binary_search_by_key`.
-
-This is an upstream fix in behavior.md; this integration inherits and enforces the constraint. Any
-`DashMap` usage in the wider blackboard subsystem is forbidden on the per-entity path, since
-blackboards are exclusively owned by a single entity and a single ECS system at a time -- there is
-no concurrency to justify `DashMap`.
+Blackboard backing store follows SC-2 and SC-3 in [shared-conventions.md](shared-conventions.md).
 
 ### Shared immutable data
 
-`Arc` is permitted only for shared immutable data: `Arc<BehaviorTreeAsset>`, `Arc<DecayCurve>`,
-`Arc<ThresholdRuleSet>`. Mutable state (Blackboard, EventLog, PropagationBuffer) uses owned values
-with exclusive `&mut` access enforced by the ECS schedule. Channels between systems are MPSC
-(crossbeam), never SPSC -- even when only one producer exists today, MPSC preserves future
-flexibility at no measurable cost.
+`Arc` usage here (`Arc<BehaviorTreeAsset>`, `Arc<DecayCurve>`, `Arc<ThresholdRuleSet>`) follows SC-1
+in [shared-conventions.md](shared-conventions.md). Channels between systems are MPSC per SC-4.
 
 ### Interface-level pseudocode
 

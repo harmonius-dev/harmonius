@@ -675,12 +675,22 @@ totals.
 
 ## Integration Document Index
 
-All 50 per-pair integration designs in this directory share a common template: Requirements Trace,
+All per-pair integration designs in this directory share a common template: Requirements Trace,
 Overview, Architecture (with Mermaid diagrams including a `classDiagram`), API Sketch, Data Flow,
 Thread Ownership, Fallbacks, Performance Budget (cross-referencing
 [/docs/design/performance-budget.md](../performance-budget.md)), Test Plan, and Open Questions. Any
 new per-pair document MUST use this template so that cross-document navigation and review are
 consistent.
+
+### Shared Normative Documents
+
+The documents below are normative rule sources that per-pair designs reference instead of restating.
+They have no companion test-cases file; they are enforced by review and lint.
+
+| Document | Purpose |
+|----------|---------|
+| [shared-conventions](shared-conventions.md) | Cross-cutting rules (Arc, HashMap, rkyv, MPSC) |
+| [shared-messaging-capacities](shared-messaging-capacities.md) | Canonical channel capacity table |
 
 ### Animation
 
@@ -700,6 +710,7 @@ consistent.
 | [ai-data-tables](ai-data-tables.md) | AI ↔ Data Tables |
 | [ai-event-logs](ai-event-logs.md) | AI ↔ Event Logs |
 | [ai-grids-volumes](ai-grids-volumes.md) | AI ↔ Grids/Volumes |
+| [ai-physics](ai-physics.md) | AI ↔ Physics |
 | [ai-scripting](ai-scripting.md) | AI ↔ Scripting |
 | [ai-spatial-awareness](ai-spatial-awareness.md) | AI ↔ Spatial Awareness |
 
@@ -738,6 +749,18 @@ consistent.
 | [input-camera](input-camera.md) | Input ↔ Camera |
 | [input-ui](input-ui.md) | Input ↔ UI |
 
+### UI
+
+| Document | Pair |
+|----------|------|
+| [ui-physics](ui-physics.md) | UI ↔ Physics |
+
+### Localization
+
+| Document | Pair |
+|----------|------|
+| [localization-ui](localization-ui.md) | Localization ↔ UI |
+
 ### Networking
 
 | Document | Pair |
@@ -773,6 +796,7 @@ consistent.
 |----------|------|
 | [scripting-data-tables](scripting-data-tables.md) | Scripting ↔ Data Tables |
 | [scripting-ecs](scripting-ecs.md) | Scripting ↔ ECS |
+| [scripting-ui](scripting-ui.md) | Scripting ↔ UI |
 
 ### Pipeline and Tools
 
@@ -781,8 +805,11 @@ consistent.
 | [asset-pipeline-build-deploy](asset-pipeline-build-deploy.md) | Asset Pipeline ↔ Build |
 | [asset-pipeline-rendering](asset-pipeline-rendering.md) | Asset Pipeline ↔ Rendering |
 | [editor-animation](editor-animation.md) | Editor ↔ Animation |
+| [editor-asset-pipeline](editor-asset-pipeline.md) | Editor ↔ Asset Pipeline |
+| [editor-core-runtime](editor-core-runtime.md) | Editor ↔ Core Runtime |
 | [editor-physics](editor-physics.md) | Editor ↔ Physics |
 | [editor-rendering](editor-rendering.md) | Editor ↔ Rendering |
+| [geometry-vfx](geometry-vfx.md) | Geometry ↔ VFX |
 | [profiler-game-loop](profiler-game-loop.md) | Profiler ↔ Game Loop |
 | [profiler-rendering](profiler-rendering.md) | Profiler ↔ Rendering |
 
@@ -790,6 +817,7 @@ consistent.
 
 | Document | Pair |
 |----------|------|
+| [save-system-profiler](save-system-profiler.md) | Save ↔ Profiler |
 | [save-system-serialization](save-system-serialization.md) | Save ↔ Serialization |
 
 ## Review Status

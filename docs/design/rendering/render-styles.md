@@ -307,6 +307,42 @@ flowchart TD
     C --> M
 ```
 
+### Material Authoring via Shared Graph Runtime
+
+`MaterialGraph` is an authoring-time IR that is **not** its own graph runtime. It is a client of the
+shared `GraphRuntime<MaterialNode, TypedEdge, CompiledMaterial>` defined in
+[../core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md). That module owns DAG
+validation, topological sort, cycle detection, pin-type inference, dead-code elimination, and editor
+diagnostics. This doc owns **only** the node palette and the HLSL codegen backend:
+
+| Concern                               | Owner                                          |
+|---------------------------------------|------------------------------------------------|
+| DAG validation / topo sort            | `core-runtime/graph-runtime.md::DagValidator`  |
+| Cycle detection                       | `core-runtime/graph-runtime.md::CycleDetector` |
+| Pin-type inference                    | `core-runtime/graph-runtime.md::TypeInfer`     |
+| Hot-reload barrier                    | `core-runtime/hot-reload-protocol.md`          |
+| HLSL codegen backend                  | This doc (`HlslBackend`)                       |
+| `MaterialNode` palette + semantics    | This doc                                       |
+
+`CompiledMaterial` is the output type produced by `HlslBackend::emit` and consumed by the `Material`
+struct in [rendering-core.md](rendering-core.md) Material System.
+
+### PermutationKey Dimensions
+
+`ShaderPermutationKey` fields (shading model, feature bits, render path, LOD) are defined
+canonically in [shader-variants.md](shader-variants.md) as `PermutationKey`. This document uses the
+shared definition; the four dimensions (`ShadingModel`, `ShaderFeatures`, `RenderPath`, `LodLevel`)
+and their caps (64 per material graph, 256 per shading model, 1024 per render path, 4096 per
+project) come from that document.
+
+### PSO Cache Integration
+
+The compiled-shader output of `MaterialGraph` feeds the PSO cache via `PsoCache::get_or_build(desc)`
+defined in [pipeline-state-cache.md](pipeline-state-cache.md). `ShaderPermutationCache` is the
+material-side view of the same cache; hot-reloading a graph emits `PsoCache::invalidate(key)` so
+stale PSOs are dropped, and the render thread builds fresh PSOs on the next frame. Material
+hot-reload events are broadcast as `MaterialChangeEvent` (see rendering-core.md Material System).
+
 ### Hair Rendering Data Flow
 
 ```mermaid
@@ -487,7 +523,7 @@ classDiagram
 
 ```mermaid
 classDiagram
-    class ShadingModelId {
+    class ShadingModel {
         StandardPbr
         Toon
         Painterly
@@ -520,7 +556,7 @@ classDiagram
     }
 
     class ShaderPermutationKey {
-        +shading_model ShadingModelId
+        +shading_model ShadingModel
         +features FeatureFlags
         +tier PlatformTier
         +blend_mode BlendMode
@@ -662,7 +698,7 @@ classDiagram
 
     MaterialGraph *-- MaterialLayerStack
     ShaderPermutationCache --> ShaderPermutationKey
-    ShaderPermutationKey --> ShadingModelId
+    ShaderPermutationKey --> ShadingModel
     ToonMaterial --> SpecularShape
     ToonOutline --> OutlineTechnique
     HighlightState --> HighlightMode
@@ -852,6 +888,13 @@ DEC, STR, SKN, TE, etc.). Current diagram only connects RG → G-Buffer.
 
 ### RF-6: Define Custom shading model
 
+> **Type ownership note:** `ShadingModel` is the canonical name and lives in
+> [rendering-core.md](rendering-core.md) (Material System section). This doc previously used
+> `ShadingModelId`; that name is deleted. All references in this document are unified with
+> rendering-core.md — see Material System there for the authoritative definition. The `Custom`
+> variant and the middleman codegen rules described below still apply to the canonical
+> `ShadingModel` enum.
+
 All shading models live in a single enum inside the **middleman .dylib** (see constraints.md
 "Codegen and Hot-Reload Architecture"). The middleman is the single source of truth for all
 codegen'd types.
@@ -860,7 +903,7 @@ codegen'd types.
 // Generated into the middleman .dylib by codegen.
 // Contains ALL shading models — built-in + plugin.
 // One enum, one source of truth, exhaustive match.
-pub enum ShadingModelId {
+pub enum ShadingModel {
     // Engine built-in (always present)
     DefaultLit,
     Subsurface,
@@ -884,13 +927,13 @@ match everywhere. No numeric IDs. No collisions.
 
 When a user adds a new shading model:
 
-1. Codegen adds the variant to `ShadingModelId`
+1. Codegen adds the variant to `ShadingModel`
 2. Middleman .dylib recompiled (sub-3 seconds)
 3. Engine hot-reloads middleman via libloading
 4. Plugin .dylibs recompiled against updated middleman
 5. All code has the new variant with full static dispatch
 
-The G-buffer stores the enum discriminant. The lighting pass matches on `ShadingModelId` with
+The G-buffer stores the enum discriminant. The lighting pass matches on `ShadingModel` with
 exhaustive match — static dispatch for all models, built-in and plugin alike.
 
 This pattern applies to ALL codegen'd enums and static dispatch types, not just shading models.
@@ -945,7 +988,7 @@ NPR/stylized styles. It does NOT own:
 
 ### RF-12: Add Water shading model
 
-Add `Water` as a built-in `ShadingModelId` variant. Water needs specialized render graph passes no
+Add `Water` as a built-in `ShadingModel` variant. Water needs specialized render graph passes no
 other model requires:
 
 - Planar reflection capture (below-surface camera render pass)

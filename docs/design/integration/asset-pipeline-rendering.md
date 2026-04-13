@@ -21,35 +21,34 @@
 | IR-5.2.6 | Shader hot-reload swaps pipeline state | Pipeline, Render Pipeline |
 | IR-5.2.7 | Streaming delivers mips/LODs to GPU memory | Pipeline, Rendering |
 
-1. **IR-5.2.1** -- The `ShaderGraphProcessor` runs on a worker thread. It walks the graph, resolves
-   generic nodes via static codegen, and emits one HLSL source file per shader stage (vertex, pixel,
-   compute, mesh). Output is a UTF-8 string buffer passed to the main thread for subprocess launch.
-   Algorithm: topological sort of the graph followed by per-node emit (see Shader Graph Codegen in
-   the Render Pipeline design).
-2. **IR-5.2.2** -- The main thread spawns `dxc` as a child subprocess using `std::process::Command`
-   with stdin/stdout pipes. The main thread polls pipe readiness via the OS event loop (io_uring,
-   IOCP, GCD dispatch_io). On exit, the main thread reads DXIL (D3D12) and SPIR-V (Vulkan) blobs
-   from stdout. No worker thread ever touches the subprocess handle.
-3. **IR-5.2.3** -- The main thread spawns `metal-shaderconverter` as a child subprocess, feeding the
-   DXIL produced by IR-5.2.2 to stdin and reading metallib from stdout. Runs strictly after dxc.
-   Output is stored in CAS indexed by `(source_hash, TargetPlatform)`.
-4. **IR-5.2.4** -- `TextureProcessor` runs on worker threads. For each source texture and target
-   profile, it compresses to a GPU-ready block format (BC7, ASTC, ETC2). Algorithm reference: ISPC
-   Texture Compressor (`ispc_texcomp`) for BC7, `astcenc` for ASTC. Output is a `BakedTexture` with
-   mip chain serialized via rkyv and aligned for zero-copy mmap.
-5. **IR-5.2.5** -- `MeshProcessor` runs on worker threads. It invokes `meshopt_buildMeshlets`
-   (reference: `meshoptimizer` library by Zeux) to cluster vertices into meshlets of 64 vertices and
-   124 triangles maximum. Each meshlet has a bounding sphere and a normal cone computed from source
-   normals. Output is `BakedMeshlet` array serialized via rkyv.
-6. **IR-5.2.6** -- During development, a platform file watcher on the main thread detects HLSL
-   changes. The main thread spawns a dxc subprocess. On success, new bytecode is published to a
-   `PipelineStateSlot` generational handle; the render thread picks up the new PSO on the next
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below. Shader compilation subprocess details (dxc invocation,
+metal-shaderconverter invocation, pipe polling, error capture) live in `tools/build-deploy.md` and
+`content-pipeline/asset-processing.md`. This integration defines only the HLSL source -> compiled
+bytecode contract and the CAS cache layout.
+
+1. **IR-5.2.1** -- The `ShaderGraphProcessor` emits one HLSL source file per shader stage (vertex,
+   pixel, compute, mesh). Output is a UTF-8 string buffer passed to the shader compiler service.
+2. **IR-5.2.2** -- The shader compiler service produces DXIL (D3D12) and SPIR-V (Vulkan) from HLSL.
+   Subprocess details live in `tools/build-deploy.md`.
+3. **IR-5.2.3** -- The shader compiler service produces `metallib` from DXIL for Apple platforms.
+   Subprocess details live in `tools/build-deploy.md`. Output is stored in CAS indexed by
+   `(source_hash, TargetPlatform)`.
+4. **IR-5.2.4** -- `TextureProcessor` compresses source textures to GPU-ready block formats (BC7,
+   ASTC, ETC2). Algorithm reference: ISPC Texture Compressor (`ispc_texcomp`) for BC7, `astcenc` for
+   ASTC. Output is a `BakedTexture` with mip chain serialized via rkyv and aligned for zero-copy
+   mmap.
+5. **IR-5.2.5** -- `MeshProcessor` invokes `meshopt_buildMeshlets` (reference: `meshoptimizer`) to
+   cluster vertices into meshlets of 64 vertices and 124 triangles maximum. Output is a
+   `BakedMeshlet` array serialized via rkyv.
+6. **IR-5.2.6** -- A file watcher drives hot-reload. On compile success, new bytecode is published
+   to a `PipelineStateSlot` generational handle; the render thread picks up the new PSO on the next
    frame. On failure, the previous pipeline is retained and `ShaderReloadStatus` transitions to
    `Failed` for the editor overlay.
 7. **IR-5.2.7** -- The streaming system delivers mip levels and LOD meshes to GPU memory via
-   platform-native I/O (io_uring on Linux, IOCP on Windows, GCD dispatch_io on Apple). The main
-   thread submits read requests and polls completions at frame end (Phase 8). Worker threads update
-   `StreamRequest` state. The render thread issues GPU upload commands from the completed data.
+   platform-native I/O. The main thread submits read requests and polls completions at frame end
+   (Phase 8). Worker threads update `StreamRequest` state. The render thread issues GPU upload
+   commands from the completed data.
 
 ## Scope
 

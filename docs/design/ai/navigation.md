@@ -51,10 +51,9 @@
 | Events | F-1.5.1 | `NavMeshInvalidation` event dispatch |
 | Thread pool | F-14.3.1 | Scoped parallel task execution |
 | Task graph | F-14.3.3 | DAG-based background work |
-| Tokio runtime | F-14.3.5 | Async tile streaming I/O |
+| Platform I/O | core-runtime/io.md | Tile streaming via request/handle pattern |
 | Destruction system | F-4.6.3 | Fracture event emission |
 | Gizmo system | F-15.1.4 | Debug overlay rendering |
-| Reflection | F-1.3.1 | `Reflect` derive for serialization |
 | Steering/avoidance | F-7.2 | Consumes waypoints from PathResult |
 
 ## Overview
@@ -63,15 +62,66 @@ The navigation system provides NavMesh-based pathfinding for all AI agents in th
 generates polygonal navigation meshes from world geometry via Recast-style voxelization, divides
 them into streamable tiles, and answers path queries using A* search with funnel smoothing.
 
-The design follows four principles:
+### Pathfinding algorithm
+
+Harmonius uses **A\* search** with a **Euclidean distance heuristic** (`||goal - node||`) for
+NavMesh polygon pathfinding. The open-set priority queue is a binary min-heap keyed on `f = g + h`.
+Ties in `f` are broken by preferring the polygon with the lower `NodeId` (a stable `u32` assigned at
+NavMesh build time). Deterministic tie-breaking is required by replay, rollback, and networked
+lockstep; identical inputs must produce byte-identical paths on every machine.
+
+For uniform-cost 2D grid worlds (RF-5 tilemaps) the pathfinder falls back to
+**Jump Point Search Plus (JPS+)**, which is typically 3–10× faster than plain A\* on open grids
+thanks to symmetry breaking and pre-computed jump distances. JPS+ is used only when the grid is
+uniform-cost; area costs force the A\* path.
+
+References:
+
+- Hart, Nilsson, Raphael — "A Formal Basis for the Heuristic Determination of Minimum Cost Paths"
+  (1968) — <https://doi.org/10.1109/TSSC.1968.300136>
+- Harabor & Grastien — "Online Graph Pruning for Pathfinding on Grid Maps" (JPS, 2011) —
+  <https://ojs.aaai.org/index.php/AAAI/article/view/7994>
+- Harabor & Grastien — "Improving Jump Point Search" (JPS+, 2014) —
+  <https://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7952>
+- Mikko Mononen — **Recast & Detour** (2009), the reference for voxelization-based nav mesh
+  generation — <https://github.com/recastnavigation/recastnavigation>
+
+### NavMesh generation parameters
+
+All NavMesh tiles are built from source geometry by a Recast-style voxelization pipeline using the
+parameter set below. These are the standard Recast parameters; every tile carries a snapshot of the
+build config so that rebuilds, incremental updates, and save files stay consistent.
+
+| Parameter              | Type  | Unit   | Typical     | Purpose                                   |
+|------------------------|-------|--------|-------------|-------------------------------------------|
+| `cell_size`            | f32   | meters | 0.30        | Voxel cell size on the XZ plane           |
+| `cell_height`          | f32   | meters | 0.20        | Voxel cell height on the Y axis           |
+| `agent_radius`         | f32   | meters | 0.40        | Agent capsule radius; erodes walkable area|
+| `agent_height`         | f32   | meters | 1.80        | Minimum headroom clearance                |
+| `agent_max_climb`      | f32   | meters | 0.45        | Maximum step-up height (stairs, curbs)    |
+| `agent_max_slope_deg`  | f32   | deg    | 45.0        | Maximum walkable slope                    |
+| `region_min_size`      | u32   | cells² | 8           | Minimum area; smaller regions are removed |
+| `region_merge_size`    | u32   | cells² | 20          | Regions below this are merged to neighbors|
+| `edge_max_length`      | f32   | meters | 12.0        | Maximum polygon edge length (subdivides)  |
+| `edge_max_error`       | f32   | meters | 1.3         | Max contour simplification error          |
+| `verts_per_poly`       | u8    | count  | 6           | Max vertices per NavMesh polygon          |
+| `detail_sample_dist`   | f32   | meters | 6.0         | Detail mesh height sampling distance      |
+| `detail_sample_max_err`| f32   | meters | 1.0         | Detail mesh max height error              |
+
+These map directly to the standard Recast parameters (`rcConfig`) so any existing Recast tuning
+guide applies. See [Recast configuration reference](https://recastnav.com/structrc_config.html).
+
+### Design principles
 
 1. **ECS-primary (~90%)-based.** All navigation data lives as components and resources. No separate
    navigation world or parallel data store.
 2. **Shared spatial index.** Obstacle queries, tile lookups, and agent proximity checks all go
    through the shared BVH (F-1.9.1).
-3. **Async and non-blocking.** Pathfinding queries batch across frames using scoped parallel tasks.
-   Tile generation runs on background workers. Tile streaming uses async I/O. The game loop thread
-   never blocks.
+3. **Sync and non-blocking.** Pathfinding queries batch across frames using scoped parallel tasks on
+   the worker pool. Tile generation runs on background workers via `pool.spawn` with `'static` data.
+   Tile streaming uses the platform I/O request/handle pattern (see
+   [core-runtime/io.md](../core-runtime/io.md)): the main thread submits read requests; completions
+   arrive as jobs. No `async fn`, no `.await`, no `Future<>`. The game loop thread never blocks.
 4. **Hierarchical for scale.** Long-distance paths plan on a coarse cluster graph (HPA*), refining
    to full NavMesh only for the agent's current tile. This bounds cost regardless of world size.
 
@@ -128,7 +178,7 @@ graph TD
     subgraph plat["harmonius_platform"]
         TP[ThreadPool]
         TG[TaskGraph]
-        IO[Tokio runtime]
+        IO[Platform I/O request handle]
     end
 
     NMG --> NMT
@@ -1370,10 +1420,14 @@ pub fn rebuild_system(
 );
 
 /// Streams NavMesh tiles in/out based on
-/// active agent positions.
+/// active agent positions. Issues `IoRequest::Read`
+/// for tile files on the main thread; completions
+/// arrive as `IoResponse::Read` events that the
+/// tile map installs at the next sync point.
+/// See [core-runtime/io.md](../core-runtime/io.md).
 pub fn tile_streaming_system(
     mut tile_map: ResMut<NavMeshTileMap>,
-    reactor: Res<Tokio runtime>,
+    io: Res<PlatformIoBridge>,
     agents: Query<
         &GlobalTransform,
         With<NavMeshAgent>,
@@ -1463,7 +1517,10 @@ pub fn navmesh_debug_system(
 
 1. The `tile_streaming_system` runs each frame.
 2. It computes the set of tile coordinates within `preload_radius` of any active `NavMeshAgent`.
-3. Tiles entering the radius are loaded via async I/O through the `Tokio runtime`.
+3. Tiles entering the radius are loaded via the platform I/O request/handle pattern
+   ([core-runtime/io.md](../core-runtime/io.md)): the system submits `IoRequest::Read`; the main
+   thread drives io_uring (Linux), IOCP (Windows), or `dispatch_io` (macOS); completions arrive as
+   `IoResponse::Read` events that the next-frame tile-install system consumes.
 4. Tiles leaving the radius (and not referenced by any agent's corridor) are unloaded from the
    `NavMeshTileMap`.
 5. The `ClusterGraph` is updated for any newly loaded or unloaded tiles.
@@ -1763,14 +1820,13 @@ default path is async-friendly stack-local search state.
 
 **Q1. What is the biggest constraint limiting this design?**
 
-The "no C++ stdlib file I/O" constraint and the custom `Tokio runtime` requirement (constraints.md)
-impose the biggest limitation on NavMesh tile streaming (F-7.1.2) and background generation
-(F-7.1.9). Tile data must be loaded via Tokio async I/O (Tokio (kqueue) on macOS, Tokio (IOCP) on
-Windows, Tokio (epoll) on Linux) rather than simple `std::fs::read`. If we lifted this constraint,
-tile streaming would be trivially implemented with blocking reads on worker threads. With it, we
-must integrate the tile loader with the `Tokio runtime` poll point, which adds complexity to the
-atomic tile swap procedure and forces background generation to use `'static` futures with `Arc` for
-shared data (per constraints.md).
+The "no async in engine" and "platform-native I/O only" constraints (constraints.md) impose the
+biggest limitation on NavMesh tile streaming (F-7.1.2) and background generation (F-7.1.9). Tile
+data must be loaded via the platform I/O request/handle pattern (io_uring on Linux, IOCP on Windows,
+`dispatch_io` / Networking.framework on macOS) rather than simple `std::fs::read`. Completions
+arrive as jobs into the main thread event loop; the tile streaming system installs them at the next
+frame sync point. Background generation uses `pool.spawn` with `'static` owned data (no
+`Arc`-in-async, no futures). See [core-runtime/io.md](../core-runtime/io.md).
 
 **Q2. How can this design be improved?**
 
@@ -1810,10 +1866,10 @@ The navigation system integrates tightly with the ECS architecture through `Path
 `PathResult`, `NavMeshAgent`, and `NavMeshObstacle` components, and `NavMeshTileMap` as an ECS
 resource. It uses the shared spatial index (BVH/octree per constraints.md) for obstacle queries and
 the thread pool for parallel pathfinding via `pool.scope()` with borrowed access. The tile streaming
-system uses the `Tokio runtime` for async tile loading, aligning with the platform I/O backend
-constraint. The destruction integration (F-7.1.10) connects cleanly to the physics fracture system
-via ECS events. The design is one of the most cohesive AI subsystems because pathfinding is a
-well-bounded problem with clear data flow boundaries.
+system uses the platform I/O request/handle pattern ([core-runtime/io.md](../core-runtime/io.md))
+for tile loading — zero async, zero Tokio. The destruction integration (F-7.1.10) connects cleanly
+to the physics fracture system via ECS events. The design is one of the most cohesive AI subsystems
+because pathfinding is a well-bounded problem with clear data flow boundaries.
 
 ## Open Questions
 
@@ -1847,11 +1903,13 @@ well-bounded problem with clear data flow boundaries.
 
 ## Review Feedback
 
-### RF-1: Replace all Tokio/async with platform-native I/O
+### RF-1: Replace all Tokio/async with platform-native I/O — RESOLVED
 
-12+ Tokio references. Replace tile streaming with platform I/O: main thread submits reads via
-io_uring/IOCP/GCD, completions arrive as jobs. No Arc, no futures, no async. Use
-`job_system::scope()` with owned data for background tile generation.
+All Tokio/async references have been replaced with the platform I/O request/handle pattern
+([core-runtime/io.md](../core-runtime/io.md)). Main thread submits reads via io_uring (Linux), IOCP
+(Windows), or `dispatch_io` / Networking.framework (macOS); completions arrive as jobs. Zero `Arc`
+in async, zero `Future`, zero `async fn`. Background tile generation uses `pool.scope()` with owned
+`'static` data.
 
 ### RF-2: Remove all Reflect derives
 

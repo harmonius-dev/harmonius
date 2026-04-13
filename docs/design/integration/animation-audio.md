@@ -1,5 +1,8 @@
 # Animation ↔ Audio Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -71,11 +74,9 @@ single audio thread drains them.
 Maps surface material types to randomized audio clip pools. Used by footstep and impact bridges to
 select the correct sound variant.
 
-`SoundBank` is a persistent asset type (loaded from disk, zero-copy deserialized), so it derives
-rkyv `Archive`, `Serialize`, `Deserialize`. It is immutable after load and shared read-only across
-bridge systems, so it is exposed as `Res<SoundBank>` (an ECS resource wrapping an `Arc` of immutable
-data). Random selection uses the Fisher-Yates weighted pick algorithm for uniform distribution
-across the pool.
+`SoundBank` is a persistent asset type loaded zero-copy via rkyv (SC-5, SC-12) and wrapped in
+`Arc<SoundBank>` per SC-1 in [shared-conventions.md](shared-conventions.md). Random selection uses
+the Fisher-Yates weighted pick algorithm for uniform distribution across the pool.
 
 ```rust
 /// Maps surface materials to audio clip pools.

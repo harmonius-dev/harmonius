@@ -1127,13 +1127,21 @@ impl RebindManager {
         contexts: &[MappingContext],
         stack: &ContextStack,
     ) -> RebindResult;
-    /// Persist within 100 ms (R-6.2.NF2).
-    pub async fn save_bindings(
+    /// Submit a save request. Persists within 100 ms (R-6.2.NF2). The
+    /// function is synchronous: it enqueues an `IoRequest::Write` on the
+    /// platform I/O bridge and returns immediately. A `BindingsSaved`
+    /// ECS event is emitted when the write completes. See
+    /// [core-runtime/io.md](../core-runtime/io.md).
+    pub fn save_bindings(
         &self, contexts: &[MappingContext],
+        io: &PlatformIoBridge,
     ) -> Result<(), IoError>;
-    /// Restore within 50 ms (R-6.2.NF2).
-    pub async fn load_bindings(
+    /// Submit a load request. Restores within 50 ms (R-6.2.NF2).
+    /// Synchronous submission; the `BindingsLoaded` event is emitted
+    /// once the read completes and bindings are parsed.
+    pub fn load_bindings(
         &self, contexts: &mut [MappingContext],
+        io: &PlatformIoBridge,
     ) -> Result<(), IoError>;
 }
 ```
@@ -1960,6 +1968,296 @@ pub struct ActiveDeviceChanged {
 }
 ```
 
+### IME Support
+
+Text input requires OS-level Input Method Editor (IME) integration so that CJK, Korean, Arabic, and
+other composition-based languages work in every text widget. The IME composition happens on the main
+thread using platform-native APIs; events are forwarded to the routed UI focus entity via ECS
+events.
+
+| Platform  | API                               | Access           |
+|-----------|-----------------------------------|------------------|
+| Windows   | IMM32 / TSF (Text Services Fwk)   | `windows-rs`     |
+| macOS     | `NSTextInputContext` / NSTextInput| `objc2`          |
+| Linux     | IBus via D-Bus (also Fcitx5)      | `zbus` crate     |
+| iOS       | `UITextInput` protocol            | `objc2`          |
+| Android   | `InputMethodManager`              | JNI via `jni`    |
+| Switch    | System software keyboard          | Platform SDK     |
+| PS5 / Xbox| System on-screen keyboard         | Platform SDK     |
+
+The main thread consumes platform IME callbacks and forwards them into the input channel as
+`ImeCompositionEvent` alongside other `RawInputEvent`s. Composition state (preedit text, cursor,
+candidate window coordinates) is routed to whichever UI entity currently holds keyboard focus.
+
+```rust
+/// A single IME composition update. Emitted by the main thread whenever
+/// the OS reports a change in the active text input composition.
+#[derive(Clone, Debug)]
+pub struct ImeCompositionEvent {
+    pub device_id: DeviceId,
+    pub timestamp: u64,
+    pub phase: ImePhase,
+    /// Preedit text shown underlined in the text field while the user
+    /// is composing. Empty on `Commit` / `End`.
+    pub preedit: SmallString,
+    /// Committed text inserted into the focused widget. Non-empty on
+    /// `Commit`.
+    pub commit: SmallString,
+    /// Cursor position within the preedit, in UTF-16 code units.
+    pub cursor_position: u16,
+    /// Candidate list selection index, for candidate-window UIs.
+    pub candidate_index: u16,
+    /// Screen-space rect where the candidate window should anchor.
+    pub candidate_anchor: Option<Rect>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ImePhase {
+    /// Composition started. `preedit` contains the initial preedit.
+    Begin,
+    /// Composition updated. `preedit` replaces the previous preedit.
+    Update,
+    /// Composition committed. `commit` is inserted at the cursor.
+    Commit,
+    /// Composition cancelled. Clear any preedit.
+    Cancel,
+    /// Composition ended normally (no commit, no cancel).
+    End,
+}
+
+/// ECS resource tracking which widget currently owns IME focus.
+/// Populated by the UI focus manager; read by the IME drain system.
+pub struct ImeFocus {
+    pub focused: Option<Entity>,
+    /// Whether the focused widget accepts composition (e.g., TextInput)
+    /// or plain keystrokes only (e.g., hotkey capture).
+    pub accepts_composition: bool,
+}
+
+/// Drains `ImeCompositionEvent`s from the input channel and dispatches
+/// them to the focused entity via ECS event routing.
+pub fn ime_drain_system(
+    events: Res<InputChannel>,
+    focus: Res<ImeFocus>,
+    mut out: EventWriter<ImeCompositionEvent>,
+);
+```
+
+The `ImeCompositionEvent` is consumed by UI text widgets (see `ui/ui-framework.md`); they update
+their internal buffer on `Begin`/`Update` and commit the text on `Commit`. Games that do not use the
+UI framework can consume the event directly.
+
+### PointerEvent and KeyboardEvent Abstraction
+
+UI consumers need a stable, device-agnostic event type that does not depend on the action-mapping
+layer. This abstraction lets UI code react to pointer and keyboard input without binding every
+widget to a game action. The abstract events are emitted alongside raw events and consumed by the UI
+framework via ECS events.
+
+```rust
+/// Device-agnostic pointer event. Mouse, pen, touch, and VR laser
+/// pointers all normalize into this type. UI consumes these instead of
+/// raw `RawInputEvent` or `ActionState`.
+#[derive(Clone, Debug)]
+pub struct PointerEvent {
+    pub device_id: DeviceId,
+    pub pointer_id: PointerId,
+    pub kind: PointerEventKind,
+    /// Screen-space position in logical pixels.
+    pub position: Vec2,
+    /// Frame-normalized delta (scroll, drag, motion).
+    pub delta: Vec2,
+    /// Pressure for pen / touch; 0.0 for mouse.
+    pub pressure: f32,
+    /// Modifier state at the time of the event.
+    pub modifiers: Modifiers,
+    /// Frame timestamp (nanoseconds since game start).
+    pub timestamp: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct PointerId(pub u16);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PointerEventKind {
+    /// Pointer entered the window / surface.
+    Enter,
+    /// Pointer moved (mouse move, touch move, pen move).
+    Move,
+    /// Pointer left the window / surface.
+    Leave,
+    /// Primary button pressed (left mouse, single touch, pen tip).
+    Down { button: PointerButton },
+    /// Primary button released.
+    Up { button: PointerButton },
+    /// Scroll wheel or two-finger scroll gesture.
+    Scroll { horizontal: f32, vertical: f32 },
+    /// Cancel (system interruption, OS gesture hijack).
+    Cancel,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PointerButton {
+    Primary,
+    Secondary,
+    Middle,
+    Back,
+    Forward,
+}
+
+/// Device-agnostic keyboard event. Keystrokes from any physical keyboard,
+/// virtual on-screen keyboard, or gamepad text-entry map into this type.
+/// IME composition is a separate `ImeCompositionEvent` stream.
+#[derive(Clone, Debug)]
+pub struct KeyboardEvent {
+    pub device_id: DeviceId,
+    pub scancode: Scancode,
+    pub keycode: Keycode,
+    pub kind: KeyboardEventKind,
+    pub modifiers: Modifiers,
+    pub timestamp: u64,
+    /// When the event is a `Char`, this is the unicode character;
+    /// always zero for `KeyDown` / `KeyUp` / `Repeat`.
+    pub character: char,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum KeyboardEventKind {
+    /// Physical key pressed.
+    KeyDown,
+    /// Physical key released.
+    KeyUp,
+    /// Auto-repeat while held.
+    Repeat,
+    /// A translated Unicode character (separate from physical key).
+    Char,
+}
+
+bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+    pub struct Modifiers: u8 {
+        const SHIFT   = 1 << 0;
+        const CONTROL = 1 << 1;
+        const ALT     = 1 << 2;
+        const SUPER   = 1 << 3;
+        const CAPS    = 1 << 4;
+        const NUM     = 1 << 5;
+    }
+}
+
+/// Normalizes `RawInputEvent` into `PointerEvent` / `KeyboardEvent` and
+/// writes them as ECS events. Runs once per frame alongside the action
+/// mapping system. UI and game code that wants raw-ish input consume
+/// these events instead of reaching into `RawInputEvent` or
+/// `ActionState`.
+pub fn input_event_normalize_system(
+    raw: EventReader<RawInputEvent>,
+    mut pointer: EventWriter<PointerEvent>,
+    mut keyboard: EventWriter<KeyboardEvent>,
+    mut modifier_state: ResMut<ModifierState>,
+);
+```
+
+Rationale: UI must not depend on `ActionState`. Actions are gameplay bindings (jump, attack,
+interact); UI widgets care about device-level events (click, hover, key press). Making the
+abstraction layer explicit means UI works identically regardless of whether the game has configured
+any action bindings, and lets input backends swap without touching UI code.
+
+### Custom Gesture Authoring
+
+Custom gestures (F-6.3.5) are authored in a visual state-machine editor. The editor compiles the
+gesture graph into a DAG of recognizer states via codegen, emitting a Rust evaluation function per
+gesture into the middleman `.dylib`. This makes custom gestures a first-class client of the shared
+graph runtime.
+
+> **Client of `core-runtime/graph-runtime.md`.** Custom gesture graphs parameterize
+> `GraphRuntime<GestureNode, GestureEdge, GestureFsm>` with a `RustBackend` codegen target. The
+> shared runtime handles DAG validation, cycle detection, topological sort, and hot-reload
+> integration; this document defines the gesture node palette and evaluation semantics only.
+
+```mermaid
+classDiagram
+    class GestureNode {
+        <<enumeration>>
+        Idle
+        TouchDown
+        TouchMove
+        TouchUp
+        Timer(duration_ms)
+        Distance(threshold_px)
+        Velocity(threshold_pps)
+        ShapeMatch(template)
+        Guard(predicate)
+        Emit(gesture_type)
+    }
+
+    class GestureEdge {
+        +from NodeId
+        +to NodeId
+        +condition GestureCondition
+    }
+
+    class GestureCondition {
+        <<enumeration>>
+        Always
+        TimerExpired
+        DistanceExceeded
+        VelocityExceeded
+        ShapeMatched
+        GuardTrue
+        GuardFalse
+    }
+
+    class GestureFsm {
+        +graph_asset Handle~GestureGraph~
+        +current NodeId
+        +entry_time u64
+        +trail SmallVec~Vec2 16~
+    }
+
+    class GestureGraph {
+        +nodes Vec~GestureNode~
+        +edges Vec~GestureEdge~
+        +root NodeId
+        +emit GestureType
+    }
+
+    GestureFsm --> GestureGraph
+    GestureGraph *-- GestureNode
+    GestureGraph *-- GestureEdge
+    GestureEdge --> GestureCondition
+```
+
+A custom gesture is a DAG where nodes represent recognizer states (Idle, TouchDown, TouchMove,
+Timer, Distance, Velocity, ShapeMatch, Guard, Emit) and edges represent transitions with guarded
+conditions. The designer draws the graph; the editor codegen pipeline validates it through the
+shared `DagValidator`, lowers it to `GraphIr`, and emits a compiled recognizer function into the
+middleman `.dylib`. Runtime evaluation is static dispatch — no tree interpreters, no
+`Box<dyn Recognizer>`.
+
+```rust
+/// Per-touch instance of a custom gesture FSM. Stored as a runtime
+/// component; the underlying graph is shared (rkyv mmap) via
+/// `Handle<GestureGraph>`.
+pub struct GestureFsm {
+    pub graph_asset: Handle<GestureGraph>,
+    pub current: NodeId,
+    pub entry_time: u64,
+    pub trail: SmallVec<Vec2, 16>,
+}
+
+impl GestureFsm {
+    /// Advance the FSM one touch event. Dispatches through the compiled
+    /// evaluation function in the middleman `.dylib`. Returns any
+    /// gesture emissions that fire this step.
+    pub fn step(
+        &mut self,
+        event: &TouchEvent,
+        now: u64,
+    ) -> SmallVec<GestureEvent, 2>;
+}
+```
+
 ## Data Flow
 
 ### Per-Frame System Execution Order
@@ -2444,10 +2742,12 @@ Add support for these devices not covered in the current design:
 All sensor data is polled by the main thread (or received via platform callbacks / network I/O on
 the main thread) and forwarded through the same SPSC channel as other input events.
 
-### RF-4: Remove all async fn
+### RF-4: Remove all async fn — RESOLVED
 
-Replace `RebindManager::save_bindings` and `load_bindings` async fn with synchronous request/handle
-pattern. Submit save/load to main thread via channel. Completion arrives as an ECS event.
+`RebindManager::save_bindings` and `load_bindings` are now synchronous and take a
+`&PlatformIoBridge` argument. They enqueue `IoRequest::Write` / `IoRequest::Read` on the platform
+I/O bridge and return immediately. Completions arrive as `BindingsSaved` / `BindingsLoaded` ECS
+events. See [core-runtime/io.md](../core-runtime/io.md).
 
 ### RF-5: Remove all Reflect derives
 

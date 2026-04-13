@@ -152,12 +152,26 @@
 
 This design covers the entire build-to-ship pipeline: packaging, signing, certification, store
 submission, delta patching, mod support, shared asset cache, the engine launcher, the asset
-marketplace, and the self-hosted AWS server infrastructure that backs it all.
+marketplace, and the self-hosted Kubernetes-backed infrastructure that backs it all.
 
 BLAKE3 hashes provide content integrity. Zstd compression for all transfers. All services are
-self-hosted via Kubernetes with the OSS infrastructure stack. Build requests are submitted via
-crossbeam-channel; completions arrive as jobs polled at frame boundaries. No Tokio, no async/await
-in the engine or editor.
+self-hosted via Kubernetes with the OSS infrastructure stack.
+
+**Async scope.** Game-side build steps (packaging triggers, asset staging, launcher UI) are strictly
+synchronous: no `async`, no `await`, no `Future`. Build requests are submitted via crossbeam-channel
+and completions arrive as jobs polled at frame boundaries. `async/await` is permitted *only* inside
+Kubernetes-hosted backend services (build orchestrator, marketplace, delta-patch server, telemetry
+ingestion) where Rust async runtimes are an acceptable implementation detail that never crosses into
+the engine or editor process.
+
+### Codegen Ownership
+
+The canonical owner of all codegen is `harmonius_codegen`. Scripting (`scripting.md`) and visual
+editors (`visual-editors.md`) are *clients* that hand authored graphs to the codegen crate; neither
+owns the `.rs` emitter or the middleman `.dylib` build rules. Build-deploy invokes
+`harmonius_codegen` during build time — packaging drives the full graph → Rust → dylib →
+statically-linked binary pipeline. Editor-side incremental compile loops call the same crate in dev
+mode; shipping builds call it once at the top of `cargo build --release`.
 
 ## Architecture
 

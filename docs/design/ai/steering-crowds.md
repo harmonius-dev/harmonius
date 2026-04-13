@@ -20,7 +20,8 @@
 
 1. **F-7.2.1** — ORCA local avoidance; deadlock-free velocity computation for dense areas
 2. **F-7.2.2** — Feeler-ray obstacle avoidance against static geometry; correction layer after ORCA
-3. **F-7.2.3** — Core steering primitives: seek, flee, arrive, wander, pursuit, evade
+3. **F-7.2.3** — Core steering primitives: seek, flee, arrive, wander, pursuit, evade, align,
+   separate, cohesion, obstacle-avoid, hide, interpose
 4. **F-7.2.4** — Weighted and priority-pipeline blending of multiple active behaviors
 5. **F-7.2.5** — Formation movement: leader-follower with parameterized slot layouts
 6. **F-7.2.6** — Group steering: shared velocity goal, cohesion, alignment corrections
@@ -301,6 +302,12 @@ classDiagram
         Wander
         Pursuit
         Evade
+        Align
+        Separate
+        Cohesion
+        ObstacleAvoid
+        Hide
+        Interpose
     }
 
     class BlendMode {
@@ -515,6 +522,60 @@ pub enum SteeringBehaviorKind {
     Pursuit { target_entity: Entity },
     /// Predictive escape from a moving threat.
     Evade { threat_entity: Entity },
+
+    // ----- Classic Reynolds steering primitives -----
+
+    /// Match heading with neighbors inside `radius`. Force points in the
+    /// direction of the average neighbor heading.
+    Align {
+        /// Radius used to sample neighbors via the shared spatial index.
+        radius: f32,
+    },
+    /// Push away from any neighbor closer than `radius`. Force magnitude
+    /// scales inversely with distance (weighted by `1 / dist`).
+    Separate {
+        /// Minimum separation distance.
+        radius: f32,
+    },
+    /// Steer toward the centroid of neighbors inside `radius`. Opposite of
+    /// Separate at the flock level.
+    Cohesion {
+        /// Radius used to compute neighbor centroid.
+        radius: f32,
+    },
+    /// Avoid static geometry via feeler rays against the shared BVH.
+    /// Distinct from ORCA (which handles dynamic neighbors) and from the
+    /// shared `ObstacleAvoidanceSystem` (which runs as a post-blend
+    /// correction). Use this variant to add obstacle avoidance as part of
+    /// the weighted steering blend.
+    ObstacleAvoid {
+        /// Length of each feeler ray.
+        feeler_length: f32,
+        /// Number of feelers cast ahead of the agent.
+        feeler_count: u8,
+    },
+    /// Move to a position on the opposite side of an obstacle from a
+    /// threat, using the shared BVH for occluder lookup.
+    Hide {
+        /// Entity the agent is hiding from.
+        threat_entity: Entity,
+        /// Maximum distance to search for occluders.
+        search_radius: f32,
+        /// Offset distance past the occluder where the agent hides.
+        hide_distance: f32,
+    },
+    /// Move to a point between two target entities at a given ratio.
+    /// Classic Reynolds primitive used for e.g. escorts standing between
+    /// a VIP and a threat.
+    Interpose {
+        /// First target entity (e.g., protected VIP).
+        a_entity: Entity,
+        /// Second target entity (e.g., threat).
+        b_entity: Entity,
+        /// Interpolation factor along the segment `a..b`.
+        /// 0.0 = on `a`, 1.0 = on `b`, 0.5 = midpoint.
+        ratio: f32,
+    },
 }
 
 #[derive(

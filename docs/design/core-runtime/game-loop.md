@@ -112,6 +112,24 @@ The game loop and render thread overlap by one frame. `RenderFrame` is an immuta
 (transforms, draw lists, camera, lights, VFX state) that the render thread consumes without
 synchronization. Triple buffering ensures the game loop never stalls waiting for the render thread.
 
+### Frame Tick Lifecycle
+
+The global `ChangeTick` is incremented exactly once per frame, at the end of Phase 8 (Frame End),
+before control returns to Phase 1 of the next frame. Systems capture their access sets' `last_run`
+tick at dispatch time (the instant the scheduler hands a system to a worker); every per-chunk tick
+observed during the system's body is compared against that snapshot.
+
+This interacts with the game loop phases as follows:
+
+1. A system dispatched in Phase N records `last_run = current_tick` on entry.
+2. During the system body, `Changed<T>` queries compare per-chunk column ticks to `last_run`.
+3. At the end of Phase 8 the world tick is incremented to `current_tick + 1`.
+4. On the next frame, every system sees an incremented tick and the `Changed<T>` filter captures
+   every write performed during the previous frame.
+
+See [change-detection.md](change-detection.md) for the full ChangeTick increment protocol,
+`Changed<T>` query semantics, and the interaction between parallel dispatch and tick visibility.
+
 ### Game Loop Phases
 
 ```mermaid
@@ -139,8 +157,12 @@ flowchart TD
 
 ### Phase-to-ECS Stage Mapping
 
-Each game loop phase corresponds to an ECS `Schedule` stage. `Schedule::build_game_loop()` produces
-`PhaseNode` entries from these stage mappings.
+Each game loop phase corresponds to an ECS `Schedule` stage. `Schedule::build()` in [ecs.md](ecs.md)
+produces a `SystemGraph`; the game loop compiles that into `PhaseBody` entries from these stage
+mappings.
+
+> **Rename note:** The enum previously called `PhaseNode` is renamed to `PhaseBody` to reduce the
+> naming collision with the `Phase` label enum. All references in this document have been updated.
 
 | Game Loop Phase | ECS Stage | Notes |
 |-----------------|-----------|-------|
@@ -169,11 +191,11 @@ flowchart LR
 ```mermaid
 classDiagram
     class GameLoopGraph {
-        -phases: Vec~PhaseNode~
+        -phases: Vec~PhaseBody~
         -edges: Vec~(PhaseId, PhaseId)~
-        +add_phase(Phase, PhaseNode) PhaseId
+        +add_phase(Phase, PhaseBody) PhaseId
         +add_dependency(PhaseId, PhaseId)
-        +compile(World, JobSystem) Result~CompiledFrame~
+        +compile(SystemGraph, World) Result~CompiledFrame~
     }
 
     class CompiledFrame {
@@ -182,13 +204,21 @@ classDiagram
         +execute(World, job_system::Scope)
     }
 
-    class PhaseNode {
+    class PhaseBody {
         <<enumeration>>
         Systems(SystemPhase)
         RenderGraph(RenderGraphPhase)
         Task(TaskPhase)
         SubGraph(GameLoopGraph)
         Barrier
+    }
+
+    class CompileError {
+        <<enumeration>>
+        CyclicDependency
+        AccessConflict
+        MissingPhase
+        PhaseConflict
     }
 
     class FixedTimestep {
@@ -201,14 +231,19 @@ classDiagram
     }
 
     class RenderFrame {
-        +transforms: Vec~InterpolatedTransform~
-        +draw_lists: Vec~DrawList~
-        +camera: CameraSnapshot
-        +lights: Vec~LightSnapshot~
-        +vfx_state: VfxSnapshot
-        +ui_layout: UiSnapshot
         +frame_index: u64
-        +alpha: f32
+        +camera: Camera
+        +transforms: Box~Mat4~
+        +draw_commands: Box~DrawCommand~
+        +lights: Box~Light~
+        +vfx_state: VfxState
+        +ui_draw_list: UiDrawList
+        +debug_lines: Box~DebugLine~
+        +post_process: PostProcessConfig
+        +sprite_draw_list: Box~SpriteDraw~
+        +tilemap_chunks: Box~TilemapChunkRef~
+        +lights_2d: Box~Light2d~
+        +interp_alpha: f32
     }
 
     class SpscQueue~T~ {
@@ -239,9 +274,10 @@ classDiagram
         +pop_sub_mode() Option~ModeId~
     }
 
-    GameLoopGraph "1" *-- "*" PhaseNode : contains
+    GameLoopGraph "1" *-- "*" PhaseBody : contains
     GameLoopGraph "1" ..> "1" CompiledFrame : compiles to
-    PhaseNode ..> GameLoopGraph : SubGraph variant
+    GameLoopGraph ..> CompileError : may fail with
+    PhaseBody ..> GameLoopGraph : SubGraph variant
     CompiledFrame ..> RenderFrame : produces
     FixedTimestep ..> RenderFrame : provides alpha
     RenderFrame ..> TripleBuffer : written to
@@ -283,19 +319,19 @@ pub enum Phase {
 
 ```rust
 /// A directed acyclic graph of frame phases.
-/// Compiled from the ECS `Schedule` once, reused
+/// Compiled from the ECS `SystemGraph` once, reused
 /// across frames until the system set changes.
 pub struct GameLoopGraph {
-    phases: Vec<PhaseNode>,
+    phases: Vec<PhaseBody>,
     edges: Vec<(PhaseId, PhaseId)>,
 }
 
 impl GameLoopGraph {
-    /// Register a phase with its systems.
+    /// Register a phase with its body.
     pub fn add_phase(
         &mut self,
         phase: Phase,
-        node: PhaseNode,
+        body: PhaseBody,
     ) -> PhaseId;
 
     /// Declare ordering: `before` runs before `after`.
@@ -305,23 +341,29 @@ impl GameLoopGraph {
         after: PhaseId,
     );
 
-    /// Compile into an executable frame. Validates the
-    /// DAG (cycle detection, access conflicts), resolves
-    /// system dependencies, inserts sync barriers.
+    /// Compile the system graph produced by
+    /// `Schedule::build` (see ecs.md) into an
+    /// executable `CompiledFrame`. Validates the
+    /// DAG (cycle detection, access conflicts),
+    /// resolves system dependencies, inserts sync
+    /// barriers, and binds render-graph phases.
     pub fn compile(
         &self,
+        systems: &SystemGraph,
         world: &World,
-        job_system: &JobSystem,
     ) -> Result<CompiledFrame, CompileError>;
 }
 
-/// A single phase in the game loop.
-pub enum PhaseNode {
+/// A single phase body in the game loop. Formerly
+/// named `PhaseNode`; renamed to `PhaseBody` to
+/// disambiguate from the `Phase` label enum and the
+/// ECS `SystemNode` type.
+pub enum PhaseBody {
     /// A set of ECS systems to run in parallel.
     Systems(SystemPhase),
     /// A render graph submission phase.
     RenderGraph(RenderGraphPhase),
-    /// A standalone async task.
+    /// A standalone task (I/O poll, save flush).
     Task(TaskPhase),
     /// A nested sub-graph (e.g., physics substeps).
     SubGraph(GameLoopGraph),
@@ -385,29 +427,95 @@ impl FixedTimestep {
 
 ### RenderFrame Snapshot
 
+`RenderFrame` is the immutable per-frame payload produced by the game loop and consumed by the
+render thread via triple buffer. Every field is owned (`Box<[...]>` or an owned value) so the game
+loop can relinquish it to the render thread with zero sharing. The game loop does not hold any
+reference to a `RenderFrame` past the triple-buffer handoff.
+
 ```rust
 /// Immutable snapshot of all data the render thread needs.
 /// Built during Phase 7 (Frame Snapshot) and submitted to
 /// the render thread via triple buffer.
+///
+/// Every field is owned, not borrowed. The render
+/// thread consumes the snapshot without synchronization
+/// with the game loop. Boxed slices are used to avoid
+/// the excess capacity of `Vec` and to surface the
+/// "finalized, no further push" contract at the type
+/// level.
 pub struct RenderFrame {
-    /// Interpolated transforms for all visible entities.
-    /// Computed as lerp(previous, current, alpha) — not
-    /// raw GlobalTransform values.
-    pub transforms: Vec<InterpolatedTransform>,
-    /// Per-view draw lists (main camera, shadow maps, etc.).
-    pub draw_lists: Vec<DrawList>,
-    /// Active camera parameters.
-    pub camera: CameraSnapshot,
-    /// Light sources and shadow configuration.
-    pub lights: Vec<LightSnapshot>,
-    /// VFX particle state for GPU simulation.
-    pub vfx_state: VfxSnapshot,
-    /// UI layout tree for overlay rendering.
-    pub ui_layout: UiSnapshot,
-    /// Frame index for temporal effects (TAA, motion blur).
+    /// Monotonic frame counter, used by temporal
+    /// effects (TAA, motion blur) and diagnostics.
     pub frame_index: u64,
-    /// Interpolation alpha from fixed timestep.
-    pub alpha: f32,
+    /// Active camera parameters for the main view.
+    pub camera: Camera,
+    /// Interpolated world-space transforms for all
+    /// visible entities. Computed as
+    /// `lerp(previous, current, interp_alpha)` in
+    /// Phase 7 — not raw `GlobalTransform`. See
+    /// [scene-transforms.md](scene-transforms.md).
+    pub transforms: Box<[Mat4]>,
+    /// Per-view / per-pass draw command buffer.
+    /// Sorted, batched, ready to record on the GPU.
+    pub draw_commands: Box<[DrawCommand]>,
+    /// Active dynamic and static lights.
+    pub lights: Box<[Light]>,
+    /// VFX simulation state handed over to GPU
+    /// particles / compute.
+    pub vfx_state: VfxState,
+    /// Finalized UI draw list for overlay rendering.
+    pub ui_draw_list: UiDrawList,
+    /// Debug-line draw list (wireframe, gizmos,
+    /// AI / physics debug).
+    pub debug_lines: Box<[DebugLine]>,
+    /// Post-processing pass configuration
+    /// (tone map, bloom, TAA weights, ...).
+    pub post_process: PostProcessConfig,
+    /// Finalized 2D sprite draw list.
+    pub sprite_draw_list: Box<[SpriteDraw]>,
+    /// 2D tilemap chunk references for streamed
+    /// tile layers.
+    pub tilemap_chunks: Box<[TilemapChunkRef]>,
+    /// 2D lights (spot, point, radial falloff).
+    pub lights_2d: Box<[Light2d]>,
+    /// Interpolation factor used to compute the
+    /// transforms above. Range `[0.0, 1.0)`.
+    pub interp_alpha: f32,
+}
+```
+
+### CompileError
+
+`Schedule::build` (defined in [ecs.md](ecs.md)) returns a `SystemGraph`. The game loop compiles that
+`SystemGraph` into a `CompiledFrame`, and the compiler can fail for several structural reasons that
+must be reported uniformly:
+
+```rust
+/// Errors produced when a `SystemGraph` is compiled
+/// into a `CompiledFrame`. Returned by
+/// `Schedule::build` and `GameLoopGraph::compile`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CompileError {
+    /// The dependency graph contains a cycle.
+    CyclicDependency,
+    /// Two or more systems in the same phase have
+    /// conflicting access sets (mutable aliasing).
+    AccessConflict,
+    /// A referenced phase is absent from the graph.
+    MissingPhase,
+    /// Two phases have conflicting properties
+    /// (e.g., both claim the main thread, or both
+    /// request the same fixed-timestep accumulator).
+    PhaseConflict,
+}
+
+impl Schedule {
+    /// See ecs.md. Returns a `CompiledFrame` once
+    /// the game loop has compiled the system graph.
+    pub fn build(
+        &self,
+        world: &World,
+    ) -> Result<CompiledFrame, CompileError>;
 }
 ```
 
@@ -531,15 +639,23 @@ sequenceDiagram
 
 ### Phase 3: Simulation Tick
 
+`SpatialUpdateSystem` runs at the **start of Phase 3 (Simulation)**, before any AI, physics, audio,
+or gameplay system that depends on the shared BVH. It drains the per-frame dirty-transform queue,
+refits moved entries into the shared BVH, and removes despawned entries. By running first, every
+downstream system in Phase 3 (and every subsequent phase) reads a BVH that reflects the current
+transform snapshot. See [spatial-index.md](spatial-index.md) for the system's internals.
+
 ```mermaid
 sequenceDiagram
     participant FS as FixedTimestep
+    participant SUS as SpatialUpdateSystem
     participant LG as Logic Graphs
     participant DS as Data Systems
     participant SIM as Simulation
 
     FS->>FS: accumulate(dt)
     loop For each tick
+        SUS->>SUS: refit moved, insert new, remove dead
         LG->>LG: Execute logic graph nodes
         DS->>DS: Evaluate conditions + effects
         DS->>DS: Traverse directed graphs
@@ -736,7 +852,8 @@ Document how the 8 game loop phases map to ECS `Schedule` stages:
 | Snapshot | PreRender |
 | Frame End | Last |
 
-Show how `Schedule::build_game_loop()` produces PhaseNodes from these stage mappings.
+Show how `Schedule::build()` in ecs.md produces a `SystemGraph`, and how `GameLoopGraph::compile`
+turns the per-phase sub-graphs into `PhaseBody` entries.
 
 ### RF-5: Add PreviousGlobalTransform interpolation [APPLIED]
 
@@ -761,8 +878,9 @@ The `RenderFrame::transforms` field contains these interpolated values, not raw 
 
 ### RF-6: Add class diagram [APPLIED]
 
-Add a Mermaid classDiagram covering: GameLoopGraph, CompiledFrame, PhaseNode, FixedTimestep,
-RenderFrame, SpscQueue, TripleBuffer, GameStateManager, GameModeManager and their relationships.
+Add a Mermaid classDiagram covering: GameLoopGraph, CompiledFrame, PhaseBody, CompileError,
+FixedTimestep, RenderFrame, SpscQueue, TripleBuffer, GameStateManager, GameModeManager and their
+relationships.
 
 ### RF-7: Fix constraints.md threading table [APPLIED]
 

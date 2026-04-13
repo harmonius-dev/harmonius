@@ -1,5 +1,8 @@
 # Animation ↔ VFX Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -429,19 +432,8 @@ All findings from the prior review round have been applied. Summary of resolutio
 | 16 | No `Arc`, `Rc`, `Cell`, `RefCell` | Verified; generational handles only |
 | 17 | Overview section missing | Overview section present |
 
-Constraint compliance recheck:
-
-1. **No async/await, no coroutines** -- observers are plain synchronous functions.
-2. **MPSC channels** -- no channels used in this integration; events flow via ECS observers.
-3. **Arc only for immutable shared data** -- no `Arc` used; all state lives in ECS components.
-4. **Persistent types need rkyv derives** -- no persistent types cross this boundary; spawn requests
-   and attachments are transient ECS state.
-5. **Runtime-toggleable debug tools** -- ribbon gizmos and bone-attach overlays are guarded by a
-   runtime `DebugFlags` resource, documented in `vfx/effects.md`.
-6. **All enums fully defined** -- `AnimEventPayload`, `AttachMode`, `LodTier`, `RibbonUvMode`.
-7. **Algorithm references** -- centripetal Catmull-Rom (Yuksel et al. 2011) cited for ribbon math.
-8. **Fallbacks documented** -- every row in Failure Modes has a fallback paragraph below the table.
-9. **Negative tests** -- failure-mode tests added in the companion test cases file.
-10. **Benchmarks** -- every IR has a benchmark row; all are CI-runnable via `cargo bench`.
-11. **No one-frame delay** -- observers run synchronously during Phase 6 event dispatch, before
-    `BoneAttachment` sync and particle simulation.
+Constraint compliance recheck: this design complies with
+[shared-conventions.md](shared-conventions.md) (SC-1 through SC-14). Observers are synchronous, no
+channels or `Arc` are introduced, ribbon math cites centripetal Catmull-Rom (Yuksel et al. 2011),
+and observers run synchronously during Phase 6 event dispatch so there is no one-frame delay between
+animation events and particle spawn.

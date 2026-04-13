@@ -48,7 +48,7 @@
 2. **F-9.2.2** — Corrective blend shapes driven by joint angle rules
 3. **F-9.2.3** — Facial animation via standardized action units
 4. **F-9.2.4** — Per-vertex animation textures with zero CPU cost
-5. **F-9.2.5** — Morph target streaming via Tokio async I/O
+5. **F-9.2.5** — Morph target streaming via platform-native I/O requests
 
 ### Cross-Cutting Dependencies
 
@@ -66,9 +66,48 @@
 | Reflection | F-1.3.1 | Serialization of graph definitions |
 | Shared spatial index | F-1.9.1 | Distance for animation LOD |
 | Thread pool | F-14.3.1 | Scoped parallel state evaluation |
-| I/O reactor | F-14.3.5 | Morph target async streaming |
+| Platform I/O | F-14.3.5 | Morph target streaming via IoRequest |
 | Logic graphs | F-15.8.4 | No-code parameter binding |
 | IK solvers | F-9.3.1 | Aim offset weapon alignment |
+
+## Client of Graph Runtime
+
+This document is a **client** of [core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md).
+Animation state machines parameterize the shared
+`GraphRuntime<StateNodeDef, TransitionDef, StateInstance>` type — they do not re-implement cycle
+detection, topological sort, DAG validation, constant folding, or hot-reload barriers. The
+state-machine evaluator contributes:
+
+1. A node palette: entry states, animation states, blend trees, blend spaces, sub-state machines.
+2. Edge semantics: transition rules with condition evaluation and blend curves.
+3. A compiled output type: `StateInstance`, produced via `RustBackend` codegen.
+
+Every property that used to be described as "the state graph validator checks cycles" or "the state
+machine runs a topological sort" is now delegated to the shared runtime. This doc only describes
+state-machine-specific semantics: state variables, transition curves, sync groups, animation layers,
+montages, aim offsets, and morph targets.
+
+## Determinism Contract
+
+State machine evaluation is **deterministic** — given the same `StateGraph` asset, the same
+`StateInstance` input, the same parameter bindings, and the same time delta, the evaluator produces
+byte-identical `BlendDescriptor` output on every platform. This is required for:
+
+1. **Multiplayer replay.** A client replaying a recorded input stream must reproduce the same
+   animation state transitions as the server authoritative simulation.
+2. **Rollback netcode.** Clients that roll back to an earlier tick and re-simulate forward must
+   reach the same state as the original simulation would have.
+3. **Debug reproduction.** Recorded replays feeding deterministic RNG and deterministic float math
+   let bugs be reproduced reliably.
+
+Blend curve evaluation uses the **same deterministic float arithmetic rules as physics**: no
+platform-specific fast-math, no FMA re-association, no transcendental approximations that differ
+across targets. The `DeterministicRng` primitive from
+[core-runtime/primitives.md](../core-runtime/primitives.md) seeds any stochastic transitions.
+
+Parameter bindings that come from `Blackboard` components must use the canonical `SortedVecMap`
+storage — no `HashMap` iteration in the condition evaluator. This is enforced by the shared
+`ConditionExpr` evaluator owned by `data-systems/attributes-effects.md`.
 
 ## Overview
 
@@ -141,7 +180,7 @@ graph TD
 
     subgraph th["harmonius_platform::threading"]
         TP[ThreadPool]
-        RE[Tokio runtime]
+        IO[Platform I/O]
     end
 
     subgraph gpu["GPU Compute"]
@@ -174,7 +213,7 @@ graph TD
     MC --> SK
     BC --> SK
 
-    MS --> RE
+    MS --> IO
     SI --> W
     MT --> W
     FA --> OB
@@ -1373,38 +1412,48 @@ impl VatPlayback {
 
 ```rust
 /// Manages on-demand streaming of morph target
-/// delta buffers via Tokio async I/O.
+/// delta buffers via platform-native I/O. Uses
+/// the IoRequest/IoResponse pattern from
+/// core-runtime/io.md: submit reads synchronously,
+/// drain completions at the frame poll point. No
+/// async runtimes, no Futures, no .await.
 pub struct MorphStreamManager {
     /// LRU cache of resident morph target sets.
     cache: LruCache<AssetId, GpuBufferHandle>,
     /// Maximum GPU memory budget for morph data.
     budget_bytes: u64,
-    /// Currently in-flight load requests.
-    pending: Vec<MorphLoadRequest>,
+    /// Currently in-flight load requests keyed by
+    /// IoRequestId. Polled once per frame.
+    pending: SortedVecMap<IoRequestId, MorphLoadRequest>,
 }
 
 struct MorphLoadRequest {
     asset_id: AssetId,
-    /// Future resolved by the I/O reactor.
-    future_handle: IoFutureHandle,
+    /// Request ID returned by the platform I/O
+    /// submit call. Resolved when the main thread
+    /// drains the IoResponse ring buffer.
+    request_id: IoRequestId,
 }
 
 impl MorphStreamManager {
     pub fn new(budget_bytes: u64) -> Self;
 
     /// Request a morph target set. Returns
-    /// immediately if cached. Otherwise begins
-    /// async load via the I/O reactor.
+    /// immediately if cached. Otherwise submits
+    /// a platform-native read via IoRequest.
     pub fn request(
         &mut self,
         asset_id: AssetId,
-        reactor: &Tokio runtime,
+        io: &mut IoChannel,
     ) -> MorphLoadStatus;
 
-    /// Called each frame to process completed
-    /// loads and upload to GPU buffers.
+    /// Called each frame to drain completed
+    /// IoResponse entries and upload to GPU
+    /// buffers. Runs on the main thread at the
+    /// frame poll point.
     pub(crate) fn process_completions(
         &mut self,
+        io: &mut IoChannel,
     );
 
     /// Evict least recently used sets to stay
@@ -1676,15 +1725,16 @@ pub fn advance_vat_playback(
 
 /// Stream morph targets on demand.
 pub fn stream_morph_targets(
-    stream_mgr: ResMut<MorphStreamManager>,
+    mut stream_mgr: ResMut<MorphStreamManager>,
     visible: Query<
         &MorphTargets,
         With<Visible>,
     >,
-    reactor: Res<Tokio runtime>,
+    mut io: ResMut<IoChannel>,
 ) {
     // Request morph sets for visible entities.
-    // Process completed loads.
+    // Submit via platform-native I/O.
+    // Drain completed IoResponse entries.
     // Evict over-budget sets.
 }
 ```
@@ -1979,23 +2029,23 @@ sequenceDiagram
     participant VS as VisibilitySystem
     participant SS as StreamMorphSystem
     participant SM as MorphStreamManager
-    participant RE as Tokio runtime
+    participant IC as IoChannel
     participant OS as Platform I/O
     participant GPU as GPU Buffer
 
     VS->>SS: entity becomes visible
-    SS->>SM: request(asset_id, reactor)
+    SS->>SM: request(asset_id, io)
     SM->>SM: check LRU cache
 
     alt Cache hit
         SM-->>SS: Resident(handle)
     else Cache miss
-        SM->>RE: read(file, offset, len).await
-        RE->>OS: submit async read
+        SM->>IC: submit IoRequest::Read
+        IC->>OS: io_uring / IOCP / GCD submit
         SM-->>SS: Loading
         Note over OS: kernel completes read
-        RE->>RE: poll() drains completion
-        SM->>SM: process_completions()
+        OS->>IC: post IoResponse::Ready
+        SM->>IC: drain completions (frame poll)
         SM->>GPU: upload delta buffer
         SM->>SM: insert into LRU cache
         SM->>SM: evict_to_budget()
@@ -2070,9 +2120,9 @@ fn compose_layers(
 
 | Platform | I/O Backend | API |
 |----------|-------------|-----|
-| Windows | Tokio (IOCP) | `tokio` |
-| macOS | Tokio (kqueue) | `tokio` |
-| Linux | Tokio (epoll) | `tokio` |
+| Windows | IOCP via `IoRequest` | platform-native, no async runtime |
+| macOS | GCD dispatch I/O via `IoRequest` | platform-native, no async runtime |
+| Linux | io_uring via `IoRequest` | platform-native, no async runtime |
 
 ### Per-Tier Scaling
 
@@ -2237,7 +2287,7 @@ Blend curves use the shared `Curve<T>` type (see [algorithms.md](../core-runtime
 | `test_ai_query_root_motion`               | R-9.4.10    |
 | `test_vat_half_res_mobile`                | US-9.2.4.3  |
 | `test_corrective_disabled_mobile_nonhero` | US-9.2.2.2  |
-| `test_platform_async_io_backend`          | US-9.2.5.3  |
+| `test_platform_io_backend`                | US-9.2.5.3  |
 
 1. **`test_1000_instances_under_1ms`** — 1000 entities with active state graphs, verify CPU eval
    under 1ms.
@@ -2267,8 +2317,8 @@ Blend curves use the shared `Curve<T>` type (see [algorithms.md](../core-runtime
 14. **`test_vat_half_res_mobile`** — Verify mobile uses half-resolution VAT textures.
 15. **`test_corrective_disabled_mobile_nonhero`** — Verify corrective shapes disabled on mobile for
     non-hero characters.
-16. **`test_platform_async_io_backend`** — Verify Tokio async I/O on all platforms for morph
-    streaming.
+16. **`test_platform_io_backend`** — Verify platform-native I/O (io_uring, IOCP, GCD) on all
+    platforms for morph streaming via the IoRequest/IoResponse pattern.
 
 ### Benchmarks
 
@@ -2308,8 +2358,8 @@ affect overlapping bone groups (Open Question 7). Blend space triangulation (F-9
 pre-computed Delaunay, but the algorithm choice (standard vs constrained) is unresolved (Open
 Question 1). The AI animation integration (F-9.4.10) relies on logic graphs to bridge behavior trees
 with animation state, adding an indirection layer that increases coupling with the AI subsystem.
-Morph target streaming (F-9.2.5) depends on the Tokio runtime but latency targets under 100 ms may
-be tight on mobile storage.
+Morph target streaming (F-9.2.5) uses platform-native I/O submitted via the IoRequest/IoResponse
+pattern — latency targets under 100 ms may be tight on mobile storage.
 
 **Q3. Is there a better approach?** If we are not taking it, why not?
 

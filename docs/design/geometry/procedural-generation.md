@@ -139,6 +139,26 @@
 63. **F-3.6.63** — Sparse cosmic data storage (128-bit keys)
 64. **F-3.6.64** — On-demand hierarchical detail (6+ LOD tiers)
 
+## Client of Graph Runtime
+
+This document is a **client** of [core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md).
+Procedural graphs parameterize the shared `GraphRuntime<ProceduralNode, TypedEdge, GeneratedAsset>`
+type — they do not re-implement DAG validation, cycle detection, topological sort, constant folding,
+dead-node elimination, or hot-reload barriers. The PCG subsystem contributes:
+
+1. A node palette: noise generators, scatter points, wave function collapse, shape grammars,
+   erosion, BSP split, cellular automata, mesh boolean ops, spline/heightmap consumers, etc.
+2. Typed edges carrying `Points`, `Meshes`, `Splines`, `Heightmaps`, and `Volumes` data streams.
+3. A codegen backend: `RustBackend` for graph evaluation (when compiling graphs to executable code
+   for hot-reload) and `TypeDescriptorBackend` for node palette metadata.
+4. Compiled output: a `GeneratedAsset` bundle containing one or more `ProceduralMeshOutput` records,
+   points, splines, or spawned entities.
+
+All DAG validation language in this document is now delegated to the shared runtime — the old text
+describing "topological-sort executor" and "cycle detector" is gone. This doc describes only
+PCG-specific semantics: node vocabulary, data streams, attribute stores, seeding policy, and runtime
+chunk streaming.
+
 ## Overview
 
 The Procedural Generation (PCG) system is Harmonius's content creation backbone. It enables worlds
@@ -147,9 +167,9 @@ graph.
 
 The system has four layers:
 
-1. **PCG Graph** -- a DAG of typed nodes that produce, filter, transform, and consume data streams
-   (points, meshes, splines, heightmaps). Evaluated by a topological-sort executor on the thread
-   pool.
+1. **PCG Graph** -- a node palette of typed nodes that produce, filter, transform, and consume data
+   streams (points, meshes, splines, heightmaps), evaluated through the shared `GraphRuntime`
+   described above.
 2. **Planet-Scale Simulation** -- plate tectonics, climate, hydrology, biomes, settlements,
    factions, and ecosystems chained in a physically-motivated pipeline.
 3. **Universe Pipeline** -- seven phases from density perturbations through civilization seeding,
@@ -517,12 +537,37 @@ pub struct PinDesc {
 /// Typed data flowing between nodes.
 pub enum PcgData {
     PointSet(PointSet),
-    Mesh(PcgMeshOutput),
+    Mesh(ProceduralMeshOutput),
     Heightmap(Heightmap),
     Spline(PcgSpline),
     Scalar(f32),
     Vector3(Vec3),
     AttributeMap(AttributeStore),
+}
+
+/// Procedural mesh output. A procedural graph that
+/// produces a mesh always emits BOTH the visual
+/// mesh and its collision shape in one record.
+/// This ensures that renderer geometry and physics
+/// collision can never drift out of sync — they
+/// are generated atomically by the same node and
+/// referenced as two handles on the same output.
+///
+/// `Handle<T>` comes from core-runtime/primitives.md;
+/// `MeshAsset` is the canonical meshlet asset from
+/// rendering/meshlets.md; `CollisionShape` is the
+/// collider asset referenced by physics/foundation.md.
+#[derive(Clone, Debug)]
+pub struct ProceduralMeshOutput {
+    /// Handle to the rasterized / ray-traced
+    /// meshlet asset.
+    pub mesh: Handle<MeshAsset>,
+    /// Handle to the collision shape asset. The
+    /// physics engine reads this directly; there
+    /// is no separate collision path.
+    pub collision_shape: Handle<CollisionShape>,
+    /// Optional bounding sphere for fast culling.
+    pub bounds: BoundingSphere,
 }
 
 /// Directed edge connecting two pins.
@@ -1311,36 +1356,38 @@ impl GpuGenerator {
     ) -> Self;
 
     /// Generate a heightmap tile on the GPU.
-    /// Returns a future that resolves when the
-    /// compute pass completes.
-    pub async fn generate_heightmap(
+    /// Dispatched as a compute pass through the
+    /// render graph. Returns a job handle that
+    /// the caller polls at the frame boundary.
+    /// No `Future`s, no `.await`.
+    pub fn generate_heightmap(
         &self,
         params: &NoiseParams,
         bounds: Aabb,
         resolution: u32,
-    ) -> Result<Heightmap, GpuGenError>;
+    ) -> JobHandle<Result<Heightmap, GpuGenError>>;
 
     /// Generate a vegetation scatter buffer.
     /// Uses indirect dispatch to populate an
     /// instance buffer for GPU instanced
     /// rendering.
-    pub async fn scatter_vegetation(
+    pub fn scatter_vegetation(
         &self,
         rules: &[VegetationRule],
         heightmap: &Heightmap,
         biome_map: &BiomeMap,
-    ) -> Result<VegetationBuffer, GpuGenError>;
+    ) -> JobHandle<Result<VegetationBuffer, GpuGenError>>;
 
     /// Fill a noise grid on the GPU. Results
     /// are bit-identical to CPU NoiseLibrary.
-    pub async fn fill_noise_gpu(
+    pub fn fill_noise_gpu(
         &self,
         params: &NoiseParams,
         origin: Vec2,
         cell_size: f32,
         width: u32,
         height: u32,
-    ) -> Result<Vec<f32>, GpuGenError>;
+    ) -> JobHandle<Result<Vec<f32>, GpuGenError>>;
 }
 ```
 
@@ -1685,8 +1732,8 @@ world_seed
 1. `GpuGenerator::generate_heightmap` allocates a UAV texture on the GPU.
 2. A compute shader dispatch fills the texture with noise. The HLSL noise kernels produce
    bit-identical results to the CPU `NoiseLibrary` for the same seed and parameters.
-3. The result is read back via an async GPU-to-CPU copy. The future resolves at the next reactor
-   poll point.
+3. The result is read back via a GPU-to-CPU copy. The job handle resolves when the main thread polls
+   the GPU fence at the frame poll point.
 4. For vegetation scatter, an indirect dispatch compute shader evaluates placement rules against the
    heightmap and biome map, writing to an instance buffer. No CPU readback needed; the instance
    buffer feeds directly into the GPU instanced draw.
@@ -1725,11 +1772,11 @@ world_seed
 
 ### Platform-Specific Notes
 
-| Platform | I/O                           | Concurrency               |
-|----------|-------------------------------|---------------------------|
-| Windows  | Tokio (IOCP)                  | Thread pool, scoped tasks |
-| macOS    | Tokio (kqueue)                | Thread pool, scoped tasks |
-| Linux    | Tokio (epoll)                 | Thread pool, scoped tasks |
+| Platform | I/O                               | Concurrency               |
+|----------|-----------------------------------|---------------------------|
+| Windows  | IOCP via `IoRequest`              | Thread pool, scoped tasks |
+| macOS    | GCD dispatch I/O via `IoRequest`  | Thread pool, scoped tasks |
+| Linux    | io_uring via `IoRequest`          | Thread pool, scoped tasks |
 
 1. **Windows** — D3D12 compute shaders via DXC
 2. **macOS** — Metal compute shaders (HLSL via Metal Shader Converter)

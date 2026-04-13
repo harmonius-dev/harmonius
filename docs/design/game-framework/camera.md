@@ -6,6 +6,14 @@
 > [features/game-framework/](../../features/), [requirements/game-framework/](../../requirements/),
 > and [user-stories/game-framework/](../../user-stories/). The table below traces design elements to
 > those definitions.
+>
+> **Scope split:** Rendering-specific camera features (spring-arm physics retraction, cine camera
+> physical lens, picture-in-picture composition, and camera sequencer) live in
+> [../rendering/camera-rendering.md](../rendering/camera-rendering.md). This document owns the
+> VirtualCamera brain, priority selection, blend system, composer, and the gameplay-facing entry
+> points. `Entity` stability across save/load, hot-reload, and network boundaries follows
+> [../core-runtime/ids.md](../core-runtime/ids.md). No async anywhere — all systems are synchronous
+> ECS phases per [../constraints.md](../constraints.md).
 
 ### Virtual Camera Framework
 
@@ -51,15 +59,9 @@
 
 ### Spring Arm and Collision
 
-| Feature    | Requirement |
-|------------|-------------|
-| F-13.25.13 | R-13.25.13  |
-| F-13.25.14 | R-13.25.14  |
-| F-13.25.15 | R-13.25.15  |
-
-1. **F-13.25.13** — Spring arm with collision retraction
-2. **F-13.25.14** — Deoccluder (line-of-sight preservation)
-3. **F-13.25.15** — Decollider (geometry penetration prevention)
+Spring-arm physics retraction (F-13.25.13), deoccluder (F-13.25.14), and decollider (F-13.25.15) are
+rendering-facing concerns and live in
+[../rendering/camera-rendering.md](../rendering/camera-rendering.md).
 
 ### Blending and Transitions
 
@@ -94,12 +96,13 @@
 | F-13.25.23 | R-13.25.23  |
 | F-13.25.24 | R-13.25.24  |
 | F-13.25.25 | R-13.25.25  |
-| F-13.25.26 | R-13.25.26  |
 
 1. **F-13.25.23** — State-driven camera switching
 2. **F-13.25.24** — Clear shot (automatic best-camera)
 3. **F-13.25.25** — Shot quality evaluator
-4. **F-13.25.26** — Camera sequencer (timed playlist)
+
+Camera sequencer (F-13.25.26, timed playlist) is a rendering-facing concern and lives in
+[../rendering/camera-rendering.md](../rendering/camera-rendering.md).
 
 ### Group and Multi-Target
 

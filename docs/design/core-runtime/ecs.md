@@ -6,6 +6,16 @@
 > [features/core-runtime/](../../features/), [requirements/core-runtime/](../../requirements/), and
 > [user-stories/core-runtime/](../../user-stories/). The table below traces design elements to those
 > definitions.
+>
+> **Cross-references for shared concepts:**
+>
+> - `Entity`, `ComponentId`, `ComponentTypeId`, `SystemId`, and all other ID conventions
+>   (stability, namespaces, save / hot-reload behavior) are owned by [core-runtime/ids.md](ids.md).
+>   This document uses those IDs without re-defining them.
+> - `ChangeTick` semantics (tick lifecycle, when the tick increments, how the `Changed<T>` query
+>   interacts with system dispatch) are owned by
+>   [core-runtime/change-detection.md](change-detection.md). The archetype column ticks defined here
+>   implement that contract.
 
 | Feature  | Requirement         |
 |----------|---------------------|
@@ -92,9 +102,9 @@
 The ECS is a custom implementation built from scratch for the Harmonius engine. It draws on bevy_ecs
 (0.18+) as a reference implementation for archetype storage, query iteration, system scheduling,
 observer dispatch, relationship pairs, and command buffers -- but we own all code and take no
-dependency on bevy_ecs. This enables direct integration with our custom job system, GameLoopGraph,
-and platform I/O layer that would be impossible with bevy_ecs's private executor and non-replaceable
-job system.
+dependency on bevy_ecs. This enables direct integration with our custom job system, the game loop
+(see [game-loop.md](game-loop.md)), and the platform I/O layer that would be impossible with
+bevy_ecs's private executor and non-replaceable job system.
 
 The ECS is the foundational data model and execution framework for every domain in the Harmonius
 engine. All simulation data lives as components, all logic runs as systems, and all state is owned
@@ -149,7 +159,7 @@ graph TD
         QE[QueryEngine]
         SC[Scheduler]
         CB[CommandBuffer]
-        OB[ObserverRegistry]
+        OB[ComponentObserverRegistry]
         CD[ChangeDetector]
         SM[StateMachine]
     end
@@ -165,8 +175,6 @@ graph TD
     subgraph "harmonius_platform::threading"
         JS[JobSystem]
         TG[TaskGraph]
-        GLG[GameLoopGraph]
-        CF[CompiledFrame]
     end
 
     W --> EA
@@ -183,10 +191,6 @@ graph TD
     QE --> SS
     QE --> CD
 
-    SC --> GLG
-    GLG --> CF
-    CF --> TG
-    CF --> JS
     SC --> SG
     SC --> QE
     SG --> PH
@@ -197,6 +201,11 @@ graph TD
     SM --> OB
     SY --> SP
 ```
+
+> **Game loop boundary:** `Schedule` in this document produces a `SystemGraph`. The game loop
+> compiles that graph into a `CompiledFrame` using its own `GameLoopGraph` type. See
+> [game-loop.md](game-loop.md) for compilation of a `Schedule` into a `CompiledFrame` and for all
+> phase / task / render-graph wrappers; those types are not owned here.
 
 ### File Layout
 
@@ -257,7 +266,8 @@ harmonius_ecs/
 │   ├── group.rs       # SystemGroup, nesting
 │   └── ambiguity.rs   # AmbiguityDetector
 ├── observer/
-│   ├── observer.rs    # Observer, ObserverRegistry
+│   ├── observer.rs    # Observer,
+│   │                  # ComponentObserverRegistry
 │   ├── trigger.rs     # Trigger, OnAdd, OnRemove,
 │   │                  # OnSet
 │   └── event.rs       # EntityEvent, propagation
@@ -322,7 +332,7 @@ classDiagram
         -sparse_sets: SparseSetMap
         -components: ComponentRegistry
         -resources: ResourceMap
-        -observers: ObserverRegistry
+        -observers: ComponentObserverRegistry
         -change_tick: AtomicU32
         +new() World
         +spawn(bundle) Entity
@@ -345,9 +355,10 @@ classDiagram
 
     class Archetype {
         -id: ArchetypeId
-        -columns: HashMap~ComponentId, Column~
+        -columns: Vec~ComponentId, Column~
         -entities: Vec~Entity~
-        -shared_values: HashMap~ComponentId, SharedValue~
+        -shared_values: Vec~ComponentId, SharedValue~
+        -enable_bits: Vec~ComponentId, AtomicU64~
         -chunk_capacity: u32
         +len() u32
         +has_component(id) bool
@@ -457,7 +468,7 @@ classDiagram
         -ambiguities: Vec~Ambiguity~
         +add_system(system, phase)
         +add_group(group)
-        +build_game_loop(world) Result~GameLoopGraph~
+        +build(world) Result~SystemGraph~
     }
 
     class SystemNode {
@@ -476,18 +487,6 @@ classDiagram
         +detect_cycles() Result
         +detect_ambiguities() Vec~Ambiguity~
         +build_system_phase(phase) SystemPhase
-    }
-
-    class GameLoopGraph {
-        -phases: Vec~PhaseNode~
-        -edges: Vec~PhaseId PhaseId~
-        +compile(world, job_system) Result~CompiledFrame~
-    }
-
-    class CompiledFrame {
-        -task_graph: TaskGraph
-        -render_submissions: Vec~RenderSubmission~
-        +execute(world, job_system)
     }
 
     class Phase {
@@ -516,8 +515,8 @@ classDiagram
         +flush(world)
     }
 
-    class ObserverRegistry {
-        -observers: HashMap~EventType, Vec~Observer~~
+    class ComponentObserverRegistry {
+        -observers: Vec~EventType, Observer~
         +register(event, query, callback)
         +dispatch(events, world)
     }
@@ -527,11 +526,9 @@ classDiagram
     Schedule --> Phase
     SystemNode --> AccessSet
     SystemNode --> RunCriterion
-    Schedule ..> GameLoopGraph : builds
-    GameLoopGraph ..> CompiledFrame : compiles
-    CompiledFrame --> TaskGraph
+    Schedule ..> SystemGraph : produces
     CommandBuffer ..> World : flush into
-    ObserverRegistry ..> CommandBuffer : may trigger
+    ComponentObserverRegistry ..> CommandBuffer : may trigger
 ```
 
 ### Relationship Pair Encoding
@@ -838,25 +835,35 @@ pub struct ArchetypeId(pub(crate) u32);
 
 /// An archetype: a unique combination of component
 /// types with contiguous SoA storage.
+///
+/// **Hot-path constraint:** using a `HashMap` on the
+/// archetype hot path is forbidden (constraints.md).
+/// Columns, shared values, and enable bits are all
+/// stored in sorted `Vec<(ComponentId, ...)>` for
+/// deterministic iteration and O(log n) binary
+/// search. `ComponentId` is a small dense u32, so
+/// the vector length stays short (typically <= 32
+/// per archetype) and lookups are cache-friendly.
 pub struct Archetype {
     id: ArchetypeId,
-    /// One column per non-tag, non-shared component
-    /// in this archetype.
-    columns: HashMap<ComponentId, Column>,
+    /// One column per non-tag, non-shared component.
+    /// Sorted by `ComponentId`. Binary search for
+    /// lookup; linear scan during iteration.
+    columns: Vec<(ComponentId, Column)>,
     /// Entity list. Index = row in columns.
     entities: Vec<Entity>,
     /// Shared component values (one per chunk).
-    shared_values:
-        HashMap<ComponentId, Vec<SharedValue>>,
+    /// Sorted by `ComponentId` for determinism.
+    shared_values: Vec<(ComponentId, Vec<SharedValue>)>,
     /// Tag component IDs (no column needed).
     /// Sorted Vec for deterministic iteration.
     tags: Vec<ComponentId>,
     /// Enableable component bit arrays. One bit
-    /// per entity per enableable component.
-    /// Uses `Vec<AtomicU64>` with fetch_or /
-    /// fetch_and for lock-free parallel toggles.
-    enable_bits:
-        HashMap<ComponentId, Vec<AtomicU64>>,
+    /// per entity per enableable component. Sorted
+    /// dense store; `Vec<AtomicU64>` payload with
+    /// fetch_or / fetch_and for lock-free parallel
+    /// toggles.
+    enable_bits: Vec<(ComponentId, Vec<AtomicU64>)>,
     /// Chunk capacity computed from component
     /// sizes and platform cache line.
     chunk_capacity: u32,
@@ -1856,6 +1863,19 @@ impl ParallelCommandWriter {
 
 ### Observer System
 
+> **Rename note (disambiguation):** The ECS component-lifecycle observer registry was previously
+> called `ObserverRegistry`. It is now `ComponentObserverRegistry` throughout this document to
+> disambiguate from the event-dispatch observer registry (`EventObserverRegistry`) defined in
+> [events-plugins.md](events-plugins.md). The two registries have different triggers:
+>
+> - `ComponentObserverRegistry` fires on component add / remove / set / table events and runs
+>   inside `CommandBuffer::flush` at sync points. That is what this section defines.
+> - `EventObserverRegistry` fires on user-defined `EventChannel<T>` dispatch and runs at the
+>   scheduler's event boundary. See events-plugins.md.
+>
+> Existing subsystems that spoke of "the observer registry" without qualification were all referring
+> to the component-lifecycle variant; references in this document have been updated.
+
 ```rust
 /// Built-in observer trigger events.
 #[derive(
@@ -1886,9 +1906,12 @@ pub struct Observer {
 }
 
 // Observer dispatch is defined in
-// [events-plugins.md](events-plugins.md). The
-// `ObserverRegistry`, trigger types, and callback
-// dispatch are canonical there.
+// [events-plugins.md](events-plugins.md). Event-
+// driven observers live there as
+// `EventObserverRegistry`. The component-lifecycle
+// observer in this doc is
+// `ComponentObserverRegistry` and is distinct.
+// See the rename note below.
 
 /// Which propagation phase an observer fires in.
 /// Capture fires root → target; Bubble fires
@@ -2081,18 +2104,23 @@ impl Schedule {
         group: SystemGroup,
     );
 
-    /// Build the game loop graph. Performs:
+    /// Build the system graph. Performs:
     /// 1. Dependency resolution from access sets
     /// 2. Topological sort
     /// 3. Cycle detection
     /// 4. Ambiguity detection
-    /// 5. Phase node construction
-    /// Returns a GameLoopGraph that can be compiled
-    /// into a CompiledFrame for execution.
-    pub fn build_game_loop(
+    ///
+    /// Returns a `SystemGraph` that the game loop
+    /// then compiles into a `CompiledFrame`. See
+    /// [game-loop.md](game-loop.md) for compilation
+    /// of a `SystemGraph` into a `CompiledFrame`;
+    /// the `GameLoopGraph` / `CompiledFrame` /
+    /// `PhaseBody` types are owned by game-loop.md
+    /// and are NOT defined in this document.
+    pub fn build(
         &self,
         world: &World,
-    ) -> Result<GameLoopGraph, ScheduleError>;
+    ) -> Result<SystemGraph, ScheduleError>;
 }
 
 pub struct Ambiguity {
@@ -2138,7 +2166,11 @@ pub struct World {
     sparse_sets: SparseSetMap,
     components: ComponentRegistry,
     resources: ResourceMap,
-    observers: ObserverRegistry,
+    /// Component-lifecycle observers. Distinct from
+    /// `EventObserverRegistry` in events-plugins.md
+    /// (event-dispatch observers). See the rename
+    /// note under "Component Observers".
+    observers: ComponentObserverRegistry,
     change_detector: ChangeDetector,
     flags: Vec<WorldFlag>,
     id: WorldId,
@@ -2393,7 +2425,8 @@ pub trait ComputedState: StateComponent {
 
 ### Frame Execution Sequence
 
-The frame is driven by a `CompiledFrame` produced from the `GameLoopGraph`. The compiled frame is
+The frame is driven by a `CompiledFrame` produced from the game loop's compilation of this
+document's `SystemGraph`. See [game-loop.md](game-loop.md) for the compiler. The compiled frame is
 reused across frames until the system set changes.
 
 ```mermaid
@@ -2532,9 +2565,12 @@ schedule.add_system(
 // Explicit ordering within a phase
 schedule.order(movement_id, collision_id);
 
-// Build game loop graph, then compile once
-let graph = schedule.build_game_loop(&world)?;
-let frame = graph.compile(&world, &job_system)?;
+// Build the system graph; game-loop.md owns the
+// downstream compilation into CompiledFrame.
+let system_graph = schedule.build(&world)?;
+let frame = game_loop::compile(
+    &system_graph, &world, &job_system,
+)?;
 
 // --- Frame Execution (reuses CompiledFrame) ---
 
@@ -2612,7 +2648,7 @@ for transform in query_changed.iter() {
 //    - Remove component -> OnRemove
 //    - Set component value -> OnSet
 
-// 3. Dispatch to ObserverRegistry:
+// 3. Dispatch to ComponentObserverRegistry:
 //    For each event:
 //      For each observer matching the event type:
 //        If entity matches the observer's query
@@ -2666,35 +2702,35 @@ for transform in query_changed.iter() {
 
 ### Job System Integration
 
-The ECS scheduler no longer directly builds a `TaskGraph`. Instead, it populates a `SystemPhase`
-within the `GameLoopGraph` (defined in [platform/threading.md](../platform/threading.md)). The game
-loop graph is the unified execution model for the entire frame.
-
-**`build_game_loop()` replaces `build_frame_graph()`.** The `Schedule` produces a `GameLoopGraph`
-instead of a raw `TaskGraph`. Each ECS phase becomes a `PhaseNode` in the graph. The `GameLoopGraph`
-is compiled once (or when systems change) and the resulting `CompiledFrame` is reused across frames.
+The ECS scheduler produces a `SystemGraph`. It does NOT directly build a `TaskGraph` or own a
+`GameLoopGraph`. Instead, the game loop consumes `SystemGraph` and wraps it inside its own
+`GameLoopGraph`, where each ECS phase is compiled into a `PhaseBody::Systems` (see
+[game-loop.md](game-loop.md) for the phase wrapper and the compilation pipeline).
 
 ```rust
 impl Schedule {
-    /// Build the game loop graph from the current
-    /// system set. Each phase becomes a PhaseNode
-    /// containing its systems. Dependencies between
-    /// phases become graph edges.
-    pub fn build_game_loop(
+    /// Build the system graph from the current
+    /// system set. Each phase becomes a sub-graph
+    /// of system nodes with dependency edges derived
+    /// from access sets.
+    ///
+    /// The game loop converts this `SystemGraph`
+    /// into a `CompiledFrame`; see game-loop.md.
+    pub fn build(
         &self,
         world: &World,
-    ) -> Result<GameLoopGraph, ScheduleError>;
+    ) -> Result<SystemGraph, ScheduleError>;
 }
 ```
 
-**Execution flow.** The main loop compiles the graph once, then executes the compiled frame each
-tick:
+**Execution flow.** The main loop asks the ECS for a `SystemGraph`, hands it to the game loop for
+compilation, and then executes the compiled frame each tick:
 
 ```rust
 // Build once (or when systems change)
-let graph = schedule.build_game_loop(&world)?;
-let frame = graph.compile(
-    &world, &job_system,
+let system_graph = schedule.build(&world)?;
+let frame = game_loop::compile(
+    &system_graph, &world, &job_system,
 )?;
 
 // Per-frame execution
@@ -2708,37 +2744,38 @@ loop {
 sequenceDiagram
     participant ML as Main Loop
     participant SC as Schedule
-    participant GLG as GameLoopGraph
-    participant CF as CompiledFrame
+    participant SG as SystemGraph
+    participant GL as game-loop.md
     participant JS as JobSystem
 
-    ML->>SC: build_game_loop(world)
-    SC-->>ML: GameLoopGraph
+    ML->>SC: build(world)
+    SC-->>ML: SystemGraph
 
-    ML->>GLG: compile(world, job_system)
-    GLG-->>ML: CompiledFrame
+    ML->>GL: compile(system_graph, world, job_system)
+    GL-->>ML: CompiledFrame
 
     loop Every Frame
-        ML->>CF: execute(world, job_system)
-        CF->>JS: dispatch task graph
+        ML->>GL: frame.execute(world, job_system)
+        GL->>JS: dispatch task graph
         JS->>JS: work-steal systems in parallel
         Note over JS: Sync barriers flush commands
-        JS-->>CF: frame complete
+        JS-->>ML: frame complete
     end
 ```
 
-**Phase mapping.** Each ECS phase populates a `SystemPhase` node in the game loop graph. The
-schedule's topological ordering and access-set analysis are preserved within each phase node.
+**Phase mapping.** Each ECS phase becomes a phase node in the game loop's compiled graph. The
+schedule's topological ordering and access-set analysis are preserved within each phase. For the
+exact wrapper enum (previously called `PhaseNode`, now `PhaseBody`) see game-loop.md.
 
-| ECS Phase | GameLoopGraph Node | Scheduling |
-|-----------|-------------------|------------|
-| PreUpdate | `PhaseNode::Systems` | Parallel within phase |
-| Update | `PhaseNode::Systems` | Parallel within phase |
-| FixedUpdate | `PhaseNode::Systems` | Fixed timestep gated |
-| PostUpdate | `PhaseNode::Systems` | Parallel within phase |
-| PreRender | `PhaseNode::Systems` | Parallel within phase |
-| Render | `PhaseNode::RenderGraph` | Render pass ordering |
-| Custom(n) | `PhaseNode::Systems` | User-defined |
+| ECS Phase   | game-loop.md phase body   | Scheduling              |
+|-------------|---------------------------|-------------------------|
+| PreUpdate   | `PhaseBody::Systems`      | Parallel within phase   |
+| Update      | `PhaseBody::Systems`      | Parallel within phase   |
+| FixedUpdate | `PhaseBody::Systems`      | Fixed timestep gated    |
+| PostUpdate  | `PhaseBody::Systems`      | Parallel within phase   |
+| PreRender   | `PhaseBody::Systems`      | Parallel within phase   |
+| Render      | `PhaseBody::RenderGraph`  | Render pass ordering    |
+| Custom(n)   | `PhaseBody::Systems`      | User-defined            |
 
 **Non-send systems** are pinned to the game loop thread by the scheduler. They run at designated
 points in the phase, never dispatched to worker threads.
@@ -2883,10 +2920,11 @@ Closures need `Send` but not `Sync`. Document this invariant.
 
 ### Archetype Column Lookup
 
-Archetype columns are stored in `HashMap<ComponentId, Column>`. For hot-path query iteration, this
-hash lookup occurs per-archetype per query. Implementation should use a flat array indexed by
-per-archetype column index (assigned at archetype creation), with the `HashMap` only for dynamic
-lookups. This avoids hash overhead in the inner loop.
+Archetype columns are stored in `Vec<(ComponentId, Column)>` sorted by `ComponentId`. Using
+`HashMap` on the archetype hot path is forbidden (constraints.md). Hot-path iteration relies on
+per-archetype column-index caches (assigned at archetype creation); dynamic lookups fall back to
+binary search over the sorted vector. This avoids both hash overhead and non-deterministic iteration
+order.
 
 ## Test Plan
 
@@ -3199,13 +3237,13 @@ layer.
 Build a custom ECS with full feature parity with bevy_ecs plus the extensions needed for this
 engine. bevy_ecs's executor is private, its thread pool (`bevy_tasks`) cannot be replaced with the
 custom job system (crossbeam-deque), and its schedule cannot integrate non-ECS nodes (platform I/O
-polling, render graph dispatch). A custom ECS integrates cleanly with our GameLoopGraph and custom
-job system (crossbeam-deque).
+polling, render graph dispatch). A custom ECS integrates cleanly with the game loop's graph (see
+[game-loop.md](game-loop.md)) and the custom job system (crossbeam-deque).
 
 Use bevy_ecs (0.18+) source code as a reference implementation during development. Its archetype
 storage, query engine, system scheduling, observer dispatch, relationship pairs, and command buffer
 designs are battle-tested and inform our implementation — but we own the code and can integrate with
-the custom job system (crossbeam-deque), GameLoopGraph, and platform I/O directly.
+the custom job system (crossbeam-deque), the game loop graph, and platform I/O directly.
 
 The existing design is a strong foundation. The fixes below address specific issues found during
 review.

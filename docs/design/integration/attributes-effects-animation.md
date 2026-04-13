@@ -1,5 +1,8 @@
 # Attributes/Effects ↔ Animation Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -45,64 +48,17 @@
 | `ActiveEffects` | Attr/Effects | Attr/Effects | Effect stack |
 | `TableRegistry` | Attr/Effects | Integration | Definition lookup |
 
-```rust
-/// System that reads post-evaluation attribute
-/// values and applies them to animation playback
-/// speed. Runs in Phase 3-Simulation immediately
-/// after attribute evaluation so effects apply
-/// same frame.
-///
-/// Fallback: if the speed attribute is missing,
-/// AnimationPlayer::speed remains 1.0. If base
-/// is zero, speed is clamped to 0.0 and a
-/// warning is logged.
-pub fn sync_speed_modifiers(
-    query: Query<(
-        &AttributeSet,
-        &mut AnimationPlayer,
-    ), Changed<AttributeSet>>,
-    schemas: Res<TableRegistry>,
-) {
-    // For each entity with changed attributes:
-    // 1. Look up the speed AttributeDefinition
-    //    via TableRegistry.
-    // 2. Read AttributeValue::current and ::base.
-    // 3. Guard: if base == 0.0, set speed = 0.0,
-    //    log warning, continue.
-    // 4. Set AnimationPlayer::speed =
-    //    current / base.
-    // 5. Clamp speed to >= 0.0.
-}
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below. Sync system implementation (`sync_speed_modifiers` and
+`anim_event_apply_effects` bodies) lives in `data-systems/attributes-effects.md`. This integration
+defines only the component contract and trigger conditions -- the read paths are:
 
-/// System that listens for animation hit-frame
-/// events and applies effects to targets.
-/// Looks up the EffectDefinition from the
-/// AnimEvent payload via TableRegistry, then
-/// calls ActiveEffects::apply().
-///
-/// Fallback: if the target entity has no
-/// ActiveEffects component, skip and log a
-/// warning. If the effect definition is not
-/// found in TableRegistry, skip and log a
-/// warning.
-pub fn anim_event_apply_effects(
-    events: EventReader<AnimEvent>,
-    mut effects: Query<&mut ActiveEffects>,
-    registry: Res<TableRegistry>,
-) {
-    // For each AnimEvent with a hit_frame
-    // payload:
-    // 1. Extract the effect RowRef from the
-    //    AnimEventPayload.
-    // 2. Look up EffectDefinition from
-    //    TableRegistry using the RowRef.
-    // 3. Resolve the target entity.
-    // 4. Query ActiveEffects on the target.
-    //    If missing, log warning and skip.
-    // 5. Call ActiveEffects::apply(
-    //    &effect_def, source_entity).
-}
-```
+1. `AttributeSet` changes are detected via ECS `Changed<AttributeSet>` (trigger: any modifier
+   addition or expiry).
+2. The sync system looks up the speed `AttributeDefinition` via `Res<TableRegistry>` and writes
+   `AnimationPlayer::speed = current / base` (guarded against zero base).
+3. `AnimEvent` readers look up `EffectDefinition` via `Res<TableRegistry>` and call
+   `ActiveEffects::apply(&def, source_entity)` on the target.
 
 ## Data Flow
 

@@ -1,5 +1,8 @@
 # AI Behavior ↔ Animation Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -114,12 +117,9 @@ impl AnimationQuery {
 > string for asset data. Both types are defined in `core-runtime`. This integration uses `StringId`
 > for triggers, consistent with the upstream `AnimationParams` definition.
 >
-> **Note on `Blackboard` and `HashMap`**: The upstream `Blackboard` design (`behavior.md`) uses
-> `HashMap<BlackboardKey, BlackboardValue>` inside `BlackboardScope`. This is a constraint
-> violation: blackboards are hot-path structures (thousands to millions of instances).
-> `BlackboardScope` must use `BTreeMap` or a sorted `Vec` instead of `HashMap`. This integration
-> does not depend on `Blackboard` internals -- AI reads the blackboard for its own decisions and
-> writes results to `AnimationParams`. The animation system never reads the blackboard directly.
+> **Blackboard hot-path rule**: see [shared-conventions.md](shared-conventions.md) SC-3. This
+> integration does not depend on `Blackboard` internals -- AI reads the blackboard for its own
+> decisions and writes results to `AnimationParams`.
 
 ## Class Diagram
 

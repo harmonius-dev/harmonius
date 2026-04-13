@@ -21,8 +21,9 @@
 2. **F-13.3.2** -- Schema versioning with ordered migration transforms
 3. **F-13.3.3** -- Checkpoint and autosave with rotating slots
 4. **F-13.3.4** -- Save slot management with metadata and transactional operations
-5. **F-13.3.5** -- Cloud save sync with platform-native APIs
-6. **F-13.3.6** -- Async I/O pipeline with compression, encryption, checksumming
+5. **F-13.3.5** -- Cloud save sync with platform-native APIs (see
+   [../platform/platform-services.md](../platform/platform-services.md))
+6. **F-13.3.6** -- Sync I/O pipeline with compression, encryption, checksumming
 
 ### Non-Functional Requirements
 
@@ -40,7 +41,7 @@
 | rkyv serialization | F-1.4.1 |
 | Schema versioning | F-1.4.4, F-1.4.5 |
 | Scene serialization | F-1.4.7 |
-| VirtualFileSystem | Memory/AsyncIo design |
+| VirtualFileSystem | [../core-runtime/io.md](../core-runtime/io.md) |
 | Platform-native I/O | Platform/Threading design |
 | ECS World | F-1.1 |
 | Event channels | F-1.5.1 |
@@ -49,14 +50,23 @@
 ## Overview
 
 Codegen-driven world serialization, incremental dirty-entity saves, schema migration, a
-platform-native I/O pipeline with compression/encryption/checksumming, save slot management, and
-cloud sync.
+platform-native I/O pipeline with compression/encryption/checksumming, and save slot management.
 
 All state lives as ECS components. The codegen pipeline generates typed
 `serialize_component`/`deserialize_component` functions for every `Saveable` component into the
 middleman .dylib. I/O is submitted to the main thread via crossbeam-channel and routed through the
 `VirtualFileSystem` / platform-native I/O layer. No `Reflect`, no `TypeRegistry`, no async/await, no
 Tokio.
+
+Schema versioning is decoupled from the codegen pipeline via a `SchemaRegistry` keyed on stable
+`TypeId`, allowing multiple format versions per component type to coexist in live saves. Stable IDs
+across save boundaries follow the model in [../core-runtime/ids.md](../core-runtime/ids.md). Live
+migration during hot-reload follows the protocol in
+[../core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md).
+
+Cloud sync and achievement queuing live in
+[../platform/platform-services.md](../platform/platform-services.md); this document provides only
+the game-side save API surface.
 
 ## Architecture
 
@@ -69,9 +79,9 @@ graph TD
         SS[SaveSerializer]
         SD[SaveDeserializer]
         MG[MigrationRegistry]
+        SR[SchemaRegistry]
         SP[SavePipeline]
         SL[SaveSlotManager]
-        CS[CloudSyncAdapter]
     end
 
     subgraph "harmonius_middleman (codegen'd .dylib)"
@@ -87,13 +97,19 @@ graph TD
         CH[crossbeam-channel]
     end
 
+    subgraph "harmonius_platform (see platform-services.md)"
+        PS[Platform Services: cloud, achievements]
+    end
+
     SM --> SS
     SM --> SD
     SM --> SP
     SM --> SL
+    SM --> SR
     SD --> MG
+    SD --> SR
+    SS --> SR
     SP --> VFS
-    SL --> CS
 
     SS --> CG
     SD --> CG
@@ -103,6 +119,7 @@ graph TD
     SP --> CH
     SM --> ECS
     SM --> EV
+    EV --> PS
 ```
 
 ### File Layout
@@ -113,11 +130,15 @@ harmonius_game/save/
   serialize.rs    # SaveSerializer, SaveDeserializer
   pipeline.rs     # SavePipeline (compress, encrypt)
   migration.rs    # MigrationRegistry, MigrationStep
+  schema.rs      # SchemaRegistry, SchemaEntry
   slots.rs        # SaveSlotManager, SaveSlotMeta
-  cloud.rs        # CloudSyncAdapter
   components.rs   # Saveable, SaveDirty, SaveMeta
   error.rs        # SaveError, LoadError
 ```
+
+Cloud sync and achievement queuing are owned by
+[../platform/platform-services.md](../platform/platform-services.md); no `cloud.rs` exists in the
+save crate.
 
 ### Data Structures
 
@@ -145,8 +166,6 @@ classDiagram
         +autosave_rotation u32
         +autosave_interval_secs u32
         +local_compression CompressionMode
-        +cloud_compression CompressionMode
-        +cloud_sync_enabled bool
         +save_dir String
     }
 
@@ -282,37 +301,23 @@ classDiagram
         Codegen
     }
 
-    class CloudSyncAdapter {
-        -platform CloudPlatform
-        +sync(slot meta vfs) Result
-        +upload(slot vfs) Result
-        +download(slot vfs) Result
+    class SchemaRegistry {
+        -entries Vec~SchemaEntry~
+        +register(entry)
+        +get(type_id version) Option~SchemaEntry~
+        +highest(type_id) Option~SchemaVersion~
+        +versions(type_id) Slice~SchemaVersion~
     }
 
-    class CloudPlatform {
-        <<enumeration>>
-        Steam
-        PlayStation
-        Xbox
-        ICloud
-        EpicOnlineServices
-        Nintendo
-        GooglePlay
-        Disabled
+    class SchemaEntry {
+        +type_id TypeId
+        +version SchemaVersion
+        +serialize fn
+        +deserialize fn
     }
 
-    class SyncResult {
-        <<enumeration>>
-        InSync
-        Uploaded
-        Downloaded
-        Conflict
-    }
-
-    class ConflictChoice {
-        <<enumeration>>
-        KeepLocal
-        KeepRemote
+    class TypeId {
+        +inner u64
     }
 
     class SchemaVersion {
@@ -369,9 +374,6 @@ classDiagram
         LoadComplete
         LoadFailed
         AutosaveTriggered
-        CloudSyncStarted
-        CloudSyncComplete
-        CloudConflict
     }
 
     class SaveError {
@@ -381,7 +383,6 @@ classDiagram
         EncryptionKeyUnavailable
         SlotLimitReached
         SlotNotFound
-        CloudUploadFailed
     }
 
     class LoadError {
@@ -405,10 +406,10 @@ classDiagram
     SaveManager --> SaveSlotManager : owns
     SaveManager --> SavePipeline : owns
     SaveManager --> MigrationRegistry : owns
+    SaveManager --> SchemaRegistry : owns
     SaveManager --> SaveSerializer : uses
     SaveManager --> SaveDeserializer : uses
     SaveManager --> SaveConfig : owns
-    SaveSlotManager --> CloudSyncAdapter : owns
     SaveSlotManager --> SaveSlotMeta : manages
     SaveSlotMeta --> SchemaVersion : stamps
     SaveSlotMeta --> SaveType : typed
@@ -417,14 +418,17 @@ classDiagram
     SavePipeline --> SaveFileHeader : writes
     SaveSerializer --> EntitySnapshot : produces
     SaveDeserializer --> EntitySnapshot : produces
+    SaveSerializer --> SchemaRegistry : queries
+    SaveDeserializer --> SchemaRegistry : queries
+    SchemaRegistry --> SchemaEntry : stores
+    SchemaEntry --> TypeId : identifies
+    SchemaEntry --> SchemaVersion : versions
     EntitySnapshot --> ComponentSnapshot : contains
     EntitySnapshot --> ProceduralAssetRef : lists
     ComponentSnapshot --> SchemaVersion : stamps
     MigrationRegistry --> MigrationStep : stores
     MigrationStep --> MigrationTransform : applies
     MigrationStep --> SchemaVersion : versions
-    CloudSyncAdapter --> CloudPlatform : targets
-    CloudSyncAdapter --> SyncResult : returns
     EncryptionConfig --> KeySource : uses
     Saveable --> SaveContext : filters
     Saveable --> ProceduralAssetRef : lists
@@ -777,27 +781,21 @@ pub struct SaveConfig {
     pub autosave_rotation: u32,
     pub autosave_interval_secs: u32,
     pub local_compression: CompressionMode,
-    pub cloud_compression: CompressionMode,
-    pub cloud_sync_enabled: bool,
     pub save_dir: String,
 }
 
+/// Save-system events. Cloud sync observes SaveComplete
+/// from platform-services.md and emits its own events
+/// there; this system does not define cloud variants.
 #[derive(Clone, Debug)]
 pub enum SaveEvent {
     SaveStarted { slot: SlotId },
-    SaveComplete { slot: SlotId },
+    SaveComplete { slot: SlotId, meta: SaveSlotMeta },
     SaveFailed { slot: SlotId, error: SaveError },
     LoadStarted { slot: SlotId },
     LoadComplete { slot: SlotId },
     LoadFailed { slot: SlotId, error: LoadError },
     AutosaveTriggered { slot: SlotId },
-    CloudSyncStarted { slot: SlotId },
-    CloudSyncComplete { slot: SlotId },
-    CloudConflict {
-        slot: SlotId,
-        local_meta: SaveSlotMeta,
-        remote_meta: SaveSlotMeta,
-    },
 }
 
 pub struct SaveManager {
@@ -856,62 +854,76 @@ impl SaveManager {
 }
 ```
 
-### Cloud Sync
+### Schema Registry
+
+`SchemaRegistry` decouples save serialization from the codegen pipeline. It maps a stable `TypeId`
+to a sorted list of registered format versions. Multiple versions per type coexist so a save
+containing older-format components can be loaded without forcing a single canonical schema. The
+codegen pipeline populates the registry at `.dylib` load time; user code reads it.
 
 ```rust
+/// Stable identity for a component schema across
+/// save boundaries. See [../core-runtime/ids.md].
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct TypeId(pub u64);
+
+/// Codegen'd descriptor for one format version of a
+/// component type. Multiple versions per TypeId are
+/// allowed in the registry; the serializer picks
+/// the highest version supported by the running
+/// engine, the deserializer accepts any registered
+/// version and dispatches via `MigrationRegistry`.
 #[derive(Clone, Debug)]
-pub enum SyncResult {
-    InSync,
-    Uploaded,
-    Downloaded,
-    Conflict {
-        local: SaveSlotMeta,
-        remote: SaveSlotMeta,
-    },
+pub struct SchemaEntry {
+    pub type_id: TypeId,
+    pub version: SchemaVersion,
+    /// Codegen'd rkyv archiver for this version.
+    pub serialize: fn(&World, Entity, &mut Arena)
+        -> Result<Box<[u8]>, SaveError>,
+    /// Codegen'd rkyv deserializer for this version.
+    pub deserialize: fn(&[u8], &mut CommandBuffer, Entity)
+        -> Result<(), LoadError>,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum ConflictChoice {
-    KeepLocal,
-    KeepRemote,
+/// Sorted Vec keyed by (TypeId, SchemaVersion) for
+/// binary search. No HashMap on hot paths.
+pub struct SchemaRegistry {
+    entries: Vec<SchemaEntry>,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum CloudPlatform {
-    Steam,
-    PlayStation,
-    Xbox,
-    ICloud,
-    EpicOnlineServices,
-    Nintendo,
-    GooglePlay,
-    Disabled,
-}
-
-pub struct CloudSyncAdapter {
-    platform: CloudPlatform,
-}
-
-impl CloudSyncAdapter {
-    /// Submits sync I/O via channel; returns immediately.
-    /// CloudSyncComplete or CloudConflict event at frame boundary.
-    pub fn sync(
-        &self, slot: SlotId,
-        local_meta: &SaveSlotMeta,
-        vfs: &VirtualFileSystem,
-    ) -> Result<SyncResult, SaveError>;
-    /// Submits upload I/O via channel; returns immediately.
-    pub fn upload(
-        &self, slot: SlotId,
-        vfs: &VirtualFileSystem,
-    ) -> Result<(), SaveError>;
-    /// Submits download I/O via channel; returns immediately.
-    pub fn download(
-        &self, slot: SlotId,
-        vfs: &VirtualFileSystem,
-    ) -> Result<(), SaveError>;
+impl SchemaRegistry {
+    /// Register a codegen'd schema entry. Called
+    /// by the middleman .dylib at load time for every
+    /// codegen'd (TypeId, SchemaVersion) pair.
+    pub fn register(&mut self, entry: SchemaEntry);
+    /// Look up the entry for a specific version.
+    pub fn get(
+        &self,
+        type_id: TypeId,
+        version: SchemaVersion,
+    ) -> Option<&SchemaEntry>;
+    /// Highest registered version for a type. Used
+    /// by the serializer to pick the canonical
+    /// version at save time.
+    pub fn highest(
+        &self,
+        type_id: TypeId,
+    ) -> Option<SchemaVersion>;
+    /// All registered versions for a type (sorted).
+    /// Used by the migration planner.
+    pub fn versions(
+        &self,
+        type_id: TypeId,
+    ) -> &[SchemaVersion];
 }
 ```
+
+### Cloud Sync and Achievement Queuing
+
+Moved to [../platform/platform-services.md](../platform/platform-services.md). The save system
+publishes `SaveComplete` events carrying the updated `SaveSlotMeta`; platform services observe those
+events and perform cloud upload, conflict detection, and achievement queuing. Save system code holds
+no platform SDK handles.
 
 ### Error Types
 
@@ -927,7 +939,6 @@ pub enum SaveError {
     EncryptionKeyUnavailable,
     SlotLimitReached { max: u32 },
     SlotNotFound(SlotId),
-    CloudUploadFailed { detail: String },
 }
 
 #[derive(Clone, Debug)]
@@ -1064,39 +1075,53 @@ sequenceDiagram
 
 ### Cloud Save Sync Flow
 
+See [../platform/platform-services.md](../platform/platform-services.md) for the cloud sync flow.
+The save system is a producer of `SaveComplete` events; platform services handle upload, conflict
+resolution, and achievement queuing.
+
+### Migration Failure Handling
+
+Migrations run as an ordered chain of codegen'd steps. Any step that fails aborts the whole chain
+and rolls back, leaving the on-disk save untouched.
+
 ```mermaid
 sequenceDiagram
-    participant SM as SaveManager
-    participant CS as CloudSyncAdapter
-    participant VFS as VirtualFileSystem
-    participant API as Platform Cloud API
+    participant L as Load Path
+    participant B as Pre-Migration Backup
+    participant MR as MigrationRegistry
+    participant SR as SchemaRegistry
+    participant W as ECS World
 
-    SM->>CS: sync slot
-    CS->>VFS: read local save metadata
-    VFS-->>CS: local timestamp and hash
-
-    CS->>API: query remote metadata
-    API-->>CS: remote timestamp and hash
-
-    alt Hashes match
-        CS-->>SM: SyncResult InSync
-    else Local newer
-        CS->>VFS: read local save
-        VFS-->>CS: save bytes
-        CS->>API: upload bytes
-        API-->>CS: upload complete
-        CS-->>SM: SyncResult Uploaded
-    else Remote newer
-        CS->>API: download
-        API-->>CS: save bytes
-        CS->>VFS: write local save
-        VFS-->>CS: write complete
-        CS-->>SM: SyncResult Downloaded
-    else Both changed
-        CS-->>SM: SyncResult Conflict
-        Note over SM: Prompt user to choose
+    L->>B: copy slot_NN.save -> slot_NN.save.bak
+    L->>MR: build chain v_saved -> v_current
+    loop each step
+        MR->>MR: apply_step(bytes)
+        alt step ok
+            MR-->>MR: accumulate migrated bytes
+        else step failed
+            MR-->>L: MigrationError::StepFailed
+            L->>B: restore slot_NN.save from backup
+            L->>L: emit LoadFailed(MigrationFailed)
+            Note over L: on-disk save is byte-identical
+            Note over L: to its pre-migration state
+        end
     end
+    L->>SR: deserialize migrated bytes
+    L->>W: apply command buffer
+    L->>L: delete backup on LoadComplete
 ```
+
+Rollback protocol:
+
+1. Before the first migration step, copy `slot_NN.save` to `slot_NN.save.bak` atomically via the
+   platform-native rename pattern.
+2. Migrations operate on an in-memory `Vec<u8>` copy of the payload; the on-disk file is never
+   mutated until the full chain succeeds.
+3. On any `MigrationError`, discard the in-memory buffer and emit
+   `LoadError::MigrationFailed { type_hash, from, to, detail }`.
+4. The backup remains until a successful `LoadComplete`, at which point it is deleted.
+5. If the process crashes mid-migration, startup recovery notices a stale `.bak` file and
+   automatically restores it before the next load.
 
 ### Incremental Save Decision
 
@@ -1198,7 +1223,7 @@ sequenceDiagram
 | Spatial awareness | produces/consumes | AwarenessState (NPC memory) | Saveable component |
 | Data tables | consumes | schema version for migration | version tag in save header |
 | Platform I/O | produces/consumes | file read/write | platform-native I/O |
-| Cloud services | produces/consumes | cloud sync | platform SDK upload/download |
+| Platform services | consumes | SaveComplete events | see platform-services.md |
 
 ## Saveable Component Map
 
@@ -1234,8 +1259,9 @@ buffers, each asset type registers a `ProceduralSaveHandler` in the middleman .d
 | Seed + params | Generation seed + parameters | < 1 KB | Regenerate on load |
 | Audio params | Parameter snapshot (no buffers) | < 1 KB | Restore parameter values |
 
-GPU readback is submitted via channel to the main thread at frame boundary. The save pipeline waits
-for all readback completions before finalizing the save archive.
+GPU readback is submitted via channel to the main thread at frame boundary and completed at a later
+frame boundary (no blocking, no `.await`). The save pipeline waits for all readback completions
+before finalizing the save archive.
 
 ## Migration Design
 
@@ -1296,7 +1322,7 @@ dimension-specific save code paths exist.
 ### Save File I/O Backend
 
 All save I/O routes through the `VirtualFileSystem` and platform-native I/O layer defined in
-[memory-async-io.md](../core-runtime/memory-async-io.md). No Tokio, no async/await.
+[../core-runtime/io.md](../core-runtime/io.md). No Tokio, no async/await.
 
 | Operation | Windows (IOCP via `windows-rs`) |
 |-----------|---------------------------------|
@@ -1334,15 +1360,8 @@ All save I/O routes through the `VirtualFileSystem` and platform-native I/O laye
 
 ### Cloud Platform APIs
 
-| Platform | API |
-|----------|-----|
-| Steam | ISteamRemoteStorage |
-| PlayStation / PSVR2 | PS5 Save Data Library |
-| Xbox | Connected Storage |
-| iCloud / visionOS | NSFileManager via objc2 |
-| Epic | EOS Player Data Storage |
-| Nintendo | `nn::sdb` (Switch Save Data Backup) |
-| Google Play / Meta | Google Play Games SavedGames API |
+Cloud platform APIs are owned by
+[../platform/platform-services.md](../platform/platform-services.md).
 
 ### Proposed Dependencies
 
@@ -1350,12 +1369,12 @@ All save I/O routes through the `VirtualFileSystem` and platform-native I/O laye
 |-------|---------|
 | `rkyv` | Zero-copy binary serialization for save files |
 | `lz4_flex` | LZ4 compression (pure Rust) |
-| `zstd` | Zstd compression (cloud uploads) |
+| `zstd` | Zstd compression (platform-services cloud uploads) |
 | `aes-gcm` | AES-256-GCM (RustCrypto) |
 | `crc32fast` | CRC-32 (SIMD-accelerated) |
 | `smallvec` | Inline SmallVec for EntitySnapshot (already core dep) |
 
-Note: `blake3` already approved in [memory-async-io.md](../core-runtime/memory-async-io.md).
+Note: `blake3` already approved in [../core-runtime/io.md](../core-runtime/io.md).
 
 ## Test Plan
 
@@ -1409,11 +1428,12 @@ All tests use real objects — no mocks. Codegen functions tested via the actual
 | `test_save_under_100ms` | R-13.3.NF1 |
 | `test_save_file_under_10mb` | R-13.3.NF2 |
 | `test_crash_safety_10_points` | R-13.3.NF3 |
-| `test_cloud_sync_upload` | R-13.3.5 |
-| `test_cloud_sync_conflict` | R-13.3.5 |
-| `test_cloud_sync_no_block` | R-13.3.5 |
+| `test_schema_registry_multi_version_coexist` | R-13.3.2 |
+| `test_migration_rollback_preserves_disk` | R-13.3.2 |
 | `test_frame_boundary_save_complete` | R-13.3.6 |
 | `test_migration_ci_golden_saves` | R-13.3.2 |
+
+Cloud-sync tests live in the platform-services test-cases file.
 
 ### Benchmarks
 
@@ -1532,7 +1552,7 @@ channel mechanism.
 | Spatial awareness | produces/consumes | AwarenessState (NPC memory) | Saveable component |
 | Data tables | consumes | schema version for migration | version tag in save header |
 | Platform I/O | produces/consumes | file read/write | platform-native I/O |
-| Cloud services | produces/consumes | cloud sync | platform SDK upload/download |
+| Platform services | consumes | SaveComplete events | see platform-services.md |
 
 ### RF-14: Saveable component map per subsystem [APPLIED]
 

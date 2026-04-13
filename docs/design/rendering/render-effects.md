@@ -549,7 +549,57 @@ sequenceDiagram
     PS->>RG: register compute passes
 ```
 
+### Render Graph Registration
+
+Every post-processing pass is explicitly registered with the shared render graph via
+`GraphBuilder::add_raster_pass` or `GraphBuilder::add_compute_pass` (see
+[render-pipeline.md](render-pipeline.md)). The `PostProcessStack` never executes a pass on its own
+queue — all work flows through the shared graph so barriers, aliasing, and queue assignment are
+computed once. Example (Bloom, a compute pass that reads HDR scene color and writes a downsampled
+bloom texture):
+
+```rust
+fn register_bloom(
+    graph: &mut GraphBuilder,
+    params: &Bloom,
+    scene_color: ResourceHandle,
+    bloom_out: ResourceHandle,
+) -> PassHandle {
+    graph
+        .add_compute_pass("bloom_downsample")
+        .read_texture(scene_color)
+        .write_storage(bloom_out)
+        .priority(PassPriority::Normal)
+        .execute(move |enc: &mut PassEncoder, ctx: &PassContext| {
+            enc.bind_compute_pipeline(ctx.pipelines.bloom_downsample);
+            enc.set_push_constants(&BloomPushConsts::from(params));
+            enc.dispatch(ctx.tile_count_x, ctx.tile_count_y, 1);
+        })
+        .finish()
+}
+```
+
+Raster-based effects use `add_raster_pass` with `write_color`/`write_depth` instead. The same
+pattern applies to every other effect (DoF, Motion Blur, Tonemap, Lens Flare, Auto Exposure, etc.):
+one pass per effect, typed resource handles, graph owns execution order.
+
 ### Acceleration Structure Build
+
+BLAS and TLAS are built directly from meshlet data. There is no parallel ray-tracing geometry path.
+Specifically:
+
+1. **BLAS is built per mesh from `MeshletAsset`.** `AccelStructManager::build_blas` reads the
+   `vertex_buffer` and `index_buffer` of the mesh's `MeshletAsset` (see [meshlets.md](meshlets.md)
+   BLAS section) and calls `GpuDevice::create_blas` with those buffers. LOD 0 is used so ray-traced
+   geometry matches rasterized geometry exactly. Incremental BLAS updates are triggered by asset
+   hot-reload or by procedural mesh regeneration — same entry point, different source.
+2. **TLAS is built per-frame from `ProxyStore`.** The render extraction phase walks the live
+   `ProxyStore` (see [rendering-core.md](rendering-core.md) Core Class Diagram) and submits one TLAS
+   instance per visible `MeshletProxy`. Each instance holds the interpolated transform and a
+   `BlasHandle` looked up by the proxy's `Handle<MeshletAsset>`. TLAS uses refit when only
+   transforms changed and rebuild when instance count or BLAS set changes.
+3. **Collision BVH is separate.** Physics uses its own BVH built from LOD 0 of the same
+   `MeshletAsset`, but never shares BLAS memory with ray tracing.
 
 ```mermaid
 sequenceDiagram
@@ -559,17 +609,17 @@ sequenceDiagram
     participant GPU as GPU Backend
     participant RT as RT Passes
 
-    ECS->>EXT: extract meshlet proxies
-    EXT->>ASM: submit dirty instances
+    ECS->>EXT: extract meshlet proxies (ProxyStore walk)
+    EXT->>ASM: submit dirty instances + MeshletAsset handles
 
     par BLAS Updates
-        ASM->>GPU: build BLAS (new meshes)
+        ASM->>GPU: build_blas(MeshletAsset.vertex_buffer, index_buffer)
         ASM->>GPU: compaction query
     and Instance Buffer
-        ASM->>GPU: upload instance transforms
+        ASM->>GPU: upload ProxyStore interp_transforms
     end
 
-    ASM->>GPU: rebuild/refit TLAS
+    ASM->>GPU: rebuild/refit TLAS from ProxyStore
     RT->>GPU: DispatchRays / TraceRay
 ```
 

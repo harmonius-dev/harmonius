@@ -106,9 +106,17 @@
 
 ## Overview
 
+> **Graph runtime clients.** Every visual editor in this document is a CLIENT of
+> [../core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md). Each editor domain
+> parameterizes the generic runtime (e.g.
+> `GraphRuntime<MaterialNode, MaterialEdge, MaterialProgram>` for the material editor); none of them
+> redefine graph execution. Hot reload of compiled graphs follows
+> [../core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md).
+
 The visual editors provide the sole authoring surface for all engine logic, materials, animations,
 and game data. Users never write textual code. Every behavior, shader, state machine, and data table
-is authored through typed, visual graph or table editors.
+is authored through typed, visual graph or table editors. Editor code is fully synchronous — no
+`async`, no `await`, no `Future`.
 
 ### Core Principles
 
@@ -1204,10 +1212,10 @@ results are committed at well-defined frame boundaries:
 
 | Operation | Thread | Frame phase |
 |-----------|--------|-------------|
-| Validation (type check, lint) | Worker | Triggered by edit; async |
-| Incremental graph compile | Worker | Triggered by edit; async |
+| Validation (type check, lint) | Worker | Triggered by edit; job dispatch |
+| Incremental graph compile | Worker | Triggered by edit; job dispatch |
 | Commit compiled systems | Main | `PreUpdate` of next frame |
-| Shader compile (DXC/MSC) | Worker | Triggered by save; async |
+| Shader compile (DXC/MSC) | Worker | Triggered by save; job dispatch |
 | Material preview update | Render | Sync with render extraction |
 | `.dylib` hot-reload | Main | `PreUpdate` of next frame |
 

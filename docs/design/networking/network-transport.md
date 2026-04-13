@@ -1,5 +1,23 @@
 # Network Transport and State Replication Design
 
+## Constraint Compliance
+
+This document is synchronous end-to-end. The game runtime is 100% synchronous per
+[constraints.md](../constraints.md) section "CPU Parallelism" and "User-Facing API Principle":
+
+- No async runtimes anywhere in the engine, editor, or headless game server.
+- All user-facing networking APIs are synchronous request/handle calls that return immediately.
+- The main thread owns all platform sockets and drains I/O each frame via the canonical
+  [core-runtime/io.md](../core-runtime/io.md) protocol (`IoRequest` / `IoResponse`).
+- QUIC is driven by `quinn-proto` (a sans-io state machine) on Linux and by native QUIC stacks on
+  Apple / Windows, all wrapped behind the sync request/handle pattern.
+- Backend workloads (matchmaker, GameDb, control panel, K8s operator) live in
+  [network-infrastructure.md](./network-infrastructure.md) and are the only scope where async
+  runtimes are permitted.
+
+Any future change that introduces an async runtime dependency or a future-returning socket API to
+this document is a constraint violation that must be reverted.
+
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
@@ -73,10 +91,11 @@
 | Constraint | Source | Impact |
 |------------|--------|--------|
 | Networking frame budget | R-X.1.1 | 0.5 ms at 60 fps |
-| Async I/O via Tokio runtime | Design constraints | All socket ops async |
-| ECS-primary (~90%)-based | Design constraints | All net state as ECS resources |
-| Static dispatch | Design constraints | No vtables, no dyn Trait |
-| Rust stable only | Design constraints | No nightly features |
+| Sync request/handle I/O | constraints.md | No async runtimes; main-thread drain |
+| Platform-native sockets | constraints.md | io_uring / IOCP / Networking.framework |
+| ECS-primary (~90%)-based | constraints.md | All net state as ECS resources |
+| Static dispatch | constraints.md | No vtables, no dyn Trait |
+| Rust stable only | constraints.md | No nightly features |
 
 ### Cross-Cutting Dependencies
 
@@ -93,29 +112,33 @@
 
 ## Overview
 
-This design covers the UDP transport layer and the state replication, prediction, rollback, and RPC
+This design covers the QUIC transport layer and the state replication, prediction, rollback, and RPC
 systems built on top of it. Together they form the data path for all networked gameplay in
 Harmonius.
 
 ### Transport Layer
 
-The transport provides UDP-based communication between the platform I/O layer (`Tokio runtime`) and
-higher-level networking systems.
+The transport provides QUIC-based communication between the main-thread platform I/O drain (see
+[core-runtime/io.md](../core-runtime/io.md)) and higher-level networking systems. All user-facing
+transport APIs are synchronous request/handle calls.
 
-1. **UDP-only for game traffic.** All reliability, ordering, and congestion control are userspace
-   over raw UDP.
-2. **Channel-based multiplexing.** Each connection supports multiple logical channels with
-   independent delivery semantics.
-3. **DTLS 1.3 encryption.** All traffic encrypted. Key rotation without session interruption.
-4. **Async I/O throughout.** All socket operations use `async`/`await` via the `Tokio runtime`.
-5. **ECS-native.** Connection state, channel buffers, congestion state, and diagnostics are ECS
-   resources.
+1. **QUIC-only for all traffic.** QUIC handles reliability, ordering, encryption (TLS 1.3),
+   congestion control, migration, and 0-RTT — replacing the previous custom UDP reliability stack.
+2. **Stream-based multiplexing.** Each connection exposes a fixed palette of QUIC streams and
+   datagrams with independent delivery semantics (see Stream Multiplexing Policy below).
+3. **TLS 1.3 built into QUIC.** No separate DTLS stack. Key rotation is handled inside the QUIC
+   implementation.
+4. **Synchronous request/handle I/O.** Workers call `fn`-returning APIs that enqueue work and hand
+   back a token or handle immediately. The main thread drains completions each frame and emits ECS
+   events — synchronous Rust throughout, with no suspensions or futures.
+5. **ECS-native.** Connection state, stream buffers, congestion state, and diagnostics are ECS
+   resources updated from main-thread completion events.
 
 ### State Replication
 
-The replication system is ECS-primary (~90%)-based. Replicated state lives as components. The
-`Reflect` trait drives field-level diffing and patching. The shared BVH provides spatial relevancy
-queries.
+The replication system is ECS-primary (~90%)-based. Replicated state lives as components. Codegen
+emits per-component `diff`/`patch` functions (see RF-2 below) that drive field-level delta
+compression without runtime reflection. The networking grid provides spatial relevancy queries.
 
 1. **Server-authoritative.** The server owns all gameplay state.
 2. **Component-level granularity.** Only changed fields are sent.
@@ -133,20 +156,22 @@ graph TD
     subgraph "harmonius_net::transport"
         TS[TransportSocket]
         CM[ConnectionManager]
-        CH[ChannelMux]
-        RC[ReliableChannel]
-        UC[UnreliableChannel]
-        FG[Fragmenter]
-        CC[CongestionController]
-        DT[DtlsLayer]
+        SM[StreamMux]
+        QP[QuinnProtoState]
+        FG[ReassemblyBuffer]
+        CC[QuicCongestion]
         DG[Diagnostics]
-        PK[PacketCodec]
     end
 
-    subgraph "harmonius_platform::threading"
-        RE[Tokio runtime]
-        TP[ThreadPool]
-        BP[BufferPool]
+    subgraph "harmonius_core_runtime::io"
+        IOD[IoDispatcher]
+        BP[IoBufferPool]
+    end
+
+    subgraph "harmonius_platform::sockets"
+        LIN[io_uring via rustix]
+        WIN[IOCP via windows-rs]
+        APL[Networking.framework via objc2]
     end
 
     subgraph "harmonius_ecs"
@@ -154,25 +179,24 @@ graph TD
         SYS[ECS Systems]
     end
 
-    TS --> RE
-    TS --> BP
+    TS --> IOD
+    IOD --> LIN
+    IOD --> WIN
+    IOD --> APL
+    IOD --> BP
     CM --> TS
-    CM --> DT
-    CH --> RC
-    CH --> UC
-    CH --> CM
-    RC --> FG
-    RC --> CC
-    UC --> CC
+    CM --> QP
+    SM --> QP
+    SM --> CM
+    QP --> CC
+    QP --> FG
     DG --> CM
     DG --> CC
-    PK --> DT
-    PK --> FG
 
     SYS -->|"read/write"| RES
-    SYS -->|"drive"| CM
-    SYS -->|"drive"| CH
-    SYS -->|"drive"| DG
+    SYS -->|"sync drive"| CM
+    SYS -->|"sync drive"| SM
+    SYS -->|"sync drive"| DG
 ```
 
 ### Replication Module Boundaries
@@ -232,20 +256,18 @@ graph TD
 ```text
 harmonius_net/
 +-- transport/
-|   +-- socket.rs        # TransportSocket, async UDP
+|   +-- socket.rs        # TransportSocket (sync API)
 |   +-- connection.rs    # ConnectionManager, Connection
-|   +-- handshake.rs     # Handshake phases, cookie, auth
-|   +-- channel.rs       # ChannelMux, ChannelId, mode
-|   +-- reliable.rs      # ReliableChannel, SACK, windows
-|   +-- unreliable.rs    # UnreliableChannel
-|   +-- fragment.rs      # Fragmenter, reassembly, MTU
-|   +-- congestion.rs    # CongestionController
-|   +-- dtls.rs          # DtlsLayer, DtlsSession
-|   +-- codec.rs         # PacketCodec, header encode
+|   +-- handshake.rs     # QUIC handshake driving
+|   +-- stream.rs        # StreamMux, StreamId, mode
+|   +-- quinn_driver.rs  # quinn-proto sans-io driver
+|   +-- reassembly.rs    # Large-packet reassembly buffer
+|   +-- congestion.rs    # QUIC congestion metrics view
+|   +-- codec.rs         # Typed payload encode/decode
 |   +-- stats.rs         # NetStatsResource, RTT, loss
-|   +-- systems.rs       # ECS systems (poll, recv, send)
+|   +-- systems.rs       # ECS sync systems (drain, events)
 |   +-- config.rs        # TransportConfig, platform defs
-|   +-- error.rs         # TransportError variants
+|   +-- error.rs         # NetworkError variants
 +-- replication/
 |   +-- system.rs        # ReplicationSystem, tick loop
 |   +-- delta.rs         # DeltaTracker, Baseline
@@ -275,27 +297,24 @@ harmonius_net/
 
 ### Connection Handshake
 
-Four-phase protocol integrating DTLS with application-layer authentication. Phase 1 is stateless to
-resist flooding (R-8.1.1).
+Three-phase protocol running on top of the QUIC handshake (R-8.1.1, R-8.1.5). QUIC's own stateless
+retry and TLS 1.3 certificate exchange make Phase 1 anti-flood-safe without a custom cookie. The
+engine then layers application authentication and stream palette setup.
 
 ```mermaid
 sequenceDiagram
     participant C as Client
     participant S as Server
-    participant DTLS as DTLS Layer
+    participant Q as quinn-proto
 
-    Note over C,S: Phase 1 -- Cookie Exchange
-    C->>S: ClientHello (no token)
-    S->>C: HelloRetry + cookie
-    Note over S: Stateless -- no allocation yet
+    Note over C,S: Phase 1 -- QUIC handshake (TLS 1.3)
+    C->>Q: Initial ClientHello
+    Q->>S: stateless Retry if needed
+    C->>Q: Retry + cert
+    Q-->>C: TLS 1.3 established
+    Q-->>S: TLS 1.3 established
 
-    Note over C,S: Phase 2 -- DTLS Handshake
-    C->>DTLS: ClientHello + cookie
-    DTLS->>DTLS: DTLS 1.3 negotiation
-    DTLS-->>C: Encrypted channel established
-    DTLS-->>S: Encrypted channel established
-
-    Note over C,S: Phase 3 -- Authentication
+    Note over C,S: Phase 2 -- Authentication
     C->>S: AuthRequest(session_token, timestamp)
     S->>S: Validate token, check replay
     alt Token valid
@@ -304,13 +323,13 @@ sequenceDiagram
         S->>C: AuthReject(reason)
     end
 
-    Note over C,S: Phase 4 -- Channel Setup
-    C->>S: ChannelConfig(requested channels)
-    S->>C: ChannelReady(assigned channel IDs)
+    Note over C,S: Phase 3 -- Stream Setup
+    C->>S: StreamConfig(requested stream roles)
+    S->>C: StreamReady(assigned stream IDs)
 ```
 
-Anti-flood: HMAC-SHA256 cookie with configurable 5 s expiry. Replay resistance: monotonic timestamp
-with sliding window.
+Anti-flood: QUIC stateless Retry blocks unauthenticated allocation. Replay resistance: monotonic
+timestamp with sliding window validated by the server after Phase 2.
 
 ### Connection State Machine
 
@@ -318,7 +337,7 @@ with sliding window.
 stateDiagram-v2
     [*] --> Disconnected
     Disconnected --> Connecting: connect()
-    Connecting --> Authenticating: DTLS done
+    Connecting --> Authenticating: QUIC handshake done
     Connecting --> Disconnected: timeout
     Authenticating --> Active: auth ok
     Authenticating --> Disconnected: auth fail
@@ -333,12 +352,43 @@ stateDiagram-v2
 
 ### Channel Architecture
 
-| Mode | Reliable | Ordered | Use Case |
-|------|----------|---------|----------|
-| ReliableOrdered | Yes | Yes | Inventory, quests, chat |
-| ReliableUnordered | Yes | No | Entity spawns, config |
-| UnreliableSequenced | No | Seq | Position updates, input |
-| UnreliableUnordered | No | No | Voice, VFX triggers |
+Harmonius exposes four logical stream classes per connection. Each class maps to native QUIC streams
+(reliable) or QUIC datagrams (unreliable).
+
+| Mode | Reliable | Ordered | QUIC Primitive | Use Case |
+|------|----------|---------|----------------|----------|
+| ReliableOrdered | Yes | Yes | QUIC bidi stream | Inventory, quests, chat |
+| ReliableUnordered | Yes | No | QUIC uni stream | Entity spawns, config |
+| UnreliableSequenced | No | Seq | QUIC datagram + seq tag | Position updates, input |
+| UnreliableUnordered | No | No | QUIC datagram | Voice, VFX triggers |
+
+### Stream Multiplexing Policy
+
+Each connection opens a fixed palette of streams on handshake, so worker systems can reference them
+by compile-time `StreamRole` constants instead of allocating dynamically. Defaults:
+
+| Role | Class | Count | Purpose |
+|-----------------------|----------------------|-------|------------------------------|
+| `GameplayReliable` | ReliableOrdered | 4 | RPCs, quests, inventory |
+| `WorldReliable` | ReliableUnordered | 4 | Entity spawns, config sync |
+| `StateUnreliableSeq` | UnreliableSequenced | 8 | Snapshots, positions, input |
+| `VoiceUnreliable` | UnreliableUnordered | 8 | Voice, VFX, ephemeral events |
+
+The engine total is 24 streams per connection by default, well below the QUIC default peer limit of
+100. Stream counts can be overridden per game in `TransportConfig`.
+
+1. **Per-stream flow control.** QUIC's built-in per-stream credit window is used unchanged.
+   `quinn-proto` raises `MaxStreamData` as the ECS reader drains bytes each frame. No custom
+   flow-control layer on top.
+2. **Back-pressure via MPSC credit.** When workers enqueue `SendToken`s faster than the main thread
+   drains them, the outbound command channel (`crossbeam::channel::bounded`, capacity
+   `max_send_tokens`) blocks enqueues and returns `NetworkError::SendQueueFull` on `try_send`.
+   Systems treat that error as a deterministic signal to drop lower-priority state.
+3. **Fairness via weighted round-robin.** The main-thread driver visits streams in a weighted
+   round-robin: `StateUnreliableSeq` weight 4, `GameplayReliable` weight 2, others weight 1. Weights
+   are constants in `TransportConfig`. Round-robin eliminates starvation without HashMap lookups.
+4. **Static ordering.** Stream roles are declared statically so ECS systems dispatch via
+   `DispatchTable<F>` (see core-runtime/primitives.md) rather than hashing role strings.
 
 ### Congestion Control
 
@@ -479,22 +529,25 @@ stateDiagram-v2
 ```mermaid
 classDiagram
     class TransportSocket {
-        -socket: RawHandle
-        -reactor: Tokio runtime
-        -recv_buf: BufferPool
-        +bind(addr) Future~Result~
-        +sendto(addr, data) Future~Result~
-        +recv_from() Future~Result~Datagram~
+        -handle: SocketHandle
+        -quinn: QuinnProtoState
+        -outbox: Sender~IoRequest~
+        -inbox: Receiver~IoResponse~
+        +bind(addr) Result~SocketHandle, NetworkError~
+        +sendto(handle, addr, data) Result~SendToken, NetworkError~
+        +poll_received(handle) Vec~Datagram~
+        +poll_connections(handle) Vec~ConnectionEvent~
+        +close(handle)
     }
 
     class ConnectionManager {
-        -connections: HashMap~ConnectionId, Connection~
-        -pending: HashMap~Token, HandshakeState~
+        -connections: SortedVecMap~ConnectionId, Connection~
+        -pending: SortedVecMap~Token, HandshakeState~
         -timeout_wheel: TimingWheel
         -config: TransportConfig
-        +accept() Future~ConnectionId~
-        +connect(addr, token) Future~ConnectionId~
+        +connect(addr, token) Result~ConnectionId, NetworkError~
         +disconnect(id)
+        +poll_events() Vec~ConnectionEvent~
         +poll_timeouts() SmallVec~ConnectionId~
     }
 
@@ -502,41 +555,43 @@ classDiagram
         -id: ConnectionId
         -remote_addr: SocketAddr
         -state: ConnectionState
-        -dtls: DtlsSession
-        -channels: ChannelMux
+        -quinn_conn: QuinnConnectionHandle
+        -streams: StreamMux
         -stats: ConnectionStats
     }
 
-    class ChannelMux {
-        -channels: Vec~Channel~
-        +open(mode) ChannelId
-        +send(channel, payload)
-        +recv(channel) Option~Payload~
+    class StreamMux {
+        -reliable_ordered: SmallVec~StreamId; 4~
+        -reliable_unordered: SmallVec~StreamId; 4~
+        -unreliable_sequenced: SmallVec~StreamId; 8~
+        -unreliable_unordered: SmallVec~StreamId; 8~
+        +open(mode) StreamId
+        +send(stream, payload) Result~SendToken, NetworkError~
+        +drain(stream) Vec~Payload~
     }
 
-    class ReliableChannel {
-        -send_window: SendWindow
-        -recv_window: RecvWindow
-        -retransmit_queue: VecDeque~Packet~
-        -rtt_estimator: RttEstimator
+    class QuinnProtoState {
+        -endpoint: EndpointState
+        -connections: SortedVecMap~ConnectionId, ConnState~
+        +handle_datagram(data, from)
+        +poll_transmit() SmallVec~Transmit; 16~
+        +poll_events() SmallVec~Event; 16~
+        +update_timers(now_ms)
     }
 
-    class CongestionController {
-        -cwnd: u32
-        -ssthresh: u32
+    class QuicCongestion {
+        -cwnd_bytes: u32
         -bytes_in_flight: u32
-        -state: CongestionState
-        +on_ack(bytes, rtt)
-        +on_loss(bytes)
-        +send_budget() u32
+        -recovery: bool
+        +view() CongestionSnapshot
     }
 
-    class Fragmenter {
-        -mtu: u16
-        -next_group_id: u16
-        -pending: HashMap~GroupId, FragmentGroup~
-        +fragment(payload) Vec~Fragment~
-        +reassemble(fragment) Option~Payload~
+    class ReassemblyBuffer {
+        -pending: SortedVecMap~GroupId, FragmentGroup~
+        -max_age_ms: u32
+        -seen_ids: FixedBitSet
+        +push(fragment) Option~Payload~
+        +expire(now_ms)
     }
 
     class NetStatsResource {
@@ -549,21 +604,12 @@ classDiagram
         -stability_score: f32
     }
 
-    class DtlsSession {
-        -state: DtlsState
-        -write_key: AesGcmKey
-        -read_key: AesGcmKey
-        +encrypt(header, payload) Result
-        +decrypt(header, payload) Result
-        +maybe_rotate_keys() Future~Result~
-    }
-
     class TimingWheel {
-        -slots: Vec~Vec~ConnectionId~~
+        -slots: Vec~SmallVec~ConnectionId; 4~~
         -current_slot: u32
         +schedule(id, delay)
         +cancel(id)
-        +tick() SmallVec~ConnectionId~
+        +tick() SmallVec~ConnectionId; 4~
     }
 
     class ReplicationSystem {
@@ -577,15 +623,16 @@ classDiagram
     }
 
     class DeltaTracker {
-        -baselines: HashMap~ClientId, Baseline~
+        -baselines: SortedVecMap~ClientId, Baseline~
         -schema_registry: SchemaRegistry
         +compute_delta(client, entity) DeltaPayload
-        +advance_baseline(client, tick)
+        +advance_baseline(client, ack_tick)
     }
 
     class InterestManager {
-        -aoi_radius: f32
-        -custom_rules: Vec~RelevancyRule~
+        -tiers: InterestTiers
+        -grid_ref: Handle~NetGrid~
+        -hysteresis_pct: f32
         +evaluate(client, world) RelevantSet
     }
 
@@ -602,7 +649,7 @@ classDiagram
     }
 
     class DormancyManager {
-        -dormant: HashSet~Entity~
+        -dormant: SortedVecMap~Entity, Tick~
         -threshold: Duration
         +check_dormancy(entity, last_change) bool
         +wake(entity)
@@ -610,7 +657,7 @@ classDiagram
 
     class ClientPredictor {
         -input_buffer: InputBuffer
-        -predicted: HashMap~Entity, DynamicValue~
+        -predicted: SortedVecMap~Entity, PredictedState~
         +predict(input, world)
     }
 
@@ -637,7 +684,7 @@ classDiagram
     }
 
     class JitterBuffer {
-        -buffer: BTreeMap~SequenceTick, Snapshot~
+        -buffer: SortedVecMap~SequenceTick, Snapshot~
         -target_depth: Duration
         +insert(snapshot, tick)
         +release() Option~Snapshot~
@@ -658,16 +705,16 @@ classDiagram
     }
 
     class RpcDispatcher {
-        -handlers: HashMap~RpcId, RpcHandler~
+        -handlers: DispatchTable~RpcHandlerFn~
         -validator: RpcValidator
         +register(rpc_id, handler, mode)
-        +dispatch_server(rpc_id, params, sender)
-        +invoke_client(target, rpc_id, params)
-        +invoke_multicast(filter, rpc_id, params)
+        +emit_server_event(rpc_id, params, sender)
+        +invoke_client(target, rpc_id, params) SendToken
+        +invoke_multicast(filter, rpc_id, params) SendToken
     }
 
     class RpcValidator {
-        -rate_limiters: HashMap~RpcId, RateLimiter~
+        -rate_limiters: SortedVecMap~RpcId, RateLimiter~
         +validate(rpc_id, params, sender) Result
     }
 
@@ -710,14 +757,13 @@ classDiagram
     }
 
     ConnectionManager *-- Connection
-    Connection *-- ChannelMux
-    Connection *-- DtlsSession
+    Connection *-- StreamMux
     Connection *-- ConnectionStats
-    ChannelMux *-- ReliableChannel
-    ChannelMux *-- UnreliableChannel
-    ReliableChannel --> CongestionController
-    ReliableChannel --> Fragmenter
+    StreamMux --> QuinnProtoState
     ConnectionManager --> TransportSocket
+    TransportSocket --> QuinnProtoState
+    TransportSocket --> ReassemblyBuffer
+    QuinnProtoState --> QuicCongestion
     ConnectionStats --> NetStatsResource
     ReplicationSystem *-- DeltaTracker
     ReplicationSystem *-- InterestManager
@@ -736,6 +782,50 @@ classDiagram
     PhysicsTransferSnapshot --> AuthorityEpoch
 ```
 
+### Sync Driver Architecture
+
+`quinn-proto` is a sans-io QUIC state machine: it consumes inbound datagrams via `handle_datagram()`
+and produces outbound datagrams via `poll_transmit()`, producing streams and events via
+`poll_events()`. The engine wraps it with platform-native sockets and drives the whole stack from
+the main thread each frame. No thread performs blocking I/O; no thread suspends on futures.
+
+```mermaid
+sequenceDiagram
+    participant W as Worker (game system)
+    participant Ch as crossbeam MPSC
+    participant Main as Main thread
+    participant Io as IoDispatcher
+    participant Plat as Platform socket
+    participant Qp as quinn-proto state
+
+    W->>Ch: TransportCmd::SendTo { socket, addr, buf }
+    Note over W: returns SendToken immediately (sync)
+    Ch-->>Main: drain commands (phase 0 per frame)
+    Main->>Io: IoRequest::SendPacket
+    Io->>Plat: io_uring submit / IOCP post
+    Plat-->>Io: completion (recv datagram)
+    Io-->>Main: IoResponse::RecvPacketOk
+    Main->>Qp: handle_datagram(data, from)
+    Qp-->>Main: events + transmits
+    Main->>Io: IoRequest::SendPacket (for Qp outbound)
+    Main->>Ch: ConnectionEvent::StreamData (ECS event)
+    Ch-->>W: event visible next tick
+```
+
+Each frame the main thread executes exactly this loop:
+
+1. Drain worker-submitted `TransportCmd` from the outbound MPSC.
+2. Submit platform-native socket I/O via `IoDispatcher` (see
+   [core-runtime/io.md](../core-runtime/io.md)).
+3. Poll platform completions; for every inbound datagram call `quinn_proto.handle_datagram()`.
+4. Call `quinn_proto.poll_transmit()` until empty and hand each datagram back to `IoDispatcher`.
+5. Call `quinn_proto.poll_events()` and translate to `ConnectionEvent` values (stream open, stream
+   data, datagram, close, loss).
+6. Update `TimingWheel` and call `quinn_proto.update_timers(now_ms)`.
+7. Publish `ConnectionEvent`s to ECS event channels that worker systems read next tick.
+
+Every step above is synchronous Rust code: no suspensions, no futures, no async runtime.
+
 ## API Design
 
 ### Transport Core Types
@@ -751,12 +841,10 @@ const PROTOCOL_ID: u16 = 0x484E; // "HN"
 )]
 pub struct ConnectionId(pub u16);
 
-/// Logical channel within a connection.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq,
-    Hash, PartialOrd, Ord, Reflect,
-)]
-pub struct ChannelId(pub u8);
+/// Legacy logical-channel identifier (`ChannelId`) is retained as a thin
+/// alias over `StreamId` so older call sites compile unchanged.
+/// New code must reference `StreamId` directly.
+pub type ChannelId = StreamId;
 
 /// 16-bit wrapping sequence number.
 #[derive(
@@ -861,11 +949,13 @@ pub enum CongestionState {
     Recovery,
 }
 
-/// DTLS handshake state.
+/// Wire TLS / QUIC handshake state mirrored from `quinn-proto` or the
+/// native QUIC stack. Used only for diagnostics; the actual state machine
+/// lives inside the underlying QUIC driver.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Reflect,
 )]
-pub enum DtlsState {
+pub enum QuicHandshakeState {
     Initial,
     Handshaking,
     Established,
@@ -873,14 +963,15 @@ pub enum DtlsState {
     Closed,
 }
 
-/// Platform-specific DTLS context.
-pub enum DtlsContext {
+/// Platform-specific QUIC driver handle. Each variant wraps a synchronous
+/// state machine that the main thread drains once per frame.
+pub enum QuicDriver {
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    QuinnProto(QuinnProtoState),
     #[cfg(target_os = "windows")]
-    Schannel(SchannelContext),
-    #[cfg(target_os = "macos")]
-    SecureTransport(SecureTransportContext),
-    #[cfg(target_os = "linux")]
-    Rustls(RustlsContext),
+    QuinnProtoWin(QuinnProtoState),
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    NetworkFramework(NetworkFrameworkState),
 }
 
 /// Network events for diagnostics.
@@ -908,25 +999,219 @@ pub enum DisconnectReason {
     ProtocolError,
 }
 
-/// Transport layer errors.
+/// Canonical networking error. All sync transport APIs return
+/// `Result<_, NetworkError>`.
 #[derive(Clone, Debug, PartialEq, Eq, Reflect)]
-pub enum TransportError {
+pub enum NetworkError {
     BindFailed { addr: SocketAddr, code: i32 },
     ConnectionLimitReached { max: u32 },
     ConnectionNotFound { id: ConnectionId },
-    ChannelNotFound { id: ChannelId },
-    ChannelLimitReached,
+    StreamNotFound { id: StreamId },
+    StreamLimitReached,
     HandshakeTimeout,
     AuthRejected { reason: String },
-    DtlsError { detail: String },
+    TlsError { detail: String },
+    QuicError { detail: String },
     InvalidPacket { detail: String },
     PayloadTooLarge { size: usize, max: usize },
     FragmentTimeout { group: FragmentGroupId },
+    SendQueueFull,
     SendFailed { code: i32 },
     RecvFailed { code: i32 },
     ConnectionTimeout { id: ConnectionId },
-    InvalidCookie,
     ReplayDetected,
+}
+
+/// Legacy alias retained for incremental migration of call sites; all
+/// new code must reference `NetworkError`.
+pub type TransportError = NetworkError;
+```
+
+### Sync Transport API
+
+All public transport operations are synchronous. A call either returns an immediate value or a
+handle the worker can use to read completions next frame. No method returns a future, and no method
+is declared as an asynchronous function.
+
+```rust
+use crate::ids::{ConnectionId, StreamId};
+use crate::primitives::{Handle, SortedVecMap, SmallVec};
+use core_runtime::io::{IoRequest, IoResponse, SocketHandle};
+use std::net::SocketAddr;
+
+/// Opaque token handed back from `sendto` and stream-send operations. The
+/// worker system can match it against a later `NetSent` event to learn the
+/// send completed on the wire.
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+pub struct SendToken(pub u64);
+
+/// A raw inbound UDP datagram delivered to the main thread before QUIC
+/// decoding. Workers rarely see these directly — they arrive through the
+/// stream APIs instead.
+pub struct Datagram {
+    pub from: SocketAddr,
+    pub payload: SmallVec<[u8; 1280]>,
+}
+
+/// Events the main thread surfaces to worker systems after draining
+/// `quinn-proto`. These are published via the ECS event channel.
+pub enum ConnectionEvent {
+    Connected { id: ConnectionId },
+    HandshakeFailed { reason: NetworkError },
+    StreamOpened { id: ConnectionId, stream: StreamId },
+    StreamData { id: ConnectionId, stream: StreamId, bytes: SmallVec<[u8; 1280]> },
+    DatagramRecv { id: ConnectionId, bytes: SmallVec<[u8; 1280]> },
+    StreamClosed { id: ConnectionId, stream: StreamId },
+    Disconnected { id: ConnectionId, reason: DisconnectReason },
+    FragmentTimeout { id: ConnectionId, group: FragmentGroupId },
+    RttUpdated { id: ConnectionId, rtt_us: u32 },
+}
+
+/// The game-facing socket. A single `TransportSocket` owns one QUIC
+/// endpoint; the main thread holds the underlying `quinn-proto` state and
+/// drives it from the per-frame I/O drain.
+pub struct TransportSocket {
+    handle: SocketHandle,
+    outbox: crossbeam_channel::Sender<TransportCmd>,
+    inbox: crossbeam_channel::Receiver<ConnectionEvent>,
+}
+
+impl TransportSocket {
+    /// Synchronously bind a local endpoint on the main thread. Returns a
+    /// socket handle that can be used to send / receive, or a
+    /// `NetworkError` if the bind failed. Runs synchronously: the main
+    /// thread submits the bind via `IoDispatcher` and blocks until the
+    /// platform returns the handle (typical latency < 1 ms because the
+    /// call is platform-local).
+    pub fn bind(addr: SocketAddr) -> Result<SocketHandle, NetworkError> {
+        unimplemented!()
+    }
+
+    /// Enqueue a send. Returns immediately with a `SendToken` the caller
+    /// can match against a later `ConnectionEvent::NetSent`. The send
+    /// itself executes on the main thread on the next frame drain.
+    pub fn sendto(
+        &self,
+        handle: SocketHandle,
+        addr: SocketAddr,
+        data: &[u8],
+    ) -> Result<SendToken, NetworkError> {
+        unimplemented!()
+    }
+
+    /// Drain datagrams received but not yet decoded by QUIC. Normal
+    /// systems use `poll_connections` instead; this hook exists for
+    /// raw-datagram games and tooling. Runs in O(n) over the pending
+    /// queue; returns an empty Vec when nothing is pending.
+    pub fn poll_received(&self, handle: SocketHandle) -> Vec<Datagram> {
+        unimplemented!()
+    }
+
+    /// Drain all decoded connection events (stream data, handshake
+    /// progress, losses, closes) queued since the last call. Called
+    /// exactly once per frame by the networking ECS system. Completes
+    /// synchronously: the call returns the moment the queue is drained.
+    pub fn poll_connections(&self, handle: SocketHandle) -> Vec<ConnectionEvent> {
+        unimplemented!()
+    }
+
+    pub fn close(&self, handle: SocketHandle) { unimplemented!() }
+}
+
+/// Command variant enqueued by workers and drained by the main thread.
+pub enum TransportCmd {
+    Bind {
+        addr: SocketAddr,
+        reply: crossbeam_channel::Sender<Result<SocketHandle, NetworkError>>,
+    },
+    Connect {
+        socket: SocketHandle,
+        addr: SocketAddr,
+        token: [u8; 64],
+    },
+    SendDatagram {
+        socket: SocketHandle,
+        addr: SocketAddr,
+        token: SendToken,
+        data: SmallVec<[u8; 1280]>,
+    },
+    OpenStream {
+        id: ConnectionId,
+        role: StreamRole,
+        reply: crossbeam_channel::Sender<StreamId>,
+    },
+    SendStream {
+        id: ConnectionId,
+        stream: StreamId,
+        token: SendToken,
+        data: SmallVec<[u8; 1280]>,
+    },
+    CloseStream {
+        id: ConnectionId,
+        stream: StreamId,
+    },
+    Disconnect {
+        id: ConnectionId,
+    },
+}
+
+/// Static palette of stream roles — mapped at handshake time to
+/// `StreamId` values that the ECS code references via `DispatchTable`.
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
+pub enum StreamRole {
+    GameplayReliable(u8),
+    WorldReliable(u8),
+    StateUnreliableSeq(u8),
+    VoiceUnreliable(u8),
+}
+
+/// Identifies a logical QUIC stream. Opaque; workers use `StreamRole` to
+/// resolve roles back to ids.
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+pub struct StreamId(pub u32);
+
+/// Synchronous connection manager. All methods are sync.
+pub struct ConnectionManager {
+    connections: SortedVecMap<ConnectionId, Connection>,
+    pending: SortedVecMap<AuthToken, HandshakeState>,
+    timeout_wheel: TimingWheel,
+    config: TransportConfig,
+}
+
+impl ConnectionManager {
+    /// Initiate an outbound connection. Returns the `ConnectionId`
+    /// immediately; the handshake is driven over subsequent frames on the
+    /// main thread and publishes `ConnectionEvent::Connected` (or
+    /// `HandshakeFailed`) when it completes. Fully synchronous — the
+    /// caller never suspends.
+    pub fn connect(
+        &mut self,
+        addr: SocketAddr,
+        token: AuthToken,
+    ) -> Result<ConnectionId, NetworkError> {
+        unimplemented!()
+    }
+
+    pub fn disconnect(&mut self, id: ConnectionId) { unimplemented!() }
+
+    /// Drain queued connection lifecycle events. Called once per frame.
+    pub fn poll_events(&mut self) -> Vec<ConnectionEvent> { unimplemented!() }
+
+    /// Expire pending handshakes and idle connections whose timers fired
+    /// this frame.
+    pub fn poll_timeouts(&mut self) -> SmallVec<[ConnectionId; 4]> {
+        unimplemented!()
+    }
+}
+
+/// Opaque session auth token (signed JWT-like payload).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AuthToken(pub [u8; 64]);
+
+pub struct HandshakeState {
+    pub connection_id: ConnectionId,
+    pub started_at_ms: u64,
+    pub phase: QuicHandshakeState,
 }
 ```
 
@@ -1182,70 +1467,171 @@ pub enum PredictionError {
 
 ### Outbound Packet Pipeline
 
-1. Application calls `connection.send(channel, data)`.
-2. Channel assigns sequence number and buffers (reliable) or discards after encoding (unreliable).
-3. Fragmenter checks payload against MTU; splits if oversized.
-4. Congestion controller checks send budget.
-5. PacketCodec encodes 16-byte header + payload.
-6. DtlsLayer encrypts and appends AES-GCM auth tag.
-7. TransportSocket submits async `sendto()` via Tokio runtime.
+1. Worker system calls `transport.send(stream, data)` — returns `SendToken` immediately (sync).
+2. Call enqueues `TransportCmd::Send` into the bounded MPSC to the main thread.
+3. Main thread drains the MPSC at phase 0 of the frame and routes to the matching `Stream`.
+4. Reliable streams append to the quinn-proto stream buffer; unreliable queue a QUIC datagram.
+5. `quinn_proto.poll_transmit()` produces outbound datagrams (encrypted via built-in TLS 1.3).
+6. Each datagram is wrapped in `IoRequest::SendPacket` and handed to `IoDispatcher`.
+7. The platform socket backend (io_uring / IOCP / Networking.framework) sends the datagram.
+8. Completion arrives as `IoResponse::SendPacketOk`; `SendToken` is resolved and published as an ECS
+   `NetSent` event that the originating system reads next tick.
 
 ### Inbound Packet Pipeline
 
-1. Tokio runtime harvests UDP recv completion at frame poll point.
-2. `net_poll_system` pushes datagram into RecvBufferResource.
-3. `net_recv_system` decodes header via PacketCodec.
-4. Invalid `protocol_id` packets are silently dropped.
-5. DtlsLayer decrypts and verifies auth tag.
-6. Fragments buffered in Fragmenter until complete.
-7. Complete payloads routed to channel by `channel_id`.
-8. Reliable channels process ack/SACK to release send window.
+1. `IoDispatcher` is submitted `IoRequest::RecvPacket` slots on every socket bind; the platform
+   backend fills them as datagrams arrive.
+2. Each completion produces `IoResponse::RecvPacketOk` which the main thread consumes synchronously.
+3. `quinn_proto.handle_datagram(data, from)` decrypts and decodes the datagram; stream and datagram
+   events are produced into `quinn_proto.poll_events()`.
+4. Malformed or unauthenticated packets are dropped by quinn-proto — no custom decoding.
+5. Stream bytes are appended to per-stream ring buffers owned by `StreamMux`.
+6. Large TLV payloads that span multiple stream chunks are assembled by `ReassemblyBuffer`.
+7. Completed payloads are published as `ConnectionEvent::StreamData` into the ECS event channel.
+8. ACK/loss information is exposed through `quinn_proto.poll_events()` to update RTT statistics.
 
 ### Server Replication Tick Pipeline
 
-1. Query `Changed` components from ECS world.
-2. Evaluate interest for all clients (parallelized via BVH).
+1. Query `Changed<T>` components from ECS world (each replicated component type).
+2. Evaluate interest via the networking grid, parallelized across worker threads.
 3. Update dormancy tracking.
-4. Compute per-client deltas via Reflect field-level diff.
+4. Compute per-client deltas via codegen `diff(&self, baseline)` (no runtime reflection).
 5. Priority-schedule within per-client bandwidth budget.
-6. Send prioritized deltas via transport.
+6. Submit prioritized deltas via `transport.send(stream, payload)` (sync request/handle).
 7. Record snapshot for lag compensation.
 
 ### Client Frame Pipeline
 
-1. Drain received snapshots into jitter buffer.
-2. Release steady-cadence snapshots.
-3. Reconcile server state against predictions.
-4. Apply new local input (prediction).
-5. Send input packet with redundancy.
-6. Interpolate remote entities with error correction.
+1. Drain `ConnectionEvent::StreamData` via `transport.poll_received()`.
+2. Insert snapshots into the jitter buffer.
+3. Release steady-cadence snapshots.
+4. Reconcile server state against predictions.
+5. Apply new local input (prediction).
+6. Send input packet with redundancy via sync `transport.send()`.
+7. Interpolate remote entities with error correction.
 
 ### Delta Compression Algorithm
 
-1. Enumerate fields via `Reflect::fields()`.
-2. Lookup client baseline.
-3. Field-by-field comparison via PartialEq.
-4. Set bit in u64 changed mask per changed field.
-5. Serialize only changed field values.
-6. Apply quantization (e.g., 16-bit position deltas).
+Delta compression runs per replicated component, driven entirely by code generated at build time
+from the codegen pipeline. No runtime reflection, no dynamic field dispatch.
+
+```text
+Baseline   = last component value acknowledged by this client
+Current    = component value at the current server tick
+Diff       = (changed_mask: u64, field_bytes: SmallVec<[u8; 64]>)
+TLV frame  = [component_id: u32] [entity_id: u32] [changed_mask: u64] [field_bytes...]
+```
+
+1. **Field-level diffing.** The codegen-emitted `fn diff(&self, baseline: &Self) -> Diff` compares
+   each `#[replicated]` field against the baseline with `PartialEq` and sets one bit in
+   `changed_mask` per changed field. Only changed field bytes are appended.
+2. **TLV frame packing.** The scheduler concatenates TLV frames for all entities that fit the
+   per-client bandwidth budget into one reliable-unordered or unreliable-sequenced send.
+3. **ACK-based baseline advance.** One baseline per `(client_id, entity_id, component_id)` is stored
+   on the server. When the server receives a cumulative ACK for tick `T`, it advances the baseline
+   to the corresponding snapshot. The algorithm is a simplified Valve-style delta (Bernier 2001)
+   with QUIC streams replacing the reliable channel.
+4. **Quantization.** Float fields may carry `#[quantize(min, max, bits)]` attributes; codegen emits
+   `to_quantized` / `from_quantized` helpers that compress at diff time.
+5. **Never exceed 64 fields per component.** The `u64 changed_mask` caps a replicated component at
+   64 fields; larger structures split into sub-components.
+
+Example trade delta for a `Health { hp: f32, max_hp: f32 }` component:
+
+```text
+baseline = { hp: 80.0, max_hp: 100.0 }
+current  = { hp: 72.0, max_hp: 100.0 }
+
+changed_mask = 0b01           // only `hp` changed
+field_bytes  = [72.0 as le f32]
+wire frame   = [HEALTH_ID][entity_id][0x01][72.0 as le f32]
+```
+
+Reference: Bernier, "Latency Compensating Methods" (2001) —
+<https://developer.valvesoftware.com/wiki/Latency_Compensating_Methods_in_Client/Server_In-game_Protocol_Design_and_Optimization>
+
+### Interest Management
+
+Interest management decides which entities each client sees and how often. Thresholds are
+distance-based with tiered update rates; hysteresis prevents thrashing at tier boundaries.
+
+| Tier | Distance | Update rate | Property set | Rationale |
+|------|----------|-------------|--------------|-----------|
+| High | `<= 100 m` | 60 Hz | Full | Player combat radius |
+| Medium | `100-500 m` | 20 Hz | Movement | Ambient world |
+| Low | `500-2000 m` | 5 Hz | PositionOnly | Visible landmarks |
+| Cull | `> 2000 m` | 0 Hz (dormant) | None | Not relevant |
+
+1. **Distance computed via networking grid.** The shared networking grid stores entity positions in
+   `UniformGrid<Entity>`. Per client, a sync function computes the cell ranges that fall inside each
+   tier radius and enumerates entities in those cells.
+2. **Hysteresis.** To avoid flapping when an entity oscillates around a tier boundary, tiers use
+   `enter_distance < exit_distance`. An entity in the High tier does not downgrade until it is past
+   `100 m + hysteresis_pct * 100 m`. Default `hysteresis_pct = 10%`.
+3. **Sticky dormancy.** An entity that enters the Cull tier is marked dormant; the server stops
+   allocating deltas until the entity moves within Low range again.
+4. **Rule overrides.** `RelevancyRule` lets gameplay force entities to be always-relevant (party
+   members, quest targets) or never-relevant (internal proxies).
+5. **Deterministic ordering.** Interest evaluation iterates entities in `SortedVecMap` order so
+   priority scheduling is deterministic across runs.
+
+### Large-Packet Reassembly
+
+QUIC handles datagram MTU fragmentation internally; however, custom TLV frames from the replication
+layer may still need splitting when a single update exceeds the per-datagram payload budget. A sync
+`ReassemblyBuffer` handles the out-of-order buffer, timeout, and duplicate detection.
+
+| Parameter | Default | Notes |
+|-----------|---------|-------|
+| Out-of-order buffer depth | 64 fragments per group | `SmallVec<[Fragment; 64]>` |
+| Group lifetime | 5 s | Drop partial groups after `max_age_ms = 5000` |
+| Duplicate window | 1024 fragment IDs | `FixedBitSet` shifted by group |
+| Fragment MTU hint | 1,200 B | Matches QUIC minimum MTU |
+
+1. **Out-of-order buffer.** `ReassemblyBuffer::push(fragment)` inserts the fragment into the
+   matching `FragmentGroup` by `GroupId`. Fragments arrive in any order; the group is complete when
+   every expected index is present.
+2. **Timeout.** Each `GroupId` records its `first_seen_ms`. On every frame the main thread calls
+   `ReassemblyBuffer::expire(now_ms)` which evicts any group older than 5 s and emits a
+   `ConnectionEvent::FragmentTimeout`.
+3. **Duplicate detection.** A `FixedBitSet` of recently seen `(GroupId, FragmentIndex)` hashes
+   filters duplicate fragments without allocations. Seen bits are cleared when the bitset wraps.
+4. **Completion.** When the group is complete the `ReassemblyBuffer` returns the reassembled payload
+   and clears the group entry.
+
+All operations are synchronous and run on the main thread as part of the inbound data flow.
 
 ## Platform Considerations
 
 ### Socket I/O
 
-| Platform | API |
-|----------|-----|
-| Windows | `tokio::net` (IOCP internally) |
-| macOS | `tokio::net` (kqueue internally) |
-| Linux | `tokio::net` (epoll internally) |
+All socket work runs on the main thread through `IoDispatcher`. Worker code never touches a socket
+fd. No Tokio anywhere in this stack.
 
-### DTLS Backend
+| Platform | QUIC implementation | Socket backend |
+|----------|---------------------|----------------|
+| Linux | `quinn-proto` (sans-io) | io_uring via `rustix` |
+| Windows | MsQuic via `windows-rs` | IOCP via `windows-rs` |
+| Apple (macOS/iOS) | Networking.framework `NWProtocolQUIC` via `objc2` | Networking.framework |
+| Android | `quinn-proto` (sans-io) | io_uring (kernel >= 5.15) |
 
-| Platform | Library |
-|----------|---------|
-| Windows | Schannel via windows-rs |
-| macOS | Security.framework via objc2 |
-| Linux | rustls (pure Rust) |
+On Linux and Android the engine drives `quinn-proto` directly: the main-thread loop pulls raw
+datagrams from the io_uring completion queue, calls `handle_datagram`, and hands `poll_transmit`
+output back to the socket backend. On Windows the native MsQuic stack is driven synchronously via
+`windows-rs` bindings; its callback surface is wrapped into `ConnectionEvent` values and delivered
+through the same ECS channel. On Apple the native `NWProtocolQUIC` stack is used via
+`objc2`-generated bindings and drained synchronously through `dispatch2` handles. The `quinn-proto`
+path is retained as the portable reference implementation on all platforms.
+
+### Transport Security
+
+QUIC has TLS 1.3 built in; there is no separate DTLS stack.
+
+| Platform | TLS implementation |
+|----------|--------------------|
+| Linux | `rustls` via `quinn-proto` |
+| Windows | `rustls` via `quinn-proto` |
+| Apple | TLS handled inside `Networking.framework` |
 
 ### Platform Defaults
 
@@ -1255,8 +1641,10 @@ pub enum PredictionError {
 | Connection timeout | 30 s | 60 s |
 | Default MTU | 1,200 B | 1,200 B |
 | Initial send rate | unlimited | 500 Kbps |
-| Send window | 256 pkts | 64 pkts |
-| AOI radius | 200 m | 100 m |
+| Outbound MPSC capacity | 4,096 | 1,024 |
+| AOI high tier radius | 100 m | 75 m |
+| AOI medium tier radius | 500 m | 300 m |
+| AOI low tier radius | 2,000 m | 1,000 m |
 | Max rollback frames | 8 | 4 |
 | Input redundancy | 3 | 6 |
 | Interpolation delay | 1 tick | 2 ticks |
@@ -1269,11 +1657,13 @@ pub enum PredictionError {
 
 | Crate | Purpose |
 |-------|---------|
-| `rustls` | DTLS on Linux |
-| `ring` | AES-GCM, HMAC-SHA256 |
-| `windows-rs` | Schannel, Winsock2 |
-| `objc2`        | Security.framework |
+| `quinn-proto` | Sans-io QUIC state machine (Linux/Windows/Android) |
+| `rustls` | TLS 1.3 feeding `quinn-proto` |
+| `rustix` | Safe io_uring and Linux syscall bindings |
+| `windows-rs` | IOCP, Winsock2 |
+| `objc2` + `dispatch2` | Networking.framework and GCD bindings |
 | `smallvec` | Inline-allocated small vectors |
+| `fixedbitset` | Duplicate detection bitsets |
 
 ## Safety Invariants
 
@@ -1302,33 +1692,39 @@ Test cases are in the companion file
 
 ## Open Questions
 
-1. **DTLS library on Linux.** rustls vs openssl for DTLS 1.3 maturity. Tradeoff: C dependency vs
-   maturity.
-2. **Congestion algorithm.** Loss-based vs BBR-style for mobile cellular links with bufferbloat.
-3. **Maximum payload size.** 64 KiB (255 fragments x 1200 B) sufficient for zone snapshots?
+1. **`quinn-proto` fork.** Do we pin an upstream version or maintain a light fork for custom
+   datagram priorities? Tradeoff: maintenance burden vs priority control.
+2. **Congestion algorithm.** Keep QUIC's bundled CUBIC or opt into BBR for mobile cellular links
+   with bufferbloat.
+3. **Maximum payload size.** 64 KiB (reassembled from QUIC streams) sufficient for zone snapshots,
+   or should we split large snapshots across multiple frames?
 4. **Connection ID size.** 16-bit limits 65,535 connections. Future scaling may need 32/64-bit IDs.
 5. **Sequence number size.** 16-bit wraps in ~18 min at 60 pkt/sec. 32-bit adds 4 bytes per packet.
 6. **Key rotation interval.** Proposed: 1 hour. Shorter limits exposure but increases CPU.
-7. **Tokio epoll compatibility.** Minimum kernel version for Tokio epoll backend?
-8. **Quantization precision.** Per-field `#[quantize]` attribute vs fixed per data type?
-9. **Snapshot memory budget.** Server snapshot only hitbox data vs full component state?
-10. **Prediction eligibility scope.** Extend to physics objects the player interacts with?
-11. **Cross-entity rollback dependencies.** Topological sort vs full ECS schedule replay?
-12. **Schema migration complexity.** Support field renames and type changes via migration functions?
-13. **Dormancy threshold tuning.** Per-entity-type thresholds via component field vs global config?
+7. **Quantization precision.** Per-field `#[quantize]` attribute vs fixed per data type?
+8. **Snapshot memory budget.** Server snapshot only hitbox data vs full component state?
+9. **Prediction eligibility scope.** Extend to physics objects the player interacts with?
+10. **Cross-entity rollback dependencies.** Topological sort vs full ECS schedule replay?
+11. **Schema migration complexity.** Support field renames and type changes via migration functions?
+12. **Dormancy threshold tuning.** Per-entity-type thresholds via component field vs global config?
+13. **Stream palette size.** Should the default 24-stream palette be bumped for RTS games with high
+    RPC counts, or stay fixed?
 
 ## Review Feedback
 
-### RF-1: Replace all Tokio/async with platform-native I/O
+### RF-1: Platform-native synchronous I/O (completed)
 
-Replace Future-returning socket APIs with synchronous submission + completion via crossbeam-channel:
+**Status: Applied in this revision.** All transport APIs return values synchronously. Socket work is
+scheduled via the `IoRequest` / `IoResponse` protocol in [core-runtime/io.md](../core-runtime/io.md)
+and platform-native backends:
 
-- Linux: io_uring via rustix (UDP send/recv)
-- Windows: IOCP via windows-rs (Winsock2 overlapped)
-- Apple: Networking.framework via objc2 (NWConnection UDP)
+- Linux / Android: io_uring via `rustix` (UDP send/recv).
+- Windows: IOCP via `windows-rs` (Winsock2 overlapped).
+- Apple: Networking.framework via `objc2` / `dispatch2` (NWConnection UDP / QUIC).
 
-Main thread polls completions, posts as jobs. All transport APIs become synchronous. Remove open
-question #7 (moot).
+Main thread polls completions and publishes `ConnectionEvent` values to ECS. No async runtime is
+used anywhere in the game-side code path. The `quinn-proto` state machine is driven in-place from
+the main thread.
 
 ### RF-2: Replace Reflect with codegen diff/patch
 

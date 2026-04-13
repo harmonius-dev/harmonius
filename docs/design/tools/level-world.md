@@ -486,7 +486,8 @@ impl TemplateManager {
     /// Submit an entity template load request.
     /// Returns a handle; call `poll_load` to check
     /// completion. I/O runs on the main thread via
-    /// platform-native async (dispatch_io/IOCP/io_uring).
+    /// platform-native non-blocking backends
+    /// (dispatch_io/IOCP/io_uring).
     pub fn request_load(
         &self,
         id: AssetId,

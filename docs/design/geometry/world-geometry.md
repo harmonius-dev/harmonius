@@ -43,7 +43,8 @@ streaming, and the shared spatial index.
 | F-3.2.7 | R-3.2.7     | US-3.2.7              |
 | F-3.2.8 | R-3.2.8     | US-3.2.8a, US-3.2.8b |
 
-1. **F-3.2.1** -- Tile-based heightfield with 16/32-bit grids, async streaming, low-LOD fallbacks
+1. **F-3.2.1** -- Tile-based heightfield with 16/32-bit grids, platform-native streaming, low-LOD
+   fallbacks
 2. **F-3.2.2** -- Virtual texture clipmap with GPU feedback
 3. **F-3.2.3** -- CDLOD geometry clipmap with vertex morphing
 4. **F-3.2.4** -- Per-tile 1-bit hole masks mirrored in collision
@@ -140,7 +141,7 @@ streaming, and the shared spatial index.
 | GPU abstraction | F-2.1.1 | Backend trait, pipelines |
 | Scene pipeline | F-2.10.1 | Render proxy extraction |
 | Asset processing | F-12.2.3 | Meshlet baking offline |
-| Streaming I/O | F-12.5.2 | Tokio async I/O |
+| Streaming I/O | F-12.5.2 | Platform-native I/O via `IoRequest` |
 | Thread pool | F-14.3.1 | Scoped parallel tasks |
 | Memory budgets | F-1.7.6 | MemoryBudget check/record |
 | Scene transforms | F-1.2.4 | WorldPosition (64-bit) |
@@ -167,7 +168,7 @@ GPU-driven clusters.
 4. **Visibility buffer** writes a 64-bit triangle+instance ID per pixel, deferring material
    evaluation to a compute pass.
 5. **Virtual geometry streaming** organizes meshlet data into fixed-size 64 KiB pages streamed via
-   Tokio async I/O.
+   platform-native I/O (`IoRequest`/`IoResponse`; no async runtime).
 
 > **Precision model.** All meshlet GPU data (vertex positions, bounding spheres, error metrics, LOD
 > thresholds) uses f32. WorldPosition (f64) is used only in the ECS transform system for large-world
@@ -179,8 +180,8 @@ GPU-driven clusters.
 Two complementary representations -- heightfield tiles and sparse voxel volumes -- unified through a
 hybrid resolver.
 
-- **Heightfield** is the primary open-world surface. Tiles stream via async I/O; LOD via CDLOD
-  clipmap; materials via virtual texture clipmap with GPU feedback.
+- **Heightfield** is the primary open-world surface. Tiles stream via platform-native I/O; LOD via
+  CDLOD clipmap; materials via virtual texture clipmap with GPU feedback.
 - **Voxel** handles caves, overhangs, tunnels, and player edits. Sparse octree stores SDF + material
   IDs. Four meshing algorithms.
 - **Hybrid mode** (default) uses heightmap for most of the world with voxel overlays for vertical
@@ -468,6 +469,16 @@ flowchart TD
 ## Data Structures
 
 All types derive `Reflect`. No `Arc`, `Rc`, `Cell`, or `RefCell`.
+
+### Dirty Region Tracking
+
+Terrain tiles, voxel chunks, foliage placement, and water heightfields all use the canonical
+`DirtyRegionSet` primitive from [core-runtime/primitives.md](../core-runtime/primitives.md). There
+is no local dirty-region implementation in this subsystem — heightfield tile edits, voxel SDF edits,
+foliage stamp edits, and water wake edits all mark their affected volumes into one `DirtyRegionSet`
+per chunk. The re-meshing and GPU upload passes consume the coalesced regions and clear the set.
+Coalescing and draining use the shared `DirtyRegionSet::coalesce` and `drain` methods — there is no
+subsystem-specific merge algorithm.
 
 ### Meshlet Types
 
@@ -1031,68 +1042,26 @@ classDiagram
 
 ### Meshlet Core Types
 
+The canonical meshlet asset format lives in [rendering/meshlets.md](../rendering/meshlets.md). This
+document does **not** define the `MeshletAsset`, `Meshlet`, `LodGroup`, `MeshletBuilder`, or
+`BufferView` types — it only imports them. Every consumer in world-geometry references the rendering
+module's types. There is no parallel format, no duplicated LOD algorithm, and no separate builder
+here; the offline baking pipeline and GPU buffer layout are both documented in
+`rendering/meshlets.md`.
+
 ```rust
-pub const MAX_MESHLET_VERTICES: u8 = 64;
-pub const MAX_MESHLET_TRIANGLES: u8 = 124;
-pub const MESHLET_PAGE_SIZE: u32 = 65536;
+use harmonius_core::primitives::{DirtyRegionSet, Handle};
+use harmonius_rendering::meshlets::{
+    LodGroup, Meshlet, MeshletAsset, MeshletBuilder,
+};
 
-#[derive(Clone, Copy, Debug, Reflect)]
-#[repr(C)]
-pub struct Meshlet {
-    pub vertex_offset: u32,
-    pub vertex_count: u8,
-    pub triangle_offset: u32,
-    pub triangle_count: u8,
-    pub bounding_sphere: BoundingSphere,
-    pub normal_cone: NormalCone,
-    pub lod_error: f32,
-}
-
-#[derive(Clone, Copy, Debug, Reflect)]
-#[repr(C)]
-pub struct BoundingSphere {
-    pub center: [f32; 3],
-    pub radius: f32,
-}
-
-#[derive(Clone, Copy, Debug, Reflect)]
-#[repr(C)]
-pub struct NormalCone {
-    pub axis: [f32; 3],
-    pub cutoff: f32,
-}
-
-#[derive(Clone, Copy, Debug, Reflect)]
-pub struct MeshletDAGNode {
-    pub group_start: u32,
-    pub group_count: u32,
-    pub children_start: u32,
-    pub children_count: u32,
-    pub parent_error: f32,
-    pub bounding_sphere: BoundingSphere,
-}
-
-#[derive(Clone, Debug, Reflect)]
-pub struct MeshletPage {
-    pub page_id: u32,
-    pub vertex_data_offset: u64,
-    pub index_data_offset: u64,
-    pub meshlet_count: u32,
-    pub compressed_size: u32,
-    pub uncompressed_size: u32,
-}
-
-#[derive(Clone, Debug, Reflect)]
-pub struct MeshletMesh {
-    pub mesh_id: MeshId,
-    pub meshlets: Vec<Meshlet>,
-    pub dag_nodes: Vec<MeshletDAGNode>,
-    pub root_node_index: u32,
-    pub pages: Vec<MeshletPage>,
-    pub vertex_data: Vec<u8>,
-    pub index_data: Vec<u8>,
-    pub total_meshlet_count: u32,
-}
+/// Re-export shims so terrain, foliage, and voxel
+/// subsystems below can refer to one name. No new
+/// types — the authoritative definitions are in
+/// rendering/meshlets.md.
+pub type WorldMeshlet = Meshlet;
+pub type WorldMeshletAsset = MeshletAsset;
+pub type WorldLodGroup = LodGroup;
 ```
 
 ### Meshlet ECS and GPU Types
@@ -1100,7 +1069,9 @@ pub struct MeshletMesh {
 ```rust
 #[derive(Clone, Debug, Component, Reflect)]
 pub struct MeshletMeshComponent {
-    pub mesh: AssetHandle<MeshletMesh>,
+    /// Handle to the canonical meshlet asset
+    /// defined in rendering/meshlets.md.
+    pub mesh: Handle<MeshletAsset>,
     pub error_threshold: Option<f32>,
     pub visible: bool,
 }
@@ -1216,9 +1187,20 @@ impl MeshletStreamer {
         &mut self,
         feedback: &[u32],
     ) -> Vec<PageRequest>;
-    pub async fn request_pages(
+    /// Submit page requests via platform-native
+    /// I/O. Each call enqueues reads; the caller
+    /// drains completions via `poll_completions`
+    /// at the frame poll point. No `Future`s.
+    pub fn request_pages(
         &mut self,
+        io: &mut IoChannel,
         requests: &[PageRequest],
+    ) -> Vec<IoRequestId>;
+    /// Drains completed page loads from the
+    /// IoResponse ring. Called once per frame.
+    pub fn poll_completions(
+        &mut self,
+        io: &mut IoChannel,
     ) -> Vec<Result<PageLoadResult, IoError>>;
     pub fn evict_pages(
         &mut self,
@@ -1400,7 +1382,13 @@ pub struct VoxelChunk {
     pub sdf: Vec<u16>,
     pub materials: Vec<u8>,
     pub resolution: u32,
-    pub is_dirty: bool,
+    /// Dirty region set for this chunk. When a
+    /// voxel is edited, the affected sub-volume
+    /// is marked here for incremental re-meshing.
+    /// `DirtyRegionSet` is the canonical type
+    /// from core-runtime/primitives.md — there
+    /// are no local dirty-tracking variants.
+    pub dirty_regions: DirtyRegionSet,
     pub aabb: Aabb,
 }
 
@@ -1478,8 +1466,13 @@ impl ResidencyManager {
 
 pub struct TerrainStreamer;
 impl TerrainStreamer {
-    pub async fn update(
+    /// Synchronous update: submits tile reads
+    /// and drains completions via platform-native
+    /// I/O. Never blocks; returns only the tiles
+    /// that have arrived by the current frame.
+    pub fn update(
         &mut self,
+        io: &mut IoChannel,
         camera_pos: WorldPosition,
         config: &TerrainConfig,
         budget: &TerrainBudget,
@@ -1582,10 +1575,13 @@ impl VoxelMesher {
         &self,
         input: &MeshInput,
     ) -> MeshOutput;
-    pub async fn mesh_gpu(
+    /// GPU meshing is dispatched as a compute
+    /// job and returns a handle that the caller
+    /// polls at the frame boundary. No `.await`.
+    pub fn mesh_gpu(
         &self,
         input: &MeshInput,
-    ) -> MeshOutput;
+    ) -> JobHandle<MeshOutput>;
 }
 ```
 
@@ -2011,8 +2007,8 @@ The meshlet pipeline applies four culling stages in order, from coarsest to fine
 1. **Feedback** -- Compute records page IDs of visible meshlets.
 2. **Readback** -- Feedback buffer read back one frame later.
 3. **Prioritize** -- Streamer scores pages by screen-space contribution and distance.
-4. **I/O Request** -- Highest-priority pages submitted via Tokio.
-5. **Poll** -- Tokio runtime drains completed I/O futures.
+4. **I/O Request** -- Highest-priority pages submitted via platform-native `IoRequest`.
+5. **Poll** -- Main thread drains completed `IoResponse` entries at the frame poll point.
 6. **Decompress** -- Zstd decompression on worker thread.
 7. **Upload** -- Pages uploaded to GPU via transfer queue.
 8. **Update** -- Page table updated; next frame sees residency.
@@ -2020,7 +2016,7 @@ The meshlet pipeline applies four culling stages in order, from coarsest to fine
 ### Terrain Frame Lifecycle
 
 1. **PreUpdate** -- Capture camera position and tool inputs.
-2. **Update** -- Stream tiles and voxel nodes via async I/O.
+2. **Update** -- Stream tiles and voxel nodes via platform-native I/O.
 3. **Update** -- Apply voxel edits (throttled per frame).
 4. **PostUpdate** -- Recompute clipmap rings and morph factors.
 5. **PostUpdate** -- Re-mesh dirty voxel chunks (parallel).
@@ -2093,9 +2089,9 @@ The meshlet pipeline applies four culling stages in order, from coarsest to fine
 
 | Platform | I/O API | GPU Upload |
 |----------|---------|------------|
-| Windows | Tokio (IOCP) | Copy queue |
-| macOS | Tokio (kqueue) | blitCommandEncoder |
-| Linux | Tokio (epoll) | Transfer queue |
+| Windows | IOCP via `IoRequest` | Copy queue |
+| macOS | GCD dispatch I/O via `IoRequest` | blitCommandEncoder |
+| Linux | io_uring via `IoRequest` | Transfer queue |
 
 ### Meshlet Scaling Tiers
 
@@ -2203,9 +2199,9 @@ table flooding when digging below sea level.
 **Q5. Is this design cohesive with the overall engine?**
 
 The world geometry subsystems integrate tightly with the ECS, shared BVH (F-1.9.1), render graph
-(F-2.2.1), and Tokio async I/O. The wind field texture provides cross-domain cohesion between
-foliage, cloth, and VFX. The foliage placement system should share node evaluation with the
-procedural generation graph (F-3.6.12) to avoid duplication.
+(F-2.2.1), and platform-native I/O (`IoRequest`/`IoResponse`). The wind field texture provides
+cross-domain cohesion between foliage, cloth, and VFX. The foliage placement system should share
+node evaluation with the procedural generation graph (F-3.6.12) to avoid duplication.
 
 ## Open Questions
 

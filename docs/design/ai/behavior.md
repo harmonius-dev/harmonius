@@ -73,13 +73,24 @@ the ECS. Every piece of AI state is a component; every AI algorithm is a system.
 - **GOAP** -- goal-oriented planning for NPCs that chain multi-step action sequences toward
   objectives.
 
-All three systems share a common **Blackboard** for per-agent data, a common **AiBudget** for
-time-slicing across frames, and a common **AiDebugReporter** for trace logging and editor
-visualization. Designers author all AI via visual editors. Users never write code.
+All three systems share a unified **`BlackboardData` ECS component** for per-agent data, a common
+**AiBudget** for time-slicing across frames, and a common **AiDebugReporter** for trace logging and
+editor visualization. Designers author all AI via visual editors. Users never write code.
+
+> **Client of `core-runtime/graph-runtime.md`.** Behavior trees are a client of the shared graph
+> runtime, parameterizing `GraphRuntime<BtNode, BtEdge, BtInstance>`. DAG validation, cycle
+> detection, topological sort, and hot-reload integration are provided by the core graph runtime;
+> this document defines only the node palette, evaluation semantics, blackboard, and GOAP/utility
+> adjuncts. See design review section 2.1.
+>
+> **Client of `core-runtime/primitives.md`.** `BlackboardData` stores its key-value pairs in a
+> `SortedVecMap<BlackboardKey, BlackboardValue>` for deterministic iteration and no hash collisions
+> on hot paths. See design review sections 2.2 and P1 task #26.
 
 Time-sliced execution uses the shared `FrameBudget` primitive (see
-[algorithms.md](../core-runtime/algorithms.md)). The `Blackboard` typed key-value store is a general
-engine pattern shared with perception, NPC simulation, and quest systems.
+[algorithms.md](../core-runtime/algorithms.md)). The `BlackboardData` component is the single
+per-agent state store; perception, NPC simulation, steering, and quest systems read and write the
+same component rather than maintaining parallel stores.
 
 Key design principles:
 
@@ -98,7 +109,7 @@ Key design principles:
 graph TD
     subgraph "harmonius_ai::behavior"
         BT[BehaviorTree]
-        BB[Blackboard]
+        BB[BlackboardData]
         UA[UtilityAI]
         GP[GoapPlanner]
         BD[AiBudget]
@@ -168,12 +179,12 @@ harmonius_ai/
 │   │   ├── abort.rs        # Conditional abort logic
 │   │   └── subtree.rs      # SubtreeRef expansion
 │   ├── blackboard/
-│   │   ├── store.rs        # Blackboard, BlackboardScope
+│   │   ├── component.rs    # BlackboardData ECS component
 │   │   ├── value.rs        # BlackboardValue enum
-│   │   ├── key.rs          # BlackboardKey, KeyId
+│   │   ├── key.rs          # BlackboardKey (u32 id)
 │   │   ├── observer.rs     # Observer registration
 │   │   │                   # and notification
-│   │   └── group.rs        # GroupBlackboard shared store
+│   │   └── group.rs        # GroupBlackboardStore resource
 │   ├── utility/
 │   │   ├── curve.rs        # ResponseCurve enum, evaluate()
 │   │   ├── consideration.rs  # InputAxis, Consideration
@@ -261,14 +272,14 @@ classDiagram
         +node_states: Vec~NodeStatus~
     }
 
-    class Blackboard {
-        +self_scope: BlackboardScope
+    class BlackboardData {
+        +vars: SortedVecMap~BlackboardKey, BlackboardValue~
         +group_handle: Option~GroupId~
+        +dirty_keys: SmallVec~BlackboardKey;4~
     }
 
-    class BlackboardScope {
-        +entries: HashMap~BlackboardKey, BlackboardValue~
-        +observers: SmallVec~ObserverId 2~
+    class BlackboardKey {
+        +u32 id
     }
 
     class BlackboardValue {
@@ -278,6 +289,7 @@ classDiagram
         Float(f32)
         Entity(Entity)
         Vec3(Vec3)
+        Vec2(Vec2)
     }
 
     class NodeStatus {
@@ -297,8 +309,8 @@ classDiagram
     DecoratorData --> DecoratorKind
     BtInstance --> BehaviorTreeAsset
     BtInstance --> NodeStatus
-    Blackboard --> BlackboardScope
-    BlackboardScope --> BlackboardValue
+    BlackboardData --> BlackboardKey
+    BlackboardData --> BlackboardValue
 ```
 
 ### Utility AI Data Model
@@ -667,28 +679,32 @@ pub enum DecoratorState {
 }
 ```
 
-### Blackboard
+### Blackboard (ECS Component)
+
+`BlackboardData` is a unified ECS component backed by a sorted vector of key-value pairs. There is
+no separate `Blackboard` wrapper type and no `BlackboardScope` nesting; per-agent state is just an
+ECS component, group state is an ECS resource keyed by `GroupId`, and global state is a distinct ECS
+resource. This removes the HashMap backing store (no hashing on the AI hot path), removes the
+observer wrapper, and unifies "per-agent state" across BT, Utility, GOAP, steering, and perception.
 
 ```rust
-/// Typed blackboard key handle.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash,
-)]
+use harmonius_core::primitives::{SortedVecMap, SmallVec};
+
+/// Compact integer identifier for a blackboard key. Codegen allocates
+/// dense IDs at editor build time (`BB_TARGET = 0`, `BB_HEALTH = 1`, ...).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BlackboardKey(pub u32);
 
 /// Group identifier for shared blackboard scope.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash,
-)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct GroupId(pub u32);
 
 /// Observer handle returned on registration.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash,
-)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct ObserverId(pub u32);
 
-/// Dynamically typed blackboard value.
+/// Dynamically typed blackboard value. Small enum so that each entry fits
+/// in two cache lines alongside the key.
 #[derive(Clone, Debug, PartialEq)]
 pub enum BlackboardValue {
     Bool(bool),
@@ -696,85 +712,136 @@ pub enum BlackboardValue {
     Float(f32),
     Entity(Entity),
     Vec3(Vec3),
+    Vec2(Vec2),
 }
 
-/// Scoped key-value storage.
-pub struct BlackboardScope {
-    entries: HashMap<BlackboardKey, BlackboardValue>,
-    observers: SmallVec<[ObserverEntry; 2]>,
-    dirty_keys: SmallVec<[BlackboardKey; 4]>,
+/// Per-agent blackboard stored directly on the entity as an ECS component.
+/// No inner `scope` wrapper. Lookups use `SortedVecMap::get` which is
+/// O(log n) binary search, deterministic, and contains zero hashing.
+#[derive(Component)]
+pub struct BlackboardData {
+    /// Sorted key-value store. Capacity grows via `Vec` realloc; most
+    /// agents stay under 32 keys.
+    pub vars: SortedVecMap<BlackboardKey, BlackboardValue>,
+    /// Optional membership in a shared group scope.
+    pub group_handle: Option<GroupId>,
+    /// Keys dirtied this tick. Flushed into observer notifications
+    /// by the `blackboard_flush_system` at the end of the AI phase.
+    pub dirty_keys: SmallVec<BlackboardKey, 4>,
 }
 
-struct ObserverEntry {
-    id: ObserverId,
-    key: BlackboardKey,
-}
+impl BlackboardData {
+    pub fn new() -> Self {
+        Self {
+            vars: SortedVecMap::new(),
+            group_handle: None,
+            dirty_keys: SmallVec::new(),
+        }
+    }
 
-/// Per-agent blackboard. Stored as ECS component.
-pub struct Blackboard {
-    self_scope: BlackboardScope,
-    group_handle: Option<GroupId>,
-}
+    /// Get a value from this agent's scope. Callers that need group
+    /// fallback pass the `GroupBlackboardStore` resource and check it
+    /// themselves — `BlackboardData` does not own group lookups.
+    pub fn get(&self, key: BlackboardKey) -> Option<&BlackboardValue> {
+        self.vars.get(&key)
+    }
 
-impl Blackboard {
-    pub fn new() -> Self;
-
-    /// Get a value from self scope. Falls through
-    /// to group scope if not found locally.
-    pub fn get(
-        &self,
-        key: BlackboardKey,
-        groups: &GroupBlackboardStore,
-    ) -> Option<&BlackboardValue>;
-
-    /// Set a value in self scope. Marks key dirty
-    /// for observer notification.
+    /// Set a value on this agent. Marks the key dirty for observer
+    /// notification at the end of the tick. `SortedVecMap::insert`
+    /// maintains sort order.
     pub fn set(
         &mut self,
         key: BlackboardKey,
         value: BlackboardValue,
-    );
+    ) {
+        self.vars.insert(key, value);
+        if !self.dirty_keys.iter().any(|k| *k == key) {
+            self.dirty_keys.push(key);
+        }
+    }
 
-    /// Register an observer for key changes.
-    /// Returns handle for unregistration.
-    pub fn observe(
-        &mut self,
-        key: BlackboardKey,
-    ) -> ObserverId;
-
-    /// Unregister an observer.
-    pub fn unobserve(&mut self, id: ObserverId);
-
-    /// Drain dirty keys and return changed key
-    /// list. Called after each BT tick.
-    pub fn flush_dirty(
-        &mut self,
-    ) -> SmallVec<[BlackboardKey; 4]>;
+    /// Drain the dirty key set. Returned keys are ready for observer
+    /// notification. Called by `blackboard_flush_system` after BT tick.
+    pub fn flush_dirty(&mut self) -> SmallVec<BlackboardKey, 4> {
+        core::mem::take(&mut self.dirty_keys)
+    }
 }
 
-/// Shared group-level blackboard storage.
-/// Stored as an ECS resource.
+/// Resolve a blackboard value walking self → group → global fallback.
+/// Systems call this helper rather than threading three lookups by hand.
+pub fn bb_resolve<'a>(
+    agent: &'a BlackboardData,
+    groups: &'a GroupBlackboardStore,
+    globals: &'a GlobalBlackboard,
+    key: BlackboardKey,
+) -> Option<&'a BlackboardValue> {
+    if let Some(v) = agent.get(key) {
+        return Some(v);
+    }
+    if let Some(g) = agent.group_handle {
+        if let Some(v) = groups.get(g, key) {
+            return Some(v);
+        }
+    }
+    globals.get(key)
+}
+
+/// Group-level blackboard storage. Stored as an ECS resource.
+/// Still a sorted map — no HashMap on the hot path.
 pub struct GroupBlackboardStore {
-    groups: HashMap<GroupId, BlackboardScope>,
+    groups: SortedVecMap<GroupId, BlackboardData>,
 }
 
 impl GroupBlackboardStore {
-    pub fn new() -> Self;
+    pub fn new() -> Self {
+        Self { groups: SortedVecMap::new() }
+    }
+
+    pub fn get(
+        &self,
+        id: GroupId,
+        key: BlackboardKey,
+    ) -> Option<&BlackboardValue> {
+        self.groups.get(&id).and_then(|bb| bb.get(key))
+    }
 
     pub fn get_group(
         &self,
         id: GroupId,
-    ) -> Option<&BlackboardScope>;
+    ) -> Option<&BlackboardData> {
+        self.groups.get(&id)
+    }
 
     pub fn get_group_mut(
         &mut self,
         id: GroupId,
-    ) -> Option<&mut BlackboardScope>;
+    ) -> Option<&mut BlackboardData> {
+        self.groups.get_mut(&id)
+    }
 
     pub fn create_group(
         &mut self,
         id: GroupId,
-    ) -> &mut BlackboardScope;
+    ) -> &mut BlackboardData {
+        self.groups.insert(id, BlackboardData::new());
+        self.groups.get_mut(&id).unwrap()
+    }
+}
+
+/// Global blackboard store. Stored as an ECS resource. Holds
+/// world-wide shared data (weather, alarm state, etc.).
+pub struct GlobalBlackboard {
+    inner: BlackboardData,
+}
+
+impl GlobalBlackboard {
+    pub fn new() -> Self { Self { inner: BlackboardData::new() } }
+    pub fn get(&self, key: BlackboardKey) -> Option<&BlackboardValue> {
+        self.inner.get(key)
+    }
+    pub fn set(&mut self, key: BlackboardKey, value: BlackboardValue) {
+        self.inner.set(key, value);
+    }
 }
 ```
 
@@ -787,7 +854,7 @@ impl GroupBlackboardStore {
 /// (blackboard, world) -> NodeStatus.
 pub struct LeafNodeFn(
     pub fn(
-        &mut Blackboard,
+        &mut BlackboardData,
         &World,
         Entity,
     ) -> NodeStatus,
@@ -822,7 +889,7 @@ pub fn bt_tick_system(
     query: Query<(
         Entity,
         &mut BtInstance,
-        &mut Blackboard,
+        &mut BlackboardData,
     )>,
     budget: Res<AiBudget>,
     leaf_registry: Res<LeafNodeRegistry>,
@@ -861,7 +928,7 @@ fn tick_node(
     node_id: NodeId,
     asset: &BehaviorTreeAsset,
     instance: &mut BtInstance,
-    blackboard: &mut Blackboard,
+    blackboard: &mut BlackboardData,
     leaf_registry: &LeafNodeRegistry,
     groups: &GroupBlackboardStore,
     world: &World,
@@ -922,7 +989,7 @@ fn tick_sequence(
     node_id: NodeId,
     asset: &BehaviorTreeAsset,
     instance: &mut BtInstance,
-    blackboard: &mut Blackboard,
+    blackboard: &mut BlackboardData,
     leaf_registry: &LeafNodeRegistry,
     groups: &GroupBlackboardStore,
     world: &World,
@@ -965,7 +1032,7 @@ fn tick_selector(
     node_id: NodeId,
     asset: &BehaviorTreeAsset,
     instance: &mut BtInstance,
-    blackboard: &mut Blackboard,
+    blackboard: &mut BlackboardData,
     leaf_registry: &LeafNodeRegistry,
     groups: &GroupBlackboardStore,
     world: &World,
@@ -1007,7 +1074,7 @@ fn tick_parallel(
     node_id: NodeId,
     asset: &BehaviorTreeAsset,
     instance: &mut BtInstance,
-    blackboard: &mut Blackboard,
+    blackboard: &mut BlackboardData,
     leaf_registry: &LeafNodeRegistry,
     groups: &GroupBlackboardStore,
     world: &World,
@@ -1082,7 +1149,7 @@ fn check_abort(
     node_id: NodeId,
     asset: &BehaviorTreeAsset,
     instance: &mut BtInstance,
-    blackboard: &mut Blackboard,
+    blackboard: &mut BlackboardData,
     leaf_registry: &LeafNodeRegistry,
     groups: &GroupBlackboardStore,
     world: &World,
@@ -1139,7 +1206,7 @@ fn check_abort(
 /// states and flushes blackboard dirty keys.
 fn abort_running(
     instance: &mut BtInstance,
-    blackboard: &mut Blackboard,
+    blackboard: &mut BlackboardData,
 ) {
     if let Some(node_id) = instance.running_node {
         instance.node_states
@@ -1330,7 +1397,7 @@ pub struct ContextSet {
 pub fn score_action(
     action: &UtilityAction,
     considerations: &[Consideration],
-    blackboard: &Blackboard,
+    blackboard: &BlackboardData,
     groups: &GroupBlackboardStore,
     world: &World,
     entity: Entity,
@@ -1366,7 +1433,7 @@ pub fn score_action(
 /// given input axis.
 fn read_input_axis(
     axis: &InputAxis,
-    blackboard: &Blackboard,
+    blackboard: &BlackboardData,
     groups: &GroupBlackboardStore,
     world: &World,
     entity: Entity,
@@ -1426,7 +1493,7 @@ pub fn utility_tick_system(
     query: Query<(
         Entity,
         &mut UtilityAgent,
-        &Blackboard,
+        &BlackboardData,
     )>,
     budget: Res<AiBudget>,
     action_sets: Res<Assets<UtilityActionSet>>,
@@ -1533,7 +1600,7 @@ pub fn select_action(
 pub fn evaluate_context(
     agent: &mut UtilityAgent,
     contexts: &[ContextSet],
-    blackboard: &Blackboard,
+    blackboard: &BlackboardData,
     groups: &GroupBlackboardStore,
     world: &World,
     entity: Entity,
@@ -1580,7 +1647,7 @@ pub fn evaluate_context(
 
 fn evaluate_context_score(
     ctx: &ContextSet,
-    blackboard: &Blackboard,
+    blackboard: &BlackboardData,
     groups: &GroupBlackboardStore,
     world: &World,
     entity: Entity,
@@ -2036,7 +2103,7 @@ pub fn goap_tick_system(
     query: Query<(
         Entity,
         &mut GoapAgent,
-        &mut Blackboard,
+        &mut BlackboardData,
     )>,
     budget: Res<AiBudget>,
     registry: Res<GoapActionRegistry>,
@@ -2360,10 +2427,10 @@ sequenceDiagram
     participant BS as BtTickSystem
     participant BD as AiBudget
     participant BT as BehaviorTree
-    participant BB as Blackboard
+    participant BB as BlackboardData
     participant LF as LeafNode
 
-    SC->>BS: run(Query BtInstance + Blackboard)
+    SC->>BS: run(Query BtInstance + BlackboardData)
     BS->>BD: request_budget(agent_count)
     BD-->>BS: max_agents_this_frame
 
@@ -2685,18 +2752,21 @@ archetypes for RPGs and open-world games.
 **Q5. Is this design cohesive with the overall engine?**
 
 The design aligns well with the ECS architecture by storing all AI state as components
-(`BtInstance`, `Blackboard`, `GoapAgent`, `UtilityAgent`) and running logic as systems. It uses the
-shared `ThreadPool` for parallel evaluation and respects the custom `Tokio runtime` by avoiding
-async I/O in the AI tick path. The `AiBudget` integrates with the LOD system (F-7.7.5) from the
-steering-crowds design. One area of divergence is the hot-reload mechanism for BT assets (F-7.3.5),
-which must coordinate with the content pipeline and asset system -- this integration is not yet
-defined and could conflict with the Tokio async I/O model if file watching uses OS-specific APIs.
+(`BtInstance`, `BlackboardData`, `GoapAgent`, `UtilityAgent`) and running logic as systems. It uses
+the shared `ThreadPool` for parallel evaluation and contains zero `async`/`await`/`Future` in the AI
+tick path per `constraints.md` (no async in engine). The `AiBudget` integrates with the LOD system
+(F-7.7.5) from the steering-crowds design. BT asset hot-reload coordinates with the content pipeline
+via the request/handle pattern in [core-runtime/io.md](../core-runtime/io.md); file watching submits
+read requests on the main thread and swaps assets through the shared `HotReloadBarrier` in
+[core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md).
 
 ## Open Questions
 
-1. **Blackboard value storage** -- `HashMap` per agent is flexible but adds overhead. A fixed-slot
-   array indexed by `BlackboardKey` would be faster but limits key count. Evaluate fixed-slot for
-   mobile, HashMap for desktop.
+1. **Blackboard value storage** -- *Resolved per design review P1 #26.* `BlackboardData` uses
+   `SortedVecMap<BlackboardKey, BlackboardValue>` on every platform. `HashMap` is forbidden on the
+   AI hot path per [constraints.md](../constraints.md). If profiling shows binary search is hot, the
+   fallback is a codegen'd fixed-slot array indexed by `BlackboardKey` (dense IDs already guaranteed
+   by codegen).
 2. **GOAP integer properties** -- 8 integer slots in `WorldState` may be limiting for complex games.
    Consider expanding to 16 with a `[i16; 16]` and `u16` mask, at the cost of larger state copies.
 3. **Utility AI custom input axis cost** -- Custom considerations use a `ConsiderationId` index into
@@ -2859,10 +2929,12 @@ AiPerception component, Transform2D instead of Transform.
 
 ### RF-7: Fix constraint violations
 
-- Remove Tokio reference (line 2689)
-- Replace `&World` in LeafNodeFn with scoped `LeafContext`
-- Fix abort_running() to reset descendant subtree
-- Replace PlanCache HashMap with IndexMap or proper LRU
+- *Resolved.* All Tokio/`async`/`await` references removed; this doc is now sync-only per
+  `constraints.md` (no async in engine).
+- Replace `&World` in LeafNodeFn with scoped `LeafContext`.
+- Fix abort_running() to reset descendant subtree.
+- Replace PlanCache HashMap with `SortedVecMap` or proper LRU (see
+  [core-runtime/primitives.md](../core-runtime/primitives.md)).
 
 ### RF-8: Add codegen for no-code visual editors
 
@@ -2977,7 +3049,7 @@ All AI state is ECS components. No hidden state outside the ECS.
 | Component | Purpose |
 |-----------|---------|
 | `AiStateMachine` | Lifecycle state (Idle/Alert/Combat/etc.) |
-| `Blackboard` | Per-agent knowledge store |
+| `BlackboardData` | Per-agent knowledge store |
 | `BehaviorTreeInstance` | Active BT state (current node) |
 | `UtilityBrain` | Active utility scores + selection |
 | `GoapAgent` | Active plan + world state snapshot |
@@ -2986,13 +3058,13 @@ All AI state is ECS components. No hidden state outside the ECS.
 | `NavMeshAgent` | Written by AI, read by navigation |
 
 Not every AI entity needs all components. A simple patrol NPC has `AiStateMachine` +
-`BehaviorTreeInstance` + `Blackboard`. A complex boss has all components.
+`BehaviorTreeInstance` + `BlackboardData`. A complex boss has all components.
 
 **System ordering in AI phase (Phase 4):**
 
 ```text
 1. PerceptionUpdateSystem
-   (BVH sight queries, audio hearing, update Blackboard)
+   (BVH sight queries, audio hearing, update BlackboardData)
 2. AiStateMachineSystem
    (evaluate state transitions, select active system)
 3. BehaviorTreeSystem / UtilitySystem / GoapPlannerSystem
@@ -3002,8 +3074,9 @@ Not every AI entity needs all components. A simple patrol NPC has `AiStateMachin
     write NavMeshAgent destination, fire events)
 ```
 
-Systems 2-3 run via `job_system::par_for_each` — each entity's AI is independent. Blackboard writes
-within a single entity are sequential; cross-entity reads use group blackboard (ECS resource).
+Systems 2-3 run via `job_system::par_for_each` — each entity's AI is independent. `BlackboardData`
+writes within a single entity are sequential; cross-entity reads use `GroupBlackboardStore` (ECS
+resource).
 
 **ECS queries for AI leaf nodes:**
 
@@ -3011,7 +3084,7 @@ Leaf nodes access the world through a scoped `LeafContext`, NOT raw `&World`:
 
 ```rust
 pub struct LeafContext<'w> {
-    pub blackboard: &'w mut Blackboard,
+    pub blackboard: &'w mut BlackboardData,
     pub perception: &'w AiPerception,
     pub animation_params: &'w mut AnimationParams,
     pub animation_query: &'w AnimationQuery,

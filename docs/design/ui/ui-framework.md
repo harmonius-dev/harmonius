@@ -160,6 +160,27 @@ The UI framework is the foundational layer of the Harmonius UI system. It manage
 widget entities, a library of reusable interactive widgets, a GPU-accelerated rendering pipeline,
 and game-specific HUD composites.
 
+> **Layout engine.** Harmonius uses a **custom layout engine** (not Yoga, not Taffy) with Flexbox
+> semantics. The constraint solver lives at `ui::layout::FlexLayout` and targets the CSS Flexible
+> Box Level 1 spec for parity with designer expectations. A companion `GridLayout`, `AnchorLayout`,
+> and `ConstraintLayout` handle the other modes. The constraint solver is pure Rust, deterministic,
+> and has zero allocations on the hot path (uses `LayoutArena`, see Hot-Path Arena Allocation). A
+> future `docs/design/ui/layout-internals.md` will cover the flex main-axis free-space distribution,
+> shrink factors, and baseline alignment.
+>
+> **Input dependency (decoupled).** UI does NOT depend on `input::ActionState`. The framework
+> consumes the device-agnostic `PointerEvent` and `KeyboardEvent` streams emitted by
+> `input_event_normalize_system` (see [input/input.md](../input/input.md)). This decoupling means
+> widgets react to clicks, hovers, and key presses without binding to any game action; actions
+> remain a gameplay concern. Swapping an input backend (keyboard, touch, VR laser) is transparent to
+> the UI framework.
+>
+> **Hot-path primitives.** Widget hit testing, style cascading, and event routing use
+> `SortedVecMap<K, V>` from [core-runtime/primitives.md](../core-runtime/primitives.md) for
+> deterministic O(log n) lookups without hashing on the per-frame hot path. `HashMap` is forbidden
+> on these paths per `constraints.md`. The hit tester maintains a `SortedVecMap<u64, Entity>` keyed
+> on packed `(z_order, submission_order)` to answer point-in-rect queries in depth order.
+
 The design follows four principles:
 
 1. **ECS-primary (~90%)-based.** Every widget is an entity. Every property is a component. Every
@@ -754,7 +775,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant IN as InputAction
+    participant IN as PointerEvent or KeyboardEvent
     participant EV as EventRouter
     participant HT as HitTester
     participant R as Root
@@ -762,9 +783,10 @@ sequenceDiagram
     participant T as Target
     participant LG as LogicGraph
 
-    IN->>EV: pointer event at (x,y)
-    EV->>HT: hit test (x,y)
+    IN->>EV: consume ECS input event
+    EV->>HT: hit test at pointer position
     HT-->>EV: target entity
+    Note over HT: SortedVecMap<z_key, Entity>
 
     Note over EV: Capture phase
     EV->>R: on_capture
@@ -778,6 +800,12 @@ sequenceDiagram
     EV->>P: on_bubble
     EV->>R: on_bubble
 ```
+
+The `EventRouter` reads `PointerEvent` and `KeyboardEvent` ECS events (see
+[input/input.md](../input/input.md)) — NOT `ActionState`. Actions are gameplay bindings, not UI
+concerns. When a widget's event handler wires to a game action (e.g., a keybind prompt UI), it
+explicitly forwards to the action layer; nothing in the core UI framework reads `ActionState`
+directly.
 
 ### Nameplate Culling Pipeline
 
@@ -1164,11 +1192,17 @@ pub struct AccessibleNode {
     pub parent: Option<Entity>,
 }
 
-/// `AccessibilityTree` stores nodes in a sorted `Vec` indexed by `Entity` generation index.
-/// Lookup is O(log n) via binary search on the sorted entity key.
-/// Avoids `HashMap` on the every-frame sync hot path (RF-4).
+/// `AccessibilityTree` stores nodes in a `SortedVecMap<Entity, AccessibleNode>` (from
+/// [core-runtime/primitives.md](../core-runtime/primitives.md)). Lookup is O(log n) via binary
+/// search on the sorted entity key. Avoids `HashMap` on the every-frame sync hot path.
+///
+/// `AccessibilityTree` is a CLIENT of the core UI event routing and `FocusManager`. It does not
+/// own its own focus manager or event router — it reads from the same routing tables the rest of
+/// the widget tree uses, so screen reader focus and visual focus are always in sync. Focus
+/// traversal on gamepad / tab key goes through `FocusManager`; the screen reader receives the
+/// new focus via an observer hook installed on `FocusChanged` events.
 pub struct AccessibilityTree {
-    nodes: Vec<(Entity, AccessibleNode)>, // sorted by Entity index
+    nodes: SortedVecMap<Entity, AccessibleNode>,
     root: Entity,
     dirty: Vec<Entity>,
 }
@@ -1988,6 +2022,48 @@ Tests are defined in the companion file [ui-framework-test-cases.md](ui-framewor
 | `test_colorblind_preview` | R-10.6.3 |
 | `test_switch_device_full_ui` | R-10.6.5 |
 | `test_wcag_all_screens` | R-10.6.7 |
+
+### Automated WCAG AA Compliance Tests
+
+WCAG 2.1 Level AA compliance is validated by automated tests that run in CI against every UI screen
+(menus, HUD, editor panels, modal dialogs). Failing tests block merge to main.
+
+| Check                               | Criterion     | Test                               |
+|-------------------------------------|---------------|------------------------------------|
+| Contrast ratio ≥ 4.5:1 (normal text)| 1.4.3         | `test_wcag_contrast_normal_text`   |
+| Contrast ratio ≥ 3.0:1 (large text) | 1.4.3         | `test_wcag_contrast_large_text`    |
+| Contrast ratio ≥ 3.0:1 (UI chrome)  | 1.4.11        | `test_wcag_contrast_ui_components` |
+| Keyboard operability (all actions)  | 2.1.1         | `test_wcag_keyboard_operable`      |
+| No keyboard trap                    | 2.1.2         | `test_wcag_no_keyboard_trap`       |
+| Focus visible                       | 2.4.7         | `test_wcag_focus_indicator`        |
+| Focus order matches reading order   | 2.4.3         | `test_wcag_focus_order`            |
+| Screen reader name/role/value       | 4.1.2         | `test_wcag_aria_exposed`           |
+| Text resizable to 200%              | 1.4.4         | `test_wcag_text_resize_200`        |
+| No color-only information           | 1.4.1         | `test_wcag_no_color_only`          |
+
+1. **`test_wcag_contrast_normal_text`** — `ContrastChecker::contrast_ratio` ≥ 4.5 for every
+   `ComputedStyle.text_color` against its resolved background for widgets with `font_size < 18 pt`.
+2. **`test_wcag_contrast_large_text`** — Ratio ≥ 3.0 for `font_size ≥ 18 pt` or bold at 14 pt.
+3. **`test_wcag_contrast_ui_components`** — Ratio ≥ 3.0 for borders, focus indicators, and graphical
+   components.
+4. **`test_wcag_keyboard_operable`** — Every widget with an interaction handler can be reached and
+   activated via keyboard (Tab/Enter/Space/Arrow keys).
+5. **`test_wcag_no_keyboard_trap`** — Modal dialogs trap focus inside the dialog but allow Esc and
+   every other screen allows forward/backward traversal to exit.
+6. **`test_wcag_focus_indicator`** — Focused widget has a visible focus ring that meets 3.0:1
+   contrast against its neighbors.
+7. **`test_wcag_focus_order`** — Focus traversal order matches the widget tree reading order.
+8. **`test_wcag_aria_exposed`** — Every interactable widget exposes `AccessibleRole`,
+   `AccessibleProperties::label`, and current state to `ScreenReaderBridge`.
+9. **`test_wcag_text_resize_200`** — `UiScaleSettings.user_scale = 2.0` produces no clipped text, no
+   overlapping widgets, no obscured controls.
+10. **`test_wcag_no_color_only`** — Every state conveyed by color (error, disabled, selected) also
+    has an icon, label, or shape cue.
+
+The test harness walks every registered UI scene (menu, HUD, editor panel) through the accessibility
+tree and runs each check. Failures report the offending entity, the failing rule, and the measured
+value for debugging. Full test cases are listed in the companion
+[ui-framework-test-cases.md](ui-framework-test-cases.md).
 
 ### Benchmarks
 

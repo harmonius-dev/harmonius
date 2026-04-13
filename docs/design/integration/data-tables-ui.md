@@ -1,5 +1,8 @@
 # Data Tables ↔ UI Framework Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -325,9 +328,9 @@ sequenceDiagram
     Note over AR: Arena resets at frame boundary
 ```
 
-`TableRegistry::get` returns an `Arc<DataTable>` because the table is immutable shared data
-(project-wide rule: `Arc` only for immutable shared data). Query results and row iteration use
-arena-allocated slices, not `Arc`.
+`TableRegistry::get` returns an `Arc<DataTable>` per SC-1 in
+[shared-conventions.md](shared-conventions.md). Query results and row iteration use arena-allocated
+slices, not `Arc`.
 
 ### Hot Reload Update Flow
 
@@ -478,18 +481,11 @@ All 14 review findings have been resolved:
     is "preserve scroll offset". Detail list explains that `ListView.scroll_offset` lives on the
     list entity and survives child rebuilds.
 
-Additional cross-cutting updates:
+Additional cross-cutting updates: this design complies with
+[shared-conventions.md](shared-conventions.md) SC-1 (Arc), SC-4 (MPSC), SC-5/SC-12 (rkyv derives on
+`DataTableBinding`, `RowColumnBinding`, `ForeignKeyDisplay`, `SortDirection`), and SC-10 (runtime
+`DataBindingDebug` flags). Negative test cases and benchmarks with arena-reset allocation budgets
+live in the companion test-cases file; all are CI-runnable.
 
-- **Arc for immutable shared data** -- `TableRegistry::get` returns `Arc<DataTable>`; arena results
-  and runtime state use owned or borrowed values, never `Arc`.
-- **MPSC channel** -- `TableReloaded` uses `crossbeam_channel::bounded(256)` from hot-reload
-  producers to the UI consumer; drop-oldest-on-full documented.
-- **Persistent types** -- `DataTableBinding`, `RowColumnBinding`, `ForeignKeyDisplay`, and
-  `SortDirection` derive `Archive`, `Serialize`, `Deserialize` (rkyv) for scene and save-game
-  round-tripping.
-- **Runtime debug toggles** -- `DataBindingDebug` resource exposes `trace_queries`,
-  `trace_fk_misses`, and `force_rebuild` flags; not persistent.
-- **Negative tests and benchmarks** -- test-case companion file now includes a Negative Tests
-  section and a Benchmarks section with arena-reset allocation budgets. All tests are CI-runnable.
 - **No async/await** -- `DataBindingSystem::run` is synchronous. Events arrive via MPSC channel poll
   at the frame boundary.

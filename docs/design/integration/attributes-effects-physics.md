@@ -1,5 +1,8 @@
 # Attributes/Effects ↔ Physics Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Owner |
@@ -125,94 +128,26 @@ pub struct SurfaceEffectMap {
 }
 ```
 
-### System Pseudocode
+### System Triggers and Contract
 
-```rust
-/// Syncs attribute modifiers to physics params.
-/// Runs in Phase 5-Physics before integration,
-/// reading post-Phase-3 attribute values.
-///
-/// Trigger: Changed<AttributeSet> fires whenever
-/// the effect system modifies the modifier stack,
-/// including on expiry. No EffectEvent is read
-/// directly; expiry is detected via change
-/// detection on the AttributeSet the internal
-/// StatAggregator writes.
-///
-/// Fallbacks:
-/// - Missing gravity_scale attr: skip, leave
-///   GravityOverride untouched.
-/// - Missing mass_scale attr: skip, leave
-///   Mass::inverse at base_inverse.
-/// - Missing friction_scale attr: remove
-///   FrictionOverride if present so the solver
-///   falls back to PhysicsMaterial values.
-/// - PhysicsMaterialHandle unresolved in asset
-///   store: skip friction write, log warning
-///   once per entity per frame.
-pub fn sync_physics_attributes(
-    mut query: Query<(
-        Entity,
-        &AttributeSet,
-        &PhysicsMaterialHandle,
-        &mut Mass,
-    ), Changed<AttributeSet>>,
-    schemas: Res<TableRegistry>,
-    mat_assets: Res<Assets<PhysicsMaterial>>,
-    mut cmds: Commands,
-) {
-    // For each entity with changed attributes:
-    // 1. gravity_scale: insert GravityOverride
-    //    { scale } when != 1.0, else remove it.
-    // 2. mass_scale: Mass::inverse =
-    //    base_inverse / mass_scale. Scale > 1.0
-    //    increases mass (inverse shrinks);
-    //    scale < 1.0 decreases mass (featherfall
-    //    -> inverse grows -> lighter).
-    // 3. friction_scale: if != 1.0, resolve
-    //    PhysicsMaterialHandle through asset
-    //    store. Compute scaled static_friction
-    //    and dynamic_friction. Insert
-    //    FrictionOverride. If asset unresolved,
-    //    log warning and skip. If scale == 1.0,
-    //    remove FrictionOverride so the solver
-    //    falls back to the base material.
-}
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below. Sync system implementation (`sync_physics_attributes` and
+`collision_surface_effects` bodies) lives in `data-systems/attributes-effects.md`. This integration
+defines only the component contract and trigger conditions. The contract is:
 
-/// Applies effects on collision with tagged
-/// surfaces (e.g., Ice). Runs at the end of
-/// Phase 5-Physics, after collision event
-/// generation.
-///
-/// Fallbacks:
-/// - Collided entity has no handle: skip.
-/// - Asset not yet loaded: skip, log once.
-/// - SurfaceType has no mapping in
-///   SurfaceEffectMap: skip silently (many
-///   surfaces legitimately have no effect).
-/// - Target entity has no ActiveEffects
-///   component: skip, log warning.
-pub fn collision_surface_effects(
-    mut events: EventReader<CollisionStarted>,
-    mat_handles: Query<&PhysicsMaterialHandle>,
-    mat_assets: Res<Assets<PhysicsMaterial>>,
-    mut effects: Query<&mut ActiveEffects>,
-    surface_map: Res<SurfaceEffectMap>,
-    registry: Res<TableRegistry>,
-) {
-    // For each CollisionStarted event:
-    // 1. Read PhysicsMaterialHandle from the
-    //    collided entity.
-    // 2. Resolve handle via mat_assets to get
-    //    PhysicsMaterial.
-    // 3. Read PhysicsMaterial::surface_type.
-    // 4. Look up SurfaceType in SurfaceEffectMap.
-    // 5. Resolve the RowRef through TableRegistry
-    //    to an EffectDefinition.
-    // 6. Apply effect via ActiveEffects::apply()
-    //    on the target entity.
-}
-```
+1. **Trigger** -- `Changed<AttributeSet>` (fires on modifier addition and on expiry via the internal
+   `StatAggregator` re-evaluation). No `EffectEvent` is read directly.
+2. **`gravity_scale`** -- insert `GravityOverride { scale }` when `!= 1.0`, else remove it.
+3. **`mass_scale`** -- set `Mass::inverse = base_inverse / mass_scale`. Scale `> 1.0` increases mass
+   (inverse shrinks); scale `< 1.0` decreases mass (featherfall).
+4. **`friction_scale`** -- when `!= 1.0`, resolve `PhysicsMaterialHandle` via
+   `Res<Assets<PhysicsMaterial>>`, compute scaled `static_friction` / `dynamic_friction`, insert
+   `FrictionOverride`. When `== 1.0`, remove `FrictionOverride` so the solver falls back to the base
+   material.
+5. **Collision surface effects** -- `EventReader<CollisionStarted>` looks up
+   `PhysicsMaterial::surface_type` via `PhysicsMaterialHandle`, then resolves a `RowRef` through
+   `SurfaceEffectMap` and `Res<TableRegistry>` to an `EffectDefinition`, and calls
+   `ActiveEffects::apply(&def, source)` on the target.
 
 ### Channels
 

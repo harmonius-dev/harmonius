@@ -1,11 +1,23 @@
 # Input ↔ Camera Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Scope
 
 This integration covers 3D and VR camera control driven by input actions.
 **2D / 2.5D cameras are intentionally out of scope** for this document — side-scroller, isometric,
 and top-down ortho cameras drive their own framing logic (see `camera.md`) and do not route through
 `CameraInputAxisController`.
+
+## Overview
+
+Input actions reach the camera via the `CameraInputAxisController` (CIAC) bridge component. The
+input subsystem writes `ActionState` to ECS storage in Phase 1 (Input), then workers running in
+Phase 6 (Animation / LateUpdate) read `Res<InputActionState>` and apply the delta to `PanTilt` or
+`OrbitalFollow` after sensitivity scaling, invert-Y, and blend-suppression gating. VR head tracking
+uses a separate `XrHeadPose` -> `VrCameraBrain` path that bypasses CIAC entirely. Aim assist
+deflects raw look input toward valid targets on the same worker thread before the CIAC write.
 
 ## Systems Involved
 
@@ -212,6 +224,43 @@ pub struct AimAssistConfig {
 }
 ```
 
+## API Sketch
+
+CIAC is a plain worker-thread system that reads `Res<InputActionState>` (the ECS-resident action
+table written in Phase 1) and writes `PanTilt` / `OrbitalFollow` on its own entity during Phase 6.
+The system signature and body outline are interface-only; the full implementation lives in
+`game-framework/camera.md`.
+
+```rust
+/// Phase 6 system that bridges InputActionState into
+/// camera rotation/orbit components. Synchronous; no
+/// async/await; no Arc (all state is owned by ECS).
+pub fn camera_input_axis_system(
+    actions: Res<InputActionState>,
+    blend: Res<BlendState>,
+    mut query: Query<(
+        &mut CameraInputAxisController,
+        Option<&mut PanTilt>,
+        Option<&mut OrbitalFollow>,
+    )>,
+) {
+    for (mut ciac, pt, orb) in query.iter_mut() {
+        // 1. If blending, advance suppression_elapsed
+        //    and bail early (zero delta). Force-clear
+        //    suppression after suppression_timeout.
+        // 2. Look up look_action in actions.
+        // 3. Reject non-Axis2D with a one-time warn.
+        // 4. Apply dead zone / response curve from
+        //    the ModifierChain.
+        // 5. Apply aim assist deflection if a target
+        //    is in range and the assist is enabled.
+        // 6. Scale by ciac.sensitivity and invert_y.
+        // 7. Write to PanTilt (yaw/pitch) or
+        //    OrbitalFollow (horizontal/vertical).
+    }
+}
+```
+
 ## Architecture
 
 ```mermaid
@@ -404,15 +453,16 @@ is read directly on the worker thread at the start of Phase 6.
 
 ## Failure Modes
 
-| Failure | Impact | Recovery |
-|---------|--------|----------|
-| No input device connected | Camera stays still | Default to last known state |
-| VR HMD tracking lost | Stale pose | Hold last valid `XrHeadPose` |
-| Action not mapped | CIAC reads zero delta | No camera movement |
-| `ActionValueType` mismatch | CIAC reads zero delta | One-time warn; no crash |
-| Aim assist no targets | Pass-through | Raw delta used unmodified |
-| `raw_camera_input` channel full | Oldest delta dropped | Drop counter increments |
-| Blend suppression stuck | No input response | Timeout clears suppression |
+| ID | Failure | Impact | Recovery |
+|----|---------|--------|----------|
+| FM-1 | Action not mapped (missing action) | CIAC reads zero delta | No camera change; warn once |
+| FM-2 | Conflicting actions (multiple bound) | First-come-first-served resolution | Keep first non-zero |
+| FM-3 | No input device connected | Camera stays still | Default to last known state |
+| FM-4 | VR HMD tracking lost | Stale pose | Hold last valid `XrHeadPose` |
+| FM-5 | `ActionValueType` mismatch | CIAC reads zero delta | One-time warn; no crash |
+| FM-6 | Aim assist no targets | Pass-through | Raw delta used unmodified |
+| FM-7 | `raw_camera_input` channel full | Oldest delta dropped | Drop counter increments |
+| FM-8 | Blend suppression stuck | No input response | Timeout clears suppression |
 
 ### Detailed Fallback Paths
 
@@ -465,6 +515,19 @@ and renders a per-camera panel.
    engine's custom per-platform windowing layer described in `platform/windowing.md`.
 4. **2D / 2.5D** — Out of scope for this integration. Ortho cameras bypass CIAC; see the Scope
    section at the top of this document.
+
+## Performance Budget
+
+CIAC evaluation shares the Phase 6 (Animation / LateUpdate) budget documented in
+[/docs/design/performance-budget.md](../performance-budget.md). Per-camera target budgets are:
+
+| Metric | Target | IR |
+|--------|--------|----|
+| CIAC evaluation, 4 split-screen cams | < 0.05 ms | IR-4.1.1 |
+| VR head tracking to output | < 1.0 ms | IR-4.1.3 |
+| Aim assist with 50 targets | < 0.1 ms | IR-4.1.5 |
+| Combined CIAC pipeline per camera | < 0.05 ms | IR-4.1.5 |
+| `raw_camera_input` p99 send | < 5 us | IR-4.1.1 |
 
 ## Test Plan
 

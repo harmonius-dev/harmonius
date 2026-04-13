@@ -1,5 +1,8 @@
 # AI Behavior ↔ Data Tables Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -284,9 +287,7 @@ subsystems, matching the cache-friendliness guidance in `feedback_integration_re
 and repopulated lazily on the next read (see Timing and Ordering).
 
 Blackboard lookups inside the binding system use the sorted-`Vec` representation of
-`BlackboardBindings` (not a `HashMap`) because the binding path is a hot path during spawn bursts
-and reload rebinds -- thousands to millions of resolves per frame. Binary-search on a dense `Vec`
-beats hashing for the small `n` typical of per-entity binding sets.
+`BlackboardBindings` per SC-2 and SC-3 in [shared-conventions.md](shared-conventions.md).
 
 ### Class Diagram
 
@@ -489,8 +490,8 @@ The entity-event queue is the ECS's own event buffer whose capacity is documente
 When `drain_reload_events` processes a `TableReloaded` event, every `AiTableCache` whose `version`
 is older than the new table version has its `entries` cleared and `cleared` set to `true`. Cleared
 caches are lazily repopulated on the next `BtTableLookup` or `TableColumnConsideration` read. The
-cache uses a sorted `Vec<(ColumnId, CachedValue)>` with binary-search lookup -- no `HashMap`,
-matching the hot-path-sort guidance for the blackboard.
+cache uses a sorted `Vec<(ColumnId, CachedValue)>` per SC-2 in
+[shared-conventions.md](shared-conventions.md).
 
 ## Failure Modes
 

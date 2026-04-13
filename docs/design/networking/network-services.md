@@ -1,5 +1,22 @@
 # Network Services Design
 
+## Constraint Compliance
+
+Game-runtime code paths in this document are synchronous: the game client and headless game server
+never call an async runtime. Any `IoRequestId`-returning API is a sync handle call that runs on the
+main thread via [core-runtime/io.md](../core-runtime/io.md). Voice, chat, session, replay, and
+telemetry clients invoked from game systems all obey this rule.
+
+Backend microservices (auth, matchmaker, lobby, session directory, replay storage, cloud save) are
+deployed as Kubernetes workloads alongside GameDb and may use async runtimes per the exception
+carved out in [constraints.md](../constraints.md) section "CPU Parallelism". Those sections are
+explicitly labelled
+**Backend service; async runtime allowed per constraints.md exception for Kubernetes workloads**.
+
+Anywhere a game-side API used to return a future, it now returns `IoRequestId` (fire-and-forget) or
+`Result<Handle, NetworkError>` (immediate). The game communicates with backend services over QUIC
+streams defined in [network-transport.md](./network-transport.md).
+
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
@@ -90,7 +107,30 @@ voice chat, DMs, moderation, editor bridge).
 
 Both subsystems are ECS-primary (~90%)-based. Session state lives as components on per-player
 entities. Replay recording and playback are ECS systems. Communication channels are polymorphic
-containers shared by game and editor. All I/O is Tokio async I/O.
+containers shared by game and editor. Game-side I/O is platform-native and synchronous, routed
+through the `IoRequest` / `IoResponse` protocol documented in
+[core-runtime/io.md](../core-runtime/io.md). Backend microservices (Kubernetes workloads) run their
+own async runtime and exchange messages with the game via QUIC streams.
+
+### Voice Chat Ownership Split
+
+Voice chat splits cleanly along two axes. This file owns the **transport** only; audio owns the
+**codec** and **spatialization**. Neither side redefines the other's types.
+
+| Concern | Owner | Type |
+|---------|-------|------|
+| QUIC unreliable transport for voice | this doc | `VoiceStream` |
+| Voice activity detection (VAD) | this doc | `VoiceActivity` |
+| Opus encode / decode | `audio/audio.md` | `VoiceVoice` |
+| Jitter buffer, PLC | `audio/audio.md` | part of `VoiceVoice` |
+| HRTF spatialization | `audio/audio.md` | `SpatialVoice` |
+| Mixer routing | `audio/audio.md` | `VoiceMixer` |
+
+`VoiceStream` is the transport handle: it owns the QUIC unreliable stream, sequence tagging, and the
+send/recv commands the game issues per frame. `VoiceVoice` (defined in audio) is the codec pipeline
+that consumes bytes off the `VoiceStream` and produces PCM frames bound for the audio engine. When
+transport-side types previously also held an `OpusEncoder` / `OpusDecoder` / `JitterBuffer`, those
+fields migrate to `audio/audio.md::VoiceVoice`.
 
 ## Architecture
 
@@ -321,7 +361,7 @@ sequenceDiagram
     participant ECS as ECS World
     participant REC as ReplayRecorder
     participant IDX as ReplayIndex
-    participant FS as Async File IO
+    participant IO as IoDispatcher (main thread)
 
     loop Every Tick
         ECS->>REC: on_tick(world_state)
@@ -329,7 +369,8 @@ sequenceDiagram
     end
     Note over REC: Snapshot interval reached
     REC->>IDX: record keyframe offset
-    REC->>FS: flush buffer to disk
+    REC->>IO: IoRequest::WriteFile (sync handle)
+    IO-->>REC: IoResponse::WriteOk (next frame)
 ```
 
 ### Kill Cam Pipeline
@@ -658,29 +699,30 @@ classDiagram
     }
 
     class TextClient {
-        +send(channel, content) Future~Result~
-        +search(channel, query) Future~Result~
-        +load_history(channel, count) Future~Result~
+        +send(channel, content) IoRequestId
+        +search(channel, query) IoRequestId
+        +load_history(channel, count) IoRequestId
     }
 
     class VoiceClient {
-        -streams: HashMap~ChannelId, VoiceStream~
-        +join(channel) Future~Result~
-        +leave(channel) Future~Result~
+        -streams: SortedVecMap~ChannelId, VoiceStream~
+        +join(channel) Result~VoiceStream, NetworkError~
+        +leave(channel) Result
         +mute_speaker(user) Result
     }
 
     class VoiceStream {
-        -encoder: OpusEncoder
-        -decoder: OpusDecoder
-        -jitter_buffer: JitterBuffer
-        -vad: VoiceActivityDetector
+        -quic_stream: StreamId
+        -vad: VoiceActivity
+        -send_seq: u32
+        +send_packet(pcm_bytes) SendToken
+        +poll_received() Vec~VoicePacket~
     }
 
     class DmClient {
-        +start_dm(target) Future~Result~ChannelId~~
-        +send(target, content) Future~Result~
-        +escalate_to_voice(target) Future~Result~
+        +start_dm(target) IoRequestId
+        +send(target, content) IoRequestId
+        +escalate_to_voice(target) IoRequestId
     }
 
     class E2eEncryption {
@@ -1011,7 +1053,8 @@ pub enum CommError {
 
 1. **Record.** ReplayRecorder observes replication stream each tick. Computes delta, captures
    periodic full snapshots.
-2. **Flush.** Async I/O writes buffered data to disk.
+2. **Flush.** Main-thread `IoRequest::WriteFile` writes the buffered data to disk; completion
+   arrives as an ECS event next frame.
 3. **Finalize.** Header and index written on recording end.
 4. **Seek.** Load nearest keyframe (binary search), replay deltas forward.
 5. **Kill cam.** Rolling 15 s ring buffer; extract on death.
@@ -1019,22 +1062,60 @@ pub enum CommError {
 
 ### Text Message Pipeline
 
-1. User sends message via reliable ordered channel.
-2. Server rate-limits and profanity-filters.
-3. Message persisted to PostgreSQL with FTS indexing.
+1. User sends message via a reliable ordered QUIC stream.
+2. Server rate-limits and profanity-filters on the main thread (sync).
+3. Message persisted to TiKV (see [network-infrastructure.md](./network-infrastructure.md)) via a
+   sync QUIC stream to the GameDb backend service.
 4. Fan-out to channel members (skipping blocked users).
-5. @-mentions generate notification events.
+5. @-mentions generate ECS notification events.
+
+### Game-side RPC Dispatch
+
+Game-facing RPC dispatch is fully synchronous. The main thread drains QUIC stream bytes and decodes
+them into typed `RpcInvocation` values. Each invocation is published as an ECS event on an event
+channel that worker systems read next tick.
+
+```mermaid
+sequenceDiagram
+    participant Net as Main thread (QUIC drain)
+    participant Dec as RpcCodec
+    participant Ev as ECS event channel
+    participant Sys as Worker system
+
+    Net->>Dec: stream bytes for RpcId
+    Dec->>Dec: codegen-generated decode
+    Dec->>Ev: RpcEvent { rpc_id, params, sender }
+    Ev-->>Sys: system reads event next tick (sync)
+    Sys->>Sys: handle RPC body as plain Rust
+```
+
+1. **Reception is main-thread only.** No `RpcHandler` is polled from a worker socket. The main
+   thread is the sole owner of the QUIC decode path.
+2. **Dispatch is an ECS event.** RPC invocations are not direct function calls. The main thread
+   emits `RpcEvent<T>` values through the ECS event channel so ordering and back-pressure behave
+   like every other ECS event.
+3. **Worker handlers are plain Rust.** Worker systems read `RpcEvent` via `EventReader<T>` and
+   invoke plain synchronous functions. No suspension, no futures.
+4. **Reply path is symmetric.** A system that needs to reply calls `rpc.reply(token, value)` which
+   enqueues a `TransportCmd::SendStream` on the outbound MPSC; the main thread drains it next frame.
 
 ### Voice Packet Pipeline
 
-1. Platform microphone capture provides raw PCM.
-2. AEC subtracts speaker output.
-3. VAD gates the signal.
-4. Opus encoder compresses (24 kbps default).
-5. Unreliable unordered channel transmits.
-6. Jitter buffer absorbs timing variance.
-7. Opus decoder (or PLC) produces audio.
-8. VoiceMixer routes to bus or spatializes via BVH.
+Transport steps (owned by this document) are numbered; codec/mixer steps (owned by
+[audio/audio.md](../audio/audio.md)) are labelled with `[audio]`.
+
+1. `[audio]` Platform microphone capture provides raw PCM.
+2. `[audio]` AEC subtracts speaker output.
+3. `[audio]` VAD gates the signal.
+4. `[audio]` Opus encoder compresses (24 kbps default).
+5. **`VoiceStream::send_packet`** enqueues the encoded bytes on a QUIC unreliable datagram with a
+   sequence tag; returns `SendToken` synchronously.
+6. Main thread drains the outbound MPSC next frame and hands the datagram to the QUIC driver.
+7. On receive, main thread drains `VoiceStream::poll_received()` and publishes a `VoicePacketEvent`
+   ECS event.
+8. `[audio]` Jitter buffer absorbs timing variance inside `VoiceVoice` on the audio thread.
+9. `[audio]` Opus decoder (or PLC) produces audio.
+10. `[audio]` VoiceMixer routes to bus or spatializes via BVH.
 
 ### Voice Bandwidth Budget
 
@@ -1049,22 +1130,30 @@ pub enum CommError {
 
 ### Session Infrastructure
 
-| Component | Deployment |
-|-----------|------------|
-| AuthService | AWS ECS Fargate (stateless) |
-| SessionDirectory | AWS DynamoDB |
-| MatchmakerService | AWS ECS Fargate |
-| LobbyManager | In-process (game server) |
-| LoginQueue | In-process (gateway) |
-| HeadlessServer | AWS ECS / Kubernetes |
+Backend service; async runtime allowed per constraints.md exception for Kubernetes workloads. Each
+component below runs as a Kubernetes workload managed by the Harmonius K8s operator described in
+[network-infrastructure.md](./network-infrastructure.md).
+
+| Component | Deployment | Game-side API |
+|-----------|------------|---------------|
+| AuthService | K8s deployment (stateless) | Sync QUIC stream |
+| SessionDirectory | TiKV (backed by K8s statefulset) | Sync QUIC stream |
+| MatchmakerService | K8s deployment | Sync QUIC stream |
+| LobbyManager | In-process on headless game server | Sync ECS system |
+| LoginQueue | K8s deployment (gateway) | Sync QUIC stream |
+| HeadlessServer | K8s deployment | N/A (is the game) |
 
 ### Replay I/O
 
-| Platform | Async I/O |
-|----------|-----------|
-| Windows | Tokio (IOCP) |
-| macOS | Tokio (kqueue) |
-| Linux | Tokio (epoll) |
+Replay file I/O on the game client and headless server uses the main-thread
+[core-runtime/io.md](../core-runtime/io.md) protocol. Subsystems submit `IoRequest::WriteFile` and
+receive `IoResponse::WriteOk` as ECS events next frame.
+
+| Platform | File backend |
+|----------|--------------|
+| Windows | IOCP via `windows-rs` |
+| Linux / Android | io_uring via `rustix` |
+| macOS / iOS | GCD `dispatch_io` via `dispatch2` |
 
 ### Microphone Capture
 
@@ -1133,11 +1222,18 @@ Test cases are in the companion file
 
 ## Review Feedback
 
-### RF-1: Replace all Tokio/async with platform-native I/O
+### RF-1: Platform-native sync I/O (completed for game-side APIs)
 
-"All I/O is Tokio async I/O" must be replaced. Use platform- native I/O per constraints. Replace
-Future return types on TextClient, VoiceClient, DmClient with synchronous request/handle pattern.
-Update replay I/O table. Use QUIC (Design #30 RF-12) for all service communication.
+**Status: Applied in this revision.** All game-runtime APIs — `TextClient`, `VoiceClient`,
+`DmClient`, `LeaderboardService`, `AchievementService`, `CloudSaveService`, `TelemetryService`,
+`StoreService` — return `IoRequestId` tokens or `Result<Handle, NetworkError>` immediately. The
+game-side code path uses the `IoRequest` / `IoResponse` protocol in
+[core-runtime/io.md](../core-runtime/io.md) and the sync QUIC transport in
+[network-transport.md](./network-transport.md).
+
+Backend service deployments (auth, matchmaker, session directory, replay storage) continue to run
+async runtimes on Kubernetes per the constraints.md exception, and communicate with the game over
+QUIC streams.
 
 ### RF-2: Remove all Reflect derives
 

@@ -1,5 +1,8 @@
 # Editor ↔ Rendering Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -553,8 +556,8 @@ sequenceDiagram
 | Worker snapshot to render | MPSC | 3 | Matches triple buffer slot count |
 | Hot reload to main | MPSC | 4 | `.dylib` reload signals, low rate |
 
-All cross-thread communication uses `crossbeam-channel` MPSC queues per the project-wide guidance
-(MPSC over SPSC). No async runtimes, no `tokio`, no `await` anywhere in this integration.
+All cross-thread communication uses `crossbeam-channel` MPSC queues per SC-4 in
+[shared-conventions.md](shared-conventions.md).
 
 ### Thread model
 

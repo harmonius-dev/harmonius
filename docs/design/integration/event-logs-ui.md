@@ -1,5 +1,8 @@
 # Event Logs ↔ UI Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -214,15 +217,10 @@ pub fn update_combat_log<'w>(
 
 ### Arc Usage
 
-`Arc` appears in this integration only for immutable shared data:
-
-1. `Arc<StringTable>` -- the localization table read by the text resolver. Immutable per locale,
-   swapped atomically on locale change.
-2. `Arc<[CombatLogStyleClass]>` -- the immutable accuracy-to-opacity style lookup built at startup
-   and shared across all combat log bindings.
-
-No mutable state is shared through `Arc`. `EventLog<T>` components and `ScrollView` components are
-owned by the ECS world and accessed via `Query` borrows.
+`Arc` usage (`Arc<StringTable>` for the localization table swapped on locale change, and
+`Arc<[CombatLogStyleClass]>` for the accuracy-to-opacity style lookup) follows SC-1 in
+[shared-conventions.md](shared-conventions.md). `EventLog<T>` and `ScrollView` components are owned
+by the ECS world and accessed via `Query` borrows.
 
 ### Channel Usage
 

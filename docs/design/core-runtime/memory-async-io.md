@@ -1,4 +1,4 @@
-# Memory Management & Async I/O Design
+# Memory Management & Platform I/O Design
 
 ## Requirements Trace
 
@@ -6,6 +6,20 @@
 > [features/core-runtime/](../../features/), [requirements/core-runtime/](../../requirements/), and
 > [user-stories/core-runtime/](../../user-stories/). The table below traces design elements to those
 > definitions.
+>
+> **Cross-references for shared concepts:**
+>
+> - `Handle<T>`, `HandleMap<T>`, `SlotMap<T>`, and the generational-index family are canonically
+>   defined in [primitives.md](primitives.md). This document describes the memory subsystem's
+>   **usage** of those primitives; it does not redefine them.
+> - The I/O request/response protocol (`IoRequest`, `IoResponse`, `IoRequestId`,
+>   `IoBuffer`, `VirtualFileSystem`, `poll_completions`) is canonically defined in [io.md](io.md).
+>   This document is a **client** of that protocol.
+> - The unified error hierarchy (`EngineError`, `IoError`, and `ToEngineError`) is defined in
+>   [error.md](error.md). `IoError` variants listed below come from that canonical enum.
+> - The **no-async** constraint applies to every I/O path in this document. All `async fn`,
+>   `.await`, `Future<...>`, and `tokio::*` references have been removed; replacements follow the
+>   synchronous request/handle pattern in [io.md](io.md).
 
 ### Memory Management (F-1.7 / R-1.7)
 
@@ -31,7 +45,7 @@
 8. **F-1.7.8** — Allocation tagging with subsystem propagation
 9. **F-1.7.9** — Arbitrary precision numeric types
 
-### Async I/O (F-1.8 / R-1.8)
+### Platform I/O (F-1.8 / R-1.8)
 
 | Feature | Requirement       |
 |---------|-------------------|
@@ -45,33 +59,37 @@
 | F-1.8.8 | R-1.8.8, R-1.8.8a |
 | F-1.8.9 | R-1.8.9           |
 
-1. **F-1.8.1** — Platform-native async I/O abstraction
-2. **F-1.8.2** — Completion-based proactor model
-3. **F-1.8.3** — Async file I/O with explicit byte offsets
-4. **F-1.8.4** — Async network socket I/O (TCP/UDP)
-5. **F-1.8.5** — Async audio stream I/O with deadline hints
+1. **F-1.8.1** — Platform-native I/O abstraction (sync request/handle, no async)
+2. **F-1.8.2** — Completion-based proactor model, drained by the main thread
+3. **F-1.8.3** — File I/O with explicit byte offsets (sync request submission)
+4. **F-1.8.4** — Network socket I/O (TCP/UDP) via the same request pattern
+5. **F-1.8.5** — Audio stream I/O with deadline hints
 6. **F-1.8.6** — Scatter-gather and vectored I/O
 7. **F-1.8.7** — I/O priority and deadline scheduling
-8. **F-1.8.8** — Cooperative I/O cancellation via tokens
+8. **F-1.8.8** — Cooperative I/O cancellation via request IDs
 9. **F-1.8.9** — I/O buffer management
 
 ## Overview
 
-This document designs the memory management and async I/O subsystems of the Harmonius engine.
+This document designs the memory management and platform I/O subsystems of the Harmonius engine.
 Together they form the allocation and I/O foundation consumed by every other domain.
 
-**Memory management** provides three allocator types (frame arena, scoped arena, typed pool),
-generational handles for safe indirect references, a slot map container for cache-friendly
-iteration, per-subsystem memory budgets, and allocation profiling/tagging.
+**Memory management** provides three allocator types (frame arena, scoped arena, typed pool), uses
+the canonical generational handles and slot map from [primitives.md](primitives.md), enforces
+per-subsystem memory budgets, and collects allocation profiling/tagging.
 
-**Async I/O** provides a platform-native `AsyncIo` facade that owns the OS I/O reactor on the main
-thread. Each platform uses its native completion-based API: io_uring via rustix (Linux), IOCP via
-windows-rs (Windows), GCD dispatch_io via dispatch2 (Apple). The facade adds cooperative
-cancellation tokens, a virtual file system (VFS) for path resolution, typed operation interfaces for
-files, sockets, and audio streams, and GPU DMA asset loading via DirectStorage (Windows), Metal I/O
-(Apple), and io_uring + Vulkan upload (Linux). All I/O is non-blocking via platform APIs. No Rust
-stdlib file I/O is permitted. No blocking thread pool exists -- every operation (DNS, file stat,
-directory listing) uses the platform's non-blocking API.
+**Platform I/O** is provided by a `PlatformIo` facade (formerly `AsyncIo`; renamed because the
+engine has no async runtime and the facade is purely synchronous from the user's perspective) that
+owns the OS I/O reactor on the main thread. Each platform uses its native completion-based API:
+io_uring via rustix (Linux), IOCP via windows-rs (Windows), GCD dispatch_io via dispatch2 (Apple).
+The facade exposes the canonical request/response protocol defined in [io.md](io.md), plus
+cooperative cancellation via `IoRequestId`, a virtual file system (VFS) for path resolution, typed
+buffer pools, and GPU DMA asset loading via DirectStorage (Windows), Metal I/O (Apple), and io_uring
+
+- Vulkan upload (Linux). All I/O is non-blocking via platform APIs.
+**No `async fn`, no `.await`, no `Future<_>`, no tokio, no blocking thread pool** — every operation
+(DNS, file stat, directory listing) uses the platform's non-blocking API and is harvested from the
+main-thread drain loop.
 
 **Scope boundary:** ECS manages its own archetype-based dense storage internally. This design covers
 non-ECS allocation only (per-frame scratch, GPU upload staging, I/O buffers, and typed asset pools).
@@ -81,10 +99,16 @@ non-ECS allocation only (per-frame scratch, GPU upload staging, I/O buffers, and
 | Contract | Consumed By |
 |----------|-------------|
 | Allocator types (`FrameArena`, `PoolAllocator`) | All domains |
-| `Handle<T>` / `HandleMap<T>` / `SlotMap<T>` | All domains (ECS, assets, rendering) |
-| `AsyncIo` facade (platform-native I/O) | Content Pipeline, Platform, Networking |
+| `PlatformIo` facade (consumes the io.md protocol) | Content Pipeline, Platform, Networking |
 | `VirtualFileSystem` | Content Pipeline, Save System |
 | `MemoryBudget` / `MemoryTracker` | All domains |
+
+> **Not defined here:**
+>
+> - `Handle<T>`, `HandleMap<T>`, `SlotMap<T>`, `GenerationalIndex` — see
+>   [primitives.md](primitives.md).
+> - `IoRequest`, `IoResponse`, `IoRequestId`, `IoBuffer`, `IoBufferPool` — see [io.md](io.md).
+> - `IoError` variants — see [error.md](error.md).
 
 ## Architecture
 
@@ -97,21 +121,18 @@ graph TD
         FA[FrameArena]
         SA[ScopedArena]
         PA[PoolAllocator]
-        GH[Handle / HandleMap]
-        SM[SlotMap]
         MB[MemoryBudget]
         MT[MemoryTracker]
         AT[AllocationTag]
     end
 
-    subgraph "harmonius_core::async_io"
-        AI[AsyncIo]
+    subgraph "harmonius_core::platform_io"
+        PI[PlatformIo]
         VFS[VirtualFileSystem]
-        FIO[FileOps]
-        NIO[NetOps]
-        AIO[AudioOps]
-        VIO[VectoredIo]
-        CT[CancelToken]
+        FIO[File submissions]
+        NIO[Net submissions]
+        AIO[Audio submissions]
+        VIO[Vectored submissions]
         DMA[GpuDmaLoader]
     end
 
@@ -125,25 +146,26 @@ graph TD
 
     PTA -->|owns per worker| FA
     SA -->|child of| FA
-    GH -->|backs| SM
     PA -->|tracked by| MB
     FA -->|tracked by| MB
     MB -->|reports to| MT
     AT -->|tags| MT
 
-    AI -->|Linux| IU
-    AI -->|Windows| IOCP
-    AI -->|Apple| GCD
+    PI -->|Linux| IU
+    PI -->|Windows| IOCP
+    PI -->|Apple| GCD
     DMA -->|Windows| DS
     DMA -->|Apple| MIO
     DMA -->|Linux| IU
-    FIO -->|uses| AI
-    NIO -->|uses| AI
-    AIO -->|uses| AI
-    VIO -->|uses| AI
-    CT -->|cancels via| AI
+    FIO -->|submits to| PI
+    NIO -->|submits to| PI
+    AIO -->|submits to| PI
+    VIO -->|submits to| PI
     VFS -->|resolves to| FIO
 ```
+
+Handle and slot map primitives are canonical in [primitives.md](primitives.md) and are not drawn in
+the memory subgraph above.
 
 ### File Layout
 
@@ -153,15 +175,13 @@ harmonius_core/
 │   ├── arena.rs          # FrameArena, ScopedArena
 │   ├── per_thread.rs     # PerThreadArena
 │   ├── pool.rs           # PoolAllocator<T>
-│   ├── handle.rs         # Handle<T>, HandleMap<T>
-│   ├── slot_map.rs       # SlotMap<T>
 │   ├── budget.rs         # MemoryBudget, BudgetUsage
 │   ├── tracker.rs        # MemoryTracker, TagStats
 │   ├── tag.rs            # AllocationTag, SubsystemId
 │   └── precision.rs      # BigInt, BigFloat
-└── async_io/
-    ├── io.rs             # AsyncIo (platform-native
-    │                     # I/O reactor)
+└── platform_io/
+    ├── io.rs             # PlatformIo facade
+    │                     # (io.md protocol client)
     ├── backend_uring.rs  # Linux: io_uring via rustix
     ├── backend_iocp.rs   # Windows: IOCP via
     │                     # windows-rs
@@ -171,17 +191,15 @@ harmonius_core/
     │                     # io_uring + Vulkan upload
     ├── vfs.rs            # VirtualFileSystem,
     │                     # MountPoint, VfsHandle
-    ├── file.rs           # FileOps (read, write,
-    │                     # flush)
-    ├── net.rs            # NetOps (TCP, UDP)
-    ├── audio.rs          # AudioOps (deadline
-    │                     # hints)
-    ├── vectored.rs       # VectoredIo
-    │                     # (scatter-gather)
-    ├── cancel.rs         # CancelToken (AtomicBool
-    │                     # + waker list)
-    └── error.rs          # IoError
+    ├── file.rs           # File submission helpers
+    ├── net.rs            # Net submission helpers
+    ├── audio.rs          # Audio deadline submission
+    └── vectored.rs       # Vectored scatter-gather
 ```
+
+> Generational handles (`handle.rs`), slot maps (`slot_map.rs`), and the `IoError` enum live in
+> [primitives.md](primitives.md) and [error.md](error.md) respectively. They are no longer emitted
+> from this document's crate layout.
 
 ### Arena Allocator Bump Flow
 
@@ -260,40 +278,8 @@ classDiagram
         +capacity() u32
     }
 
-    class Handle~T~ {
-        +index u32
-        +generation u32
-        +is_valid(map) bool
-    }
-
-    class HandleMap~T~ {
-        -entries Vec~HandleEntry~
-        -free_head Option~u32~
-        -len u32
-        +new() HandleMap
-        +insert(value) Handle
-        +remove(handle) Option~T~
-        +get(handle) Option~Ref~
-        +get_mut(handle) Option~RefMut~
-        +contains(handle) bool
-        +len() u32
-    }
-
-    class SlotMap~T~ {
-        -dense Vec~T~
-        -sparse Vec~SparseEntry~
-        -handles Vec~Handle~
-        -free_head Option~u32~
-        +new() SlotMap
-        +insert(value) Handle
-        +remove(handle) Option~T~
-        +get(handle) Option~Ref~
-        +iter() Iterator
-        +len() u32
-    }
-
     class MemoryBudget {
-        -budgets HashMap~SubsystemId Budget~
+        -budgets Vec~SubsystemId Budget~
         +set_budget(id, bytes)
         +check(id, bytes) BudgetResult
         +record_alloc(id, bytes)
@@ -302,7 +288,7 @@ classDiagram
     }
 
     class MemoryTracker {
-        -tags HashMap~AllocationTag TagStats~
+        -tags Vec~AllocationTag TagStats~
         +record_alloc(tag, bytes, site)
         +record_dealloc(tag, bytes)
         +stats(tag) TagStats
@@ -312,24 +298,25 @@ classDiagram
 
     PerThreadArena --> FrameArena : owns per worker
     ScopedArena --> FrameArena : borrows
-    HandleMap --> Handle : issues
-    SlotMap --> Handle : issues
     PoolAllocator --> MemoryBudget : checked by
     FrameArena --> MemoryBudget : checked by
     MemoryBudget --> MemoryTracker : reports to
 ```
 
-### Async I/O Data Structures
+> `Handle<T>`, `HandleMap<T>`, and `SlotMap<T>` are defined in [primitives.md](primitives.md) and
+> are referenced by the memory subsystem but NOT drawn in this class diagram. The pools below all
+> issue `Handle<T>` values via the canonical types.
+
+### Platform I/O Data Structures
 
 ```mermaid
 classDiagram
-    class AsyncIo {
+    class PlatformIo {
         -backend IoBackend
-        +new() AsyncIo
-        +poll()
-        +read(handle, offset, len) Future
-        +write(handle, data, offset) Future
-        +cancel(token)
+        +new() PlatformIo
+        +submit(IoRequest) IoRequestId
+        +poll_completions() Iterator
+        +cancel(IoRequestId)
     }
 
     class IoBackend {
@@ -340,7 +327,8 @@ classDiagram
     }
 
     class GpuDmaLoader {
-        +load_gpu(path, gpu_handle) Future
+        +submit_load(path, gpu_handle) IoRequestId
+        +poll_completions() Iterator
     }
 
     class GpuDmaBackend {
@@ -352,29 +340,22 @@ classDiagram
 
     class VirtualFileSystem {
         -mounts Vec~MountPoint~
-        -io AsyncIo ref
+        -io PlatformIo ref
         +mount(virtual_path, physical_path)
-        +open(path) Future
-        +read(handle, offset, len) Future
-        +write(handle, data, offset) Future
-        +exists(path) Future
+        +open(path) Result~VfsHandle~
+        +submit_read(handle, offset, len) IoRequestId
+        +submit_write(handle, data, offset) IoRequestId
+        +exists(path) Result~bool~
     }
 
-    class CancelToken {
-        -cancelled AtomicBool
-        -wakers Vec~Waker~
-        -children Vec~CancelToken~
-        +new() CancelToken
-        +child() CancelToken
-        +cancel()
-        +is_cancelled() bool
-    }
-
-    AsyncIo --> IoBackend : selects
-    AsyncIo --> CancelToken : accepts
+    PlatformIo --> IoBackend : selects
     GpuDmaLoader --> GpuDmaBackend : selects
-    VirtualFileSystem --> AsyncIo : wraps
+    VirtualFileSystem --> PlatformIo : wraps
 ```
+
+> `IoRequest`, `IoResponse`, `IoRequestId`, `IoBuffer`, and `IoBufferPool` are defined in
+> [io.md](io.md); `PlatformIo` consumes the io.md protocol and is the platform-specific back end of
+> it. `IoError` is defined in [error.md](error.md).
 
 ### Generational Handle Lifecycle
 
@@ -401,26 +382,30 @@ sequenceDiagram
     HM-->>C: None
 ```
 
-### Async I/O Data Flow
+### Platform I/O Data Flow
 
 ```mermaid
 sequenceDiagram
     participant S as ECS System
     participant VFS as VirtualFileSystem
-    participant AIO as AsyncIo (main thread)
+    participant PIO as PlatformIo (main thread)
     participant OS as Platform Backend
 
-    S->>VFS: read(path, 0, 4096)
+    S->>VFS: submit_read(path, 0, 4096)
     VFS->>VFS: resolve mount point
-    VFS->>AIO: submit read(raw_handle, 0, 4096)
+    VFS->>PIO: submit(IoRequest::ReadFile)
+    PIO-->>VFS: IoRequestId
+    VFS-->>S: IoRequestId
 
-    Note over S: System yields, job system runs other jobs
+    Note over S: System records the request id
+    Note over S: and returns. No await, no Future.
 
-    AIO->>OS: submit to io_uring / IOCP / GCD
-    OS->>OS: async read completes
-    AIO->>AIO: poll() drains completion
-    AIO-->>VFS: completion with data
-    VFS-->>S: read result posted as job
+    PIO->>OS: submit to io_uring / IOCP / GCD
+    OS->>OS: completion event
+    Note over PIO: Next frame, main thread calls
+    Note over PIO: poll_completions
+    PIO->>PIO: drain ready responses
+    PIO-->>S: IoResponse posted as a job
 ```
 
 ## API Design
@@ -618,154 +603,13 @@ impl<T> PoolSlot<T> {
 }
 ```
 
-### Generational Handles
+### Generational Handles and Slot Map
 
-```rust
-/// Generational index handle. Packed index + generation
-/// counter. Stale handles fail validation in O(1).
-///
-/// `Handle<T>` is the canonical engine-wide
-/// generational index. ECS `Entity` and spatial
-/// `BvhHandle` are aliases or wrappers of this type.
-/// See [algorithms.md](algorithms.md)
-/// for the full contract.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct Handle<T> {
-    pub index: u32,
-    pub generation: u32,
-    _marker: PhantomData<T>,
-}
-
-impl<T> Handle<T> {
-    /// Check if this handle is still valid in the
-    /// given map.
-    pub fn is_valid(
-        &self,
-        map: &HandleMap<T>,
-    ) -> bool;
-}
-
-/// Storage container that issues and validates
-/// generational handles.
-pub struct HandleMap<T> {
-    entries: Vec<HandleEntry<T>>,
-    free_head: Option<u32>,
-    len: u32,
-}
-
-struct HandleEntry<T> {
-    value: Option<T>,
-    generation: u32,
-    next_free: Option<u32>,
-}
-
-impl<T> HandleMap<T> {
-    pub fn new() -> Self;
-
-    /// Insert a value. Returns a handle for future
-    /// access.
-    pub fn insert(&mut self, value: T) -> Handle<T>;
-
-    /// Remove the value at `handle`. Increments the
-    /// generation, invalidating all copies of this
-    /// handle. Returns the value if valid.
-    pub fn remove(
-        &mut self,
-        handle: Handle<T>,
-    ) -> Result<T, HandleError>;
-
-    /// O(1) lookup by handle.
-    pub fn get(
-        &self,
-        handle: Handle<T>,
-    ) -> Result<&T, HandleError>;
-
-    /// O(1) mutable lookup by handle.
-    pub fn get_mut(
-        &mut self,
-        handle: Handle<T>,
-    ) -> Result<&mut T, HandleError>;
-
-    /// Check if handle points to a live entry.
-    pub fn contains(&self, handle: Handle<T>) -> bool;
-
-    pub fn len(&self) -> u32;
-}
-
-pub enum HandleError {
-    /// Handle's generation does not match stored
-    /// generation.
-    GenerationMismatch {
-        handle_gen: u32,
-        stored_gen: u32,
-    },
-    /// Index is out of bounds.
-    IndexOutOfBounds { index: u32, capacity: u32 },
-}
-```
-
-### Slot Map
-
-```rust
-/// Dense-sparse set. Values stored in a contiguous
-/// dense array for cache-friendly iteration.
-/// Generational handles provide O(1) lookup via a
-/// sparse indirection table.
-pub struct SlotMap<T> {
-    dense: Vec<T>,
-    sparse: Vec<SparseEntry>,
-    handles: Vec<Handle<T>>,
-    free_head: Option<u32>,
-}
-
-struct SparseEntry {
-    dense_index: u32,
-    generation: u32,
-    next_free: Option<u32>,
-}
-
-impl<T> SlotMap<T> {
-    pub fn new() -> Self;
-
-    pub fn with_capacity(capacity: u32) -> Self;
-
-    /// Insert a value. Returns a generational handle.
-    pub fn insert(&mut self, value: T) -> Handle<T>;
-
-    /// Remove by handle. Swap-removes from dense
-    /// array and updates indirection.
-    pub fn remove(
-        &mut self,
-        handle: Handle<T>,
-    ) -> Result<T, HandleError>;
-
-    /// O(1) lookup via sparse indirection.
-    pub fn get(
-        &self,
-        handle: Handle<T>,
-    ) -> Result<&T, HandleError>;
-
-    pub fn get_mut(
-        &mut self,
-        handle: Handle<T>,
-    ) -> Result<&mut T, HandleError>;
-
-    /// Iterate the dense array (cache-friendly).
-    pub fn iter(&self) -> impl Iterator<Item = &T>;
-
-    pub fn iter_mut(
-        &mut self,
-    ) -> impl Iterator<Item = &mut T>;
-
-    /// Iterate handles and values together.
-    pub fn iter_with_handles(
-        &self,
-    ) -> impl Iterator<Item = (Handle<T>, &T)>;
-
-    pub fn len(&self) -> u32;
-    pub fn capacity(&self) -> u32;
-}
-```
+`Handle<T>`, `HandleMap<T>`, and `SlotMap<T>` are canonically defined in
+[primitives.md](primitives.md). This document does not redeclare the types, their API, or their
+error enum. The memory subsystem consumes those types unchanged: typed pools expose `Handle<T>`
+values, and the asset cache uses `SlotMap<T>` for dense iteration. Handle-validation errors surface
+as `IoError` / `EngineError` variants from [error.md](error.md) at subsystem boundaries.
 
 ### Memory Budgets and Tracking
 
@@ -884,26 +728,31 @@ impl MemoryTracker {
 }
 ```
 
-### AsyncIo Facade
+### PlatformIo Facade (formerly AsyncIo)
 
-The `AsyncIo` layer owns the platform-native I/O reactor on the main thread. It polls completions
-each frame and posts results as jobs to the compute worker pool via crossbeam-channel. Each platform
-uses its native completion-based API directly. No blocking thread pool exists -- all operations use
-non-blocking platform APIs.
+> **Rename:** The `AsyncIo` type is renamed to `PlatformIo`. "Async" was misleading — the engine has
+> no async runtime. The facade is the platform-specific back end of the request/handle protocol
+> defined in [io.md](io.md). All APIs below are synchronous submissions that return an
+> `IoRequestId`; completions are drained from the main thread via `poll_completions`.
+
+`PlatformIo` owns the OS I/O reactor on the main thread. On every game-loop iteration the main
+thread calls `poll_completions` to drain ready I/O results from the platform backend and post them
+as jobs to the compute worker pool via crossbeam-channel. Each platform uses its native
+completion-based API directly. No blocking thread pool, no `async fn`, no `Future<_>`.
 
 ```rust
-/// Platform-agnostic I/O errors.
-pub enum IoError {
-    NotFound,
-    PermissionDenied,
-    /// Operation was cancelled via CancelToken.
-    Cancelled,
-    DeviceFull,
-    /// Subsystem memory budget exceeded.
-    BudgetExceeded { subsystem: SubsystemId },
-    /// Platform-specific error with OS error code.
-    Platform { code: i32 },
-}
+// `IoError` is defined canonically in error.md.
+// This document uses the variants listed there
+// (NotFound, PermissionDenied, Cancelled,
+//  DeviceFull, BudgetExceeded, Unsupported,
+//  PlatformSpecific, ...).
+use crate::error::IoError;
+
+// `IoRequest`, `IoResponse`, `IoRequestId`, and
+// `IoBuffer` are defined canonically in io.md.
+use crate::io::{
+    IoRequest, IoResponse, IoRequestId, IoBuffer,
+};
 
 /// Platform I/O backend selected at compile time.
 pub enum IoBackend {
@@ -915,115 +764,41 @@ pub enum IoBackend {
     Gcd,
 }
 
-/// The engine's async I/O facade. Owns the
-/// platform-native I/O reactor on the main thread.
-/// All I/O operations in the engine route through
-/// this layer. No blocking thread pool.
-pub struct AsyncIo {
+/// The engine's platform-native I/O facade. Owns
+/// the OS I/O reactor on the main thread. All I/O
+/// operations route through the io.md request /
+/// response protocol; this type is that protocol's
+/// back end.
+pub struct PlatformIo {
     backend: IoBackend,
-    completions: crossbeam_channel::Sender<IoResult>,
+    completions: crossbeam_channel::Sender<IoResponse>,
 }
 
-impl AsyncIo {
+impl PlatformIo {
     /// Initialize the platform I/O backend.
     pub fn new() -> Result<Self, IoError>;
 
-    /// Non-blocking I/O poll. Drains ready I/O
-    /// completions from the platform backend and
-    /// posts results as jobs to the compute worker
-    /// pool. Called on the main thread each frame.
-    pub fn poll(&self);
-
-    /// Submit an async file read at explicit byte
-    /// offset.
-    pub fn submit_read(
+    /// Submit a request and return a tag that the
+    /// caller can correlate with the completion.
+    /// Synchronous in the user's perspective: the
+    /// call queues the work and returns immediately.
+    pub fn submit(
         &self,
-        handle: RawHandle,
-        offset: u64,
-        len: u32,
-        token: Option<&CancelToken>,
+        request: IoRequest,
     ) -> IoRequestId;
 
-    /// Submit an async file write at explicit byte
-    /// offset.
-    pub fn submit_write(
-        &self,
-        handle: RawHandle,
-        data: &[u8],
-        offset: u64,
-        token: Option<&CancelToken>,
-    ) -> IoRequestId;
+    /// Drain ready completions from the platform
+    /// backend and forward them to the compute
+    /// worker pool. Called once per frame on the
+    /// main thread. No allocations on the hot path.
+    pub fn poll_completions(&self);
 
-    /// Submit scatter-gather read into multiple
-    /// buffers.
-    pub fn submit_read_vectored(
-        &self,
-        handle: RawHandle,
-        ops: &[(u64, u32)],
-        token: Option<&CancelToken>,
-    ) -> IoRequestId;
-
-    /// Submit scatter-gather write from multiple
-    /// buffers.
-    pub fn submit_write_vectored(
-        &self,
-        handle: RawHandle,
-        bufs: &[&[u8]],
-        offset: u64,
-        token: Option<&CancelToken>,
-    ) -> IoRequestId;
-
-    /// Submit async TCP accept.
-    pub fn submit_tcp_accept(
-        &self,
-        listener: RawHandle,
-        token: Option<&CancelToken>,
-    ) -> IoRequestId;
-
-    /// Submit async TCP connect.
-    pub fn submit_tcp_connect(
-        &self,
-        addr: SocketAddr,
-        token: Option<&CancelToken>,
-    ) -> IoRequestId;
-
-    /// Submit async TCP/UDP send.
-    pub fn submit_send(
-        &self,
-        handle: RawHandle,
-        data: &[u8],
-        token: Option<&CancelToken>,
-    ) -> IoRequestId;
-
-    /// Submit async TCP/UDP receive.
-    pub fn submit_recv(
-        &self,
-        handle: RawHandle,
-        token: Option<&CancelToken>,
-    ) -> IoRequestId;
-
-    /// Cancel an in-flight operation.
-    pub fn cancel(
-        &self,
-        token: &CancelToken,
-    );
-}
-
-/// Opaque request ID for tracking submitted I/O.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct IoRequestId(u64);
-
-/// Completion result posted to the job system.
-pub struct IoResult {
-    pub request_id: IoRequestId,
-    pub result: Result<IoData, IoError>,
-}
-
-pub enum IoData {
-    Read(Vec<u8>),
-    Write { bytes_written: u32 },
-    Accept(RawHandle),
-    Connect(RawHandle),
+    /// Cancel an in-flight operation by request id.
+    /// The completion still fires (with
+    /// `IoError::Cancelled`) so the caller can
+    /// release any per-request resources in one
+    /// place.
+    pub fn cancel(&self, id: IoRequestId);
 }
 ```
 
@@ -1057,49 +832,24 @@ impl GpuDmaLoader {
     /// Submit a GPU DMA load. On Windows/Apple, data
     /// goes directly from disk to GPU memory. On
     /// Linux, data is read to a CPU staging buffer
-    /// and then uploaded via Vulkan.
+    /// and then uploaded via Vulkan. Returns an
+    /// `IoRequestId` that the caller drains via
+    /// `PlatformIo::poll_completions`.
     pub fn submit_load(
         &self,
         path: &str,
         gpu_handle: GpuResourceHandle,
-        token: Option<&CancelToken>,
     ) -> IoRequestId;
-
-    /// Poll for completed GPU loads.
-    pub fn poll(&self) -> Vec<IoResult>;
 }
 ```
 
-### Cancellation Token
+### Cancellation
 
-```rust
-/// Cooperative cancellation for in-flight I/O.
-/// Uses `AtomicBool` + waker list with parent-child
-/// hierarchy. The completion always fires (with
-/// `IoError::Cancelled` if cancelled before the
-/// underlying operation completed).
-pub struct CancelToken {
-    cancelled: AtomicBool,
-    wakers: Vec<Waker>,
-    children: Vec<CancelToken>,
-}
-
-impl CancelToken {
-    pub fn new() -> Self;
-
-    /// Create a child token. Cancelling the parent
-    /// also cancels all children.
-    pub fn child(&self) -> Self;
-
-    /// Request cancellation. Sets the flag and wakes
-    /// all registered wakers. Recursively cancels
-    /// all child tokens.
-    pub fn cancel(&self);
-
-    /// Check if cancellation was requested.
-    pub fn is_cancelled(&self) -> bool;
-}
-```
+Cancellation is expressed by the `CancelRequest` variant of `IoRequest` (see [io.md](io.md)),
+identified by an `IoRequestId`. No separate token type is needed: callers pass the previously
+returned `IoRequestId` to `PlatformIo::cancel`, the platform backend tears down its in-flight
+resources, and the response channel yields an `IoResponse::Cancelled { request_id }` so ownership of
+any attached `IoBuffer` is returned to the pool in one place.
 
 ### Virtual File System
 
@@ -1109,7 +859,7 @@ impl CancelToken {
 /// archive files, and mod overlay paths.
 pub struct VirtualFileSystem<'a> {
     mounts: Vec<MountPoint>,
-    io: &'a AsyncIo,
+    io: &'a PlatformIo,
 }
 
 pub struct MountPoint {
@@ -1132,7 +882,7 @@ pub struct FileMetadata {
 }
 
 impl<'a> VirtualFileSystem<'a> {
-    pub fn new(io: &'a AsyncIo) -> Self;
+    pub fn new(io: &'a PlatformIo) -> Self;
 
     /// Mount a physical path at a virtual location.
     /// Higher priority mounts override lower ones.
@@ -1230,26 +980,28 @@ impl BigFloat {
 
 ### Frame Lifecycle with Memory and I/O
 
-The main thread owns both the `PerThreadArena` and `AsyncIo`. The main thread polls the platform I/O
-reactor and posts completions as jobs to the compute worker pool. Each frame proceeds as:
+The main thread owns both the `PerThreadArena` and `PlatformIo`. The main thread polls the platform
+I/O reactor and posts completions as jobs to the compute worker pool. Each frame proceeds as:
 
 ```rust
 loop {
     // 1. Reset all per-thread arenas (zero cost)
     per_thread_arena.reset_all();
 
-    // 2. Main thread polls I/O: drain completions,
-    //    post results as jobs to worker pool
-    async_io.poll();
-    gpu_dma.poll();
+    // 2. Main thread drains I/O completions and
+    //    posts them as jobs to the worker pool.
+    platform_io.poll_completions();
 
     // 3. Build and run ECS systems on job system
-    let graph = ecs.build_frame_graph();
-    job_system.execute_graph(graph);
+    let system_graph = schedule.build(&world)?;
+    let frame = game_loop::compile(
+        &system_graph, &world, &job_system,
+    )?;
+    frame.execute(&mut world, &job_system);
     // Systems allocate transient data from their
     // worker's PerThreadArena. I/O requests are
-    // submitted to async_io; completions arrive
-    // as jobs in a future frame.
+    // submitted to platform_io via IoRequest;
+    // completions arrive as jobs in a later frame.
 
     // 4. Render submission
     renderer.submit_commands();
@@ -1292,12 +1044,14 @@ When multiple mounts overlap, the VFS resolves paths by mount priority (highest 
 
 ### I/O Cancellation Flow
 
-1. Caller creates `CancelToken` and passes it when submitting I/O
-2. The platform backend checks `token.is_cancelled()` before submitting and on each completion poll
-3. To cancel, caller calls `token.cancel()`, which sets the `AtomicBool` and wakes all registered
-   wakers
-4. Child tokens are also cancelled recursively
-5. The result is either the original data (if completed before cancellation) or `IoError::Cancelled`
+1. Caller submits a request via `PlatformIo::submit(IoRequest::...)` and records the returned
+   `IoRequestId`.
+2. To cancel, the caller submits `IoRequest::CancelRequest { id }` or calls
+   `PlatformIo::cancel(id)`.
+3. The platform backend removes the in-flight entry from its queue.
+4. The response channel always yields exactly one `IoResponse` per submitted id: either the original
+   result (if it completed before cancellation) or `IoResponse::Cancelled { id }`.
+5. On the `Cancelled` response, the caller releases any attached `IoBuffer` back to its pool.
 
 ## Platform Considerations
 
@@ -1315,8 +1069,9 @@ When multiple mounts overlap, the VFS resolves paths by mount priority (highest 
 
 ### I/O Backend
 
-AsyncIo uses platform-native completion-based I/O APIs directly. The main thread owns the I/O
-reactor and polls completions each frame. No blocking thread pool exists.
+`PlatformIo` uses platform-native completion-based I/O APIs directly. The main thread owns the I/O
+reactor and drains completions each frame via `poll_completions`. No blocking thread pool exists,
+and no async runtime is present in any configuration.
 
 | Platform | I/O API | GPU DMA |
 |----------|---------|---------|
@@ -1385,10 +1140,10 @@ is no concurrent access. The job system graph enforces ordering for cross-thread
 the slot is freed. Implementation must tie `PoolSlot<T>` to the allocator's lifetime, or use
 generational indices (like `Handle<T>`) with runtime validation.
 
-### AsyncIo Platform Backend Ownership (Critical)
+### PlatformIo Platform Backend Ownership (Critical)
 
-`AsyncIo` owns the platform I/O backend (io_uring ring, IOCP handle, or GCD dispatch queue). The
-backend must not be dropped while submitted operations are still in flight. `AsyncIo::drop` must
+`PlatformIo` owns the platform I/O backend (io_uring ring, IOCP handle, or GCD dispatch queue). The
+backend must not be dropped while submitted operations are still in flight. `PlatformIo::drop` must
 drain all pending completions or cancel them before releasing platform resources.
 
 ### ScopedArena Child Lifetimes (High)
@@ -1570,7 +1325,7 @@ The design covers file, network, and audio I/O but lacks explicit memory-mapped 
 beyond zero-copy deserialization (F-1.4.2). User story US-1.8.7 references asset loading but there
 is no streaming virtual memory feature for texture and mesh data that exceeds physical RAM. For
 open-world games with hundreds of GB of terrain data, a virtual memory streaming layer integrated
-with the AsyncIo facade would enable seamless world traversal. The arbitrary precision numerics
+with the `PlatformIo` facade would enable seamless world traversal. The arbitrary precision numerics
 (F-1.7.9) also lack user stories for integration with the spatial index (F-1.9) for cosmic-scale
 worlds. Adding virtual memory streaming and large-world coordinate integration would expand support
 for space games and planetary-scale simulations.
@@ -1578,13 +1333,13 @@ for space games and planetary-scale simulations.
 **Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
 modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
 
-Memory management and async I/O are foundational layers that all other modules depend on, giving
+Memory management and platform I/O are foundational layers that all other modules depend on, giving
 them strong structural cohesion. The generational handle design (F-1.7.4) is shared across ECS
-entities (F-1.1.11) and spatial index (F-1.9.1), unified via the core algorithms module. ECS manages
-its own archetype-based storage separately, keeping this design focused on non-ECS allocation.
-Per-thread arenas indexed by job system worker avoid atomics on the hot path. I/O buffer ownership
-is explicit -- the platform backend owns buffers until completion, then transfers ownership to the
-completion handler posted as a job.
+entities (F-1.1.11) and spatial index (F-1.9.1), unified via [primitives.md](primitives.md). ECS
+manages its own archetype-based storage separately, keeping this design focused on non-ECS
+allocation. Per-thread arenas indexed by job system worker avoid atomics on the hot path. I/O buffer
+ownership is explicit -- the platform backend owns buffers until completion, then transfers
+ownership to the completion handler posted as a job.
 
 ## Open Questions
 
@@ -1610,8 +1365,8 @@ completion handler posted as a job.
    for large files) or lazily on first `metadata()` call? Lazy is better for hot paths but
    complicates the API.
 
-7. **Audio I/O integration depth** — The current design routes audio I/O through `AsyncIo` backed by
-   platform-native APIs. Should audio have a completely separate I/O path (dedicated thread with
+7. **Audio I/O integration depth** — The current design routes audio I/O through `PlatformIo` backed
+   by platform-native APIs. Should audio have a completely separate I/O path (dedicated thread with
    deadline scheduling) to guarantee sub-10 ms latency even under I/O saturation?
 
 ## Review feedback

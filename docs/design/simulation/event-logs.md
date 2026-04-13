@@ -293,7 +293,22 @@ pub struct DecayCurve {
 
 ### Entry and Log
 
+`SpatialDim` is the typed enum used for event positions. It replaces the previous `Option<Vec3>`
+with "2D games set z=0" convention — 2D games now pass a `Vec2` directly. The spatial propagation
+system queries the 2D BVH for `D2` variants and the 3D BVH for `D3` variants. Events without a known
+position use `None` at the outer `Option<SpatialDim>` level, not a sentinel value.
+
 ```rust
+/// Typed position for an event entry. Pure 2D
+/// games use `D2`; pure 3D games use `D3`; mixed
+/// games can use either per entry. Propagation
+/// queries the matching BVH.
+#[derive(Clone, Copy, Debug, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
+pub enum SpatialDim {
+    D2(Vec2),
+    D3(Vec3),
+}
+
 /// A single entry in the event log ring buffer.
 /// Target size: <= 256 bytes (NFR-13.19.2).
 #[derive(Clone, Debug, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
@@ -311,10 +326,9 @@ pub struct DecayingEntry<T: Clone + rkyv::Archive> {
     /// Entity that caused this event. None for
     /// environmental events.
     pub source: Option<Entity>,
-    /// World position where this event occurred.
-    /// 2D games set z=0; spatial propagation uses
-    /// the 2D or 3D shared BVH as appropriate.
-    pub position: Option<Vec3>,
+    /// World position where this event occurred,
+    /// typed as 2D or 3D. `None` means unknown.
+    pub position: Option<SpatialDim>,
     /// Number of propagation hops. 0 = first-hand.
     pub hop_count: u8,
 }
@@ -360,7 +374,7 @@ impl<T: Clone + rkyv::Archive> EventLog<T> {
         data: T,
         tick: u64,
         source: Option<Entity>,
-        position: Option<Vec3>,
+        position: Option<SpatialDim>,
     );
 
     /// All valid entries in insertion order.
@@ -573,6 +587,41 @@ pub struct ThresholdFired {
     pub matched_count: u32,
 }
 ```
+
+### Network Replication
+
+Event logs replicate over the network as **server-authoritative deltas**. The full log is never
+re-sent after the initial spawn; instead, the replication system observes the ECS events defined
+above (`LogEntryAdded`, `LogEntryDecayed`, `LogPropagated`, `ThresholdFired`) and serializes the
+delta to each interested client via the networking subsystem (see
+[networking/network-transport.md](../networking/network-transport.md)).
+
+**Replication contract:**
+
+| Phase          | Sender → Receiver                                               |
+|----------------|------------------------------------------------------------------|
+| Initial spawn  | Server sends full `EventLog<T>` state via rkyv archive          |
+| Entry add      | Server sends `LogEntryAdded` delta (entry + metadata)           |
+| Entry decay    | Server sends `LogEntryDecayed` delta (entry id + new accuracy)  |
+| Propagation    | Server sends `LogPropagated` delta (source → target binding)    |
+| Eviction       | Server sends `LogEntryEvicted` delta (entry id)                 |
+
+**Authority:** the server owns every `EventLog<T>` instance. Clients receive events read-only and
+apply them to their local shadow copy. When a client predicts (lag compensation, rollback), it may
+speculate on its own `push` calls against its local copy; the server's next authoritative delta
+overrides the speculation. No client-to-server event log writes are permitted outside the prediction
+window.
+
+**Bandwidth budget:** whole-log replication is reserved for spawn only. Delta replication caps at
+one entry per tick per log to stay within the 128 KB/s per-entity budget from
+[networking/network-transport.md](../networking/network-transport.md).
+
+**Time Scale.** Event log decay respects the engine-wide `GameTime::tick_scale` multiplier. When
+`tick_scale < 1.0`, decay runs proportionally slower — an entry that would normally fade in 10
+seconds of wall time instead fades in `10 / tick_scale` seconds. When `tick_scale = 0.0`, the decay
+system exits early for the tick: no entries lose accuracy and no eviction happens. Replication
+continues independently because it is driven by the actual delta events fired by the server, not by
+the scaled tick counter.
 
 ---
 

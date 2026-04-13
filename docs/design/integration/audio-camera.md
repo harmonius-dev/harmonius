@@ -1,5 +1,8 @@
 # Audio ↔ Camera Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -56,11 +59,10 @@
 ### Channel Buffering
 
 The game-to-audio command queue is a lock-free MPSC ring buffer (see `audio.md` section "Lock-free
-Communication"). MPSC is used rather than SPSC because multiple ECS systems on the game side may
-produce commands concurrently (listener sync, spatial emitter updates, music, dialogue).
+Communication"). MPSC is the default per SC-4 in [shared-conventions.md](shared-conventions.md).
 
-- **Capacity** -- 4096 commands (configurable at init). Sized to absorb one full frame at peak rate:
-  4 listeners + 512 spatial sources + music/dialogue, with headroom for bursts.
+- **Capacity** -- 4096 commands. See
+  [shared-messaging-capacities.md](shared-messaging-capacities.md) row CH-3 for the formula.
 - **Producers** -- any ECS system on the game thread (or jobs on the job pool) via
   `CommandSender::send`. `CommandSender` is cloneable.
 - **Consumer** -- the dedicated real-time audio thread via `CommandReceiver::drain` at each buffer

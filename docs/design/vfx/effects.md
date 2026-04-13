@@ -104,6 +104,23 @@
 7. **F-15.8.1** — Universal logic graph runtime
 8. **F-15.8.5b** — Shader graph to HLSL compilation
 
+## Client of Graph Runtime
+
+This document is a **client** of [core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md).
+VFX effect graphs parameterize the shared `GraphRuntime<EffectNode, TypedEdge, CompiledEffect>` type
+— they do not re-implement DAG validation, cycle detection, topological sort, constant folding, or
+hot-reload barriers. The effect-graph compiler supplies:
+
+1. A node palette: spawn, update, output, parameter, and sub-graph nodes.
+2. Edge semantics: typed pins connecting node outputs to node inputs.
+3. A codegen backend: `HlslBackend` that fuses each lifecycle stage into a compute shader.
+4. A compiled output type: `CompiledEffect`, uploaded to the GPU.
+
+Every place that used to describe "the effect-graph validator runs a topological sort" is now
+delegated to the shared runtime. This document only specifies VFX-specific semantics: node
+vocabulary, HLSL fusion, budget integration, and runtime effect subsystems (decals, screen effects,
+weather, destruction).
+
 ## Overview
 
 This document combines runtime VFX effects (decals, screen effects, weather, destruction) with the

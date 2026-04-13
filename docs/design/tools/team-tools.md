@@ -60,12 +60,16 @@ LFS locks are the sole concurrency mechanism for binary assets. Users lock a fil
 unlock on commit or discard. The structural merge driver handles text-based asset formats (scenes,
 prefabs) via three-way merge. For binary assets that conflict, a dedicated binary conflict
 resolution UI reads base/ours/theirs zero-copy via rkyv with codegen'd type descriptors, shows a
-structural diff, and lets the user resolve per-property.
+structural diff, and lets the user resolve per-property. The diff/merge algorithm is specified in
+[scene-versioning.md](scene-versioning.md); this document wires it into the Git workflow.
 
-CPU-bound operations (structural merge, binary diff, property tree construction) run on worker
-threads via the custom job system (`scope()`, `par_iter` from crossbeam-deque). Network I/O (Git
-push/pull, LFS lock/unlock, QUIC stream management) is submitted to the main thread's
-platform-native I/O (IOCP/GCD/io_uring) via crossbeam-channel.
+**Async scope.** All game-side and editor-side code is synchronous: no `async`, no `await`, no
+`Future` in the editor or engine process. CPU-bound operations (structural merge, binary diff,
+property tree construction) run on worker threads via the custom job system (`scope()`, `par_iter`
+from crossbeam-deque). Network I/O (Git push/pull, LFS lock/unlock, QUIC stream management) is
+submitted to the main thread's platform-native I/O (IOCP/GCD/io_uring) via crossbeam-channel. The
+backend Git LFS server and merge-driver RPC endpoints are Kubernetes- hosted services and *may* use
+async runtimes internally.
 
 ## Architecture
 

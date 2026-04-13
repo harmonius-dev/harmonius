@@ -218,7 +218,7 @@ sequenceDiagram
 classDiagram
     class Skeleton {
         -bones Vec~Bone~
-        -name_to_index HashMap~StringId BoneIndex~
+        -name_to_index SortedVecMap~StringId BoneIndex~
         -root BoneIndex
         +bone_count() u16
         +parent(idx) Option~BoneIndex~
@@ -356,12 +356,16 @@ graph LR
 
 ### Skeleton and Bones
 
+`BoneIndex` is a stable, save-persistent ID — see [core-runtime/ids.md](../core-runtime/ids.md) for
+the ID taxonomy and stability policy. A bone index identifies the same bone across save/load,
+network replication, and hot-reload cycles as long as the skeleton asset has not been structurally
+reauthored. `Handle<T>` is the canonical asset handle from
+[core-runtime/primitives.md](../core-runtime/primitives.md); animation clips and skeletons are
+referenced by `Handle<Skeleton>` and `Handle<AnimationClip>`.
+
 ```rust
-/// Index into a skeleton's bone array.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash,
-)]
-pub struct BoneIndex(pub u16);
+use harmonius_core::ids::{BoneIndex, StableId};
+use harmonius_core::primitives::{Handle, SortedVecMap};
 
 /// A single bone in a skeleton hierarchy.
 pub struct Bone {
@@ -376,7 +380,10 @@ pub struct Bone {
 /// entities that use the same skeletal mesh.
 pub struct Skeleton {
     bones: Vec<Bone>,
-    name_to_index: HashMap<StringId, BoneIndex>,
+    /// Sorted map for deterministic iteration and
+    /// zero `HashMap` on the hot path. See
+    /// core-runtime/primitives.md.
+    name_to_index: SortedVecMap<StringId, BoneIndex>,
     root: BoneIndex,
 }
 
@@ -419,19 +426,42 @@ pub enum PlaybackMode {
     PingPong,
 }
 
-/// Compression format for a bone track.
+/// Compression format for a bone track. ACL is
+/// the target library for compressed clips; the
+/// full format specification lives in the
+/// "Compression Format" section below.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CompressionFormat {
     /// No compression. Full f32 keyframes.
     Uncompressed,
-    /// Smallest-three quaternion encoding for
-    /// rotations. Range-reduced fixed-point
-    /// for translation and scale.
-    VariableRate {
-        rotation_bits: u8,
-        translation_bits: u8,
-        scale_bits: u8,
-    },
+    /// ACL-compressed clip (target format).
+    /// Configuration is carried by `AclConfig`.
+    Acl(AclConfig),
+}
+
+/// ACL compression configuration. Maps to the
+/// upstream ACL library's compression settings.
+/// ACL is cited as a dependency decision — see
+/// the "Compression Format" section for the
+/// target ratio and quality bounds.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AclConfig {
+    /// ACL algorithm variant.
+    pub algorithm: AclAlgorithm,
+    /// Error threshold in world units per bone.
+    pub error_threshold_mm: u32,
+    /// Enable variable-rate quantization.
+    pub variable_rate: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AclAlgorithm {
+    /// Uniform quantization with smallest-three
+    /// rotation encoding.
+    UniformlyQuantized,
+    /// Variable-rate quantization with per-track
+    /// error bounds.
+    VariableRate,
 }
 
 /// A compressed animation curve for a single
@@ -605,6 +635,11 @@ pub struct AnimationBlendDescriptor {
 
 ### Root Motion
 
+Root motion is the explicit per-frame delta extracted from the root bone and forwarded to the
+entity's `Transform`. The output type is `RootMotion` — a plain struct containing
+`delta_translation: Vec3` and `delta_rotation: Quat`. No other values cross this boundary;
+locomotion systems, navigation, and networking all consume the same struct.
+
 ```rust
 /// Root motion extraction mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -620,6 +655,27 @@ pub enum RootMotionMode {
     Disabled,
 }
 
+/// The explicit root motion output for a single
+/// frame. This is the only type that carries
+/// root motion data between the animation player
+/// and gameplay systems.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RootMotion {
+    /// Root bone translation delta in world space
+    /// over one frame.
+    pub delta_translation: Vec3,
+    /// Root bone rotation delta as a unit quat
+    /// over one frame.
+    pub delta_rotation: Quat,
+}
+
+impl RootMotion {
+    pub const IDENTITY: Self = Self {
+        delta_translation: Vec3::ZERO,
+        delta_rotation: Quat::IDENTITY,
+    };
+}
+
 /// Extracts root bone deltas from a sampled
 /// pose and applies them to the entity's
 /// Transform component.
@@ -627,12 +683,13 @@ pub struct RootMotionExtractor;
 
 impl RootMotionExtractor {
     /// Compute the delta between two root bone
-    /// transforms.
+    /// transforms. Returns `RootMotion` — the
+    /// canonical output type.
     pub fn compute_delta(
         prev: &Transform,
         current: &Transform,
         mode: RootMotionMode,
-    ) -> RootMotionDelta;
+    ) -> RootMotion;
 
     /// Zero the root bone's extracted channels
     /// in the local pose so the skeleton does
@@ -642,13 +699,6 @@ impl RootMotionExtractor {
         root: BoneIndex,
         mode: RootMotionMode,
     );
-}
-
-/// The delta extracted from the root bone for
-/// one frame.
-pub struct RootMotionDelta {
-    pub translation: Vec3,
-    pub rotation: Quat,
 }
 ```
 
@@ -1241,6 +1291,82 @@ impl GpuSkinner {
 }
 ```
 
+### Skinning Weight Format
+
+Every skinned vertex stores up to four bone influences. Bone indices are 8-bit values into the
+per-skeleton palette; weights are 8-bit quantizations of the `[0, 1]` blend factor (`q = round(w
+
+- 255)`). Four influences cover every rig we support: humanoid, quadruped, tree, vehicle, and
+mechanical. Vertices that need fewer influences zero the unused slots (index`0`, weight`0`). Weights
+are renormalized on the GPU after quantization so the four slots always sum to`255`.
+
+```rust
+/// Per-vertex skinning weights. Four bone
+/// influences, quantized to 8 bits each.
+/// Layout is fixed at 8 bytes per vertex.
+#[derive(Clone, Copy, Debug, Default)]
+#[repr(C, align(4))]
+pub struct VertexWeights {
+    /// Four bone indices into the local palette.
+    pub bone_indices: [u8; 4],
+    /// Four weights, quantized to [0, 255]. The
+    /// GPU pipeline renormalizes on load so the
+    /// four weights always sum to 255.
+    pub weights: [u8; 4],
+}
+
+/// GPU buffer layout contract for a skinned
+/// mesh. Specifies how to locate the weights,
+/// bone palette, and matrix palette in the
+/// shared vertex and constant buffers.
+#[derive(Clone, Copy, Debug)]
+pub struct BonePaletteLayout {
+    /// Stride of one vertex in bytes.
+    pub vertex_stride: u32,
+    /// Byte offset of `VertexWeights` within a
+    /// vertex record.
+    pub weight_offset: u32,
+    /// Byte offset of the Mat4 bone palette
+    /// array inside the constant buffer bound
+    /// for this draw call.
+    pub matrix_palette_offset: u32,
+    /// Maximum number of bones in the palette.
+    /// Platform tiers cap this: Mobile 64,
+    /// Switch 128, Desktop 256, High-end 256.
+    pub max_bone_count: u16,
+}
+```
+
+**GPU buffer layout.** The vertex buffer is shared between rasterization and compute skinning; the
+position, normal, tangent, UV, and `VertexWeights` records are interleaved at 32 or 48 bytes per
+vertex depending on attribute set. The bone palette is uploaded per instance per frame to a
+structured buffer and indexed by `bone_indices[i]`. The mesh shader reads `VertexWeights` via the
+shared vertex buffer, multiplies by four `Mat4` palette entries, and writes the skinned position and
+normal to the fragment stage. No separate skinned vertex buffer exists — the compute skinner and the
+mesh shader skinner both read the same source layout.
+
+### Compression Format
+
+Harmonius selects **ACL** (Animation Compression Library) as the target compression library for
+animation clips. ACL is a widely-used C++ library specifically designed for runtime-efficient
+animation compression with bounded worst-case error. It is cited here as a **dependency decision** —
+the exact crate (via C ABI wrapper, or a pure-Rust port) is a follow-up; the
+`CompressionFormat::Acl(AclConfig)` variant declared earlier is the fixed seam in the API.
+
+| Criterion | Target |
+|-----------|--------|
+| Compression ratio | 10:1 or better for locomotion clips |
+| Bounded error | &le; 0.1 mm world-space translation, &le; 0.1 deg rotation |
+| Decompression cost | &le; 1 us per bone per frame on desktop |
+| Streaming friendliness | Constant-time random access to any frame |
+| Variable-rate support | Per-track error bounds and bit budgets |
+
+The `Uncompressed` format exists as a fallback for debugging and for clips that do not benefit from
+compression (< 8 keyframes). The `Acl(AclConfig)` variant is the production default for every
+imported clip. When the underlying library version changes, ACL-compressed clips must be rebuilt by
+the asset pipeline; the middleman codegen (see [platform/constraints](../constraints.md)) tracks ACL
+version in the content hash so rebuilds are automatic.
+
 ### Error Types
 
 ```rust
@@ -1595,12 +1721,13 @@ user stories? What are they? How would adding them improve the engine? What kind
 enable?
 
 The design covers F-9.1.1 through F-9.1.10 and all user stories. A gap is animation streaming --
-loading clips asynchronously as characters enter the scene. The compression feature (F-9.1.7)
-reduces memory but does not address streaming from disk during gameplay. Adding async clip streaming
-via the Tokio runtime would enable open-world games with thousands of unique animations loaded on
-demand. Another gap is animation mirroring (reflecting a clip across the skeleton's symmetry plane),
-which would halve locomotion clip storage for symmetric characters and benefit fighting games and
-RPGs with symmetrical movesets.
+loading clips on demand as characters enter the scene. The compression feature (F-9.1.7) reduces
+memory but does not address streaming from disk during gameplay. Adding clip streaming on top of
+platform-native I/O (via `IoRequest`/`IoResponse` from core-runtime/io.md; no async runtimes) would
+enable open-world games with thousands of unique animations loaded on demand. Another gap is
+animation mirroring (reflecting a clip across the skeleton's symmetry plane), which would halve
+locomotion clip storage for symmetric characters and benefit fighting games and RPGs with
+symmetrical movesets.
 
 **Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
 modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?

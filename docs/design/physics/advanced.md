@@ -1004,12 +1004,99 @@ pub fn hover_stabilization_system(
 
 ### Destruction and Fracture
 
+#### Fracture Pattern Format
+
+A `FracturePattern` is the baked, deterministic representation of how an object breaks. It is
+produced offline by a Voronoi decomposition step in the asset pipeline (see
+[content-pipeline/asset-pipeline.md](../content-pipeline/asset-pipeline.md)) and is immutable at
+runtime. Patterns are stored as rkyv archives and referenced by `Handle<FracturePattern>`. `Handle`
+comes from [core-runtime/primitives.md](../core-runtime/primitives.md).
+
+A `FracturePattern` contains:
+
+- A set of convex cells covering the source mesh (one per fragment).
+- A connectivity graph mapping each pair of adjacent cells to a break threshold.
+- A stress propagation model describing how impact force flows through the graph.
+
+```rust
+use harmonius_core::primitives::Handle;
+
+/// Immutable fracture decomposition for a source
+/// mesh. Baked offline via Voronoi sites; runtime
+/// consumes the cells and connectivity verbatim.
+pub struct FracturePattern {
+    /// Convex cells covering the source mesh.
+    /// One cell corresponds to one fragment.
+    pub cells: Vec<FractureCell>,
+    /// Connectivity graph: one edge per adjacent
+    /// cell pair, with a break threshold.
+    pub connectivity: Vec<FractureEdge>,
+    /// How stress propagates across the graph when
+    /// an impact force is applied.
+    pub stress_propagation: StressModel,
+}
+
+/// One convex cell in a fracture decomposition.
+pub struct FractureCell {
+    /// Convex hull geometry for the cell. Stored
+    /// as a Handle so the asset pipeline can share
+    /// geometry across variants.
+    pub hull: Handle<ConvexHullAsset>,
+    /// Site position used during Voronoi
+    /// decomposition. Kept for debugging.
+    pub site: Vec3,
+    /// Local-space transform of this cell.
+    pub local_transform: Transform,
+    /// Cell mass derived from density * volume.
+    pub mass: f32,
+    /// Inertia tensor for the cell.
+    pub inertia: Mat3,
+}
+
+/// One edge in the fracture connectivity graph.
+pub struct FractureEdge {
+    pub cell_a: u32,
+    pub cell_b: u32,
+    /// Force magnitude that must be exceeded to
+    /// break this connection.
+    pub break_threshold: f32,
+    /// Shared surface area used by the stress
+    /// propagation model.
+    pub contact_area: f32,
+}
+
+/// Model describing how impact energy is
+/// distributed across the connectivity graph.
+pub enum StressModel {
+    /// Energy decays linearly with hop count from
+    /// the impact point.
+    LinearFalloff { decay_per_hop: f32 },
+    /// Energy decays exponentially with edge
+    /// cumulative resistance.
+    ExponentialResistance { sigma: f32 },
+    /// Full graph relaxation solve — more accurate
+    /// but quadratic in edge count. Used offline.
+    FullRelaxation { iterations: u32 },
+}
+```
+
+**Voronoi generation.** Patterns are built offline from the source mesh using a bounded 3D Voronoi
+decomposition with the user-specified cell sites (uniform, clustered, or painted). The asset
+pipeline emits the `cells` and `connectivity` arrays verbatim; runtime never regenerates them. See
+[content-pipeline/asset-pipeline.md](../content-pipeline/asset-pipeline.md) for the build step.
+
 #### Components
 
 ```rust
 /// Asset containing pre-computed fracture data.
+/// The lower-level `FracturePattern` is the
+/// source of truth; this asset wraps it with
+/// runtime-authored break thresholds.
 pub struct FractureAsset {
-    /// Per-fragment convex hull geometry.
+    /// Baked pattern (cells + connectivity).
+    pub pattern: Handle<FracturePattern>,
+    /// Per-fragment convex hull geometry. Cached
+    /// from `pattern.cells` for runtime lookup.
     pub fragments: Vec<FragmentData>,
     /// Adjacency graph for structural analysis.
     pub connectivity: Vec<(u32, u32)>,
@@ -1131,6 +1218,64 @@ pub fn debris_lod_system(
 );
 ```
 
+#### DestructionBudgetManager
+
+Destruction, debris, and VFX each spawn GPU-backed content that competes for the same simulation and
+render budgets: active rigid-body fragments, decals, and particles. Per-subsystem caps (ragdoll
+budget, debris lifetime, VFX particle limit) do not compose — three subsystems all running at their
+individual caps simultaneously overruns the frame budget.
+
+`DestructionBudgetManager` is a single shared resource that caps all three in aggregate across
+destruction, debris, and VFX (see [vfx/particles.md](../vfx/particles.md) and
+[vfx/effects.md](../vfx/effects.md)). It is backed by `BudgetAllocator` from
+[core-runtime/primitives.md](../core-runtime/primitives.md): three allocators share a global ceiling
+per platform tier and each subsystem reserves / releases slots as fragments, decals, and particles
+are spawned / retired.
+
+```rust
+use harmonius_core::primitives::BudgetAllocator;
+
+/// Aggregate cap on destruction, debris, and VFX.
+/// Three `BudgetAllocator` instances share one
+/// per-platform ceiling so that none can starve
+/// the others.
+#[derive(Resource)]
+pub struct DestructionBudgetManager {
+    /// Active rigid-body fragments across all
+    /// destructible entities.
+    pub fragments: BudgetAllocator,
+    /// Decals placed by impacts, scorch marks,
+    /// damage overlays.
+    pub decals: BudgetAllocator,
+    /// GPU particles from destruction, debris
+    /// dust, and VFX effects.
+    pub particles: BudgetAllocator,
+}
+
+impl DestructionBudgetManager {
+    pub fn for_platform(tier: PlatformTier) -> Self {
+        let (frag_cap, decal_cap, part_cap) =
+            match tier {
+                PlatformTier::Mobile => (64, 128, 4096),
+                PlatformTier::Switch => (128, 256, 8192),
+                PlatformTier::Desktop => (512, 1024, 65536),
+                PlatformTier::HighEndPc => (2048, 4096, 262144),
+            };
+        Self {
+            fragments: BudgetAllocator::new(frag_cap),
+            decals: BudgetAllocator::new(decal_cap),
+            particles: BudgetAllocator::new(part_cap),
+        }
+    }
+}
+```
+
+Subsystems `reserve()` before spawning and `release()` before despawning. A failed reservation
+returns `None`, and the caller must either skip the spawn or reclaim an older slot via its own LRU
+(debris lifetime, particle pool eviction). The manager lives on the main thread as a `Resource`;
+systems that spawn on worker threads go through a request queue to the main thread poll point (see
+[core-runtime/io.md](../core-runtime/io.md) for the same pattern).
+
 ### Soft Body and Cloth
 
 #### Cloth Ownership Boundary
@@ -1141,25 +1286,91 @@ solver as a service; animation drives when and how cloth is simulated. `ClothSim
 file defines the solver-side state; `ClothGarment` in the animation domain defines the
 authoring-side state.
 
+#### Cloth Constraint Types
+
+`ClothConstraint` is the explicit sum type over every constraint class the XPBD solver accepts.
+Per-panel state is stored as a `Vec<ConstraintGroup>`, where each group contains a contiguous run of
+constraints of the same variant. Grouping by variant lets the GPU dispatch one kernel per variant
+rather than branching per constraint.
+
+```rust
+/// Every constraint the XPBD solver understands.
+/// Compliance is XPBD's stiffness-independent
+/// parameter (small = stiff, large = soft).
+pub enum ClothConstraint {
+    /// Edge-length preservation between two
+    /// particles. `rest_length` in meters.
+    Distance {
+        particle_a: u32,
+        particle_b: u32,
+        rest_length: f32,
+        compliance: f32,
+    },
+    /// Dihedral bend angle between two adjacent
+    /// triangles sharing an edge. `angle` is the
+    /// rest angle in radians.
+    Bending {
+        edge_a: u32,
+        edge_b: u32,
+        shared_edge: u32,
+        angle: f32,
+        compliance: f32,
+    },
+    /// Minimum distance between non-adjacent
+    /// particles (self-collision layer).
+    SelfCollision {
+        particle_a: u32,
+        particle_b: u32,
+        distance: f32,
+        compliance: f32,
+    },
+}
+
+/// A run of constraints sharing one variant, so
+/// the GPU kernel dispatches one shader per run.
+/// Stored as an index into the panel's constraint
+/// buffer plus a length.
+pub struct ConstraintGroup {
+    pub variant: ClothConstraintKind,
+    pub first_index: u32,
+    pub count: u32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ClothConstraintKind {
+    Distance,
+    Bending,
+    SelfCollision,
+}
+
+/// Per-panel storage for the constraint solver.
+/// Replaces the old flat compliance / stretch /
+/// bend fields on `ClothSimulation`.
+pub struct ClothConstraintPanel {
+    pub constraints: Vec<ConstraintGroup>,
+    pub particle_count: u32,
+    pub iteration_budget: u32,
+}
+```
+
 #### Components
 
 ```rust
 /// Core cloth simulation data. Particle and
-/// constraint buffers live on the GPU.
+/// constraint buffers live on the GPU. The CPU
+/// side owns only per-panel ConstraintGroup lists
+/// for dispatch ordering.
 pub struct ClothSimulation {
     pub position_buffer: GpuBufferHandle,
     pub velocity_buffer: GpuBufferHandle,
     pub constraint_buffer: GpuBufferHandle,
     pub particle_count: u32,
-    /// Material parameters.
-    pub stretch: f32,
-    pub shear: f32,
-    pub bend: f32,
+    /// Per-panel constraint groups. One inner Vec
+    /// per panel entry; the outer Vec indexes by
+    /// panel_id within this cloth simulation.
+    pub constraints: Vec<ConstraintGroup>,
     /// Strain threshold for tearing. 0 = no tear.
     pub tear_threshold: f32,
-    /// XPBD compliance for stiffness-independent
-    /// solving.
-    pub compliance: f32,
     /// Number of solver iterations.
     pub iterations: u32,
 }
@@ -1314,22 +1525,87 @@ pub fn cloth_tearing_system(
 );
 ```
 
+#### Wind Field Synchronization
+
+Cloth, hair, and debris all sample wind forces from one shared 3D texture: `WindField`. There is
+exactly one write site per physics step — a single compute dispatch run immediately after all
+`WindSource` components have been read. Every consumer (cloth, hair, particles, debris) reads from
+the same texture in the same frame, so no subsystem can ever observe a stale field.
+
+**Update cadence:**
+
+1. Exactly once per physics step, `wind_field_generation_system` runs on the main thread.
+2. It enqueues a compute dispatch that rasterizes all active `WindSource` components into the shared
+   `WindField` texture. The dispatch is driven by the physics substep, not the render frame.
+3. Downstream systems — `cloth_wind_system`, hair wind, debris wind, VFX wind in
+   [vfx/particles.md](../vfx/particles.md) — read the updated texture via SRV bindings in the next
+   GPU pass. They never write, they only sample.
+4. The dispatch is scheduled in the `AdvancedSet::WindField` ordering set, which runs **before**
+   every consumer in the same substep.
+5. When no `WindSource` entities exist, the dispatch writes a zero field once and skips subsequent
+   updates (change detection on the query).
+
+**Ordering guarantee.** The scheduler enforces
+`AdvancedSet::WindField.before(Cloth, Debris, Particles)`. Any consumer that tries to read the
+texture out of order is caught at schedule build time.
+
 ### Fluid Simulation
+
+#### Fluid Solver
+
+Harmonius selects **PIC/FLIP hybrid** as the default liquid solver. SPH remains an opt-in variant
+for small-scale effects (splashes, muzzle fluid) where particle-level detail matters more than
+incompressibility; the Eulerian pure-grid path is reserved for gas/smoke volumes. The default choice
+is PIC/FLIP because:
+
+1. It handles arbitrary geometry with good mass conservation.
+2. It is stable at the coarse grid resolutions required by the platform budgets below.
+3. Its grid representation composes well with the shared wind field texture and collision solver.
+
+The solver variant is selected per `FluidVolume`; authors can mix solvers in one scene. The enum is
+not open — every variant here must have a corresponding GPU dispatch path.
+
+```rust
+/// Selects which fluid solver to use. `FlipPic` is
+/// the default for all liquid volumes. `Sph` is an
+/// opt-in variant for particle-scale effects.
+/// `Eulerian` is reserved for gas/smoke volumes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FluidSolverType {
+    /// Opt-in particle solver for small splashes.
+    Sph,
+    /// Default: PIC/FLIP hybrid liquid solver.
+    FlipPic,
+    /// Pure grid solver (smoke, gas, fire).
+    Eulerian,
+}
+
+/// Solver parameters shared across every variant.
+/// Specific variants read the fields they need.
+pub struct FluidSolverParams {
+    /// Grid cell size in meters (FLIP / Eulerian).
+    pub grid_cell_size: f32,
+    /// Particles per cell target (PIC / FLIP / SPH).
+    pub particles_per_cell: u32,
+    /// FLIP blend [0, 1]. 0 = pure PIC (smooth,
+    /// dissipative), 1 = pure FLIP (noisy,
+    /// energetic). Default 0.95.
+    pub flip_blend: f32,
+    /// Pressure solve iterations. Default 40 for
+    /// FlipPic, 20 for Eulerian.
+    pub pressure_iterations: u32,
+    /// Substeps per frame. Default 2.
+    pub substeps: u32,
+}
+```
 
 #### Components
 
 ```rust
-/// Selects which fluid solver to use.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FluidSolverType {
-    Sph,
-    FlipPic,
-    Eulerian,
-}
-
 /// Core fluid volume component.
 pub struct FluidVolume {
     pub solver_type: FluidSolverType,
+    pub solver_params: FluidSolverParams,
     pub domain_bounds: Aabb,
     pub viscosity: f32,
     pub surface_tension: f32,
@@ -1699,7 +1975,8 @@ Each physics tick, vehicle systems execute in order:
 **Linux:**
 
 - GPU compute via Vulkan compute shaders (HLSL compiled to SPIR-V by DXC).
-- Tokio for async data loading of fracture assets or fluid initialization data.
+- Fracture and fluid asset streaming uses platform-native io_uring via the core-runtime
+  request/handle pattern. No async runtimes, no `Future<>`, no `.await`.
 
 ## Test Plan
 

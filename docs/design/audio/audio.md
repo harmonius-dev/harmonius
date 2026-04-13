@@ -25,7 +25,8 @@
    inheritance, mute, solo)
 4. **F-5.1.4** -- Voice management (priority classes, audibility scoring, virtualization, stealing,
    restoration)
-5. **F-5.1.5** -- Streaming playback via Tokio async I/O with ring-buffer chunks and prefetch
+5. **F-5.1.5** -- Streaming playback via platform-native I/O (io_uring / IOCP / dispatch_io) with
+   ring-buffer chunks and prefetch
 6. **F-5.1.6** -- Sample-accurate scheduling (command queue from game thread to audio thread)
 7. **F-5.1.7** -- Codec support (PCM, Vorbis, Opus, FLAC) with extensible plugin registry
 8. **F-5.2.1** -- 3D positioning with Doppler and transform interpolation
@@ -112,7 +113,7 @@
 | R-5.1.NF3 | Audio memory budget | < 64 MiB resident |
 | R-5.1.NF4 | Mixer output latency | < 20 ms at 48 kHz |
 | R-5.2.NF1 | Spatialization/voice | < 2 us |
-| R-5.2.NF2 | Propagation solver | < 4 ms, async 10 Hz |
+| R-5.2.NF2 | Propagation solver | < 4 ms, 10 Hz job |
 | R-5.3.NF1 | 4-insert DSP chain | < 1 us/sample |
 | R-5.4.NF1 | Music transition | within 1 beat |
 | R-5.5.NF1 | Voice chat latency | < 150 ms e2e |
@@ -142,7 +143,11 @@ compose the system:
 
 The game thread communicates with the audio thread through a lock-free SPSC command queue. The audio
 thread runs a high-priority callback driven by the platform backend. Streaming playback uses the
-engine's `Tokio runtime` for Tokio async I/O (Tokio (IOCP), Tokio (kqueue), Tokio (epoll)).
+engine's platform I/O request/handle pattern ([core-runtime/io.md](../core-runtime/io.md)): IOCP on
+Windows, io_uring on Linux, `dispatch_io` on macOS/iOS. No `async fn`, no `.await`, no Tokio. The
+main thread submits `IoRequest::Read` for the next streaming chunk; completions arrive as
+`IoResponse::Read` events and the stream manager feeds decoded samples into the SPSC ring buffer
+consumed by the audio thread.
 
 ## Architecture
 
@@ -215,7 +220,7 @@ graph TD
     end
 
     subgraph harmonius_platform
-        IO[Tokio runtime]
+        IO[Platform I/O request handle]
         TP[ThreadPool]
         SI[SpatialIndex]
     end
@@ -1032,7 +1037,7 @@ impl AudioEngine {
     pub fn new(
         config: AudioConfig,
         backend: impl AudioBackend,
-        reactor: &Tokio runtime,
+        io_bridge: &PlatformIoBridge,
     ) -> Self;
     pub fn command_sender(&self) -> CommandSender;
     pub fn mixer_graph(&self) -> &MixerGraph;
@@ -1193,6 +1198,17 @@ impl VoiceManager {
 
 ### Mixer Graph
 
+> **Client of `core-runtime/graph-runtime.md`.** The audio mixer bus DAG is a client of the shared
+> graph runtime. It parameterizes `GraphRuntime<DspNode, DspEdge, MixerOutput>`. DAG validation
+> (acyclic bus parenting), topological sort (leaf-first bus ordering), and hot-reload handoff are
+> provided by the shared runtime. This document defines only the DSP node palette, bus semantics,
+> ducking rules, and the real-time mix callback. See design review section 2.1 and
+> [core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md).
+
+The shared runtime emits a linearized `MixerOutput` every time the bus graph mutates (insert,
+reparent, effect chain change). The audio thread reads the latest `MixerOutput` at the start of each
+buffer callback via an atomic triple-buffer swap — never touching the source graph.
+
 ```rust
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct BusId(pub(crate) u16);
@@ -1303,12 +1319,17 @@ impl CodecRegistry {
 pub struct StreamManager { /* ... */ }
 impl StreamManager {
     pub fn new(
-        config: StreamConfig, reactor: &Tokio runtime,
+        config: StreamConfig, io_bridge: &PlatformIoBridge,
     ) -> Self;
-    pub async fn open(
+    /// Submit an open request. Completion arrives via
+    /// [`StreamOpenResponse`] routed through the main thread event loop
+    /// (see [core-runtime/io.md](../core-runtime/io.md)).
+    pub fn open(
         &mut self, clip: AssetHandle<AudioClip>,
     ) -> Result<StreamHandle, StreamError>;
-    pub async fn prefetch(
+    /// Submit a prefetch read for the next chunk. Non-blocking; the
+    /// request is enqueued on the platform I/O submission queue.
+    pub fn prefetch(
         &mut self, handle: StreamHandle,
     );
     pub fn read(
@@ -1319,11 +1340,221 @@ impl StreamManager {
 }
 ```
 
+### Audio Ducking
+
+Priority-based automatic gain reduction. Ducking is a cross-bus side-chain effect: when a
+louder-priority bus becomes active, the target bus is attenuated by a configurable gain reduction
+with attack and release envelopes. Voice ducks SFX; SFX ducks music; music does not duck anything.
+The ducking graph is enforced at mixer-graph build time (ducking cycles raise a `GraphError::Cycle`
+from the shared validator).
+
+```rust
+/// One ducking rule applied to the mixer graph.
+#[derive(Clone, Copy, Debug)]
+pub struct DuckingConfig {
+    /// Bus that receives gain reduction when trigger is active.
+    pub target_bus: BusId,
+    /// Bus whose activity drives the ducker.
+    pub trigger_bus: BusId,
+    /// Envelope attack time (target → ducked), milliseconds.
+    pub attack_ms: f32,
+    /// Envelope release time (ducked → restored), milliseconds.
+    pub release_ms: f32,
+    /// Peak gain reduction applied at full ducking, decibels.
+    /// Negative values (e.g., `-12.0`) are attenuation.
+    pub gain_reduction_db: f32,
+    /// Activity threshold on the trigger bus (dBFS). Below this
+    /// threshold the ducker is inactive.
+    pub trigger_threshold_db: f32,
+}
+
+/// Default rules wired at engine startup. These match the voice > SFX >
+/// music priority hierarchy. Additional rules may be added via the editor
+/// and are codegen'd into the middleman .dylib.
+pub const DEFAULT_DUCKING: &[DuckingConfig] = &[
+    DuckingConfig {
+        target_bus: BusId::SFX,
+        trigger_bus: BusId::VOICE,
+        attack_ms: 20.0,
+        release_ms: 200.0,
+        gain_reduction_db: -6.0,
+        trigger_threshold_db: -30.0,
+    },
+    DuckingConfig {
+        target_bus: BusId::MUSIC,
+        trigger_bus: BusId::SFX,
+        attack_ms: 40.0,
+        release_ms: 400.0,
+        gain_reduction_db: -4.0,
+        trigger_threshold_db: -25.0,
+    },
+    DuckingConfig {
+        target_bus: BusId::MUSIC,
+        trigger_bus: BusId::VOICE,
+        attack_ms: 20.0,
+        release_ms: 400.0,
+        gain_reduction_db: -8.0,
+        trigger_threshold_db: -30.0,
+    },
+];
+
+/// Per-rule runtime state stored inside `MixerGraph`.
+pub struct DuckerState {
+    pub current_reduction_db: f32,
+    pub attack_coeff: f32,
+    pub release_coeff: f32,
+}
+
+impl MixerGraph {
+    /// Install a ducking rule. Validated against the bus DAG — duplicate
+    /// rules and cycles are rejected.
+    pub fn add_ducking(&mut self, rule: DuckingConfig);
+
+    /// Remove a ducking rule by target/trigger pair.
+    pub fn remove_ducking(&mut self, target: BusId, trigger: BusId);
+}
+```
+
+Ducking is evaluated inside the per-buffer mix pass: for each rule, compute the trigger bus's peak
+level in the current buffer; if above the threshold, drive the attenuation envelope toward
+`gain_reduction_db`; otherwise drive it toward `0.0 dB`. Smoothing uses one-pole attack/release
+coefficients derived from `attack_ms` / `release_ms` and the output sample rate.
+
+### HRTF SOFA Loading
+
+HRTF profiles are distributed as binary SOFA files (AES69 standard from
+<https://www.sofaconventions.org/>). The content pipeline imports `.sofa` source files and produces
+engine-internal `HrtfAsset` archives via rkyv. The runtime format is a simple binary blob with a
+header and interleaved impulse-response pairs.
+
+```rust
+/// rkyv-serialized HRTF asset header. Matches the on-disk layout of
+/// `.hrtf.bin` files produced by the content pipeline.
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct HrtfHeader {
+    /// Magic number `HRT1` (`0x31_54_52_48`).
+    pub magic: u32,
+    /// Format version. Bumped when the layout changes.
+    pub version: u16,
+    /// Sample rate of the impulse responses (typically 44100 or 48000).
+    pub rate: u32,
+    /// Total number of HRIR pairs stored (azimuth × elevation samples).
+    pub impulse_count: u32,
+    /// Length of one impulse response in samples. Fixed for the dataset.
+    pub length: u32,
+    /// Number of distinct elevation angles.
+    pub elevation_count: u16,
+    /// Number of distinct azimuth angles per elevation.
+    pub azimuth_count: u16,
+    /// Minimum elevation angle in degrees.
+    pub elevation_min_deg: f32,
+    /// Elevation step in degrees.
+    pub elevation_step_deg: f32,
+    /// Distance of the virtual microphone array, meters.
+    pub measurement_distance_m: f32,
+}
+
+/// Binary HRTF asset. Zero-copy mmap target; the impulse-response arrays
+/// are read directly out of the mapped page.
+pub struct HrtfAsset {
+    pub header: HrtfHeader,
+    /// `impulse_count * length` left-ear samples, interleaved by index.
+    pub left: &'static [f32],
+    /// `impulse_count * length` right-ear samples.
+    pub right: &'static [f32],
+    /// Optional delay values (integer samples) for each impulse pair.
+    pub delays: &'static [u16],
+}
+
+impl HrtfAsset {
+    /// Load an HRTF asset via the platform I/O bridge. Synchronous
+    /// submission; the asset is delivered via an ECS event when the read
+    /// completes. See [core-runtime/io.md](../core-runtime/io.md).
+    pub fn load(handle: Handle<HrtfAsset>, io: &PlatformIoBridge);
+
+    /// Look up the nearest impulse-response pair for a direction.
+    /// Returns indices into `left` and `right`.
+    pub fn lookup(&self, azimuth: f32, elevation: f32) -> HrtfIndex;
+}
+
+/// Runtime selection: `HrtfRenderer` consults the `HrtfProfileRegistry`
+/// resource at engine startup to pick a dataset. Players may override via
+/// the audio settings screen; the editor lists bundled datasets (MIT
+/// KEMAR default) plus any user-supplied SOFA files the content pipeline
+/// imported.
+pub struct HrtfProfileRegistry {
+    pub profiles: SortedVecMap<StringId, Handle<HrtfAsset>>,
+    pub active: StringId,
+}
+
+impl HrtfProfileRegistry {
+    pub fn active(&self) -> Handle<HrtfAsset> {
+        *self.profiles.get(&self.active).unwrap()
+    }
+    pub fn set_active(&mut self, id: StringId);
+}
+```
+
+Loading lifecycle:
+
+1. Content pipeline imports `.sofa` source, validates AES69 conformance, resamples to 48 kHz, emits
+   `HrtfHeader` + interleaved `f32` impulse pairs, writes `.hrtf.bin`.
+2. At startup, `HrtfRenderer` submits an `IoRequest::Read` for the active profile and installs the
+   mmap'd asset once the completion event arrives.
+3. Per-voice spatialization looks up the nearest HRIR pair via `HrtfAsset::lookup` and runs
+   partitioned-FFT convolution on the audio thread.
+
+### Voice Chat Ownership Split
+
+Voice chat is split cleanly between audio and networking per design review section 2.2 and P1 task
+
+## 27
+
+| Concern                         | Owner     | Type/location                              |
+|---------------------------------|-----------|--------------------------------------------|
+| QUIC transport                  | networking| `VoiceStream` in `networking/`             |
+| Channel management (party/raid) | networking| `ChannelManager` in `networking/`          |
+| Opus encode / decode            | audio     | `OpusEncoder`, `OpusVoiceDecoder` here     |
+| Jitter buffer + PLC             | audio     | `JitterBuffer` here                        |
+| VAD / noise suppression / AEC   | audio     | `VoiceActivityDetector`, `NoiseSuppressor` |
+| HRTF spatialization for voice   | audio     | `HrtfRenderer` here                        |
+| Mixer bus routing               | audio     | `ChannelManager::route_for_channel` here   |
+| Viseme generation               | audio     | `VisemeGenerator` here                     |
+
+**Ownership rule.** Audio owns the Opus codec, HRTF spatialization, and mixer bus routing.
+Networking owns QUIC transport and channel management. The `VoiceStream` transport type is defined
+in `networking/network-services.md`; the `VoiceVoice` (codec output) type is defined here and is the
+point-of-handoff from the network receive pipeline into the audio thread.
+
+```rust
+/// Owned by audio. Carries codec output from the decode stage to the
+/// mixer bus. `VoiceVoice` is intentionally distinct from
+/// `networking::VoiceStream` — one is codec output, one is transport.
+pub struct VoiceVoice {
+    /// Identifier for the originating player / stream.
+    pub voice_id: VoiceId,
+    /// Decoded PCM samples for the current frame.
+    pub pcm: SmallVec<f32, 960>,
+    /// Timestamp of the originating packet, for sync with viseme tracks.
+    pub timestamp_ms: u64,
+    /// Active channel routing for bus selection.
+    pub channel: ChannelId,
+}
+```
+
+The receive pipeline in `networking/network-services.md` pushes `VoiceStream` frames into a bounded
+MPSC queue drained by the audio thread. The audio thread decodes the Opus payload, constructs a
+`VoiceVoice`, runs PLC/VAD/NS/AEC, and mixes into the bus returned by
+`ChannelManager::route_for_channel`.
+
 ### Spatial Audio
 
 ```rust
 #[derive(Clone, Debug, Default)]
 pub struct SpatialParams {
+    pub position: Vec3,
+    pub velocity: Vec3,
     pub position: Vec3,
     pub velocity: Vec3,
     pub pan: f32,
@@ -1367,7 +1598,11 @@ impl OcclusionSystem {
 
 pub struct PropagationSolver { /* ... */ }
 impl PropagationSolver {
-    pub async fn update(
+    /// Synchronous update dispatched onto the worker pool via
+    /// `pool.scope`. The game loop calls this at the reduced propagation
+    /// tick (10 Hz default); it returns when all rays have finished
+    /// tracing and the `paths` cache is up to date.
+    pub fn update(
         &self, spatial_index: &SpatialIndex,
         portal_graph: &PortalGraph,
         sources: &[(VoiceId, Vec3)],
@@ -1402,7 +1637,7 @@ impl AmbisonicsCodec {
 }
 ```
 
-### DspNode Trait and Effect Chain
+#### DspNode Trait and Effect Chain
 
 ```rust
 pub trait DspNode: Send {
@@ -1448,7 +1683,7 @@ impl DspNodeRegistry {
 }
 ```
 
-### Adaptive Music
+#### Adaptive Music
 
 ```rust
 pub struct BeatClock {
@@ -1524,7 +1759,7 @@ impl MusicStateMachine {
 }
 ```
 
-### Voice Chat
+#### Voice Chat
 
 ```rust
 pub struct OpusEncoder {
@@ -1608,7 +1843,7 @@ impl ChannelManager {
 }
 ```
 
-### Platform Backend
+#### Platform Backend
 
 ```rust
 pub trait AudioBackend: Send {
@@ -1623,7 +1858,7 @@ pub trait AudioBackend: Send {
 }
 ```
 
-### ECS Systems
+#### ECS Systems
 
 ```rust
 pub fn audio_sync_system(
@@ -1660,7 +1895,7 @@ pub fn occlusion_system(
     sender: Res<CommandSender>,
 );
 
-pub async fn propagation_system(
+pub fn propagation_system(
     spatial_index: Res<SpatialIndex>,
     portal_graph: Res<PortalGraph>,
     solver: Res<PropagationSolver>,
@@ -1695,9 +1930,9 @@ pub fn viseme_sync_system(
 );
 ```
 
-## Data Flow
+### Data Flow
 
-### Audio Thread Data Flow
+#### Audio Thread Data Flow
 
 ```mermaid
 sequenceDiagram
@@ -1724,7 +1959,7 @@ sequenceDiagram
     end
 ```
 
-### Frame Lifecycle
+#### Frame Lifecycle
 
 Each game frame, the ECS systems synchronize component state with the audio thread:
 
@@ -1749,7 +1984,7 @@ The audio thread runs independently. Each callback:
 6. Applies the master bus limiter.
 7. Writes the final buffer to the platform backend.
 
-### Lock-Free Communication
+#### Lock-Free Communication
 
 All game-to-audio communication uses lock-free structures:
 
@@ -1760,18 +1995,22 @@ All game-to-audio communication uses lock-free structures:
 - **Voice network** -- bounded MPSC lock-free queue carries incoming Opus packets indexed by player
   ID.
 
-### Streaming I/O
+#### Streaming I/O
+
+Streaming playback uses the platform I/O request/handle pattern defined in
+[core-runtime/io.md](../core-runtime/io.md). The main thread drives io_uring / IOCP / `dispatch_io`;
+the audio system never touches the filesystem directly.
 
 ```mermaid
 sequenceDiagram
     participant GT as Game Thread
-    participant IR as Tokio runtime
+    participant IO as Platform I/O (main thread)
     participant SM as StreamManager
     participant RB as Ring Buffer
     participant AT as Audio Thread
 
-    GT->>IR: poll completions
-    IR-->>SM: chunk ready callback
+    GT->>IO: drain completions at frame boundary
+    IO-->>SM: IoResponse Read chunk ready
     SM->>SM: decode compressed chunk
     SM->>RB: write decoded samples
 
@@ -1782,7 +2021,7 @@ sequenceDiagram
         AT->>AT: repeat last buffer or fade
     end
 
-    SM->>IR: submit next async read priority 0
+    SM->>IO: submit next IoRequest Read priority 0
 ```
 
 | Parameter | Value |
@@ -1793,7 +2032,7 @@ sequenceDiagram
 | Sample rate | 48,000 Hz |
 | Block size | 512 samples |
 
-### Intensity-Driven Adaptive Music
+#### Intensity-Driven Adaptive Music
 
 The `IntensityParam` resource maps a single `f32` (0.0-1.0) through authored curves to
 simultaneously control:
@@ -1802,9 +2041,9 @@ simultaneously control:
 - **SegmentGraph** -- edge conditions using intensity as a gameplay state parameter
 - **StingerScheduler** -- probability multiplier for stinger triggers
 
-## Platform Considerations
+### Platform Considerations
 
-### Audio Backends
+#### Audio Backends
 
 | Platform | Backend | API |
 |----------|---------|-----|
@@ -1812,7 +2051,7 @@ simultaneously control:
 | macOS | CoreAudio | `AudioUnit` via objc2 |
 | Linux | ALSA/PipeWire | `snd_pcm_*` / PipeWire |
 
-### Microphone Capture
+#### Microphone Capture
 
 | Platform | API |
 |----------|-----|
@@ -1822,15 +2061,20 @@ simultaneously control:
 | iOS | AVAudioSession (system AEC) |
 | Android | AAudio (system AEC) |
 
-### Streaming I/O Backends
+#### Streaming I/O Backends
 
-| Platform | I/O | Notes |
-|----------|-----|-------|
-| Windows | Tokio (IOCP) | Tokio poll at frame boundary |
-| macOS | Tokio (kqueue) | Tokio poll at frame boundary |
-| Linux | Tokio (epoll) | Tokio poll at frame boundary |
+| Platform | I/O        | Notes                                   |
+|----------|------------|-----------------------------------------|
+| Windows  | IOCP       | Drained from main thread event loop    |
+| macOS    | dispatch_io| GCD-scheduled reads, main thread drain |
+| Linux    | io_uring   | Submission & completion on main thread |
+| iOS      | dispatch_io| Same as macOS                           |
+| Android  | io_uring   | Same as Linux                           |
 
-### Voice Pool and DSP Tier Scaling
+No async runtime. All completions are delivered as ECS events by the main-thread I/O drain system.
+See [core-runtime/io.md](../core-runtime/io.md).
+
+#### Voice Pool and DSP Tier Scaling
 
 | Component | Mobile | Switch | Desktop |
 |-----------|--------|--------|---------|
@@ -1848,7 +2092,7 @@ simultaneously control:
 | Ambisonics order | First | First | Third |
 | Max reverb zones | 2 | 4 | 6+ |
 
-### AEC Platform Delegation
+#### AEC Platform Delegation
 
 | Platform | AEC Source |
 |----------|-----------|
@@ -1856,7 +2100,7 @@ simultaneously control:
 | iOS | System AEC (AVAudioSession) |
 | Android | System AEC (AAudio) |
 
-### Propagation Solver Scaling
+#### Propagation Solver Scaling
 
 | Tier | Mode | Update Rate | Bounces |
 |------|------|-------------|---------|
@@ -1864,7 +2108,7 @@ simultaneously control:
 | Switch | Portal + 1-bounce | 2-4 frames | 1 |
 | Desktop | Portal + multi | 1-2 frames | 3+ |
 
-### Proposed Dependencies
+#### Proposed Dependencies
 
 | Crate | Purpose |
 |-------|---------|
@@ -1879,7 +2123,7 @@ simultaneously control:
 | `windows-rs` | WASAPI bindings |
 | `objc2` | CoreAudio Objective-C FFI |
 
-## Safety Invariants
+### Safety Invariants
 
 1. **AudioEffect match arms** -- `process` and `reset` must exhaustively match all variants. No
    wildcard `_ =>` arms. Adding a new variant with a wildcard silently produces silence.
@@ -1888,11 +2132,11 @@ simultaneously control:
 3. **Command queue backpressure** -- `CommandSender::send` returns `Err` when full. Stop/Pause
    commands have higher priority than Play when near full. Log a warning on drop.
 
-## Test Plan
+### Test Plan
 
 Full test cases are in the companion file [audio-test-cases.md](./audio-test-cases.md).
 
-### Unit Tests
+#### Unit Tests
 
 | Test | Req |
 |------|-----|
@@ -1940,7 +2184,7 @@ Full test cases are in the companion file [audio-test-cases.md](./audio-test-cas
 | `test_viseme_timing` | R-5.5.5 |
 | `test_dialogue_priority` | R-5.5.6 |
 
-### Integration Tests
+#### Integration Tests
 
 | Test | Req |
 |------|-----|
@@ -1956,7 +2200,7 @@ Full test cases are in the companion file [audio-test-cases.md](./audio-test-cas
 | `test_intensity_drives_all` | R-5.4.7 |
 | `test_channel_isolation` | R-5.5.8 |
 
-### Benchmarks
+#### Benchmarks
 
 | Benchmark | Target | Source |
 |-----------|--------|--------|
@@ -1973,7 +2217,7 @@ Full test cases are in the companion file [audio-test-cases.md](./audio-test-cas
 | Viseme gen/frame | < 100 us | F-5.5.5 |
 | Audio memory (max cfg) | < 64 MiB | R-5.1.NF3 |
 
-## Open Questions
+### Open Questions
 
 1. **WASAPI exclusive vs shared mode** -- Default to shared with opt-in for exclusive, or
    exclusive-first with shared fallback?
@@ -1994,25 +2238,27 @@ Full test cases are in the companion file [audio-test-cases.md](./audio-test-cas
 12. **Platform hardware decoders** -- Apple Audio Toolbox can decode AAC in hardware; how does this
     interact with the streaming pipeline?
 
-## Review Feedback
+### Review Feedback
 
-### RF-1: Replace all Tokio/async with platform-native I/O
+#### RF-1: Replace all Tokio/async with platform-native I/O — RESOLVED
 
-7+ Tokio references + 4 async fn signatures. Replace with:
+All Tokio references and `async fn` signatures have been removed. Streaming playback uses the
+platform I/O request/handle pattern in [core-runtime/io.md](../core-runtime/io.md):
 
-- Linux: io_uring via rustix
+- Linux / Android: io_uring via rustix
 - Windows: IOCP via windows-rs
-- macOS: GCD dispatch_io via dispatch2
+- macOS / iOS: GCD dispatch_io via dispatch2
 
-StreamManager API becomes synchronous. Submissions via channel to main thread, completions arrive as
-jobs. The ring buffer read path on the audio thread is already correct.
+`StreamManager::open`, `StreamManager::prefetch`, and `PropagationSolver::update` are all
+synchronous. Submissions enqueue into the platform I/O bridge; completions arrive as jobs/events on
+the main thread. The ring buffer read path on the audio thread is unchanged.
 
-### RF-2: Remove all Reflect derives
+#### RF-2: Remove all Reflect derives
 
 "All types derive Reflect" (line 384). Remove. Codegen generates type metadata statically per
 constraints.
 
-### RF-3: Dependencies — cpal + symphonia only
+#### RF-3: Dependencies — cpal + symphonia only
 
 | Crate | Purpose | License |
 |-------|---------|---------|
@@ -2028,13 +2274,13 @@ Everything else is custom:
 - Streaming ring buffer
 - Acoustic material system
 
-### RF-4: Eliminate DspNode trait + DspNodeRegistry
+#### RF-4: Eliminate DspNode trait + DspNodeRegistry
 
 Replace dynamic dispatch `DspNode` trait and string-keyed `DspNodeRegistry` with codegen'd enum
 variants in the middleman .dylib. Custom DSP nodes added by plugins become new enum variants via
 codegen. Static dispatch on the real-time audio thread.
 
-### RF-5: Replace AudioBackend trait with cfg-gated type
+#### RF-5: Replace AudioBackend trait with cfg-gated type
 
 3 platforms selected at compile time. Use cfg-gated concrete type, not a trait:
 
@@ -2047,12 +2293,12 @@ type AudioBackend = CoreAudioBackend;
 type AudioBackend = AlsaBackend;
 ```
 
-### RF-6: Replace String in InsertEffect command
+#### RF-6: Replace String in InsertEffect command
 
 Heap allocation near real-time path. Use the codegen'd `AudioEffect` enum variant or a `u16` effect
 ID.
 
-### RF-7: Custom HRTF implementation
+#### RF-7: Custom HRTF implementation
 
 Build HRTF from scratch using SOFA file datasets:
 
@@ -2065,7 +2311,7 @@ Build HRTF from scratch using SOFA file datasets:
 
 Supports custom HRTFs — users can load their own SOFA profiles for personalized binaural rendering.
 
-### RF-8: Acoustic material system
+#### RF-8: Acoustic material system
 
 Extend physics materials with acoustic properties. The propagation solver uses these when rays hit
 surfaces.
@@ -2099,7 +2345,7 @@ The material doesn't change between environments — the geometry changes the re
 traps rays (many bounces, long reverb). The same stone in an open crater lets rays escape (few
 bounces, dry sound). Emergent from geometry, not hardcoded.
 
-### RF-9: ECS-parallel spatial audio propagation
+#### RF-9: ECS-parallel spatial audio propagation
 
 Use the job system and ECS change detection for propagation:
 
@@ -2130,15 +2376,15 @@ Key optimizations:
 5. **GPU RT (optional)** — on platforms with hardware RT, audio rays can use the same acceleration
    structure as rendering.
 
-### RF-10: Fix layer count
+#### RF-10: Fix layer count
 
 Overview says "Five layers" but lists 7. Change to "Seven."
 
-### RF-11: Create companion test cases file
+#### RF-11: Create companion test cases file
 
 Create `audio-test-cases.md` with TC-5.X.Y.Z entries.
 
-### RF-12: Algorithm references
+#### RF-12: Algorithm references
 
 | Algorithm | Reference |
 |-----------|-----------|
@@ -2150,7 +2396,7 @@ Create `audio-test-cases.md` with TC-5.X.Y.Z entries.
 | Ambisonics | [Zotter & Frank, "Ambisonics" (2019)](https://link.springer.com/book/10.1007/978-3-030-17207-7) |
 | Lock-free SPSC | [Lamport (1983)](https://dl.acm.org/doi/10.1145/69624.357207) |
 
-### RF-13: Emergent acoustic behaviors (design notes)
+#### RF-13: Emergent acoustic behaviors (design notes)
 
 The ray propagation + acoustic material system produces these behaviors with ZERO special-case code
 — all emergent from geometry and material properties:

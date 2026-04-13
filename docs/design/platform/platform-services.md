@@ -37,7 +37,7 @@
 1. **F-14.4.1** -- Crash handler with out-of-process minidump
 2. **F-14.4.2** -- Debug symbol upload and server symbolication
 3. **F-14.4.3** -- Crash aggregation by stack signature
-4. **F-14.4.4** -- Structured logging with async ring buffer
+4. **F-14.4.4** -- Structured logging with lock-free ring buffer
 5. **F-14.4.5** -- Lock-free per-thread performance counters
 6. **F-14.4.6** -- GPU crash breadcrumbs per render pass
 
@@ -89,9 +89,9 @@
 | F-14.6.6 | R-14.6.6    |
 | F-14.6.7 | R-14.6.7    |
 
-1. **F-14.6.1** -- Async file I/O via platform-native backends
-2. **F-14.6.2** -- Async create/delete with batch unlink
-3. **F-14.6.3** -- Async metadata and batch stat
+1. **F-14.6.1** -- Non-blocking file I/O via platform-native backends
+2. **F-14.6.2** -- Non-blocking create/delete with batch unlink
+3. **F-14.6.3** -- Non-blocking metadata and batch stat
 4. **F-14.6.4** -- Directory enumeration with depth and glob
 5. **F-14.6.5** -- File watching with debounce
 6. **F-14.6.6** -- BLAKE3 content hash false-positive filter
@@ -119,15 +119,18 @@ Consolidates OS integration, crash reporting, filesystem, platform services, sto
 integration. All share `harmonius_platform` and overlapping F-14.5.x features. All use static
 dispatch (`cfg`-gated). No `Arc`, `Rc`, `Cell`, `RefCell`.
 
-All user-facing platform service APIs are **synchronous**. Async I/O is an invisible implementation
-detail handled by platform-native backends (io_uring on Linux, IOCP on Windows, GCD dispatch_io on
-macOS). Main-thread-only OS calls are cached as read-only ECS resources (`Res<ClipboardState>`,
-`Res<PowerState>`, etc.).
+All user-facing platform service APIs are **synchronous**. Kernel-level non-blocking I/O is an
+invisible implementation detail handled by platform-native backends (io_uring on Linux, IOCP on
+Windows, GCD dispatch_io on macOS); no Rust `async`, no `await`, no `Future`. Main-thread-only OS
+calls are cached as read-only ECS resources (`Res<ClipboardState>`, `Res<PowerState>`, etc.). Crash
+reporting and telemetry are detailed in [crash-reporting.md](crash-reporting.md) and
+[telemetry.md](telemetry.md); this document owns only the wiring between them and the ECS.
 
 - **OS integration** -- clipboard, file dialogs, notifications, drag-drop, keyboard, IME
-- **Crash reporting** -- out-of-process handler, logging, perf counters, GPU breadcrumbs
-- **Filesystem** -- async I/O via platform-native backends (io_uring / IOCP / GCD); no `std::fs`
-  anywhere
+- **Crash reporting** -- see [crash-reporting.md](crash-reporting.md)
+- **Telemetry** -- see [telemetry.md](telemetry.md)
+- **Filesystem** -- non-blocking I/O via platform-native backends (io_uring / IOCP / GCD); no
+  `std::fs` anywhere
 - **Platform services** -- achievements, leaderboards, presence, cloud, entitlements, auth
 - **Storage** -- preferences (TOML), player cache (LRU), dev cache (BLAKE3), PSO cache, temp files
 - **SDK integration** -- IAP, subscriptions, matchmaking, anti-cheat, friends, mods, account linking
@@ -1574,7 +1577,7 @@ pub struct AchievementService {
 
 /// All methods are synchronous. Unlock and
 /// increment queue requests; platform I/O flushes
-/// them asynchronously.
+/// them at frame boundary via non-blocking SDK.
 /// **Thread affinity: any thread.**
 impl AchievementService {
     /// Queues an unlock request.
@@ -1760,6 +1763,175 @@ impl CloudStorageService {
     pub fn remaining_quota(&self) -> u64;
 }
 ```
+
+#### Save / Cloud Integration (moved from save-system.md)
+
+The save system publishes `SaveEvent::SaveComplete { slot, meta }` when a save file is written to
+local storage. Platform services observe those events and drive cloud upload, conflict detection,
+and resolution. Save system code holds no platform SDK handles; all SDK interaction happens here.
+
+```mermaid
+sequenceDiagram
+    participant SS as SaveSystem (game thread)
+    participant EV as Event Channel
+    participant PS as CloudStorageService
+    participant API as Platform Cloud API
+    participant UI as Conflict UI
+
+    SS->>EV: SaveEvent::SaveComplete{slot, meta}
+    EV-->>PS: observe on PreUpdate drain
+    PS->>API: query remote metadata (timestamp, hash)
+    alt hashes match
+        PS->>EV: CloudSyncEvent::InSync{slot}
+    else local newer
+        PS->>API: upload local save bytes
+        API-->>PS: upload complete
+        PS->>EV: CloudSyncEvent::Uploaded{slot}
+    else remote newer
+        PS->>API: download remote save bytes
+        API-->>PS: remote bytes
+        PS->>EV: CloudSyncEvent::DownloadReady{slot, bytes}
+        Note over SS: SaveSystem applies via normal load path
+    else both changed
+        PS->>UI: prompt conflict resolution
+        UI-->>PS: ConflictChoice
+        PS->>EV: CloudSyncEvent::Resolved{slot, choice}
+    end
+```
+
+```rust
+/// Events emitted by the cloud sync integration
+/// for save slots. SaveSystem observes these and
+/// runs the normal load path on DownloadReady.
+#[derive(Clone, Debug)]
+pub enum CloudSyncEvent {
+    Started { slot: SlotId },
+    InSync { slot: SlotId },
+    Uploaded { slot: SlotId },
+    DownloadReady { slot: SlotId, bytes: Vec<u8> },
+    Conflict {
+        slot: SlotId,
+        local: CloudMetadata,
+        remote: CloudMetadata,
+    },
+    Resolved { slot: SlotId, choice: ConflictChoice },
+    Failed { slot: SlotId, error: CloudError },
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum ConflictChoice { KeepLocal, KeepRemote }
+
+/// Cloud-sync target. Selected at runtime via
+/// `cfg` + platform feature flags.
+#[derive(Clone, Copy, Debug)]
+pub enum CloudPlatform {
+    Steam,
+    PlayStation,
+    Xbox,
+    ICloud,
+    EpicOnlineServices,
+    Nintendo,
+    GooglePlay,
+    Disabled,
+}
+
+/// Glue that wires SaveEvent drains to
+/// CloudStorageService uploads and turns responses
+/// back into CloudSyncEvents.
+#[derive(Codegen)]
+pub struct SaveCloudBridge {
+    platform: CloudPlatform,
+    pending: DeferredQueue<(SlotId, CloudKey)>,
+}
+
+impl SaveCloudBridge {
+    /// Drain one frame of SaveEvents and queue cloud
+    /// work. Called from PreUpdate on the main thread.
+    pub fn drain_save_events(
+        &mut self,
+        events: &mut EventReader<SaveEvent>,
+        cloud: &mut CloudStorageService,
+    );
+
+    /// Drain one frame of completed cloud work and
+    /// emit CloudSyncEvents + feed DownloadReady
+    /// bytes into the save load path.
+    pub fn drain_cloud_completions(
+        &mut self,
+        cloud: &mut CloudStorageService,
+        out: &mut EventWriter<CloudSyncEvent>,
+    );
+}
+```
+
+| Platform            | Cloud API                                  |
+|---------------------|--------------------------------------------|
+| Steam               | ISteamRemoteStorage                        |
+| PlayStation / PSVR2 | PS5 Save Data Library                      |
+| Xbox                | Connected Storage                          |
+| iCloud / visionOS   | NSFileManager via objc2                    |
+| Epic                | EOS Player Data Storage                    |
+| Nintendo            | `nn::sdb` (Switch Save Data Backup)        |
+| Google Play / Meta  | Google Play Games SavedGames API           |
+
+#### Achievement Queuing (moved from save-system.md)
+
+Save progress often triggers achievement unlocks (first save, 100% completion, ending reached). The
+save system does not call the achievement SDK directly; it publishes semantic progress events that
+this service translates into `AchievementService::unlock` calls.
+
+```mermaid
+flowchart LR
+    SS[SaveSystem] -->|SaveEvent| PQ[ProgressQueue]
+    PQ -->|maps via AchievementRules| AS[AchievementService]
+    AS -->|queue unlock| DQ[DeferredQueue~AchievementId~]
+    DQ -->|flush frame boundary| API[Platform Achievement API]
+    API -->|ack| DQ
+    DQ -->|on success| AS
+    DQ -->|on retryable error| DQ
+```
+
+```rust
+/// Semantic progress events emitted by gameplay
+/// and the save system. Pure data — no SDK handles.
+#[derive(Clone, Debug)]
+pub enum ProgressEvent {
+    SaveCompleted { slot: SlotId, completion: f32 },
+    StoryChapterReached { chapter: LocalizedStringId },
+    FirstRunComplete,
+    Custom { tag: &'static str, value: u64 },
+}
+
+/// Codegen'd mapping from ProgressEvent patterns to
+/// achievement IDs. Populated at .dylib load time.
+#[derive(Clone, Debug)]
+pub struct AchievementRule {
+    pub predicate: fn(&ProgressEvent) -> bool,
+    pub achievement: AchievementId,
+}
+
+#[derive(Codegen)]
+pub struct ProgressQueue {
+    rules: Vec<AchievementRule>,
+    pending: Vec<ProgressEvent>,
+}
+
+impl ProgressQueue {
+    /// Push a progress event. Called from any thread.
+    pub fn push(&mut self, event: ProgressEvent);
+
+    /// Drain events, evaluate rules, queue unlocks
+    /// in the achievement service. Called from the
+    /// main thread's PreUpdate phase.
+    pub fn drain(
+        &mut self,
+        achievements: &mut AchievementService,
+    );
+}
+```
+
+The `DeferredQueue<AchievementId>` on `AchievementService` handles retry on network failure using
+exponential backoff; no achievement is dropped silently.
 
 #### Entitlement Service (F-14.5.6 / R-14.5.6)
 
@@ -2350,10 +2522,10 @@ pub enum TempError {
 
 ### File Read
 
-1. Caller calls `AsyncFile::read(buf, offset)`, receives `IoRequestId`
+1. Caller calls `File::read(buf, offset)`, receives `IoRequestId` (no `.await`)
 2. Request submitted to platform I/O backend (io_uring / IOCP / GCD dispatch_io); acquires
    `BufferSlot`, enqueues to kernel
-3. Kernel reads asynchronously
+3. Kernel performs the read out-of-band (kernel completion, not Rust `async`)
 4. Completion arrives via crossbeam-channel as a job
 5. Job system delivers result to caller
 
@@ -2578,7 +2750,7 @@ See [constraints.md](../constraints.md).
 | `blake3`       | Content hashing (R-14.6.6)       |
 | `dispatch2`    | GCD dispatch_io (macOS I/O)      |
 | `objc2`        | Apple platform SDK bindings      |
-| `rustix`       | io_uring (Linux async I/O)       |
+| `rustix`       | io_uring (Linux non-blocking I/O) |
 | `steamworks`   | Steamworks SDK Rust bindings     |
 | `toml`         | Preferences serialization        |
 | `windows-rs`   | Win32/COM/IOCP/DirectStorage     |
@@ -2748,7 +2920,7 @@ trivially meeting the < 1 ms requirement (R-14.5.11).
 All references to compio in platform services must be updated. Replace with:
 
 - Linux: io_uring for all async file/network operations
-- Windows: IOCP for async I/O, DirectStorage for GPU assets
+- Windows: IOCP for non-blocking I/O, DirectStorage for GPU assets
 - Apple: GCD dispatch_io for files, Networking.framework for network, Metal I/O for GPU assets
 
 Platform services that perform I/O (FileSystem, Clipboard, PowerState, NetworkInfo) use the platform

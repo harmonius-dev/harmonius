@@ -6,6 +6,19 @@
 > [features/core-runtime/](../../features/), [requirements/core-runtime/](../../requirements/), and
 > [user-stories/core-runtime/](../../user-stories/). The table below traces design elements to those
 > definitions.
+>
+> **Cross-references for shared concepts:**
+>
+> - Plugins that register graph-producing systems (logic graphs, material graphs, animation state
+>   machines, behavior trees, timelines) depend on the shared graph runtime in
+>   [graph-runtime.md](graph-runtime.md). Those plugins contribute nodes, edges, and codegen
+>   backends to the `GraphRuntime<N, E>` defined there; they do not reimplement cycle detection,
+>   topological sort, or hot-reload barriers locally.
+> - Event-dispatch observers registered here (`EventObserverRegistry`) are **distinct** from the
+>   ECS component-lifecycle observers (`ComponentObserverRegistry`) defined in [ecs.md](ecs.md). See
+>   the rename note in the "Event-Dispatch Observers" section.
+> - The hot-reload protocol used by plugin reload is canonically defined in
+>   [hot-reload-protocol.md](hot-reload-protocol.md); this document is a client of that protocol.
 
 ### Events & Messaging (F-1.5, R-1.5)
 
@@ -85,7 +98,7 @@ graph TD
         ER["EventReader&lt;T&gt;"]
         EW["EventWriter&lt;T&gt;"]
         PS["PersistentStream&lt;T&gt;"]
-        OB[ObserverRegistry]
+        OB[EventObserverRegistry]
         CB[CommandBuffer]
         BR["EventBridge"]
     end
@@ -139,7 +152,7 @@ harmonius_core/
 │   ├── writer.rs        # EventWriter<T> system param
 │   ├── stream.rs        # PersistentStream<T>,
 │   │                    # StreamCursor<T>
-│   ├── observer.rs      # ObserverRegistry,
+│   ├── observer.rs      # EventObserverRegistry,
 │   │                    # ObserverDescriptor
 │   ├── reactive.rs      # ReactiveQuery, archetype
 │   │                    # change subscription
@@ -196,7 +209,7 @@ sequenceDiagram
     participant S as Parallel Systems
     participant CB as Command Buffers
     participant SC as Scheduler (Sync Point)
-    participant OR as ObserverRegistry
+    participant OR as EventObserverRegistry
     participant W as World
 
     S->>CB: record: insert Transform
@@ -383,7 +396,7 @@ classDiagram
         +unread_count() u32
     }
 
-    class ObserverRegistry {
+    class EventObserverRegistry {
         -observers HashMap
         +register(query, callback)
         +notify(event_type, world)
@@ -400,11 +413,37 @@ classDiagram
     EventChannel --> EventWriter
     EventChannel --> EventReader
     PersistentStream --> StreamCursor
-    ObserverRegistry --> EventChannel : monitors
+    EventObserverRegistry --> EventChannel : monitors
     EventBridge --> EventChannel : routes
 ```
 
 ## API Design
+
+### Selection Guide: `EventChannel<T>` vs `PersistentStream<T>`
+
+The events subsystem offers two delivery primitives. Pick the right one per event type up front;
+switching later means rewriting every reader and every writer.
+
+| Primitive             | When to use                                         | Retention                      |
+|-----------------------|-----------------------------------------------------|--------------------------------|
+| `EventChannel<T>`     | Frame-local events consumed by a few systems       | One frame (double-buffered)    |
+| `PersistentStream<T>` | Audit trail or variable-rate consumers (per cursor)| Ring buffer until overwritten  |
+
+1. **Use `EventChannel<T>` (double-buffered)** when every consumer reads the events in the same
+   frame they were produced, the producer set is small (usually one), and no cursor tracking is
+   needed. Examples: `DamageEvent`, `InputActionEvent`, `UiClickEvent`. Readers drain the front
+   buffer once per frame; unread events are discarded at the next frame boundary.
+2. **Use `PersistentStream<T>` (ring buffer with cursors)** when at least one consumer runs at a
+   different rate than the producer (e.g., a 10 Hz AI system reading 60 Hz perception events), or
+   when the event stream is an **audit trail** that replay/telemetry/save needs later. Each reader
+   owns an independent `StreamCursor<T>` and can lag arbitrarily far behind, subject to the
+   ring-buffer capacity. A cursor that falls behind the ring returns `has_overflowed == true`.
+
+> **Event channel contention:** scheduler dependency analysis guarantees
+> **at most one `EventWriter<T>` per frame for any event type `T`**. Registering two systems that
+> both declare `EventWriter<T>` is a **compile-time error** produced by the schedule build step.
+> Multiple `EventReader<T>` instances are unconstrained — readers never contend with each other or
+> with the single writer because the front buffer is immutable for the duration of a frame.
 
 ### Event Channel (F-1.5.1, R-1.5.1)
 
@@ -616,11 +655,27 @@ impl StreamConfig {
 }
 ```
 
-### Component Lifecycle Observers (F-1.5.3, R-1.5.3)
+### Event-Dispatch Observers (F-1.5.3, R-1.5.3)
 
-Observers fire at sync points during command buffer application. They differ from component hooks
-(F-1.1.9) in that observers match multi-term queries and are deferred, making them safe for
-structural changes.
+> **Rename note (disambiguation):** This registry is now `EventEventObserverRegistry`. It dispatches
+> observers at **event-boundary** sync points on behalf of the events subsystem — observers that
+> fire when a `ComponentEvent` is emitted through the event channel, observers that route
+> cross-world events via `EventBridge`, and observers registered via the plugin API. It is
+> **distinct** from the `ComponentEventObserverRegistry` defined in [ecs.md](ecs.md), which runs
+> inside `CommandBuffer::flush` on the raw archetype-level add/remove events.
+>
+> Both registries can sit in the same `World`; they exist because they answer different questions:
+>
+> - `ComponentEventObserverRegistry` (ecs.md): "a component was written to the world — who fires?"
+> - `EventEventObserverRegistry` (events-plugins.md): "an `EventChannel<ComponentEvent>` payload
+>   reached the dispatch boundary — who fires?"
+>
+> Existing subsystems that said "`EventObserverRegistry`" without qualification meant the event-
+> dispatch variant when they were reading the events subsystem API and the component-lifecycle
+> variant when they were reading the ECS core API.
+
+Observers fire at sync points during event dispatch. They differ from component hooks (F-1.1.9) in
+that observers match multi-term queries and are deferred, making them safe for structural changes.
 
 ```rust
 /// Canonical component lifecycle event enum.
@@ -652,13 +707,18 @@ pub struct ObserverDescriptor {
     pub priority: i32,
 }
 
-/// Registry of all active observers. Owned by the
-/// World.
-pub struct ObserverRegistry {
-    /// Map from component TypeId to observers
-    /// watching that component.
+/// Registry of all active event-dispatch observers.
+/// Owned by the World. Distinct from
+/// `ComponentObserverRegistry` in ecs.md — see the
+/// rename note at the top of this section.
+pub struct EventObserverRegistry {
+    /// Sorted map from ComponentTypeId to the
+    /// observers watching that component. A sorted
+    /// `Vec<(ComponentTypeId, Vec<_>)>` is used
+    /// instead of a `HashMap` per constraints.md
+    /// (no HashMap on hot paths).
     observers:
-        HashMap<TypeId, Vec<ObserverEntry>>,
+        Vec<(ComponentTypeId, Vec<ObserverEntry>)>,
 }
 
 struct ObserverEntry {
@@ -686,7 +746,7 @@ pub trait ObserverCallback: Send + 'static {
     );
 }
 
-impl ObserverRegistry {
+impl EventObserverRegistry {
     pub fn new() -> Self;
 
     /// Register an observer. Returns an ID for

@@ -848,10 +848,24 @@ pub enum LodTier {
 /// Global particle budget manager. Caps total
 /// alive particles and allocates per-emitter
 /// budgets based on priority and LOD tier.
+///
+/// Backed by `BudgetAllocator` from
+/// [core-runtime/primitives.md](../core-runtime/primitives.md).
+/// The canonical primitive owns the ceiling /
+/// used / available bookkeeping; this manager
+/// layers per-emitter priority and LOD routing
+/// on top of it. `DestructionBudgetManager` in
+/// [physics/advanced.md](../physics/advanced.md)
+/// is the aggregate cap across destruction,
+/// debris, and VFX — when present, the particle
+/// pool reserves its slots through the
+/// aggregate `BudgetAllocator`.
 pub struct ParticleBudgetManager {
-    /// Platform-specific global maximum.
-    global_max: u32,
-    /// Per-emitter budget allocations.
+    /// Platform-specific global maximum. Backed
+    /// by a shared BudgetAllocator.
+    allocator: BudgetAllocator,
+    /// Per-emitter budget allocations (priority,
+    /// LOD tier, granted slots).
     allocations: Vec<BudgetAllocation>,
     /// Current total alive particle count.
     total_alive: u32,
@@ -876,7 +890,9 @@ impl ParticleBudgetManager {
             PlatformTier::Desktop => 500_000,
         };
         Self {
-            global_max,
+            allocator: BudgetAllocator::new(
+                global_max as usize,
+            ),
             allocations: Vec::new(),
             total_alive: 0,
         }
@@ -893,9 +909,13 @@ impl ParticleBudgetManager {
         requested: u32,
     ) -> u32 {
         let remaining =
-            self.global_max
-                .saturating_sub(self.total_alive);
+            self.allocator.available() as u32;
         let granted = requested.min(remaining);
+        if granted > 0 {
+            // Reserve from the core BudgetAllocator.
+            self.allocator
+                .reserve(granted as usize);
+        }
         self.allocations.push(BudgetAllocation {
             entity,
             priority,
@@ -917,6 +937,10 @@ impl ParticleBudgetManager {
             let alloc =
                 self.allocations.swap_remove(idx);
             self.total_alive -= alloc.alive;
+            // Release back to the shared
+            // BudgetAllocator.
+            self.allocator
+                .release(alloc.allocated as usize);
         }
     }
 
@@ -935,8 +959,12 @@ impl ParticleBudgetManager {
         self.total_alive
     }
 
+    /// Returns the aggregate ceiling cached by
+    /// the inner BudgetAllocator. Equal to
+    /// `allocator.ceiling()` for the platform.
     pub fn global_max(&self) -> u32 {
-        self.global_max
+        (self.allocator.available() as u32)
+            + self.total_alive
     }
 }
 
@@ -1234,6 +1262,77 @@ pub struct WarmUpConfig {
     pub time_step: f32,
 }
 ```
+
+### Sort / Cull Compute Interface
+
+GPU particle sort, cull, and indirect-arg build are expressed as shared compute dispatch shapes that
+integrate with the render pipeline. The render graph in
+[rendering/render-pipeline.md](../rendering/render-pipeline.md) schedules these dispatches alongside
+the other GPU-driven passes (meshlet culling, light culling, shadow prep). Each dispatch is a struct
+describing the inputs, outputs, and extraction function rather than a bare function call so the
+render graph can track barriers, buffer reuse, and timing per pass.
+
+```rust
+/// Describes one radix-sort dispatch for a list
+/// of particle indices. `key_extract_fn` is a
+/// compile-time-known HLSL function name that
+/// extracts a u32 sort key from a particle
+/// record (typically view-space depth quantized
+/// to u32). The render graph compiles this into
+/// compute passes against the shared GPU scratch
+/// allocator.
+pub struct RadixSortDispatch {
+    /// Input buffer holding particle indices.
+    pub input_buffer: BufferHandle,
+    /// Output buffer holding sorted indices.
+    pub output_buffer: BufferHandle,
+    /// Input count (live particles only).
+    pub count_buffer: BufferHandle,
+    /// HLSL function name that extracts a u32
+    /// key from a particle record.
+    pub key_extract_fn: &'static str,
+    /// Max key width in bits. 32 for depth keys,
+    /// 16 for age keys.
+    pub key_bits: u8,
+}
+
+/// Describes an indirect-args build dispatch
+/// that converts a live-particle count into
+/// `DispatchIndirect` arguments for the render
+/// pass. Shape is a fixed record; only the
+/// input count buffer and output args buffer
+/// vary per emitter.
+pub struct BuildIndirectArgsDispatch {
+    /// Input buffer holding the live count.
+    pub count_buffer: BufferHandle,
+    /// Output buffer holding DispatchIndirect
+    /// args (`group_count_x/y/z`, `vertex_count`,
+    /// `instance_count`).
+    pub args_buffer: BufferHandle,
+    /// Thread group width for the render pass.
+    /// Used to convert count -> group_count_x.
+    pub group_width: u32,
+    /// Whether to emit vertex or mesh shader
+    /// indirect args.
+    pub mode: IndirectArgsMode,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IndirectArgsMode {
+    /// Traditional vertex + instance dispatch.
+    VertexShader,
+    /// Mesh shader DispatchMesh args.
+    MeshShader,
+    /// Pure compute dispatch (no raster).
+    Compute,
+}
+```
+
+Both dispatch types are submitted through the render pipeline's GPU dispatch interface defined in
+[rendering/render-pipeline.md](../rendering/render-pipeline.md); the particle subsystem does not
+bind command buffers directly. This keeps barrier analysis and resource tracking in one place and
+lets the renderer reorder or merge passes across subsystems (particles, decals, VFX, meshlet cull)
+when the timing makes sense.
 
 ### GPU Radix Sort
 

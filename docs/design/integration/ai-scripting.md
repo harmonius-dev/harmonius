@@ -1,5 +1,8 @@
 # AI Behavior ↔ Scripting Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -112,18 +115,10 @@ AI behavior uses `Blackboard` as the per-agent knowledge store. Codegen'd graph 
 
 #### Blackboard hot-path constraint
 
-`Blackboard` is read on every AI tick and is therefore a **hot path**. Per project feedback, hot
-paths MUST NOT use `HashMap`. The AI behavior design's current `BlackboardScope` uses
-`HashMap<BlackboardKey, BlackboardValue>`, which violates this constraint and is tracked as a
-follow-up in the behavior design. Until that migration lands, this integration defines the canonical
-fast path as follows:
-
-- `BlackboardBridge` resolves all lookups through the slot-indexed `VariableStore`, which is a dense
-  `Vec` keyed by `u32`.
-- The sync pass walks a fixed `SmallVec<[(BlackboardKey, u32); 8]>` mapping, never the `HashMap`, so
-  graph-driven AI ticks bypass the map entirely.
-- The eventual behavior-side fix is to replace `BlackboardScope::entries` with a fixed-slot array
-  indexed by `BlackboardKey(u32)`. At that point the bridge implementation is unchanged.
+Blackboard backing store follows SC-2 and SC-3 in [shared-conventions.md](shared-conventions.md).
+`BlackboardBridge` resolves all lookups through a slot-indexed `VariableStore` (`Vec` keyed by
+`u32`) and the sync pass walks a fixed `SmallVec<[(BlackboardKey, u32); 8]>` mapping, so
+graph-driven AI ticks never touch the blackboard's own store.
 
 ### LeafNodeRegistry bypass (direct dispatch)
 
@@ -255,14 +250,13 @@ pub fn step_to_status(result: StepResult) -> NodeStatus;
    per-system copy.
 2. **`Res<UtilityScoreTable>`** -- pure score functions; a parallel resource to `FnPtrTable` because
    the two aliases have different borrow requirements.
-3. **`Arc<FnPtrTable>`** -- allowed because the table is immutable once loaded from the `.dylib`;
-   this satisfies the "Arc only for immutable shared data" constraint.
+3. **`Arc<FnPtrTable>`** -- allowed per SC-1 in [shared-conventions.md](shared-conventions.md); the
+   table is immutable once loaded from the `.dylib`.
 
-`Arc` is permitted here because the contents are immutable for the lifetime of a loaded `.dylib`
-version. Hot reload constructs a new `FnPtrTable` and swaps the `Res` at a phase boundary; it never
-mutates the existing one. This matches the "Arc only for immutable shared data" constraint. The
-three AI systems (`bt_tick_system`, `utility_tick_system`, `goap_tick_system`) each obtain the
-resource via `Res<FnPtrTable>` and dispatch independently; there is no per-system table.
+Hot reload constructs a new `FnPtrTable` and swaps the `Res` at a phase boundary; it never mutates
+the existing one. The three AI systems (`bt_tick_system`, `utility_tick_system`, `goap_tick_system`)
+each obtain the resource via `Res<FnPtrTable>` and dispatch independently; there is no per-system
+table.
 
 ### Class Diagram
 
@@ -493,8 +487,8 @@ coroutine machinery, no stackful fiber, no trampolining, and no `await`.
 ### Channel buffering (if used)
 
 Where the integration publishes events between AI and scripting (e.g. graph → BT "sub-tree finished"
-notifications for deferred logging), we use **MPSC** channels (preferred over SPSC per project
-feedback). Buffer lengths:
+notifications for deferred logging), we use MPSC channels per SC-4 in
+[shared-conventions.md](shared-conventions.md). Buffer lengths:
 
 | Channel | Producers | Consumer | Capacity | Rationale |
 |---------|-----------|----------|---------:|-----------|

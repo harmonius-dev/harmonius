@@ -349,6 +349,48 @@ table generated at codegen time — no runtime string allocation.
 
 ## API Design
 
+### Profiler Marker API
+
+The public user-code instrumentation surface. Logic graphs and user Rust templates call these
+functions to annotate custom scopes in the timeline.
+
+```rust
+/// Begin a user-code profiling scope. Returns an
+/// RAII guard that ends the scope on drop. Name
+/// must be a 'static string to avoid per-frame
+/// allocation; logic graphs pass codegen'd string
+/// constants.
+#[inline(always)]
+pub fn begin_scope(name: &'static str) -> ScopeGuard;
+
+/// Emit an instantaneous timeline event (no
+/// duration). Used for "interesting moments" such
+/// as a level-up, weapon fire, or save trigger.
+#[inline(always)]
+pub fn event(name: &'static str);
+
+/// RAII guard returned from `begin_scope`.
+pub struct ScopeGuard { /* ... */ }
+
+impl Drop for ScopeGuard {
+    #[inline(always)]
+    fn drop(&mut self);
+}
+```
+
+Enable/disable toggles integrate with
+[../core-runtime/console-variables.md](../core-runtime/console-variables.md). The following cvars
+control user-marker behaviour at runtime without recompilation:
+
+| Cvar                     | Type | Default | Effect                                  |
+|--------------------------|------|---------|-----------------------------------------|
+| `profiler.user_markers`  | bool | `true`  | Enable/disable all user `begin_scope`.  |
+| `profiler.user_events`   | bool | `true`  | Enable/disable all user `event`.        |
+| `profiler.user_min_us`   | u32  | `0`     | Drop scopes shorter than N microseconds. |
+
+When a toggle is off, `begin_scope` returns a no-op guard and `event` returns immediately, so user
+code pays only an atomic load per call.
+
 ### CPU Instrumentation
 
 ```rust

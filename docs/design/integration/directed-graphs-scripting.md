@@ -1,5 +1,8 @@
 # Directed Graphs ↔ Scripting Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -62,9 +65,9 @@ referenced in this document only to clarify how traversal state feeds the state 
 Scripting design for their full definitions.
 
 IR-2.7.4 defines how `GraphTraversalState.current_node` maps to `GraphStateMachine::current_step`.
-The mapping is one-way: traversal state is read-only input to the state machine, avoiding shared
-mutable state (no `Arc`/`Rc`/`Cell`/`RefCell`). `Arc` is permitted only for immutable shared data
-(compiled `GraphProgram` function tables), never for mutable traversal or step state.
+The mapping is one-way: traversal state is read-only input to the state machine. `Arc` usage
+(compiled `GraphProgram` function tables only) follows SC-1 in
+[shared-conventions.md](shared-conventions.md).
 
 ```rust
 // Imported from harmonius_scripting::compiler
@@ -498,18 +501,10 @@ Resolutions:
     native ARM64/x86_64 (no bytecode, no interpreter, no JIT), and adds a runtime-toggleable
     debug-flags note.
 
-Additional project-wide compliance notes applied in this revision:
+Additional project-wide compliance notes: this design complies with
+[shared-conventions.md](shared-conventions.md) SC-1 (Arc), SC-4 (MPSC), SC-5/SC-12 (rkyv derives),
+SC-9 (errors), and SC-11 (fully enumerated enums). Algorithm references Kahn 1962 (topological sort)
+and Tarjan 1976 (SCC) are inherited from the directed-graphs design. 2D / 2.5D authoring paths are
+intentionally out of scope.
 
-- No async/await anywhere. No coroutines. Synchronous state machine only.
-- All MPSC channel boundaries are documented at the owning design; this integration does not open
-  any new channels.
-- `Arc` only for immutable shared data (compiled function table).
-- All persistent types derive rkyv `Archive`/`Serialize`/`Deserialize`.
-- Enums are fully defined (`StepOutcome`, `GraphError`) with no catch-all variants.
-- Algorithm references: Kahn 1962 (topological sort), Tarjan 1976 (SCC) -- inherited from the
-  directed-graphs design.
-- All fallbacks documented in the Failure Modes section.
-- 2D / 2.5D authoring paths are intentionally out of scope (scope note under Integration
-  Requirements).
-- Negative tests and benchmarks are present in the companion file and runnable in CI.
 - `classDiagram` present and updated.

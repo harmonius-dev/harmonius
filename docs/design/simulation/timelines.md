@@ -67,6 +67,40 @@
 | Animation SM | F-9.4.1 | Animation layers, blend trees |
 | Camera system | F-13.4 | Gameplay camera override |
 
+## Client of Graph Runtime (Track Graphs)
+
+When a timeline's track graph uses DAG semantics — for example when one track's output drives
+another track's input via a dependency edge — the track graph is a **client** of
+[core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md). It parameterizes the shared
+`GraphRuntime<TrackNode, TrackEdge, CompiledTrackGraph>` type for cycle detection, topological sort,
+and codegen. Plain single-track timelines and independent multi-track timelines do not need the
+runtime — they evaluate linearly over keyframes and bypass the shared graph infrastructure entirely.
+
+## GameTime Integration
+
+Harmonius uses a canonical `GameTime` resource defined in
+[core-runtime/change-detection.md](../core-runtime/change-detection.md) (and the future
+`core-runtime/time.md`). `GameTime` has two views of the same clock:
+
+| Field             | Type    | Description                                         |
+|-------------------|---------|-----------------------------------------------------|
+| `tick`            | `u64`   | Fixed-timestep tick counter since start             |
+| `elapsed_secs`    | `f64`   | Floating-point seconds since start                  |
+| `tick_scale`      | `f32`   | Slow-mo / pause multiplier (0.0 = paused)           |
+
+Timelines use `f64` seconds for keyframe times and the `current_time` field of `PlaybackState`
+because keyframe interpolation inherently works in continuous time. However, the conversion between
+the canonical `GameTime::tick` and the `f64` keyframe view is explicit and deterministic:
+
+```text
+elapsed_secs = tick as f64 * FIXED_TIMESTEP_SECS
+```
+
+`FIXED_TIMESTEP_SECS` comes from the game-loop configuration. The advance system reads both `tick`
+and `elapsed_secs` from `GameTime` and applies `tick_scale` when integrating
+`PlaybackState::current_time`. This keeps timelines save-stable (tick is the authoritative save
+value) while preserving the continuous-time API for keyframe authors.
+
 ## Overview
 
 This document defines a generic multi-track timeline sequencer primitive for all time-sequenced
@@ -534,6 +568,40 @@ pub struct TimelineEvent {
     pub entity: Entity,
 }
 ```
+
+## Integration Boundaries
+
+Timelines are **data-driven sequencers**. Gameplay logic responds to `TimelineEvent` via ECS systems
+— never via inline scripting at keyframes. Timelines cannot call into logic graphs, Rust functions,
+or user-defined scripts at the moment a keyframe is crossed. The only output path is
+`TimelineEvent`, pushed onto the ECS event bus and consumed by downstream systems.
+
+**What timelines can do:**
+
+1. Interpolate typed property values across keyframes (camera FOV, audio volume, animation weights,
+   material parameters).
+2. Emit `TimelineEvent::Keyframe` when playback crosses a marker frame so gameplay systems can
+   react.
+3. Emit `TimelineEvent::TrackComplete`, `TimelineComplete`, `LoopPoint` for lifecycle hooks.
+4. Drive multiple tracks in sync via `MultiTrackTimeline`.
+5. Be seeked, paused, reversed, looped, and played back in slow-mo or fast-forward via
+   `PlaybackState`.
+
+**What timelines cannot do:**
+
+1. Call scripting functions (logic graphs, blueprints, Rust closures) at keyframe times.
+2. Spawn or despawn entities directly — this must go through a gameplay system that observes a
+   `TimelineEvent`.
+3. Mutate arbitrary ECS components outside their registered property bindings — timelines only write
+   through codegen'd `apply_<component>_<field>` functions.
+4. Block the caller for side effects — every reaction is asynchronous to the timeline itself via the
+   event bus (message-driven, not function-call-driven).
+
+This keeps timelines composable, serializable, and save-stable: a timeline is a sequence of data,
+not a sequence of code. Games that need custom logic at a keyframe subscribe to `TimelineEvent` from
+an ECS system and dispatch their own work there. This is the same pattern used by the animation
+state machine, audio command bus, and navigation — every boundary between "data" and "behavior"
+crosses an ECS event channel.
 
 ## Codegen Integration
 

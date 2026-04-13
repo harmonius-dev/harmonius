@@ -1148,6 +1148,12 @@ channel:
 
 ### Input System Integration
 
+Windowing is fully synchronous on the main thread. There is no `async`, no `await`, no `Future` —
+the main thread pumps the OS event loop and drains input events every frame. Event drain uses the
+synchronous `EventDrain` pattern defined in [../core-runtime/io.md](../core-runtime/io.md); each
+frame the main thread calls `drain_events` to move queued events into a bounded crossbeam channel
+read by the game loop.
+
 The main thread is the source of raw input events on all platforms. It receives keyboard, mouse,
 touch, and pen events from the same event poller that produces window events, performs DPI
 coordinate conversion (physical to logical), and forwards converted `PointerEvent`s to worker

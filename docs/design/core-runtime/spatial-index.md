@@ -56,30 +56,37 @@ Physics maintains its own BVH (see physics design). GPU compute shaders handle r
 
 ## Overview
 
-The spatial indexing subsystem provides two structures: BVH and Grid. The primary acceleration
-structure is a BVH (Bounding Volume Hierarchy) built with Surface Area Heuristic (SAH), stored as a
-shared ECS resource. The CPU-side BVH is for gameplay queries (AI, AoE, raycasts), NOT for rendering
-culling. GPU compute shaders handle frustum + occlusion culling (Nanite-style). Physics maintains
-its own BVH, separate from this shared one; the physics design owns the physics BVH spec.
-
-A 2D uniform grid provides cell-based spatial partitioning for network relevancy, zone-based
-replication, and interest management.
+The spatial indexing subsystem provides 2D and 3D BVH structures specific to spatial queries (ray,
+AABB, sphere, frustum, k-NN). The primary acceleration structure is a BVH (Bounding Volume
+Hierarchy) built with Surface Area Heuristic (SAH), stored as a shared ECS resource. The CPU-side
+BVH is for gameplay queries (AI, AoE, raycasts), NOT for rendering culling. GPU compute shaders
+handle frustum + occlusion culling (Nanite-style). Physics maintains its own BVH, separate from this
+shared one; the physics design owns the physics BVH spec.
 
 A dedicated ECS system (`SpatialUpdateSystem`) runs once per frame, before any consumer systems. It
 uses change detection on `Transform` components to incrementally refit moved entities, batch-insert
 spawned entities, and remove despawned entities. Full rebuilds happen in the background via a
-double-buffered rebuild task that builds into a shadow buffer and swaps at frame boundary.
+double-buffered rebuild task that builds into a shadow buffer and swaps at the frame boundary.
 
 All queries go through a unified `SpatialQuery` API that accepts query shapes (ray, AABB, sphere,
 frustum, k-NN) and spatial layer masks. Batch queries are parallelized across worker threads via the
 `ThreadPool::scope` API.
 
-In addition to the BVH, the engine provides a generic `UniformGrid<T>` (defined in
-[algorithms.md](algorithms.md)) for density-based and cell-based spatial queries. Domains such as AI
-perception (scent), crowd simulation (density), fog of war, and tactical grids instantiate
-`UniformGrid<T>` with domain-specific cell data. The BVH remains the primary spatial index for
-point, ray, shape, and frustum queries; the uniform grid serves fixed-resolution cell queries that
-do not benefit from hierarchical acceleration.
+> **Phase ordering:** `SpatialUpdateSystem` runs at the **start of Phase 3 (Simulation)**, before
+> any AI, physics, audio, or gameplay system that depends on the shared BVH. This guarantees every
+> downstream system in Phase 3 and every subsequent phase reads a BVH that reflects the current
+> transform snapshot. See [game-loop.md](game-loop.md) for the full phase ordering.
+>
+> **`UniformGrid<T>` relocated.** The network AOI / interest-management uniform grid has moved to
+> [primitives.md](primitives.md). This document retains only the 2D/3D BVH structures specific to
+> spatial queries.
+>
+> **`CellGrid` vs `UniformGrid<T>`.** The gameplay-propagating grid (for influence maps, fog of war,
+> scent trails, NPC memory propagation) is a DIFFERENT type named `CellGrid` and lives in
+> [simulation/grids-volumes.md](../simulation/grids-volumes.md). It is not a spatial index: it is a
+> cell-based propagation scratchpad that the simulation drives per-tick. Do not confuse the two —
+> `UniformGrid<T>` (primitives.md) is a static lookup structure, while `CellGrid` (simulation) is a
+> dynamic propagation structure.
 
 ---
 

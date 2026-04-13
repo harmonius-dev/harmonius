@@ -1,5 +1,18 @@
 # Input ↔ UI Framework Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
+## Overview
+
+Raw input events cross the main thread to worker thread boundary via a bounded MPSC channel
+(capacity 256, see [shared-messaging-capacities.md](shared-messaging-capacities.md) row CH-1).
+Workers running in Phase 2 (PreUpdate) drain the channel into `PointerEvent` / `KeyboardEvent`
+streams and feed the `EventRouter` for hit testing plus the `FocusManager` for focus traversal. The
+UI framework consumes abstract `UiPointerEvent` entity events so input backends (mouse, touch,
+gamepad, VR ray) can swap without touching widget code. Focus, capture/bubble dispatch, context
+stacking, and IME text routing all run on worker threads; only the OS pump touches the main thread.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -128,6 +141,41 @@ pub struct InteractionState {
     pub pressed: bool,
     pub focused: bool,
     pub disabled: bool,
+}
+```
+
+## API Sketch
+
+The UI framework consumes an abstract event stream rather than driving `ActionState` directly. A
+worker-thread system drains the bounded MPSC channel from the main thread and dispatches entity
+events. The full implementation lives in `ui/ui-framework.md`; this integration defines only the
+channel shape and the entry-point system signature.
+
+```rust
+/// Phase 2 (PreUpdate) system that drains the
+/// bounded MPSC pointer channel from the main
+/// thread and dispatches UiPointerEvent /
+/// KeyboardEvent entity events through the
+/// EventRouter + FocusManager. Synchronous; no
+/// async/await. Channel capacity = 256 per
+/// shared-messaging-capacities.md row CH-1.
+pub fn ui_input_dispatch_system(
+    mut rx: ResMut<PointerEventReceiver>,
+    mut router: ResMut<EventRouter>,
+    mut focus: ResMut<FocusManager>,
+    contexts: Res<ContextStack>,
+) {
+    // 1. Drain pointer events via try_recv.
+    // 2. For each event:
+    //      a. Check top MappingContext's
+    //         InputConsumption flags.
+    //      b. If pointer consumed: hit test through
+    //         EventRouter; dispatch Capture ->
+    //         Target -> Bubble phases.
+    //      c. If keyboard consumed: route to focused
+    //         widget; otherwise fall through to
+    //         gameplay.
+    // 3. Update InteractionState on target entities.
 }
 ```
 
@@ -393,13 +441,14 @@ framework design's `event_routing_system` placement in PreUpdate.
 
 ## Failure Modes
 
-| Failure | Impact | Recovery |
-|---------|--------|----------|
-| No focused widget | Key events dropped | Focus first focusable |
-| Hit test misses all widgets | No interaction | Event falls through to game |
-| ContextStack underflow | Pop on empty stack | No-op, log warning |
-| VR laser misses all panels | No UI interaction | Pointer events not sent |
-| IME composition interrupted | Partial text | Commit or cancel composition |
+| ID | Failure | Impact | Recovery |
+|----|---------|--------|----------|
+| FM-1 | No focused widget | Key events dropped | Focus first focusable |
+| FM-2 | Gesture recognition fails | GestureEvent not emitted | Fall back to raw pointer events |
+| FM-3 | Hit test misses all widgets | No interaction | Event falls through to game |
+| FM-4 | ContextStack underflow | Pop on empty stack | No-op, log warning |
+| FM-5 | VR laser misses all panels | No UI interaction | Pointer events not sent |
+| FM-6 | IME composition interrupted | Partial text | Commit or cancel composition |
 
 ## Platform Considerations
 
@@ -413,6 +462,20 @@ framework design's `event_routing_system` placement in PreUpdate.
 
 IME input handling differs per platform (TSF on Windows, InputMethodKit on macOS, IBus/Fcitx on
 Linux). The `TextInput` widget abstracts these differences.
+
+## Performance Budget
+
+UI input dispatch shares the Phase 2 (PreUpdate) budget documented in
+[/docs/design/performance-budget.md](../performance-budget.md). Per-IR target budgets are:
+
+| Metric | Target | IR |
+|--------|--------|----|
+| Hit test 500 widgets | < 0.2 ms | IR-4.2.1 |
+| Capture/bubble dispatch depth 20 | < 0.05 ms | IR-4.2.1 |
+| Focus traversal 100 widgets | < 0.05 ms | IR-4.2.2 |
+| Pinch gesture apply to ScrollView | < 0.02 ms | IR-4.2.4 |
+| Consumption check across 16 contexts | < 0.01 ms | IR-4.2.5 |
+| VR ray vs 10 world panels | < 0.1 ms | IR-4.2.6 |
 
 ## Test Plan
 

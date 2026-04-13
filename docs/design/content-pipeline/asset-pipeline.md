@@ -88,12 +88,12 @@
 
 | Dependency | Source | Consumed API |
 |------------|--------|--------------|
-| Tokio | F-14.3.5 | `tokio::fs`, `tokio::io` |
+| Platform I/O | F-14.3.5 | `io_uring` / IOCP / GCD `dispatch_io` |
 | ThreadPool | F-14.3.1 | `spawn`, `scope` |
 | FileWatcher | F-14.6.5 | `FileWatcher`, `FileEventStream` |
 | ContentHasher | F-14.6.6 | `ContentHasher`, `Blake3Hash` |
 | ECS | F-1.1.1 | Component storage for asset handles |
-| Reflection | F-1.3.1 | `Reflect` derive for all configs |
+| Codegen | F-15.8.1 | Codegen'd type descriptors in middleman `.dylib` |
 
 ## Overview
 
@@ -107,8 +107,16 @@ interchange formats:
 - **Audio** -- WAV, FLAC
 
 All imported content flows through: source detection, format decoding, validation, BLAKE3 hashing,
-CAS storage, and metadata registration. The system uses Tokio for all async file I/O and
-parallelizes batch imports across `ThreadPool`.
+CAS storage, and metadata registration.
+
+**Async scope.** Game-side paths (asset handles, residency manager, hot reload swap, and every API
+the engine or editor calls at runtime) are fully synchronous: no `async`, no `await`, no `Future`.
+Asset-import CLI tools (`harmonius-import`, `harmonius-cook`) run as separate processes and *may*
+use a Rust async runtime internally, but they never link against the engine process. Runtime batch
+imports parallelize across the custom job system via `scope()` / `par_iter`, submitting file I/O to
+the main thread through crossbeam-channel and reading completions at frame boundaries. Hot-reload
+schema migration follows
+[../core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md).
 
 Key design goals:
 
@@ -164,7 +172,7 @@ graph TD
     end
 
     subgraph harmonius_platform
-        TK[Tokio Runtime]
+        IOB[IoBridge]
         TP[ThreadPool]
         FW[FileWatcher]
     end
@@ -290,7 +298,7 @@ sequenceDiagram
     participant RT as Runtime
 
     FS->>FW: File change notification
-    FW->>AW: FileEvent async stream
+    FW->>AW: FileEvent queue (drained per frame)
     AW->>CD: Batch of FileEvents
     CD->>CD: BLAKE3 hash comparison
     CD->>CD: Resolve dependents
@@ -370,24 +378,23 @@ classDiagram
         -cas ContentAddressableStore
         -metadata MetadataStore
         -cache ImportCache
-        +import_file(path, settings) Future
+        +import_file(path, settings) RequestId
         +batch_import(entries) BatchImportHandle
-        +reimport(id) Future
-        +invalidate(changed) Future
+        +reimport(id) RequestId
+        +invalidate(changed) Result
     }
     class ContentAddressableStore {
         -root_path PathBuf
-        -runtime TokioRuntime
-        +store(hash, data) Future
-        +load(hash) Future
-        +exists(hash) Future
-        +gc(referenced) Future
+        +store(hash, data) RequestId
+        +load(hash) RequestId
+        +exists(hash) bool
+        +gc(referenced) Result
     }
     class MetadataStore {
-        -entries AsyncRwLock
-        +get(id) Future
-        +put(id, meta) Future
-        +query(filter) Future
+        -entries SortedVecMap
+        +get(id) Option~AssetMetadata~
+        +put(id, meta) Result
+        +query(filter) Vec~AssetMetadata~
         +transaction() MetadataTransaction
     }
     class DependencyGraph {
@@ -399,14 +406,14 @@ classDiagram
         +topological_order() Result
     }
     class ImportCache {
-        +lookup(key) Future
-        +insert(key, entry) Future
-        +invalidate(key) Future
+        +lookup(key) Option~CacheEntry~
+        +insert(key, entry) Result
+        +invalidate(key) Result
     }
     class Importer {
         <<trait>>
         +extensions() Vec~str~
-        +import(source, settings) Future
+        +import(source, settings) Result
     }
 
     ImportCoordinator --> ContentAddressableStore
@@ -426,19 +433,19 @@ classDiagram
     class AssetWatcher {
         -file_watcher FileWatcher
         -hasher ContentHasher
-        +start(config, db) Future
-        +poll_changes() Future
+        +start(config, db) Result
+        +poll_changes() Vec~FileEvent~
         +stop()
     }
     class ChangeDetector {
         -asset_db AssetDatabase
-        +detect(changes) Future
+        +detect(changes) Vec~ReloadTask~
         +resolve_dependents(id) Vec~AssetId~
     }
     class ReloadCoordinator {
         -importer AssetImporter
         -swap_scheduler SwapScheduler
-        +submit(requests) Future
+        +submit(requests) Vec~RequestId~
         +poll_completed() Vec~ReloadTask~
     }
     class SwapScheduler {
@@ -510,7 +517,7 @@ classDiagram
         -asset_type_id u64
         +add_section(name, type, data, comp) Self
         +build() Result
-        +write_to(path) Future
+        +write_to(path) RequestId
     }
     class StructuralDiff {
         +diff(old, new, type_id) DiffResult
@@ -553,9 +560,12 @@ pub struct ContentHash {
 
 impl ContentHash {
     pub fn from_data(data: &[u8]) -> Self;
-    pub async fn from_reader(
-        reader: &mut AsyncReader,
-    ) -> Result<Self, IoError>;
+    /// Submit a hash request over a file and return
+    /// an id. Poll via `IoBridge::take_result`.
+    pub fn from_file(
+        path: &CanonicalPath,
+        bridge: &mut IoBridge,
+    ) -> Result<IoRequestId, IoError>;
     pub fn hex(&self) -> String;
     pub fn prefix(&self) -> [u8; 2];
 }
@@ -636,28 +646,31 @@ pub struct ContentAddressableStore {
 impl ContentAddressableStore {
     pub fn new(root_path: PathBuf) -> Self;
 
-    /// Store blob if absent. Returns Written or
-    /// Deduplicated.
-    pub async fn store(
-        &self,
+    /// Submit a store request; returns an id.
+    /// Completion arrives via IoBridge at a later
+    /// frame boundary.
+    pub fn store(
+        &mut self,
         hash: ContentHash,
         data: &[u8],
-    ) -> Result<StoreResult, CasError>;
+        bridge: &mut IoBridge,
+    ) -> IoRequestId;
 
-    pub async fn load(
-        &self,
+    pub fn load(
+        &mut self,
         hash: ContentHash,
-    ) -> Result<Option<Vec<u8>>, CasError>;
+        bridge: &mut IoBridge,
+    ) -> IoRequestId;
 
-    pub async fn exists(
-        &self,
-        hash: ContentHash,
-    ) -> Result<bool, CasError>;
+    /// Synchronous existence check against the
+    /// in-memory manifest (no I/O).
+    pub fn exists(&self, hash: ContentHash) -> bool;
 
-    pub async fn gc(
-        &self,
+    pub fn gc(
+        &mut self,
         referenced: &HashSet<ContentHash>,
-    ) -> Result<GcStats, CasError>;
+        bridge: &mut IoBridge,
+    ) -> IoRequestId;
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
@@ -670,36 +683,44 @@ pub enum StoreResult {
 ### Metadata Store
 
 ```rust
+/// Synchronous metadata store. Reads/writes hit
+/// an in-memory SortedVecMap; durability is a
+/// journal file written by the IoBridge.
 pub struct MetadataStore {
-    entries: AsyncRwLock<HashMap<AssetId, AssetMetadata>>,
+    entries: SortedVecMap<AssetId, AssetMetadata>,
     journal_path: PathBuf,
+    dirty: bool,
 }
 
 impl MetadataStore {
-    pub async fn open(
+    pub fn open(
         db_path: PathBuf,
+        bridge: &mut IoBridge,
     ) -> Result<Self, MetadataError>;
-    pub async fn get(
+    pub fn get(
         &self,
         id: AssetId,
-    ) -> Option<AssetMetadata>;
-    pub async fn put(
-        &self,
+    ) -> Option<&AssetMetadata>;
+    pub fn put(
+        &mut self,
         id: AssetId,
         metadata: AssetMetadata,
     );
-    pub async fn remove(&self, id: AssetId) -> bool;
-    pub async fn query(
+    pub fn remove(&mut self, id: AssetId) -> bool;
+    pub fn query(
         &self,
         filter: &SearchFilter,
     ) -> Vec<AssetId>;
     /// Begin atomic transaction. Drop = rollback.
     pub fn transaction(
-        &self,
+        &mut self,
     ) -> MetadataTransaction;
-    pub async fn flush(
-        &self,
-    ) -> Result<(), MetadataError>;
+    /// Submit a journal flush; completion via
+    /// IoBridge at a later frame boundary.
+    pub fn flush(
+        &mut self,
+        bridge: &mut IoBridge,
+    ) -> IoRequestId;
 }
 ```
 
@@ -709,7 +730,9 @@ impl MetadataStore {
 pub trait Importer: Send + Sync {
     fn extensions(&self) -> &[&str];
     fn asset_types(&self) -> &[AssetType];
-    async fn import(
+    /// Synchronous import. Long-running importers run
+    /// on the worker pool via `ImportCoordinator::submit`.
+    fn import(
         &self,
         source: &SourceFile,
         settings: &ImportSettings,
@@ -720,30 +743,40 @@ pub struct ImportCoordinator {
     registry: ImporterRegistry,
     cas: ContentAddressableStore,
     metadata: MetadataStore,
-    dep_graph: AsyncRwLock<DependencyGraph>,
+    dep_graph: DependencyGraph,
     cache: ImportCache,
     pool: ThreadPool,
     version_store: VersionStore,
 }
 
 impl ImportCoordinator {
-    pub async fn import_file(
-        &self,
+    /// Queue a single-file import on the worker pool.
+    /// Returns an id; poll via `take_result`.
+    pub fn import_file(
+        &mut self,
         path: PathBuf,
         settings: ImportSettings,
-    ) -> Result<ImportResult, ImportError>;
-    pub async fn batch_import(
-        &self,
+    ) -> ImportRequestId;
+    /// Queue a batch of imports. Returns a handle
+    /// that reports per-entry completion.
+    pub fn batch_import(
+        &mut self,
         entries: Vec<ImportEntry>,
     ) -> BatchImportHandle;
-    pub async fn reimport(
-        &self,
+    pub fn reimport(
+        &mut self,
         id: AssetId,
-    ) -> Result<ImportResult, ImportError>;
-    pub async fn invalidate(
-        &self,
+    ) -> ImportRequestId;
+    pub fn invalidate(
+        &mut self,
         changed: &[AssetId],
     ) -> Vec<AssetId>;
+    /// Drain completed import jobs at the start of
+    /// a frame. Called from the main thread.
+    pub fn take_result(
+        &mut self,
+        id: ImportRequestId,
+    ) -> Option<Result<ImportResult, ImportError>>;
 }
 ```
 
@@ -761,11 +794,13 @@ pub struct AssetWatcherConfig {
 pub struct AssetWatcher { /* ... */ }
 
 impl AssetWatcher {
-    pub async fn start(
+    pub fn start(
         config: AssetWatcherConfig,
         asset_db: &AssetDatabase,
     ) -> Result<Self, HotReloadError>;
-    pub async fn poll_changes(
+    /// Called each frame on the main thread.
+    /// Drains pending OS file events.
+    pub fn poll_changes(
         &mut self,
     ) -> Vec<AssetChange>;
     pub fn stop(&mut self);
@@ -793,7 +828,7 @@ pub struct ReloadRequest {
 pub struct ChangeDetector { /* ... */ }
 
 impl ChangeDetector {
-    pub async fn detect(
+    pub fn detect(
         &mut self,
         changes: &[AssetChange],
     ) -> Vec<ReloadRequest>;
@@ -918,10 +953,14 @@ impl AssetWriter {
     pub fn build(
         self,
     ) -> Result<Vec<u8>, AssetError>;
-    pub async fn write_to(
+    /// Submit the built bytes for write via the
+    /// IoBridge. Returns an id; completion is polled
+    /// from `IoBridge::take_result`.
+    pub fn write_to(
         self,
         path: &std::path::Path,
-    ) -> Result<u64, IoError>;
+        bridge: &mut IoBridge,
+    ) -> IoRequestId;
 }
 ```
 
@@ -1054,14 +1093,72 @@ pub enum HotReloadError {
 ### Single File Import Lifecycle
 
 1. Detect format from file extension
-2. Async read source file via Tokio
+2. Submit source-file read via `IoBridge` and wait one frame for completion (sync call)
 3. Check import cache (BLAKE3(source + settings + version))
-4. On cache miss: run format-specific importer
+4. On cache miss: run format-specific importer on worker pool via `scope()`
 5. BLAKE3 hash artifact, store in CAS (deduplicates)
 6. Register metadata in `MetadataStore`
 7. Update `DependencyGraph` edges
 8. Record `VersionEntry` for history
 9. Insert cache entry for future hits
+
+### Asset Dependency Graph Invalidation
+
+When a source file changes, cascading invalidation walks the reverse dependency graph. Every
+dependent asset is marked dirty and queued for reprocessing even if it was not touched directly.
+
+```mermaid
+flowchart TD
+    S[source.png modified] --> H[recompute BLAKE3]
+    H --> C{hash == cached?}
+    C -->|yes| D1[no-op]
+    C -->|no| U[update CAS entry]
+    U --> M[invalidate MetadataStore]
+    M --> DG[walk DependencyGraph reverse edges]
+    DG --> L[build ordered dirty list]
+    L --> R[reprocess each dependent]
+    R --> UD[update dependents]
+    UD --> DG2{any new dependents?}
+    DG2 -->|yes| DG
+    DG2 -->|no| F[fire ReloadRequest per asset]
+```
+
+```rust
+/// Cascade dependency invalidation. Pure function:
+/// given a root set of changed assets and the
+/// reverse edges of the dependency graph, returns
+/// the fully closed transitive set in topological
+/// order, ready to hand to the reload coordinator.
+///
+/// Runs on the main thread; caller already owns
+/// &mut MetadataStore and &DependencyGraph.
+pub fn cascade_invalidation(
+    roots: &[AssetId],
+    graph: &DependencyGraph,
+) -> Vec<AssetId> {
+    let mut visited = HashSet::new();
+    let mut order = Vec::new();
+    let mut stack: Vec<AssetId> = roots.iter().copied().collect();
+    while let Some(id) = stack.pop() {
+        if !visited.insert(id) {
+            continue;
+        }
+        order.push(id);
+        for &dependent in graph.dependents_of(id) {
+            if !visited.contains(&dependent) {
+                stack.push(dependent);
+            }
+        }
+    }
+    // Topologically sort the dirty subset so
+    // downstream assets reprocess after upstream.
+    graph.topological_sort(&mut order);
+    order
+}
+```
+
+The coordinator then submits each dirty asset's reprocessing as a worker job. Hot-reload swap
+follows [../core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md).
 
 ### Batch Import with Cancellation
 

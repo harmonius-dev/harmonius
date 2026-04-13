@@ -1,5 +1,13 @@
 # Directed Graph Primitives Design
 
+> **Client of `core-runtime/graph-runtime.md`.** This document parameterizes the shared
+> `GraphRuntime<N, E, TraversalState>` framework with data-systems-specific node, edge, and
+> traversal semantics. Validation, topological sort, cycle detection, and codegen are provided by
+> [../core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md). This doc owns only the
+> data-systems layer on top of that framework: traversal state, condition guards, node ordering, and
+> gameplay composition hooks. Stable node IDs referenced here are defined in
+> [../core-runtime/ids.md](../core-runtime/ids.md).
+
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
@@ -49,16 +57,19 @@
 
 ### Cross-Cutting Dependencies
 
-| Dependency        | Source  | Consumed API               |
-|-------------------|---------|----------------------------|
-| `Handle<T>`       | F-1.7.4 | Generational index         |
-| `HandleMap<T>`    | F-1.7.5 | Dense gen-validated store  |
-| `ConditionExpr`   | shared  | Boolean expression tree    |
-| `ConditionContext` | shared  | Runtime evaluation context |
-| Serialization     | F-1.4.1 | rkyv binary codec          |
-| ECS World         | F-1.1.1 | `Entity`, `Query`          |
-| Event channels    | F-1.5.1 | `EventWriter<T>`           |
-| Asset system      | F-12.1  | `AssetId`, asset loading   |
+| Dependency         | Source   | Consumed API                |
+|--------------------|----------|-----------------------------|
+| `GraphRuntime<N,E>`| F-1.15.1 | Validation, topo sort, gen  |
+| `Handle<T>`        | F-1.7.4  | Generational index          |
+| `HandleMap<T>`     | F-1.7.5  | Dense gen-validated store   |
+| `ConditionExpr`    | shared   | Boolean expression tree     |
+| `ConditionContext` | shared   | Runtime evaluation context  |
+| `ConditionRegistry`| shared   | Single global fn pointer tab|
+| `NodeId` stability | F-1.10.1 | `core-runtime/ids.md`       |
+| Serialization      | F-1.4.1  | rkyv binary codec           |
+| ECS World          | F-1.1.1  | `Entity`, `Query`           |
+| Event channels     | F-1.5.1  | `EventWriter<T>`            |
+| Asset system       | F-12.1   | `AssetId`, asset loading    |
 
 ---
 
@@ -110,8 +121,9 @@ classDiagram
     CondEdge *-- ConditionExpr
     OrderedGraph *-- DirectedGraph
     OrderedGraph o-- NodeId
-    GraphTraversalState o-- NodeStatus
+    GraphTraversalState o-- S : S is user-supplied status
     GraphTraversalState --> NodeId
+    QuestNodeStatus ..> S : example status enum
 
     class NodeId {
         +u32 index
@@ -165,22 +177,22 @@ classDiagram
         +inner() DirectedGraph
     }
 
-    class GraphTraversalState {
+    class GraphTraversalState~S~ {
         +AssetId graph_id
-        +HandleMap node_states
+        +HandleMap~S~ node_states
         +Option current_node
         +u64 started_at
-        +from_graph(graph start tick) Self
-        +transition(NodeId NodeStatus) Result
-        +status(NodeId) Option
-        +is_complete() bool
+        +from_graph(graph start tick initial) Self
+        +transition(NodeId S) Result
+        +status(NodeId) Option~S~
+        +is_complete(is_terminal) bool
     }
 
     class CycleError {
         +Vec cycle_path
     }
 
-    class NodeStatus {
+    class QuestNodeStatus {
         <<enumeration>>
         Locked
         Available
@@ -209,16 +221,23 @@ classDiagram
 ### Module Boundaries
 
 - `harmonius_graph/`
-  - `node.rs` -- `NodeId`, `NodeStatus`
+  - `node.rs` -- `NodeId`, `NodeStateTag` trait
   - `edge.rs` -- `DirectedEdge<E>`, `CondEdge<E>`
   - `graph.rs` -- `DirectedGraph<N, E>`
   - `conditional.rs` -- `ConditionalGraph<N, E>`
   - `ordered.rs` -- `OrderedGraph<N, E>`
-  - `traversal.rs` -- `GraphTraversalState`, transitions
-  - `error.rs` -- `GraphError`, `CycleError`, `TransitionError`
+  - `traversal.rs` -- `GraphTraversalState<S>`, transitions
+  - `error.rs` -- `GraphError`, `CycleError`, `TransitionError<S>`
   - `validate.rs` -- DAG validation, cycle detection
   - `codegen.rs` -- middleman .dylib type registration, monomorphization hooks
   - `lib.rs` -- re-exports, plugin registration
+
+> **Note on `NodeStatus` variants.** The previous `NodeStatus` enum with variants `Locked`,
+> `Available`, `Active`, `Completed`, `Failed`, `Skipped` has been extracted from the generic graph
+> primitive. These variants now live as the default `QuestNodeStatus` enum used by quest-specific
+> graphs. Other game systems (dialogue, abilities, talents) may define their own status enums and
+> plug them into `GraphTraversalState<S>` as the `S` type parameter. See
+> [composition.md](composition.md) for usage recipes.
 
 ---
 
@@ -574,11 +593,41 @@ impl<N, E> OrderedGraph<N, E> {
 
 ### Traversal State
 
+The generic graph primitive does not hard-code any node status vocabulary. Instead, game code
+supplies its own status enum as the `S` type parameter on `GraphTraversalState<S>`. The engine ships
+one canonical status enum — `QuestNodeStatus` — used by quest-specific graphs and the composition
+recipes in [composition.md](composition.md). Dialogue, ability, and talent systems define their own
+status enums.
+
 ```rust
-/// Per-entity mutable state tracking progress through
-/// an immutable graph asset. Stored as an ECS component.
-#[derive(Archive, Serialize, Deserialize, Clone)]
-pub enum NodeStatus {
+/// Trait every user-supplied status enum implements.
+/// Stable ordering and default state are required for
+/// deterministic initialization and rollback. Status
+/// enums must be codegen'd into the middleman .dylib
+/// for rkyv `Archive` support.
+pub trait NodeStateTag:
+    Copy + Clone + Eq + Ord
+    + rkyv::Archive
+    + rkyv::Serialize<rkyv::ser::serializers::AllocSerializer<0>>
+{
+    /// The initial state for unreached nodes (typically
+    /// "Locked" for quests, "Inactive" for abilities).
+    fn initial() -> Self;
+
+    /// The state assigned to the start node by
+    /// `from_graph`. Defaults to `initial()`.
+    fn start() -> Self { Self::initial() }
+
+    /// Returns true when the status represents a
+    /// terminal state (no further transitions allowed).
+    /// Used by `is_complete`.
+    fn is_terminal(self) -> bool;
+}
+
+/// Default status enum for quest-specific graphs.
+/// Other game systems provide their own `S` enums.
+#[derive(Archive, Serialize, Deserialize, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub enum QuestNodeStatus {
     Locked,
     Available,
     Active,
@@ -587,40 +636,57 @@ pub enum NodeStatus {
     Skipped,
 }
 
+impl NodeStateTag for QuestNodeStatus {
+    fn initial() -> Self { Self::Locked }
+    fn start() -> Self { Self::Available }
+    fn is_terminal(self) -> bool {
+        matches!(
+            self,
+            Self::Completed | Self::Failed | Self::Skipped,
+        )
+    }
+}
+
+/// Per-entity mutable state tracking progress through
+/// an immutable graph asset. Stored as an ECS component.
+/// The status type `S` is chosen by the client subsystem
+/// (quest, dialogue, ability, talent, or user-defined).
 #[derive(Archive, Serialize, Deserialize)]
-pub struct GraphTraversalState {
+pub struct GraphTraversalState<S: NodeStateTag> {
     pub graph_id: AssetId,
-    pub node_states: HandleMap<NodeStatus>,
+    pub node_states: HandleMap<S>,
     pub current_node: Option<NodeId>,
     pub started_at: u64,
 }
 
-impl GraphTraversalState {
-    /// Creates initial state from a graph asset.
-    /// Start node is set to Available; all others
-    /// are Locked.
+impl<S: NodeStateTag> GraphTraversalState<S> {
+    /// Creates initial state from a graph asset. Start
+    /// node is set to `S::start()`; all others to
+    /// `S::initial()`.
     pub fn from_graph<N, E>(
         graph: &DirectedGraph<N, E>,
         start: NodeId,
         tick: u64,
     ) -> Self;
 
-    /// Transitions a node to a new status.
-    /// Validates the transition is legal.
+    /// Transitions a node to a new status. Client
+    /// subsystems validate the transition legality
+    /// (the generic primitive does not enforce any
+    /// order between user-defined states).
     pub fn transition(
         &mut self,
         node: NodeId,
-        status: NodeStatus,
-    ) -> Result<(), TransitionError>;
+        status: S,
+    ) -> Result<(), TransitionError<S>>;
 
     /// Returns current status of a node.
     pub fn status(
         &self,
         node: NodeId,
-    ) -> Option<NodeStatus>;
+    ) -> Option<S>;
 
-    /// True when all end nodes are Completed,
-    /// Failed, or Skipped.
+    /// True when all end nodes are in a terminal
+    /// state per `S::is_terminal`.
     pub fn is_complete(&self) -> bool;
 }
 ```
@@ -648,13 +714,16 @@ pub struct CycleError {
     pub cycle_path: Vec<NodeId>,
 }
 
+/// Generic transition error over the user-supplied
+/// status enum `S`. Legal transitions are defined by
+/// each client subsystem, not by the primitive.
 #[derive(Archive, Serialize, Deserialize)]
-pub enum TransitionError {
+pub enum TransitionError<S: NodeStateTag> {
     InvalidNode(NodeId),
     InvalidTransition {
         node: NodeId,
-        from: NodeStatus,
-        to: NodeStatus,
+        from: S,
+        to: S,
     },
     AlreadyComplete,
 }
@@ -677,24 +746,30 @@ flowchart LR
 
 ### Step-by-Step
 
+The worked example below walks through a quest graph parameterized with `QuestNodeStatus`. Dialogue,
+ability, and talent graphs follow the same pipeline with their own status enums.
+
 1. **Author.** Designer creates a graph in the visual editor. Nodes and edges are placed, typed, and
    annotated with conditions via the predicate editor.
 2. **Serialize.** The asset pipeline bakes the graph to an rkyv archive (F-1.4.1). The file can be
    mmap'd at runtime with zero deserialization cost. The graph asset is immutable once baked.
 3. **Load.** At runtime the asset system mmap-loads the rkyv archive into an immutable `Resource`.
    Multiple entities can share a single graph asset.
-4. **Spawn.** When an entity begins traversing a graph, a `GraphTraversalState` component is spawned
-   on that entity. The start node is set to `Available`; all others `Locked`.
+4. **Spawn.** When an entity begins traversing a graph, a `GraphTraversalState<QuestNodeStatus>`
+   component is spawned on that entity. The start node is set to `QuestNodeStatus::Available`; all
+   others to `QuestNodeStatus::Locked` (via `QuestNodeStatus::initial()`).
 5. **Evaluate.** ECS systems run in the `Update` phase. They evaluate conditions on outgoing edges
-   using the `ConditionContext`. When conditions are met, successor nodes transition from `Locked`
-   to `Available`.
+   using the `ConditionContext`. When conditions are met, successor nodes transition from
+   `QuestNodeStatus::Locked` to `QuestNodeStatus::Available`.
 6. **Advance.** Systems transition nodes through the status lifecycle: `Available` -> `Active` ->
-   `Completed`/`Failed`/`Skipped`. Events are emitted on each transition in the same frame and are
-   visible to observer systems in `PostUpdate`.
-7. **Indicators.** When a quest node transitions to `Available`, the quest system spawns gameplay
-   indicator entities (world-space markers, waypoint beams, minimap icons) via
-   `EventWriter<NodeTransitionEvent>`. When the node transitions to `Completed`, the indicators are
-   despawned. `GraphTraversalState` is the authoritative source for indicator visibility.
+   `Completed` / `Failed` / `Skipped`. Events are emitted on each transition in the same frame and
+   are visible to observer systems in `PostUpdate`. Non-quest graphs advance their own
+   `S: NodeStateTag` enums.
+7. **Indicators.** When a quest node transitions to `QuestNodeStatus::Available`, the quest system
+   spawns gameplay indicator entities (world-space markers, waypoint beams, minimap icons) via
+   `EventWriter<NodeTransitionEvent>`. When the node transitions to `QuestNodeStatus::Completed`,
+   the indicators are despawned. `GraphTraversalState<QuestNodeStatus>` is the authoritative source
+   for indicator visibility.
 
 ### Per-Frame ECS Data Flow
 
@@ -752,6 +827,95 @@ where global allocator pressure is more acute.
 
 ---
 
+## Condition Registry Sharing
+
+`ConditionExpr` and `ConditionRegistry` are **shared across all data systems** — directed graphs,
+attributes and effects (see [attributes-effects.md](attributes-effects.md)), and containers and
+slots (see [containers-slots.md](containers-slots.md)) all resolve conditions against the same
+registry. This is a deliberate design choice: conditions authored in the visual editor must be
+reusable across subsystems ("player has item X" should evaluate the same whether it gates a quest
+edge, an effect application, or a container transfer).
+
+### Single Global Registry
+
+The engine owns exactly one `ConditionRegistry` instance, stored as an ECS resource. It is populated
+at startup by codegen'd condition functions loaded from the middleman `.dylib`. Hot reloads of the
+`.dylib` refresh the registry entries in place.
+
+| Rule                          | Rationale                                                     |
+|-------------------------------|---------------------------------------------------------------|
+| One global `ConditionRegistry`| Shared eval across graphs, effects, containers               |
+| Globally unique `ConditionId` | Condition IDs never collide across subsystems                |
+| Codegen'd function pointers   | `fn(&ConditionContext) -> bool`, loaded from middleman .dylib |
+| Read-only at runtime          | No dynamic registration after startup; hot reload replaces   |
+| Deterministic lookup          | `Vec<Option<ConditionCheckFn>>` indexed by `ConditionId(u32)`|
+
+### Condition ID Namespacing
+
+`ConditionId(u32)` is a globally unique identifier across the entire engine. The codegen pipeline
+assigns IDs deterministically from a stable source hash so that two builds of the same project
+produce identical IDs. Cross-subsystem references (a quest edge gated by a condition that also gates
+an effect) share the same `ConditionId`.
+
+---
+
+## Networked Graph Traversal
+
+Networked games replicate graph traversal state across peers. For the replicated state to converge
+deterministically, every peer must evaluate transitions in an identical order. This section
+specifies the canonical traversal rules used by `graph_eval_system` and `graph_advance_system` when
+authoritative traversal runs on the server.
+
+### Canonical Traversal Order
+
+| Rule                                     | Detail                                             |
+|------------------------------------------|----------------------------------------------------|
+| Topological sort                         | Kahn's algorithm (see `graph-runtime.md`)          |
+| Tie-breaker                              | Ascending `NodeId` (stable per graph asset)        |
+| Edge iteration                           | Insertion order (never hash-derived)               |
+| Condition evaluation order               | Outer-to-inner DFS over `ConditionExpr` tree       |
+| `MultiGraph` parallel edges              | Insertion order; ties broken by `EdgeId` ascending |
+
+1. Every frame, the authoritative peer runs Kahn's topological sort with
+   **ascending `NodeId` tie-breaking** when the ready set has multiple candidates.
+2. Within a single node, outgoing edges are evaluated in **insertion order**, matching the order the
+   editor wrote them to the rkyv archive.
+3. `ConditionExpr` trees are evaluated depth-first with **short-circuit semantics** matching Rust
+   `&&` / `||`; short-circuiting is allowed because conditions are pure functions.
+4. `MultiGraph` parallel edges between the same node pair are processed in insertion order; ties
+   broken by ascending `EdgeId`.
+
+### Server-Authoritative Rules
+
+| Rule                                 | Enforcement                                           |
+|--------------------------------------|-------------------------------------------------------|
+| Server owns traversal                | Clients never advance state; they replicate only     |
+| Client prediction                    | Optional, rolled back on authoritative update        |
+| Replication payload                  | `(NodeId, S)` pairs for changed node states          |
+| Conflict resolution                  | Server state always wins                              |
+| `NodeId` stability across network    | `NodeId` is asset-relative and stable by construction |
+
+1. The **server** is the sole writer of `GraphTraversalState<S>`. Clients receive authoritative
+   updates via the replication layer defined in `composition.md`.
+2. Clients may optimistically predict transitions (matching the prediction/rollback model in
+   F-8.2.1) but any divergence from server state rolls back on the next authoritative frame.
+3. Replication sends only **changed** `(NodeId, S)` pairs, sorted by `NodeId` ascending for
+   determinism and delta-compression efficiency.
+4. `NodeId` is **asset-relative**, so the same node has the same `NodeId` on every peer that has
+   loaded the same graph asset. See [../core-runtime/ids.md](../core-runtime/ids.md) for the
+   stability contract.
+
+### Determinism Preconditions
+
+| Precondition                                | Documented in                      |
+|---------------------------------------------|------------------------------------|
+| All iteration uses sorted / indexed storage | This doc (no `HashMap` adjacency)  |
+| Condition functions are pure                | `attributes-effects.md`            |
+| RNG is seeded per graph instance            | `core-runtime/primitives.md`       |
+| Float evaluation uses fixed-precision ops   | `core-runtime/graph-runtime.md`    |
+
+---
+
 ## Test Plan
 
 Full test cases are in the companion file
@@ -766,7 +930,7 @@ Full test cases are in the companion file
 | Reachability      | ~8    | bfs/dfs_pre/dfs_post, BFS/DFS       |
 | Conditional       | ~8    | ConditionExpr evaluation at 1K      |
 | Ordered           | ~10   | Child ordering, tree ops            |
-| State transitions | ~10   | NodeStatus lifecycle                |
+| State transitions | ~10   | `QuestNodeStatus` lifecycle         |
 | Serialization     | ~5    | rkyv archive round-trip, mmap load  |
 | Benchmarks        | ~10   | Multi-scale traversal and loading   |
 
@@ -781,16 +945,16 @@ Full test cases are in the companion file
    returns only nodes reachable through passing edges.
 5. **Conditional reachability** -- build a `ConditionalGraph`, set up a `ConditionContext` where
    some conditions pass and others fail, verify correct reachable set.
-6. **State transitions** -- create a `GraphTraversalState`, transition through the full lifecycle,
-   verify `is_complete` returns true at the end.
+6. **State transitions** -- create a `GraphTraversalState<QuestNodeStatus>`, transition through the
+   full lifecycle, verify `is_complete` returns true at the end.
 7. **Invalid transitions** -- attempt `Locked` -> `Completed` directly, verify
-   `TransitionError::InvalidTransition`.
+   `TransitionError::InvalidTransition` with the correct `from`/`to` payload.
 8. **Benchmark: 1000-node DAG topo sort** -- < 1 ms on a 1K-node DAG.
 9. **Benchmark: 10K-node DAG topo sort** -- < 5 ms on a 10K-node DAG.
 10. **Benchmark: 100K-node DAG topo sort** -- < 50 ms on a 100K-node DAG.
 11. **Benchmark: conditional reachability 1K** -- < 500 µs for `ConditionalGraph` reachability at 1K
     nodes with 50% conditions passing.
-12. **Benchmark: state transitions per frame** -- 10K `NodeStatus` transitions in < 1 ms.
+12. **Benchmark: state transitions per frame** -- 10K `QuestNodeStatus` transitions in < 1 ms.
 13. **Benchmark: rkyv load** -- mmap-load a 10K-node rkyv archive in < 2 ms.
 
 ---

@@ -1,5 +1,8 @@
 # AI ↔ Spatial Awareness Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -30,10 +33,8 @@
    hear it until the next frame when propagation data is available.
 3. **IR-1.10.3** -- `AwarenessState` transitions (Unaware -> Suspicious -> Alert -> Tracking ->
    Lost) are written to `Blackboard` keys. BT condition nodes and GOAP preconditions read these keys
-   to gate behavior changes (e.g., enter combat when awareness reaches Alert). Blackboard is a
-   hot-path structure (written every frame per agent). Its backing store (`BlackboardScope.entries`)
-   must use a sorted `Vec` or `BTreeMap`, never `HashMap`, per the no-HashMap-on-hot-paths
-   constraint.
+   to gate behavior changes (e.g., enter combat when awareness reaches Alert). Blackboard backing
+   store follows SC-2 and SC-3 in [shared-conventions.md](shared-conventions.md).
 4. **IR-1.10.4** -- `SenseResult` scores (distance, angle, occlusion weighted) are ranked to select
    the highest-threat target. The top-scored entity is written to `Blackboard` as the current threat
    target for BT/GOAP consumption.
@@ -180,15 +181,9 @@ recompute it). This prevents unbounded memory growth while accepting one-frame s
 
 ### Arc usage
 
-`Arc` is permitted only for shared immutable data that crosses the Phase 3/4 boundary:
-
-- `Arc<SenseDefinition>` -- immutable asset data shared between the asset loader and perception
-  system. Never mutated after load.
-- `Arc<AcousticMaterialTable>` -- immutable material lookup shared with the audio propagation
-  system.
-
-No `Arc` is used for mutable state. All mutable per-agent data (`Blackboard`, `AiPerception`,
-`AwarenessState`) is owned by the ECS as components.
+`Arc` usage (`Arc<SenseDefinition>`, `Arc<AcousticMaterialTable>`) follows SC-1 in
+[shared-conventions.md](shared-conventions.md). All mutable per-agent data (`Blackboard`,
+`AiPerception`, `AwarenessState`) is owned by the ECS as components.
 
 ## Failure Modes
 

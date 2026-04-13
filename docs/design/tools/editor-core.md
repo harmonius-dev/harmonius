@@ -94,10 +94,47 @@
 
 The editor core is the top-level shell hosting all visual editing tools. It provides the dock/panel
 system, viewports, undo/redo, selection, gizmos, property inspection, plugin extensibility, VR mode,
-and preferences.
+and preferences. Undo/redo details live in [undo-redo.md](undo-redo.md); selection lives in
+[selection-model.md](selection-model.md); scene versioning lives in
+[scene-versioning.md](scene-versioning.md); plugin discovery and distribution live in
+[plugin-marketplace.md](plugin-marketplace.md).
 
 The editor runs as a **separate ECS world** alongside the game world. An `EventBridge` synchronizes
-mutations between worlds. All editor UI uses the engine's own widget framework (F-13.1).
+mutations between worlds. All editor UI uses the engine's own widget framework (F-13.1). Editor code
+is fully synchronous — no `async`, no `await`, no `Future`.
+
+### Editor World Isolation
+
+The editor operates on a **shadow copy** of the ECS world, not the live game world. All
+`EditorCommands` mutate the shadow exclusively. An `EventBridge` drains shadow mutations and replays
+them into the game world with an explicit phase order so play-in-editor never races editor
+mutations.
+
+```mermaid
+flowchart LR
+    EI[Editor Input] --> EC[EditorCommands]
+    EC --> SW[Shadow World]
+    SW --> EB[EventBridge]
+    EB --> GW[Game World]
+    GW --> GL[Game Loop]
+    GL --> EBR[EventBridge.reverse]
+    EBR --> SW
+```
+
+Phase order per frame:
+
+1. `EditorInput` — translate OS events to `EditorCommand` values.
+2. `EditorCommands` — apply commands to the shadow world via the undo stack.
+3. `EventBridge.forward` — diff shadow against game, emit mutations into game world command buffer.
+   No two-way mutation in this step.
+4. `GameLoop` — run ECS systems on the game world. Editor reads are frozen during this phase.
+5. `EventBridge.reverse` — after `PostUpdate`, copy game-world state back into the shadow for the
+   next frame's inspector reads. This is the *only* place game-to-shadow writes happen.
+6. `Render` — one frame draws both worlds (shadow for inspector panels, game for viewport).
+
+Play-in-editor uses the same topology: play sessions simply promote the shadow diff to a one-shot
+commit and then route subsequent commands directly to the game world. Exiting play mode restores the
+pre-play shadow snapshot from the undo stack.
 
 ### Design principles
 
@@ -310,8 +347,8 @@ classDiagram
         +execute(cmd, world) Result
         +undo(world) Result~bool~
         +redo(world) Result~bool~
-        +save_history(path) Future~Result~
-        +load_and_replay(path, world) Future~Result~
+        +save_history(path) IoRequestId
+        +load_and_replay(path, world) IoRequestId
     }
     class Selectable {
         <<enum>>

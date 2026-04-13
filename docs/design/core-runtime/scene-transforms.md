@@ -103,6 +103,7 @@ graph TD
         GT2D[GlobalTransform2D]
         PGT[PreviousGlobalTransform]
         PGT2D[PreviousGlobalTransform2D]
+        IT[InterpolatedTransform]
         P[Parent]
         CH[Children]
         HP[HierarchyPlugin]
@@ -135,6 +136,8 @@ graph TD
     T2D --> GT2D
     GT --> PGT
     GT2D --> PGT2D
+    PGT --> IT
+    GT --> IT
     P --> CH
     HP --> REL
     HP --> CB
@@ -226,6 +229,12 @@ classDiagram
         +Mat3 matrix
     }
 
+    class InterpolatedTransform {
+        +Mat4 0
+        +from_lerp(Mat4, Mat4, f32) InterpolatedTransform
+        +as_mat4() Mat4
+    }
+
     class Parent {
         +Entity entity
     }
@@ -254,6 +263,8 @@ classDiagram
     Transform2D --> GlobalTransform2D : propagates to
     GlobalTransform --> PreviousGlobalTransform : copied before update
     GlobalTransform2D --> PreviousGlobalTransform2D : copied before update
+    PreviousGlobalTransform --> InterpolatedTransform : lerp src A
+    GlobalTransform --> InterpolatedTransform : lerp src B
     Parent --> Children : inverse of
     Parent ..> HierarchyEvent : triggers
     Children ..> HierarchyEvent : triggers
@@ -725,7 +736,11 @@ impl Default for PreviousGlobalTransform {
 }
 
 /// Stores the previous frame's 2D world-space
-/// transform for render interpolation.
+/// transform for render interpolation. Dual of
+/// `PreviousGlobalTransform` for the 2D pipeline so
+/// that 2D entities can interpolate between ticks
+/// identically to 3D. The matrix is a `Mat3`
+/// (column-major, 2D affine).
 #[derive(
     Component, Clone, Copy, Debug, PartialEq,
 )]
@@ -746,6 +761,73 @@ impl Default for PreviousGlobalTransform2D {
     }
 }
 ```
+
+### InterpolatedTransform Component
+
+`InterpolatedTransform` is the finalized world-space transform handed to rendering. It is the lerp
+between `PreviousGlobalTransform` and `GlobalTransform` using the game loop's `interp_alpha` (see
+[game-loop.md](game-loop.md)). Because rendering reads only `InterpolatedTransform` and never raw
+`GlobalTransform`, the render thread never sees a half-tick snapshot.
+
+```rust
+/// World-space transform the renderer actually uses.
+///
+/// Computed once per frame in Phase 7 of the game
+/// loop (see game-loop.md) from
+/// `PreviousGlobalTransform` and `GlobalTransform`
+/// together with the current frame's
+/// `interp_alpha`. Never written to by gameplay,
+/// physics, or animation systems. Read-only for
+/// all consumers after Phase 7.
+#[derive(
+    Component, Clone, Copy, Debug, PartialEq,
+)]
+pub struct InterpolatedTransform(pub Mat4);
+
+impl InterpolatedTransform {
+    pub const IDENTITY: Self = Self(Mat4::IDENTITY);
+
+    pub fn from_lerp(
+        previous: Mat4,
+        current: Mat4,
+        alpha: f32,
+    ) -> Self {
+        Self(previous.lerp(current, alpha))
+    }
+
+    pub fn as_mat4(&self) -> Mat4 { self.0 }
+}
+
+impl Default for InterpolatedTransform {
+    fn default() -> Self { Self::IDENTITY }
+}
+```
+
+### Transform Interpolation for Rendering
+
+The Phase 7 Render-Frame Snapshot pass (see [game-loop.md](game-loop.md)) computes
+`InterpolatedTransform` for every entity that has both `PreviousGlobalTransform` and
+`GlobalTransform`, using the game loop's `interp_alpha`:
+
+```rust
+// Phase 7 render-frame pass (see game-loop.md):
+let alpha = fixed_timestep.alpha();
+for (prev, current, interpolated) in query.iter::<(
+    &PreviousGlobalTransform,
+    &GlobalTransform,
+    &mut InterpolatedTransform,
+)>() {
+    *interpolated = InterpolatedTransform::from_lerp(
+        prev.matrix, current.matrix, alpha,
+    );
+}
+```
+
+The 2D dual is identical in structure: any entity with both `PreviousGlobalTransform2D` and
+`GlobalTransform2D` has its `InterpolatedTransform` filled by lifting the `Mat3` into a `Mat4`
+before the lerp, keeping the renderer's consumption uniform between 2D and 3D entities. See
+[game-loop.md](game-loop.md) for how `interp_alpha` is produced by `FixedTimestep::alpha()` and how
+the resulting `InterpolatedTransform` feeds `RenderFrame::transforms`.
 
 ### GlobalTransform Size (Performance -- High)
 

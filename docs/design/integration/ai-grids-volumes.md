@@ -1,5 +1,8 @@
 # AI Behavior ↔ Grids/Volumes Integration Design
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below.
+
 ## Systems Involved
 
 | System | Design | Domain |
@@ -204,33 +207,6 @@ pub enum CellOrVoxel {
     Voxel(VoxelCoord),
 }
 
-/// Drain applier signature (interface only -- body
-/// lives in `grids/propagation.rs`). Runs at the
-/// start of Phase 3 before propagation kernels fire.
-/// Drains up to `MAX_WRITES_PER_GRID` messages from
-/// the channel and commutatively folds them into
-/// cells using `InfluenceWriteMode` semantics.
-pub fn drain_influence_writes<T>(
-    rx: &mut MpscReceiver<InfluenceWriteMsg>,
-    grid: &mut UniformGrid<T>,
-);
-```
-
-### Write-back flow (IR-2.3.6)
-
-The write path is interface-only pseudocode; bodies live in the grids subsystem.
-
-```rust
-/// AI side (Phase 4). Invoked by `BtInfluenceWrite`
-/// leaves. Pure function over blackboard -> message;
-/// no grid mutation.
-pub fn enqueue_influence_write(
-    leaf: &BtInfluenceWrite,
-    blackboard: &Blackboard,
-    tx: &MpscSender<InfluenceWriteMsg>,
-    seq_counter: &mut u64,
-) -> EnqueueResult;
-
 /// Result of enqueueing an influence write.
 pub enum EnqueueResult {
     /// Message accepted into the channel.
@@ -242,16 +218,13 @@ pub enum EnqueueResult {
     /// Grid entity generation did not match.
     DroppedStaleEntity,
 }
-
-/// Grids side (start of Phase 3, before propagation).
-/// Single-system drain -- exactly one consumer per
-/// channel, matching the MPSC (many producers, one
-/// consumer) contract.
-pub fn apply_pending_writes<T>(
-    channel: &mut MpscReceiver<InfluenceWriteMsg>,
-    grid: &mut UniformGrid<T>,
-) -> DrainStats;
 ```
+
+### Write-back flow (IR-2.3.6)
+
+The write-back implementation lives in `simulation/grids-volumes.md`; this integration defines only
+the MPSC message `InfluenceWriteMsg` and the channel capacity (see
+[shared-messaging-capacities.md](shared-messaging-capacities.md) row CH-12).
 
 Ordering and conflict resolution:
 
@@ -448,9 +421,9 @@ timestep. Multiple AI ticks can occur between fixed simulation ticks. AI reads r
 
 The "Grid not yet propagated" recovery in the failure table relies on
 **immutable-front-buffer double buffering**: each `UniformGrid<T>` / `VoxelVolume<T>` holds a
-`front: Arc<GridSnapshot<T>>` and a `back: GridSnapshot<T>`. `Arc` is permitted because the front
-buffer is immutable for the duration of Phase 4, matching the "Arc only for immutable shared data"
-constraint.
+`front: Arc<GridSnapshot<T>>` and a `back: GridSnapshot<T>`. `Arc` usage is permitted per SC-1 in
+[shared-conventions.md](shared-conventions.md) because the front buffer is immutable for the
+duration of Phase 4.
 
 1. Phase 3 drain and propagation write into `back`.
 2. At the Phase 3 -> Phase 4 transition, `swap` atomically promotes `back` to `front` and resets a
@@ -461,16 +434,7 @@ constraint.
 
 ## Hot-path constraints
 
-The per-agent `BlackboardScope` is the hottest AI data structure in the engine: every agent samples
-grids and writes results to its blackboard each frame. Upstream `behavior.md` currently defines
-`BlackboardScope.entries` as `HashMap<BlackboardKey, BlackboardValue>`. This integration requires
-the field be replaced with one of:
-
-1. `BTreeMap<BlackboardKey, BlackboardValue>`, or
-2. `SmallVec<[(BlackboardKey, BlackboardValue); N]>` sorted by `BlackboardKey` for small N.
-
-`HashMap` is forbidden on hot paths per the engine-wide constraint. `DashMap` is not suitable here
-because each `BlackboardScope` is owned by one agent and never shared across threads.
+Blackboard backing store follows SC-2 and SC-3 in [shared-conventions.md](shared-conventions.md).
 
 ## Failure Modes
 

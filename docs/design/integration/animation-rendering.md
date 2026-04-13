@@ -35,6 +35,12 @@
 
 ## Overview
 
+This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
+only deviations are called out below. GPU skinning dispatch (compute pipeline creation, barrier
+layouts, dispatch thread-group sizing) lives in `rendering/render-pipeline.md`. This integration
+defines only the `BlendDescriptor` and `BonePaletteGpu` production contract consumed by that
+pipeline.
+
 This integration defines how the animation system produces GPU-ready skinning data and how the
 rendering system consumes it. Animation runs during Phase 6 on worker threads, producing blend
 descriptors, morph weights, and bone palettes. Phase 7 snapshots all GPU buffer handles into
@@ -280,22 +286,10 @@ sequenceDiagram
 
 ### Compute Dispatch Synchronization
 
-The render thread issues compute dispatches in a fixed order with GPU barriers between each stage:
-
-1. **Morph accumulation** -- sparse delta buffer writes. A UAV barrier follows to ensure morph
-   deltas are visible.
-2. **Skinning (LBS or DQS)** -- reads morph output + bone palette, writes final vertex positions. A
-   UAV barrier follows before the vertex shader reads skinned positions.
-
-On each backend:
-
-- **D3D12**: `ID3D12GraphicsCommandList::ResourceBarrier` with `D3D12_RESOURCE_BARRIER_TYPE_UAV`.
-- **Metal**: `MTLComputeCommandEncoder::memoryBarrier` with `.scope(.buffers)` between dispatches.
-- **Vulkan**: `vkCmdPipelineBarrier` with `VK_ACCESS_SHADER_WRITE_BIT` ->
-  `VK_ACCESS_SHADER_READ_BIT`.
-
-HalfRate LOD tier reuses the previous frame's skinning output. The render thread skips the skinning
-dispatch and binds the prior frame's vertex buffer directly.
+The render thread issues compute dispatches in a fixed order (morph accumulation, then skinning)
+with GPU barriers between stages. Per-backend barrier APIs and thread-group sizing live in
+`rendering/render-pipeline.md`. HalfRate LOD tier reuses the previous frame's skinning output; the
+render thread skips the skinning dispatch and binds the prior frame's vertex buffer directly.
 
 ### Fallback Paths
 

@@ -249,6 +249,21 @@ classDiagram
         +shape: ColliderShape
         +offset: Vec3
     }
+    class ColliderShape {
+        <<enumeration>>
+        Sphere
+        Box
+        Capsule
+        ConvexHull
+        Mesh
+        Heightfield
+    }
+    class HandleMeshletAsset {
+        <<alias>>
+        Handle~MeshletAsset~
+    }
+    Collider --> ColliderShape
+    ColliderShape --> HandleMeshletAsset : Mesh variant
     class PhysicsMaterial {
         +static_friction: f32
         +dynamic_friction: f32
@@ -527,7 +542,20 @@ pub struct ExternalTorque {
 
 ### Collision Shapes
 
+`Handle<T>` is the canonical asset handle defined in
+[core-runtime/primitives.md](../core-runtime/primitives.md). Physics mesh colliders reference
+`Handle<MeshAsset>` instead of embedding vertex data; collision geometry and rendering geometry
+resolve to the same `MeshletAsset` root described in
+[rendering/meshlets.md](../rendering/meshlets.md). The physics engine reads LOD 0 of the asset
+directly; renderer LOD selection does not change the collision shape. This LOD synchronization
+contract guarantees that visual meshes, collision shapes, and BLAS ray-tracing geometry all flow
+from one `MeshletAsset` — when the asset hot-reloads, the physics BVH and the GPU buffers are
+rebuilt together.
+
 ```rust
+use harmonius_core::primitives::Handle;
+use harmonius_rendering::meshlets::MeshletAsset;
+
 /// Collider component. Defines collision geometry
 /// for an entity.
 pub struct Collider {
@@ -552,28 +580,33 @@ pub enum ColliderShape {
         radius: f32,
     },
     ConvexHull {
-        /// Indices into a shared vertex buffer.
-        vertices: Vec<Vec3>,
+        /// Handle to a pre-baked convex hull asset.
+        hull: Handle<ConvexHullAsset>,
     },
-    TriMesh {
-        /// Triangle mesh data (vertices + indices).
-        mesh: TriMeshData,
+    Mesh {
+        /// Handle to the canonical meshlet asset.
+        /// The physics engine reads LOD 0 vertices
+        /// and indices to build its private BVH.
+        /// Renderer LOD selection does not affect
+        /// collision — LOD sync is via the shared
+        /// asset handle. See rendering/meshlets.md.
+        mesh: Handle<MeshletAsset>,
     },
     Heightfield {
-        /// Heightfield grid data.
-        field: HeightfieldData,
+        /// Handle to a heightfield asset.
+        field: Handle<HeightfieldAsset>,
     },
 }
 
-pub struct TriMeshData {
+/// ConvexHullAsset — baked by the asset pipeline.
+/// Stored as rkyv archive; physics mmaps the bytes.
+pub struct ConvexHullAsset {
     pub vertices: Vec<Vec3>,
-    pub indices: Vec<[u32; 3]>,
-    /// Per-triangle material index. Maps to
-    /// PhysicsMaterial entries in the material table.
-    pub material_indices: Option<Vec<u16>>,
+    pub faces: Vec<ConvexFace>,
 }
 
-pub struct HeightfieldData {
+/// HeightfieldAsset — baked heightfield grid.
+pub struct HeightfieldAsset {
     pub heights: Vec<f32>,
     pub rows: u32,
     pub columns: u32,
@@ -884,12 +917,13 @@ impl NarrowphaseSystem {
                 ) => capsule_vs_capsule(
                     col_a, tf_a, col_b, tf_b,
                 ),
-                // Mesh-based paths
-                (_, ColliderShape::TriMesh { .. })
+                // Mesh-based paths (resolve
+                // Handle<MeshletAsset> LOD 0)
+                (_, ColliderShape::Mesh { .. })
                 | (
-                    ColliderShape::TriMesh { .. },
+                    ColliderShape::Mesh { .. },
                     _,
-                ) => trimesh_narrowphase(
+                ) => mesh_narrowphase(
                     col_a, tf_a, col_b, tf_b,
                 ),
                 (
@@ -2343,8 +2377,8 @@ design level.
 
 ### Triangle Mesh and Heightfield Limits
 
-| Platform | TriMesh Triangles | Heightfield Resolution |
-|----------|-------------------|----------------------|
+| Platform | Mesh Triangles (LOD 0) | Heightfield Resolution |
+|----------|------------------------|------------------------|
 | Mobile | 8K per collider | 128x128 |
 | Switch | 32K per collider | 256x256 |
 | Desktop | 256K per collider | 1024x1024 |
@@ -2678,14 +2712,22 @@ All queries use the physics-private BVH. Available to all gameplay systems via
 
 ### RF-5: Deterministic containers
 
-Replace `HashSet<(Entity, Entity)>` in `ActiveCollisions` with `BTreeSet` or sorted `Vec` for
-cross-platform determinism per R-4.1.NF3.
+Replace `HashSet<(Entity, Entity)>` in `ActiveCollisions` with `SortedVecMap<(Entity, Entity), ()>`
+or a sorted `Vec` for cross-platform determinism per R-4.1.NF3. `SortedVecMap<K, V>` is owned by
+[core-runtime/primitives.md](../core-runtime/primitives.md); it replaces `HashMap` on every hot path
+in the physics module. Never use `HashMap` in broadphase, narrowphase, island solve, or the contact
+cache — any lookup table on the frame hot path must use `SortedVecMap` or a dense `Vec` indexed by
+component or island ID.
 
 ### RF-6: Asset handles for mesh/heightfield data
 
-`TriMeshData` and `HeightfieldData` should reference rkyv-compatible asset data via
-`Handle<TriMeshAsset>` instead of owned `Vec`s. This enables zero-copy mmap loading per the
-serialization constraints.
+`ColliderShape::Mesh` references `Handle<MeshletAsset>` (owned by
+[rendering/meshlets.md](../rendering/meshlets.md)). `ColliderShape::Heightfield` references
+`Handle<HeightfieldAsset>`. `ColliderShape::ConvexHull` references `Handle<ConvexHullAsset>`. All
+three handle types are instances of `Handle<T>` defined in
+[core-runtime/primitives.md](../core-runtime/primitives.md). This enables zero-copy mmap loading per
+the serialization constraints and binds physics collision LOD to the same asset the renderer uses,
+so the physics engine cannot silently desync from the rasterized geometry.
 
 ### RF-7: Expanded character controller
 
@@ -2887,23 +2929,24 @@ not interact.
 
 ### RF-10: Voxel terrain collision
 
-Per-chunk triangle mesh colliders for voxel terrain. Each voxel chunk generates a surface mesh
-(marching cubes / surface nets) which becomes a `TriMesh` collider. When a player modifies voxels,
-only the affected chunk's collider is rebuilt.
+Per-chunk mesh colliders for voxel terrain. Each voxel chunk generates a surface mesh (marching
+cubes / surface nets) which is baked into a `MeshletAsset` and referenced by a
+`ColliderShape::Mesh { mesh: Handle<MeshletAsset> }` collider. When a player modifies voxels, only
+the affected chunk's collider is rebuilt.
 
 **Per-terrain-type collider strategy:**
 
 | Terrain Type | Collider | Update Cost |
 |-------------|----------|-------------|
 | Heightfield | `Heightfield` | O(modified cells) |
-| Voxel | `TriMesh` per chunk | O(chunk verts) |
+| Voxel | `Mesh` per chunk | O(chunk verts) |
 | CSG | `ConvexHull` decomposition | O(affected volume) |
 
 **Real-time update flow:**
 
 1. Player modifies voxel (dig/place)
 2. Chunk surface mesh regenerated (world-geometry system)
-3. Chunk `TriMesh` collider rebuilt from new surface
+3. Chunk `Mesh` collider rebuilt from new `MeshletAsset` handle
 4. Old collider removed from physics BVH
 5. New collider inserted into physics BVH
 6. Physics sees updated collision in next FixedUpdate

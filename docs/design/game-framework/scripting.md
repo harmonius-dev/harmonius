@@ -29,6 +29,14 @@
 
 ## Overview
 
+> **Graph runtime client.** Logic graphs are a CLIENT of
+> [../core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md). The scripting subsystem
+> parameterizes the generic runtime as `GraphRuntime<LogicNode, LogicEdge, LogicGraphProgram>`; it
+> does not define graph execution primitives. Coroutines are a client of
+> [../core-runtime/coroutines.md](../core-runtime/coroutines.md). Hot reload follows
+> [../core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md). Stable
+> `GraphInstanceId` values come from [../core-runtime/ids.md](../core-runtime/ids.md).
+
 The logic graph system is the **universal extensibility layer for the entire engine**. Users never
 write code. All logic — gameplay, AI, shaders, asset processing, editor tools, plugins — is authored
 in the visual logic graph editor (F-15.8.4) and compiled to native Rust or HLSL by the graph
@@ -48,9 +56,9 @@ Key architectural choices:
 4. **Sandboxed.** User graphs cannot express `unsafe`, raw pointers, or unbounded loops. The codegen
    pipeline enforces this by construction — the node palette has no unsafe operations. Generated
    modules compile with `#![forbid(unsafe_code)]`.
-5. **Coroutine support.** Multi-frame sequences (boss phases, timed objectives) compile to
-   synchronous Rust state machines: each yield point is an enum variant. No `async`/`await`, no
-   Tokio. Pure synchronous state machine dispatched with `match`.
+5. **Coroutine support.** Multi-frame sequences (boss phases, timed objectives) use the coroutine
+   primitive from [../core-runtime/coroutines.md](../core-runtime/coroutines.md). Each yield point
+   compiles to a variant of the codegen'd state machine. No `async`/`await`, no Tokio.
 6. **Hot reload.** The runtime hot-reloads the middleman `.dylib` when graphs change, patching
    running `GraphInstance` state using a drain-then-swap protocol.
 7. **Dual backend.** The graph compiler supports `CompileTarget::Rust` (CPU: gameplay, ECS,
@@ -337,6 +345,11 @@ There is no bytecode interpreter. Each visual logic graph compiles to a Rust fun
 middleman `.dylib`. `GraphProgram` is a handle to the fn-pointer table and rkyv-archived metadata
 loaded from the `.dylib` and `.asset` files respectively. See RF-10 for rkyv metadata details.
 
+`LogicGraphProgram` implements the `GraphProgram` trait from
+[../core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md); the scripting subsystem does
+not build its own runtime. All scheduling, instance iteration, and step dispatch come from the core
+runtime parameterized as `GraphRuntime<LogicNode, LogicEdge, LogicGraphProgram>`.
+
 ```rust
 /// Type alias for a codegen'd graph entry function.
 /// Generated signature: takes instance state and
@@ -411,7 +424,10 @@ pub struct ScriptTypeId(pub u32);
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SlotId(pub u16);
 
-/// Unique identifier for a graph instance.
+/// Unique identifier for a graph instance. The
+/// canonical allocator lives in
+/// [../core-runtime/ids.md](../core-runtime/ids.md);
+/// scripting re-exports the type for convenience.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GraphInstanceId(pub u64);
 
@@ -605,55 +621,15 @@ impl VariableStore {
 
 ### Coroutine support
 
-Coroutines compile to synchronous Rust state machines. No `async`/`await`, no Tokio. Each yield
-point in the logic graph becomes a variant of a codegen'd `ResumeVariant` enum. The generated
-function is a `match` on the current variant — pure synchronous dispatch.
+The coroutine primitive (`WaitCondition`, `CoroutineState`, `coroutine_tick_system`) is defined in
+[../core-runtime/coroutines.md](../core-runtime/coroutines.md). Scripting is a client: each yield
+point in a logic graph codegen's a variant of a `ResumeVariant` enum stored inside
+`CoroutineState::resume_variant`. The generated graph entry function is a `match` on the current
+variant — pure synchronous dispatch, no `async`, no `await`.
 
-```rust
-/// Condition that a suspended coroutine waits on.
-/// Evaluated by coroutine_tick_system each frame.
-#[derive(Clone, Debug)]
-pub enum WaitCondition {
-    /// Resume on the next frame.
-    NextFrame,
-    /// Resume after N frames have elapsed.
-    Frames { remaining: u32 },
-    /// Resume after N seconds (wall clock).
-    Delay { remaining_secs: f32 },
-    /// Resume when a specific event type fires.
-    Event { event_type: EventTypeId },
-}
-
-/// Saved coroutine suspension point.
-/// Coroutines are codegen'd state machines:
-/// each yield point is a u32 variant index into
-/// the generated match dispatch table.
-pub struct CoroutineState {
-    /// Variant index in the codegen'd state
-    /// machine. Passed to the entry fn on resume.
-    resume_variant: u32,
-    /// The condition that must be met to resume.
-    wait_condition: WaitCondition,
-    /// Saved local variable snapshot at yield.
-    /// Restored on resume. SmallVec avoids alloc
-    /// for graphs with few locals (see RF-8).
-    saved_locals: SmallVec<[TypedSlot; 8]>,
-}
-
-impl CoroutineState {
-    /// Check if the wait condition is satisfied.
-    pub fn is_ready(
-        &self,
-        current_frame: u64,
-        delta_time: f32,
-        pending_events: &EventBuffer,
-    ) -> bool;
-
-    /// Advance timers. Called each frame for
-    /// suspended coroutines.
-    pub fn tick(&mut self, delta_time: f32);
-}
-```
+The scripting subsystem adds only the codegen glue that maps authored yield nodes to `WaitCondition`
+values and stores per-graph local snapshots in the primitive's `saved_locals` slot. All tick and
+ready-check logic lives in the core primitive.
 
 ### Graph execution dispatch
 
@@ -1015,12 +991,19 @@ impl DebugBridgeEditor {
 
 ### Hot reload
 
+Hot reload follows the canonical drain-then-swap protocol defined in
+[../core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md). The scripting
+subsystem is a client: it provides a `LogicGraphHotReloader` that plugs into the core protocol and
+owns only variable-layout migration logic. All `.dylib` loading, version fencing, and rollback on
+failure are handled by the core protocol.
+
 ```rust
 /// Handles patching running graph instances when
 /// the editor recompiles a graph asset.
 /// Uses drain-then-swap protocol: all in-flight
 /// executions on the old .dylib complete before
-/// the new fn-ptr table is installed (see RF-2).
+/// the new fn-ptr table is installed. See
+/// [../core-runtime/hot-reload-protocol.md].
 pub struct HotReloader;
 
 /// Result of a hot-reload attempt.

@@ -81,12 +81,28 @@ This document defines generic typed grid and volume primitives for spatial simul
 primitives are building blocks that higher-level systems compose into game-specific behaviors. The
 design is intentionally free of genre assumptions.
 
+### CellGrid vs UniformGrid — Name Split
+
+**The gameplay propagation grid in this document is named `CellGrid<T>`.** It is distinct from the
+`UniformGrid<T>` type in [core-runtime/spatial-index.md](../core-runtime/spatial-index.md), which
+handles network area-of-interest bucketing. The rename resolves the collision flagged in design
+review section 2.2 — same name, two different APIs, three different call sites. Going forward:
+
+| Name                      | Owner                                   | Purpose                      |
+|---------------------------|------------------------------------------|------------------------------|
+| `CellGrid<T>`             | simulation/grids-volumes.md (this doc)  | Gameplay propagation (this)  |
+| `UniformGrid<T>`          | core-runtime/spatial-index.md            | Network AOI / relevancy      |
+
+References to `UniformGrid` in this file from before the split remain for cross-reference — they are
+the **relevancy grid** from networking, not this doc's propagation primitive. New gameplay code uses
+`CellGrid<T>`.
+
 Three primitives:
 
-1. **UniformGrid\<T\>** -- 2D grid with typed cells. Fixed cell size, axis-aligned. Supports fog of
+1. **CellGrid\<T\>** -- 2D grid with typed cells. Fixed cell size, axis-aligned. Supports fog of
    war, tactical maps, height fields, scent grids, and influence maps. Provides GPU texture sync for
    rendering overlays. Used with `Transform2D` in 2D games and `Transform` in 3D games. Pure 2D
-   games use `UniformGrid` and `HierarchicalGrid` — not `VoxelVolume`.
+   games use `CellGrid` and `HierarchicalGrid` — not `VoxelVolume`.
 2. **VoxelVolume\<T\>** -- 3D voxel grid with typed cells. Chunk-based storage for block worlds,
    density fields, and wind volumes. Supports LOD and dirty tracking. 3D-only.
 3. **PropagationKernel\<T\>** -- Defines how values spread across grid cells per tick. Handles fire
@@ -414,17 +430,17 @@ pub struct ChunkCoord {
 }
 ```
 
-### 2. UniformGrid Definition
+### 2. CellGrid Definition
 
 ```rust
-/// Immutable definition for a 2D uniform grid.
+/// Immutable definition for a 2D cell grid.
 /// Authored in the visual editor, stored as an
 /// asset in gameplay databases (F-13.7.2).
 #[derive(
     Clone, Debug,
     rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
-pub struct UniformGridDef {
+pub struct CellGridDef {
     /// Width in cells.
     pub width: u32,
     /// Height in cells.
@@ -433,7 +449,7 @@ pub struct UniformGridDef {
     pub cell_size: f32,
 }
 
-impl UniformGridDef {
+impl CellGridDef {
     /// Total number of cells.
     pub fn cell_count(&self) -> u32 {
         self.width * self.height
@@ -447,11 +463,13 @@ impl UniformGridDef {
 }
 ```
 
-### 3. UniformGrid\<T\>
+### 3. CellGrid\<T\>
 
 ```rust
 /// Runtime 2D grid with typed cells. Attached as
-/// an ECS component to world entities.
+/// an ECS component to world entities. Distinct
+/// from `UniformGrid<T>` in spatial-index.md —
+/// this is the gameplay propagation grid.
 ///
 /// T must be Clone + Default + rkyv::Archive.
 /// Storage is a flat Vec<T> in row-major order.
@@ -459,7 +477,7 @@ impl UniformGridDef {
     Clone, Debug,
     rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
 )]
-pub struct UniformGrid<T> {
+pub struct CellGrid<T> {
     /// Width in cells.
     pub width: u32,
     /// Height in cells.
@@ -472,7 +490,7 @@ pub struct UniformGrid<T> {
     cells: Vec<T>,
 }
 
-impl<T: Default + Clone + rkyv::Archive> UniformGrid<T> {
+impl<T: Default + Clone + rkyv::Archive> CellGrid<T> {
     /// Create a grid initialized to T::default().
     pub fn new(
         width: u32,
@@ -935,7 +953,9 @@ GI), the canonical data lives in a GPU structured buffer. CPU readback is on-dem
 ```rust
 /// GPU-resident grid variant. The GPU structured
 /// buffer is the authoritative copy. CPU readback
-/// is async on-demand via a staging buffer.
+/// is on-demand via a staging buffer and a GPU
+/// fence polled at the frame boundary. No `.await`,
+/// no `Future<>`.
 ///
 /// Attached as a component on entities that need
 /// GPU-driven propagation or render graph reads.
@@ -981,8 +1001,9 @@ impl<T: bytemuck::Pod> GpuGrid<T> {
 /// Runs in FixedUpdate schedule (Phase 2). (RF-7)
 pub fn propagation_system<T>(
     time: Res<GameTime>,
+    rng: Res<DeterministicRng>,
     mut query: Query<(
-        &mut UniformGrid<T>,
+        &mut CellGrid<T>,
         &PropagationKernel<T>,
     )>,
 );
@@ -997,6 +1018,44 @@ pub fn gpu_grid_sync_system(
     mut gpu: ResMut<GpuTextureManager>,
 );
 ```
+
+### Time Scale Handling
+
+`CellGrid<T>` propagation respects the engine-wide `GameTime::tick_scale` value (see
+[core-runtime/change-detection.md](../core-runtime/change-detection.md) or the future
+`core-runtime/time.md`). `tick_scale` is a `f32` multiplier applied to the fixed-timestep dt before
+kernels integrate. The contract is:
+
+| Tick scale | Behavior                                                             |
+|------------|----------------------------------------------------------------------|
+| `1.0`      | Propagation runs at the normal rate (default)                       |
+| `0.5`      | Propagation runs at half speed — slow-mo gameplay                    |
+| `2.0`      | Propagation runs at double speed — fast-forward                      |
+| `0.0`      | Propagation is paused — cells do not change this tick                |
+
+Pause semantics are unified: a `tick_scale` of zero freezes propagation. The propagation system
+checks `time.tick_scale > 0.0` before running the kernel; when zero, the system exits early and does
+not touch any cells. This matches the unified pause semantics for timelines, awareness transitions,
+and event-log decay across all four simulation primitives.
+
+### Determinism Seed
+
+`CellGrid<T>` propagation is **deterministic** given a `Res<DeterministicRng>` seed from
+[core-runtime/primitives.md](../core-runtime/primitives.md). Any stochastic propagation kernel
+(randomized fire spread, jittered scent diffusion, cellular-automaton coin flips) must draw from the
+shared RNG — never from thread-local state, never from `rand::thread_rng()`. The seed is injected
+via a system parameter (see the `rng: Res<DeterministicRng>` argument on `propagation_system`).
+
+**Determinism guarantees:**
+
+1. Given identical `CellGrid<T>`, identical `PropagationKernel<T>`, identical `tick_scale`, and
+   identical RNG seed, the grid state after N ticks is byte-identical across runs.
+2. The RNG state is serialized into save files (via `rkyv::Archive` on `DeterministicRng`) so
+   save/load preserves propagation parity.
+3. Multiplayer clients receive the server's RNG seed on spawn and stay in lockstep by reseeding at
+   every checkpoint tick.
+4. Floating-point propagation kernels use the same deterministic float arithmetic as physics — no
+   platform-specific fast-math, no FMA re-association.
 
 ### 12. Codegen for User-Defined Cell Types
 

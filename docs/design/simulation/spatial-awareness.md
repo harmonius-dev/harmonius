@@ -349,6 +349,9 @@ classDiagram
         BoxSelect
         SphereSelect
         NearestN
+        Circle2D
+        Cone2D
+        Box2D
     }
 
     class SelectionResult {
@@ -607,6 +610,12 @@ impl AwarenessState {
 
 ### Awareness Transition and Config
 
+**Time Scale.** Awareness level transitions, decay, and timeouts respect the engine-wide
+`GameTime::tick_scale` multiplier. When `tick_scale < 1.0`, score decay and `lost_timeout_ticks` run
+slower — a Tracking entry persists longer under slow-mo. When `tick_scale = 0.0`, the awareness
+update system exits early for the tick: no transitions fire, no timers advance, no levels change.
+This matches the unified pause semantics shared with timelines, event logs, and propagation grids.
+
 ```rust
 /// Thresholds and rates governing awareness level
 /// transitions. Immutable data authored in the
@@ -623,10 +632,13 @@ pub struct AwarenessTransition {
     /// Score threshold to enter Tracking.
     pub tracking_threshold: f32,
     /// Rate at which score decays per tick when
-    /// no new stimulus is received.
+    /// no new stimulus is received. Multiplied
+    /// by `GameTime::tick_scale` each tick.
     pub decay_rate: f32,
     /// Number of ticks with no stimulus before
-    /// a Lost entry reverts to Unaware.
+    /// a Lost entry reverts to Unaware. Counted
+    /// against scaled ticks — a tick_scale of 0.5
+    /// effectively doubles the timeout.
     pub lost_timeout_ticks: u32,
 }
 
@@ -717,7 +729,9 @@ pub fn update_awareness(
 ```rust
 /// Player-facing spatial query for entity picking
 /// and selection. Simplified interface on top of
-/// the shared spatial index.
+/// the shared spatial index. Provides both 3D and
+/// explicit 2D variants so pure-2D games never
+/// have to go through a Z=0 conversion.
 #[derive(Clone, Debug)]
 pub enum SelectionQuery {
     /// Single ray from camera through screen
@@ -744,16 +758,25 @@ pub enum SelectionQuery {
         radius: f32,
         count: u32,
     },
-    /// 2D marquee box select in screen/world space.
-    /// Used for top-down RTS and 2D games.
-    BoxSelect2D {
-        min: Vec2,
-        max: Vec2,
-    },
-    /// 2D circle select for radial area effects.
-    CircleSelect2D {
+    /// 2D circle area select (radial menu, AoE,
+    /// 2D-game target picking).
+    Circle2D {
         center: Vec2,
         radius: f32,
+    },
+    /// 2D cone select — center + facing + half-angle
+    /// — for 2D games and top-down shooters.
+    Cone2D {
+        center: Vec2,
+        direction: Vec2,
+        radius: f32,
+        half_angle: f32,
+    },
+    /// 2D axis-aligned box select (marquee drag in
+    /// 2D games and top-down RTS).
+    Box2D {
+        min: Vec2,
+        max: Vec2,
     },
 }
 
@@ -778,6 +801,51 @@ pub struct SelectionResult {
 pub fn execute_selection(
     query: &SelectionQuery,
     spatial_index: &SpatialIndex,
+    filter: impl Fn(Entity) -> bool,
+) -> Vec<SelectionResult>;
+```
+
+### Headless Fallback (no SpatialIndex)
+
+Headless game servers, unit tests, and stripped-down CLI tools may run without a `SpatialIndex`
+resource — for example when the engine is compiled with the `no-spatial-index` feature, or when
+running a minimal simulation harness for CI.
+
+In those configurations awareness queries **fall back to linear search** across the world's entity
+list. The fallback path is contractual, not best-effort — every query function detects the absence
+of `Res<SpatialIndex>` at system build time and routes to a `linear_search` implementation that
+iterates all entities with a `Transform` or `Transform2D` component and applies the sense shape or
+selection query predicate in order.
+
+**SLA.** The fallback is correct but slow:
+
+| Path                           | Entity count | Query latency       |
+|--------------------------------|--------------|---------------------|
+| `SpatialIndex` (normal)        | 100K         | O(log n) per query  |
+| Linear search (headless)       | 100K         | O(n) per query      |
+| Linear search (headless)       | 10K          | &lt; 1 ms typical   |
+| Linear search (headless)       | 100K         | 10–50 ms typical    |
+
+Callers running headless must cap their entity count accordingly; beyond 100K entities the headless
+simulation is unsuitable for per-frame sense queries and should batch or cache results. All
+game-facing semantics (ordering, tiebreaker, scoring) are identical between the two paths — only the
+lookup algorithm differs.
+
+```rust
+/// Scan all entities with a Transform and apply
+/// the sense predicate. Used when SpatialIndex is
+/// unavailable. Correct but O(n) per query.
+pub fn linear_search_senses(
+    sense: &SenseDefinition,
+    origin: SenseOrigin,
+    world: &World,
+) -> SmallVec<[SenseResult; 16]>;
+
+/// Scan all entities and apply the selection
+/// predicate. Fallback path for headless mode.
+pub fn linear_search_selection(
+    query: &SelectionQuery,
+    world: &World,
     filter: impl Fn(Entity) -> bool,
 ) -> Vec<SelectionResult>;
 ```

@@ -719,52 +719,24 @@ stateDiagram-v2
 
 ### Spring-Damper Primitives
 
-All first-person, weapon, cloth card, and secondary bone motion uses these shared spring types.
-Defined in `algorithms.md`.
+`SpringDamper<T>` is **defined in core-runtime** — see
+[core-runtime/primitives.md](../core-runtime/primitives.md) (which promotes the Tier-1 primitives
+from [core-runtime/algorithms.md](../core-runtime/algorithms.md)). This document does not redefine
+the type; it only names the aliases used by the procedural animation subsystem. Every consumer in
+first-person, weapon, cloth card, and secondary bone motion imports the canonical type from
+`harmonius_core::primitives` and uses the parameterized form — there is no local duplicate.
 
 ```rust
-/// 1D critically-damped spring-damper.
-/// Semi-implicit Euler integration.
-#[derive(Clone, Debug, Reflect)]
-pub struct SpringDamper {
-    pub position: f32,
-    pub velocity: f32,
-    pub stiffness: f32,
-    pub damping: f32,
-    pub mass: f32,
-}
+use harmonius_core::primitives::SpringDamper;
 
-impl SpringDamper {
-    pub fn new(
-        stiffness: f32,
-        damping: f32,
-        mass: f32,
-    ) -> Self;
-    pub fn evaluate(
-        &mut self, target: f32, dt: f32,
-    ) -> f32;
-    pub fn apply_impulse(&mut self, impulse: f32);
-    pub fn reset(&mut self);
-}
+/// 1D spring alias used for scalar bob/lean.
+pub type ScalarSpring = SpringDamper<f32>;
 
-/// 3D positional spring (sway, recoil translation).
-#[derive(Clone, Debug, Reflect)]
-pub struct SpringDamper3D {
-    pub position: Vec3,
-    pub velocity: Vec3,
-    pub stiffness: f32,
-    pub damping: f32,
-    pub mass: f32,
-}
+/// 3D positional spring alias (sway, recoil).
+pub type PositionSpring = SpringDamper<Vec3>;
 
-/// Quaternion spring for rotational springs.
-#[derive(Clone, Debug, Reflect)]
-pub struct SpringDamperQuat {
-    pub rotation: Quat,
-    pub angular_velocity: Vec3,
-    pub stiffness: f32,
-    pub damping: f32,
-}
+/// Rotational spring alias.
+pub type RotationSpring = SpringDamper<Quat>;
 ```
 
 ### IK Components
@@ -951,6 +923,30 @@ pub struct FootPlacement {
 }
 ```
 
+### CCD Integration
+
+Procedural animation raycasts (foot placement, spring-bone collision, look-at occlusion, IK target
+safety) can optionally route through the **physics swept query API** defined in
+[physics/foundation.md](../physics/foundation.md). The physics engine already maintains a private
+BVH that supports `shape_cast`, `ray_cast`, and CCD-aware `swept_cast` queries — reusing these keeps
+procedural animation collision consistent with physics collision in the same frame.
+
+**Usage contract:**
+
+1. A fast-moving foot or IK target uses `PhysicsQueries::shape_cast` or `swept_cast` rather than a
+   simple instantaneous `ray_cast`, so the target never tunnels through thin floors between frames.
+2. Procedural systems read from the physics BVH; they never write to it. The BVH rebuild phase runs
+   earlier in the frame than procedural animation (see the post-process pipeline ordering diagram
+   earlier in this document).
+3. When procedural animation runs on worker threads, `Res<PhysicsQueries>` is borrowed immutably —
+   multiple worker threads can query the same BVH in parallel.
+4. The swept-query API is shared with all other subsystems that need CCD: character controllers,
+   projectiles, and destruction debris all call the same functions with different filters.
+
+This replaces the previous pattern where each subsystem implemented its own raycast against a local
+collision cache. With shared CCD, if a moving platform nudges the floor geometry between the physics
+step and procedural animation, the foot-placement raycast still sees the updated geometry.
+
 ### Secondary Motion (Spring Bones)
 
 ```rust
@@ -1130,11 +1126,11 @@ pub struct FpCamera {
 
 #[derive(Component, Reflect)]
 pub struct FpCameraRig {
-    pub head_bob_vertical: SpringDamper,
-    pub head_bob_horizontal: SpringDamper,
-    pub landing_impact: SpringDamper,
-    pub lean_offset: SpringDamper,
-    pub strafe_tilt: SpringDamper,
+    pub head_bob_vertical: ScalarSpring,
+    pub head_bob_horizontal: ScalarSpring,
+    pub landing_impact: ScalarSpring,
+    pub lean_offset: ScalarSpring,
+    pub strafe_tilt: ScalarSpring,
     pub bob_amplitude: f32,
     pub bob_frequency: f32,
     pub landing_snap_scale: f32,

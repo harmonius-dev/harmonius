@@ -1,5 +1,13 @@
 # Core Algorithms Design
 
+> **Canonical scope:** Tier 1 shared primitives are now documented in
+> [primitives.md](primitives.md). This document covers only higher-tier algorithmic primitives
+> (`Curve`, `SpringDamper`, `ConditionExpr`, `FalloffCurve`, `DeterministicRng`, `GraphCompiler`,
+> and friends) that are NOT duplicated there. `Handle<T>`, `HandleMap<T>`, `SlotMap<T>`,
+> `SortedVecMap<K, V>`, `RingBuffer<T, N>`, `DirtyRegionSet`, `DispatchTable<F>`, and
+> `BudgetAllocator` all live in [primitives.md](primitives.md); `UniformGrid<T>` is retained only as
+> an alias that wraps the primitives-level structure for legacy call sites.
+
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined across all 15 domains.
@@ -8,27 +16,33 @@
 
 ### Tier 1 — Engine-Wide Primitives
 
-| Primitive                         |
-|-----------------------------------|
-| `Handle<T>` + `HandleMap<T>` |
-| `UniformGrid<T>`             |
-| `Octree<T>`                  |
-| `Curve<T>`                   |
-| `SpringDamper<T>`            |
-| `ConditionExpr`              |
-| `FrameBudget`                |
-| `FalloffCurve`               |
-| `PlatformTier`               |
-| `CompressionCodec`           |
+> **Moved:** The definitions for `Handle<T>`, `HandleMap<T>`, `SlotMap<T>`, `GenerationalIndex`,
+> `SortedVecMap<K, V>`, `RingBuffer<T, N>`, `DirtyRegionSet`, `DispatchTable<F>`, `BudgetAllocator`,
+> and `DeterministicRng` now live in [primitives.md](primitives.md). The entries below are kept only
+> for traceability; all API pseudocode and test coverage for these types belongs in the canonical
+> doc.
 
-1. **`Handle<T>` + `HandleMap<T>`** — ecs.md (Entity), memory-async-io.md (Handle), spatial-index.md
-   (BvhHandle)
+| Primitive                         | Canonical owner                  |
+|-----------------------------------|----------------------------------|
+| `Handle<T>` + `HandleMap<T>`      | [primitives.md](primitives.md)   |
+| `UniformGrid<T>`                  | [primitives.md](primitives.md)   |
+| `Octree<T>`                       | algorithms.md (this document)    |
+| `Curve<T>`                        | algorithms.md (this document)    |
+| `SpringDamper<T>`                 | algorithms.md (this document)    |
+| `ConditionExpr`                   | algorithms.md (this document)    |
+| `FrameBudget`                     | algorithms.md (this document)    |
+| `FalloffCurve`                    | algorithms.md (this document)    |
+| `PlatformTier`                    | algorithms.md (this document)    |
+| `CompressionCodec`                | algorithms.md (this document)    |
+
+1. **`Handle<T>` + `HandleMap<T>`** — see [primitives.md](primitives.md). Consumers (ECS Entity,
+   asset handles, BVH handles) depend on the canonical definition there.
    - **Features Served:** F-1.1.11, F-1.7.4, F-1.7.5, F-1.9.1
-2. **`UniformGrid<T>`** — perception.md (ScentGrid), steering-crowds.md (DensityGrid), simulation.md
-   (FogGrid, TacticalGrid)
+2. **`UniformGrid<T>`** — see [primitives.md](primitives.md) (core structure). Domain usage (scent,
+   density, fog, tactical) now references the canonical type by reference only.
    - **Features Served:** F-7.6, F-7.7, F-13.20, F-13.26
-3. **`Octree<T>`** — spatial-index.md (BVH/octree), physics.md, rendering.md, audio.md,
-   networking.md
+3. **`Octree<T>`** — algorithms.md (this doc). Consumed by physics, rendering, audio, AI, and
+   networking for spatial queries; builds on `Handle<T>` from [primitives.md](primitives.md).
    - **Features Served:** F-1.9.1, F-4.1, F-2.1, F-7.6
 4. **`Curve<T>`** — databases.md (NumericCurve), camera.md (Spline), navigation.md (PathSmooth),
    abilities-combat.md (RecoilCurve), state-machine.md (BlendCurve), behavior.md (ResponseCurve)
@@ -232,58 +246,14 @@ graph LR
 
 ### Class Diagram — All Types
 
+> **Note:** `Handle<T>`, `HandleMap<T>`, `SlotMap<T>`, `GenerationalIndex`, `UniformGrid<T>`,
+> `SortedVecMap<K,V>`, `RingBuffer<T,N>`, `DirtyRegionSet`, `DispatchTable<F>`, `BudgetAllocator`,
+> and `DeterministicRng` are documented in [primitives.md](primitives.md). They are omitted from
+> this diagram to prevent duplication.
+
 ```mermaid
 classDiagram
     direction TB
-
-    class Handle~T~ {
-        -u32 index
-        -u32 generation
-        +index() u32
-        +generation() u32
-        +is_null() bool
-    }
-
-    class HandleMap~T~ {
-        -Vec~Slot~T~~ entries
-        -Vec~u32~ free_list
-        +insert(T) Handle~T~
-        +remove(Handle~T~) Option~T~
-        +get(Handle~T~) Option~T~
-        +get_mut(Handle~T~) Option~T~
-        +contains(Handle~T~) bool
-        +len() usize
-        +iter() Iterator
-    }
-
-    class EntityMarker {
-        <<unit struct>>
-    }
-
-    class UniformGrid~T~ {
-        -Vec~T~ cells
-        -GridDimensions dimensions
-        -f32 cell_size
-        -Vec3 origin
-        +world_to_cell(Vec3) Option~CellCoord~
-        +cell_to_world(CellCoord) Vec3
-        +get(CellCoord) Option~T~
-        +neighbors(CellCoord, NeighborMode) Iterator
-        +cells_in_bounds(Vec3, Vec3) Iterator
-        +clear()
-    }
-
-    class GridDimensions {
-        +u32 width
-        +u32 height
-        +u32 depth
-    }
-
-    class CellCoord {
-        +u32 x
-        +u32 y
-        +u32 z
-    }
 
     class NeighborMode {
         <<enumeration>>
@@ -510,16 +480,6 @@ classDiagram
         +Vec~NodeId~ cycle
     }
 
-    class DeterministicRng {
-        -u64 state
-        +new(u64) Self
-        +fork(u64) DeterministicRng
-        +next_u32() u32
-        +next_u64() u64
-        +next_f32() f32
-        +range(u32, u32) u32
-    }
-
     class WeightedEntry~V~ {
         +V value
         +f32 weight
@@ -580,10 +540,7 @@ classDiagram
         +compile(nodes, edges, target)$ Result
     }
 
-    HandleMap~T~ o-- Handle~T~
-    UniformGrid~T~ *-- GridDimensions
-    UniformGrid~T~ ..> CellCoord
-    UniformGrid~T~ ..> NeighborMode
+    Octree~T~ ..> NeighborMode
     Octree~T~ *-- OctreeNode
     Curve~T~ *-- CurveKey~T~
     Curve~T~ *-- BezierKey~T~
@@ -623,176 +580,15 @@ classDiagram
 
 #### 1. `Handle<T>` + `HandleMap<T>`
 
-Generational index pattern providing safe, O(1) indirect references without lifetime tracking. A
-`Handle<T>` is a lightweight value containing a slot index and a generation counter. `HandleMap<T>`
-stores values in a dense array with generation-validated lookup. Stale handles (referencing
-deallocated slots) are detected at access time by comparing the handle's generation against the
-slot's current generation. Type safety is enforced via `PhantomData<T>`, preventing accidental use
-of a mesh handle where a texture handle is expected.
-
-This primitive unifies `Entity` (ecs.md), `Handle<T>` (memory-async-io.md), and `BvhHandle`
-(spatial-index.md) into a single definition. The ECS `Entity` type becomes a type alias:
-`type Entity = Handle<EntityMarker>`.
-
-```rust
-/// Generational index handle. Type-safe via phantom.
-/// 32-bit index + 32-bit generation = 64 bits total.
-pub struct Handle<T> {
-    index: u32,
-    generation: u32,
-    _marker: PhantomData<T>,
-}
-
-impl<T> Handle<T> {
-    /// Returns the raw slot index.
-    pub fn index(&self) -> u32;
-
-    /// Returns the generation counter.
-    pub fn generation(&self) -> u32;
-
-    /// Returns true if this handle has never been assigned.
-    pub fn is_null(&self) -> bool;
-}
-
-/// Dense storage with generation-validated O(1) lookup.
-pub struct HandleMap<T> {
-    entries: Vec<Slot<T>>,
-    free_list: Vec<u32>,
-}
-
-impl<T> HandleMap<T> {
-    /// Allocates a slot and returns a handle to it.
-    pub fn insert(&mut self, value: T) -> Handle<T>;
-
-    /// Removes the value at the handle's slot.
-    /// Increments the slot generation, invalidating
-    /// all existing handles to this slot.
-    pub fn remove(&mut self, handle: Handle<T>) -> Option<T>;
-
-    /// Returns a reference if the handle's generation
-    /// matches the slot's current generation.
-    pub fn get(&self, handle: Handle<T>) -> Option<&T>;
-
-    /// Mutable variant of `get`.
-    pub fn get_mut(
-        &mut self,
-        handle: Handle<T>,
-    ) -> Option<&mut T>;
-
-    /// Returns true if the handle is still valid.
-    pub fn contains(&self, handle: Handle<T>) -> bool;
-
-    /// Number of occupied slots.
-    pub fn len(&self) -> usize;
-
-    /// Iterates over all occupied (handle, value) pairs.
-    pub fn iter(&self) -> impl Iterator<Item = (Handle<T>, &T)>;
-}
-
-/// Entity is a type alias over Handle.
-pub struct EntityMarker;
-pub type Entity = Handle<EntityMarker>;
-```
+See [primitives.md](primitives.md). All consumers (`Entity`, asset handles, `BvhHandle`) depend on
+the canonical types there; no duplicate definition is kept in this document.
 
 #### 2. `UniformGrid<T>`
 
-Generic uniform-cell spatial structure supporting cell-based iteration, neighbor queries, and
-world-space bounds mapping. Each cell stores a user-defined `T` (e.g., density `f32`, scent
-intensity, fog state, tactical value). The grid maps from continuous world coordinates to discrete
-cell indices via a configurable cell size and origin offset.
-
-Optional GPU upload provides a read-only buffer for shaders (fog-of-war rendering, density
-visualization). This formalizes the grid as a first-class spatial primitive alongside the BVH
-defined in spatial-index.md.
-
-```rust
-/// Generic uniform grid over a 2D or 3D region.
-/// Cell size is fixed at construction.
-pub struct UniformGrid<T> {
-    cells: Vec<T>,
-    dimensions: GridDimensions,
-    cell_size: f32,
-    origin: Vec3,
-}
-
-/// Grid dimensions and addressing.
-pub struct GridDimensions {
-    pub width: u32,
-    pub height: u32,
-    pub depth: u32,
-}
-
-/// Integer cell coordinate.
-pub struct CellCoord {
-    pub x: u32,
-    pub y: u32,
-    pub z: u32,
-}
-
-impl<T: Default + Clone> UniformGrid<T> {
-    /// Creates a grid with the given dimensions and cell
-    /// size, centered at `origin`. All cells initialized
-    /// to `T::default()`.
-    pub fn new(
-        dimensions: GridDimensions,
-        cell_size: f32,
-        origin: Vec3,
-    ) -> Self;
-
-    /// Maps a world-space position to a cell coordinate.
-    /// Returns `None` if out of bounds.
-    pub fn world_to_cell(&self, pos: Vec3) -> Option<CellCoord>;
-
-    /// Maps a cell coordinate to the world-space center
-    /// of that cell.
-    pub fn cell_to_world(&self, coord: CellCoord) -> Vec3;
-
-    /// Returns a reference to the cell value.
-    pub fn get(&self, coord: CellCoord) -> Option<&T>;
-
-    /// Returns a mutable reference to the cell value.
-    pub fn get_mut(
-        &mut self,
-        coord: CellCoord,
-    ) -> Option<&mut T>;
-
-    /// Iterates over the Von Neumann or Moore neighbors
-    /// of a cell, returning (coord, &T) pairs.
-    pub fn neighbors(
-        &self,
-        coord: CellCoord,
-        mode: NeighborMode,
-    ) -> impl Iterator<Item = (CellCoord, &T)>;
-
-    /// Iterates over all cells in a world-space AABB.
-    pub fn cells_in_bounds(
-        &self,
-        min: Vec3,
-        max: Vec3,
-    ) -> impl Iterator<Item = (CellCoord, &T)>;
-
-    /// Returns the world-space AABB of the entire grid.
-    pub fn world_bounds(&self) -> Aabb;
-
-    /// Uploads cell data to a GPU buffer for shader
-    /// access. Returns a handle to the GPU buffer.
-    pub fn upload_to_gpu(
-        &self,
-        device: &GpuDevice,
-    ) -> Handle<GpuBuffer>;
-
-    /// Resets all cells to `T::default()`.
-    pub fn clear(&mut self);
-}
-
-/// Neighbor iteration mode.
-pub enum NeighborMode {
-    /// Face-adjacent only (6 in 3D, 4 in 2D).
-    VonNeumann,
-    /// Face + edge + corner adjacent (26 in 3D, 8 in 2D).
-    Moore,
-}
-```
+See [primitives.md](primitives.md) for the canonical primitive. The gameplay-propagating grid
+(influence maps, fog of war, scent trails) is now `CellGrid` in
+[simulation/grids-volumes.md](../simulation/grids-volumes.md). The networking AOI variant is
+documented in the networking design. This document does not redefine either.
 
 #### 3. `Octree<T>`
 
@@ -1574,44 +1370,9 @@ pub enum CompileTarget {
 
 #### 16. `DeterministicRng`
 
-Deterministic pseudo-random number generator with per-system seed forking. Ensures reproducible
-simulation across all subsystems that need randomness. Each system forks a child RNG from a root
-seed, providing independent but deterministic sequences.
-
-Used by AI behavior trees, particle effects, loot tables, and procedural generation.
-
-```rust
-/// Deterministic PRNG with seed forking.
-pub struct DeterministicRng {
-    state: u64,
-}
-
-impl DeterministicRng {
-    /// Creates a new RNG from a seed.
-    pub fn new(seed: u64) -> Self;
-
-    /// Forks a child RNG with a domain-specific key.
-    /// The child's seed is derived from the parent's
-    /// state and the key, ensuring determinism.
-    pub fn fork(&self, key: u64) -> DeterministicRng;
-
-    /// Returns the next pseudo-random u32.
-    pub fn next_u32(&mut self) -> u32;
-
-    /// Returns the next pseudo-random u64.
-    pub fn next_u64(&mut self) -> u64;
-
-    /// Returns a pseudo-random f32 in [0, 1).
-    pub fn next_f32(&mut self) -> f32;
-
-    /// Returns a pseudo-random u32 in [min, max).
-    pub fn range(
-        &mut self,
-        min: u32,
-        max: u32,
-    ) -> u32;
-}
-```
+See [primitives.md](primitives.md). The canonical `DeterministicRng` (Xoshiro256**) lives there.
+Higher-tier consumers (AI, particles, loot tables, procedural generation) depend on the
+primitives-level type and rely on its seed / fork contract.
 
 ---
 
@@ -1686,8 +1447,6 @@ Rust stdlib file I/O.
 
 | Primitive                    |
 |------------------------------|
-| `Handle<T>` + `HandleMap<T>` |
-| `UniformGrid<T>`             |
 | `Octree<T>`                  |
 | `Curve<T>`                   |
 | `SpringDamper<T>`            |
@@ -1697,31 +1456,28 @@ Rust stdlib file I/O.
 | `PlatformTier`               |
 | `CompressionCodec`           |
 
-1. **`Handle<T>` + `HandleMap<T>`** — Insert/get/remove round-trip; stale handle returns `None`;
-   generation overflow wraps correctly; iteration skips free slots; type safety prevents cross-type
-   access
-2. **`UniformGrid<T>`** — World-to-cell mapping at boundaries; neighbor iteration counts (VN=6,
-   Moore=26 in 3D); out-of-bounds returns `None`; clear resets all cells; `cells_in_bounds` returns
-   correct subset; `upload_to_gpu` produces valid buffer
-3. **`Octree<T>`** — Insert/remove round-trip; AABB query returns entries within bounds; sphere
+> **Moved tests:** Unit tests for `Handle<T>`, `HandleMap<T>`, `UniformGrid<T>`, and
+> `DeterministicRng` live in [primitives-test-cases.md](primitives-test-cases.md).
+
+1. **`Octree<T>`** — Insert/remove round-trip; AABB query returns entries within bounds; sphere
    query returns entries within radius; raycast returns nearest hit; nearest-k returns correct
    count; empty octree queries return empty results
-4. **`Curve<T>`** — Linear: `evaluate(0.5)` midpoint; CatmullRom: passes through control points;
+2. **`Curve<T>`** — Linear: `evaluate(0.5)` midpoint; CatmullRom: passes through control points;
    Bezier: endpoint interpolation; Step: holds value until next key; derivative correctness;
    `resample` produces evenly-spaced points
-5. **`SpringDamper<T>`** — Critically damped converges without overshoot; underdamped oscillates;
+3. **`SpringDamper<T>`** — Critically damped converges without overshoot; underdamped oscillates;
    overdamped sluggish; zero dt produces no change; f32/Vec3/Quat implementations
-6. **`ConditionExpr`** — And: all true passes, one false fails; Or: one true passes, all false
+4. **`ConditionExpr`** — And: all true passes, one false fails; Or: one true passes, all false
    fails; Not: inverts; nested expressions; leaf_count correctness; `collect_ids` returns all unique
    IDs
-7. **`FrameBudget`** — High-priority executes first; budget exhaustion defers remainder; reset
+5. **`FrameBudget`** — High-priority executes first; budget exhaustion defers remainder; reset
    preserves deferred items; zero-budget defers all
-8. **`FalloffCurve`** — Linear: 0 at max_range, 1 at distance 0; Quadratic: inverse-square law;
+6. **`FalloffCurve`** — Linear: 0 at max_range, 1 at distance 0; Quadratic: inverse-square law;
    Exponential: decay rate; Custom: delegates to inner curve; beyond max_range returns 0
-9. **`PlatformTier`** — Ordering: Mobile < Switch < Desktop < HighEnd; `meets` returns true for
+7. **`PlatformTier`** — Ordering: Mobile < Switch < Desktop < HighEnd; `meets` returns true for
    equal/higher; recommended values are monotonically increasing
-10. **`CompressionCodec`** — None: output equals input; Lz4: round-trip fidelity; Zstd: round-trip
-    fidelity; empty input; large input (1 MiB+)
+8. **`CompressionCodec`** — None: output equals input; Lz4: round-trip fidelity; Zstd: round-trip
+   fidelity; empty input; large input (1 MiB+)
 
 ### Tier 2 Unit Tests
 
@@ -1732,7 +1488,6 @@ Rust stdlib file I/O.
 | `DecayingStore<T>`        |
 | `TaggedLookupTable<K, V>` |
 | `GraphCompiler`           |
-| `DeterministicRng`        |
 
 1. **`DiGraph<N, E>`** — Add nodes/edges; `has_cycle` detects cycles; `topological_sort` produces
    valid order for DAGs and returns `CycleError` for cyclic graphs; `shortest_path` finds
@@ -1746,9 +1501,6 @@ Rust stdlib file I/O.
    many samples; missing key returns None
 5. **`GraphCompiler`** — Topological sort correctness; type mismatch produces CompileError; dead
    code elimination removes unreachable nodes; HLSL output for simple graph
-6. **`DeterministicRng`** — Same seed produces same sequence; different seeds produce different
-   sequences; `fork` produces deterministic child; `range` stays within bounds; `next_f32` returns
-   values in [0, 1)
 
 ### Integration Tests
 

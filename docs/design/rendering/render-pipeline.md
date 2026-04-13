@@ -283,7 +283,7 @@ classDiagram
         +create_compute_pipeline(desc) Result
         +submit(queue, bufs, signal, wait) Result
         +create_fence(initial) Result~FenceHandle~
-        +wait_fence(handle, value) Future
+        +poll_fence(handle, value) bool
         +capabilities() DeviceCapabilities
         +memory_budget() GpuMemoryBudget
     }
@@ -648,6 +648,233 @@ flowchart TD
     H -->|Yes| E
     H -->|No| I[Execute remaining]
 ```
+
+### PSO Cache
+
+The full design lives in [pipeline-state-cache.md](pipeline-state-cache.md). The following
+integration points connect it to this document:
+
+| Touchpoint                  | Location in this doc              | Consumer API             |
+|-----------------------------|-----------------------------------|--------------------------|
+| Lookup on pass execute      | `ExecutionPlan::execute`          | `PsoCache::get_or_build` |
+| Content hash from bytecode  | `ShaderCompiler::compile` result  | `PsoKey`                 |
+| Invalidate on hot-reload    | Hot-reload flow in RF-9           | `PsoCache::invalidate`   |
+| Descriptor layout           | "Descriptor Layout Inference"     | `DescriptorLayout`       |
+| Per-device isolation        | Backend init                      | `DeviceFingerprint`      |
+| LRU + GC                    | End-of-frame cleanup              | `PsoCache::gc`           |
+
+The cache is owned by the render thread, uses `SortedVecMap<PsoKey, PsoEntry>` on the hot path (no
+`HashMap`), and serializes PSOs to a per-device-fingerprint directory via rkyv. See the companion
+design for key format, disk layout, invalidation rules, corruption recovery, and hot-reload
+integration.
+
+### Meshlet Asset Pipeline
+
+The full design lives in [meshlets.md](meshlets.md). This subsection shows how `MeshletAsset` flows
+through the extract phase into GPU buffers owned by this document.
+
+```mermaid
+sequenceDiagram
+    participant ECS as ECS World
+    participant EX as RenderExtractor
+    participant MP as MeshletProxyBuilder
+    participant GA as GpuAllocator
+    participant CB as CommandBuffer
+    ECS->>EX: query MeshRenderer + Transform
+    EX->>MP: handles + interp transforms
+    MP->>GA: reserve instance buffer slice
+    MP->>CB: upload vertex/index/meshlet buffers
+    MP-->>EX: MeshletProxy per instance
+    EX->>CB: record DispatchMeshIndirect
+```
+
+Key points:
+
+1. `MeshletAsset` rkyv archives are mmap'd once at asset load. Their `BufferView`s become GPU buffer
+   handles via `GpuDevice::create_buffer` with the rkyv range as initial data.
+2. Extract records a `MeshletProxy` per visible entity (see [rendering-core.md](rendering-core.md)
+   Material System section and Core Class Diagram).
+3. The GPU culling compute pass reads the meshlet buffer directly — no CPU round-trip.
+4. BLAS construction reads the same `vertex_buffer`/`index_buffer` via `GpuDevice::create_blas`
+   (RF-2); see [meshlets.md](meshlets.md) BLAS section.
+
+### Barrier Optimizer Algorithm
+
+`BarrierOptimizer::analyze` groups resources by required state at each pass boundary, detects
+transitions between passes, collapses redundant transitions, and emits split barriers where
+profitable. Pseudocode:
+
+```text
+fn analyze(plan: &ExecutionPlan) -> Vec<BarrierBatch> {
+    // 1. Group resources by required state per pass.
+    let mut state_by_pass: SortedVecMap<PassHandle, SortedVecMap<ResourceId, ResourceState>>;
+    for pass in plan.passes() {
+        for usage in pass.reads().chain(pass.writes()) {
+            state_by_pass[pass.handle()].insert(usage.resource, usage.required_state);
+        }
+    }
+
+    // 2. Walk topological order, detect transitions per resource.
+    let mut transitions: Vec<Transition> = Vec::new();
+    let mut prev_state: SortedVecMap<ResourceId, ResourceState> = initial_states(plan);
+    for pass in plan.topo_order() {
+        for (res, new_state) in state_by_pass[pass.handle()].iter() {
+            let old = prev_state.get(res).copied().unwrap_or(ResourceState::Undefined);
+            if old != *new_state {
+                transitions.push(Transition {
+                    resource: *res, from: old, to: *new_state,
+                    begin_pass: pass.handle(), end_pass: pass.handle(),
+                });
+                prev_state.insert(*res, *new_state);
+            }
+        }
+    }
+
+    // 3. Collapse redundant — if two consecutive passes transition the same resource to
+    //    the same state, keep only the first.
+    let collapsed = collapse_runs(&transitions);
+
+    // 4. Emit split barriers: for transitions that are known ahead of time, begin the
+    //    barrier on the last pass that uses the "from" state and end it on the first
+    //    pass that needs the "to" state. This lets the GPU hide barrier cost behind
+    //    intermediate work. Only emit split barriers when begin_pass != end_pass and
+    //    the queue path allows it.
+    let mut batches: Vec<BarrierBatch> = Vec::new();
+    for t in collapsed {
+        if plan.distance(t.begin_pass, t.end_pass) > 1 {
+            batches.push(BarrierBatch::Split { begin: t.begin_pass, end: t.end_pass, ..t });
+        } else {
+            batches.push(BarrierBatch::Immediate { at: t.end_pass, ..t });
+        }
+    }
+    batches
+}
+```
+
+References: Wihlidal, "Optimizing Graphics Pipeline" (GDC 2016), and the Vulkan
+`VK_KHR_synchronization2` spec (section on split / event-based barriers). D3D12 reference:
+`D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY` / `D3D12_RESOURCE_BARRIER_FLAG_END_ONLY` in the
+[D3D12 resource barriers documentation][d3d12-barriers].
+
+[d3d12-barriers]: https://learn.microsoft.com/en-us/windows/win32/direct3d12/using-resource-barriers-to-synchronize-resource-states-in-direct3d-12
+
+### Swapchain Trait
+
+```rust
+pub trait Swapchain {
+    /// Block until v-sync releases a backbuffer image. The only acceptable block on the
+    /// render thread (see RF-1). Returns the resource handle for the image and its index
+    /// in the triple buffer chain.
+    fn acquire_backbuffer(&mut self) -> AcquiredBackbuffer;
+
+    /// Submit a present of `color_resource` using the given command buffer. The command
+    /// buffer must transition the resource to `ResourceState::Present` before calling.
+    fn present(&mut self, cmd: &mut CommandBuffer, color_resource: ResourceHandle);
+
+    /// Recreate the swapchain for a new window size. Idempotent; no-op if `w`/`h` match
+    /// the current configuration.
+    fn on_resize(&mut self, w: u32, h: u32);
+
+    /// Return the currently negotiated color format (e.g. BGRA8Unorm or RGB10A2).
+    fn current_format(&self) -> Format;
+}
+
+pub struct AcquiredBackbuffer {
+    pub resource: ResourceHandle,
+    pub buffer_index: u32,
+    pub semaphore: FenceHandle,
+}
+```
+
+All three backends implement `Swapchain`:
+
+| Backend | `acquire_backbuffer`            | `present`                              |
+|---------|----------------------------------|----------------------------------------|
+| D3D12   | `IDXGISwapChain3::Present` wait  | `ExecuteCommandLists` + `Present`      |
+| Vulkan  | `vkAcquireNextImageKHR`          | `vkQueueSubmit` + `vkQueuePresentKHR`  |
+| Metal   | `CAMetalLayer::nextDrawable`     | `MTLCommandBuffer::present(drawable)`  |
+
+### Frame Synchronization
+
+Harmonius uses a **triple-buffered** producer/consumer between the simulation (game worker threads)
+and the render thread. The chain has three slots: **back** (producer writing), **middle** (ready for
+consumer), and **front** (render thread reading).
+
+Lifecycle per frame:
+
+1. Game worker threads extract into the back slot of the `TripleBuffer<RenderFrame>`.
+2. On completion, the producer atomically swaps back and middle. The middle slot now holds the
+   freshest committed snapshot; any previous middle slot (if unconsumed) is discarded.
+3. The render thread calls `Swapchain::acquire_backbuffer`. This is the only block on the render
+   thread; v-sync gates the frame rate here.
+4. After acquire, the render thread swaps middle and front, taking ownership of the latest
+   `RenderFrame`. If the producer has not yet committed (back != middle), the render thread reuses
+   the previous front (repeated frame), ensuring the render thread never stalls.
+5. The render thread encodes command buffers from `front`, submits them, and calls
+   `Swapchain::present(cmd, backbuffer.resource)`.
+6. `PerFrameBuffer`s (see RF-10) are indexed by `frame_index % 3`. `poll_fence` confirms when
+   in-flight GPU work on a given slot has retired, so its resources can be reused.
+
+This guarantees: (a) simulation is never blocked by GPU, (b) render thread is only blocked by
+v-sync, (c) up to 3 frames in flight, (d) no torn reads — each `RenderFrame` is an immutable
+snapshot.
+
+### Descriptor Layout Inference
+
+`ShaderCompiler::compile` reads dxc DXIL/SPIR-V bytecode metadata (or Metal IR reflection for
+metallib) and produces a `DescriptorLayout`. The `DescriptorBinder` then allocates descriptor sets
+per layout and caches them next to the PSO in the `PsoCache`.
+
+```rust
+pub struct ShaderCompileResult {
+    pub bytecode: Vec<u8>,
+    pub target: ShaderTarget,
+    pub descriptor_layout: DescriptorLayout,
+    pub permutation_key: PermutationKey,
+}
+
+impl ShaderCompiler {
+    pub fn compile(&mut self, desc: &ShaderCompileDesc) -> Result<ShaderCompileResult, GpuError>;
+    pub fn reflect(&self, bytecode: &[u8], target: ShaderTarget)
+        -> Result<DescriptorLayout, GpuError>;
+}
+
+pub struct DescriptorLayout {
+    pub bindings: SmallVec<[Binding; 8]>,
+    pub push_constants: u32,
+}
+
+pub struct Binding {
+    pub group: u32,
+    pub slot: u32,
+    pub kind: BindingKind,
+    pub stages: ShaderStageFlags,
+}
+
+pub enum BindingKind {
+    UniformBuffer,
+    StorageBuffer { read_only: bool },
+    SampledTexture,
+    StorageTexture,
+    Sampler,
+    AccelerationStructure,
+}
+```
+
+`PermutationKey` is defined in [shader-variants.md](shader-variants.md) and carries
+`(ShadingModel, ShaderFeatures, RenderPath, LodLevel)`. The shader compiler is invoked once per
+(source, permutation) during asset processing; on hot-reload the new bytecode re-runs reflection so
+that `DescriptorLayout` stays in sync with the shader.
+
+`DescriptorBinder::bind_material` reads a `Material::descriptor_layout` (defined in
+[rendering-core.md](rendering-core.md) Material System) and produces the platform-specific binding
+call:
+
+| Backend | Allocation                | Binding call                           |
+|---------|---------------------------|----------------------------------------|
+| D3D12   | descriptor heap slice     | `SetGraphicsRootDescriptorTable`       |
+| Vulkan  | `VkDescriptorSet` per set | `vkCmdBindDescriptorSets`              |
+| Metal   | argument buffer encoder   | `setFragmentBuffer:offset:atIndex:`    |
 
 ## Platform Considerations
 

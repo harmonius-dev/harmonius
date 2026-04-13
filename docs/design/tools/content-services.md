@@ -95,13 +95,21 @@
 Content services cover four editor subsystems that share infrastructure but serve distinct purposes:
 
 1. **Localization** -- string table management, ICU MessageFormat, RTL, font fallback, translation
-   memory, XLIFF, pseudo-loc.
+   memory, XLIFF, pseudo-loc. Runtime string table lookup is owned by
+   [../game-framework/localization.md](../game-framework/localization.md); this document covers only
+   the editor-side authoring tools and backend translation workflow.
 2. **Documentation** -- auto-generated API reference from codegen type descriptors (middleman
    .dylib), interactive tutorials, contextual help, search.
 3. **AI Governance** -- provenance tagging, modification tracking, feature toggles, tamper-evident
    audit trails, review workflows, enterprise policy administration.
 4. **AI Assistant** -- natural language editor commands (voice + text), multi-modal context, LLM
    tool calling, agent orchestration, rate limiting, quotas, provider configuration.
+
+**Async scope.** All editor-side paths are synchronous: no `async`, no `await`, no `Future` in any
+editor process. LLM requests, translation memory queries, and audit log writes are queued via
+crossbeam-channel and completions arrive as jobs polled at frame boundaries. Backend services (TiKV,
+translation memory server, audit attestation, LLM router) are Kubernetes-hosted and *may* use async
+runtimes internally — they never cross the editor process boundary.
 
 All LLM inference runs on customer-owned infrastructure (see RF-6). No model weights ship with the
 engine. The governance layer is always available; the assistant is gated behind toggles (F-15.7.4)
@@ -401,10 +409,10 @@ classDiagram
     }
     class ToolInterface {
         +register_tool(definition)
-        +execute(call, access) Future~ToolResult~
+        +execute(call, access) RequestId
     }
     class CommandInterpreter {
-        +process_command(ctx, user) Future~Result~
+        +process_command(ctx, user) RequestId
     }
     class MultiModalContext {
         +Option~String~ text
@@ -414,7 +422,7 @@ classDiagram
     }
     class AgentOrchestrator {
         +create_agent() AgentId
-        +run_command(id, ctx) Future~Result~
+        +run_command(id, ctx) RequestId
         +terminate_agent(id) Result
     }
     class RateLimiter {

@@ -1019,22 +1019,36 @@ impl BreakDetectionSystem {
 
 ### Ragdoll Definition and Activation
 
+`BoneIndex` stability and the canonical skeleton schema are owned by
+[animation/skeletal.md](../animation/skeletal.md); `Handle<T>` is defined in
+[core-runtime/primitives.md](../core-runtime/primitives.md). A `RagdollDef` is authored once and
+stored as an asset (`Handle<RagdollDef>`). The editor auto-generates a default `RagdollDef` from a
+`Skeleton` asset plus per-bone collision primitives; authors can override the result with manual
+edits, and the override path is preserved in the saved asset.
+
 ```rust
+use harmonius_animation::skeletal::Skeleton;
+use harmonius_core::ids::BoneIndex;
+
 /// Maps a skeleton hierarchy to joint entity
 /// archetypes for ragdoll activation. Stored
 /// as a shared asset.
 pub struct RagdollDef {
     /// One entry per joint in the skeleton.
     pub joints: Vec<RagdollJointDef>,
+    /// True if any joint has been hand-edited
+    /// after auto-generation; prevents the editor
+    /// from silently overwriting manual tuning.
+    pub manual_override: bool,
 }
 
 /// Definition for a single ragdoll joint.
 pub struct RagdollJointDef {
     /// Index of the parent bone in the
     /// skeleton hierarchy.
-    pub parent_bone: u16,
+    pub parent_bone: BoneIndex,
     /// Index of the child bone.
-    pub child_bone: u16,
+    pub child_bone: BoneIndex,
     /// Joint type for this connection.
     pub joint_type: JointType,
     /// Angular limits for this joint.
@@ -1169,6 +1183,61 @@ pub struct RagdollBudget {
     pub max_bones_per_ragdoll: u32,
 }
 ```
+
+### Ragdoll Auto-Generation
+
+Manual authoring of a `RagdollDef` is tedious and error-prone: every bone needs a parent link, a
+collision primitive, a mass, and joint limits. The editor auto-generates a sensible default from a
+`Skeleton` asset plus an ordered list of per-bone collision primitives; this runs at asset-import or
+in response to a user command in the editor. The generated def can then be hand-tuned; setting
+`manual_override = true` marks the def as authoritative and prevents further auto-runs from
+overwriting it.
+
+```rust
+/// Auto-generate a RagdollDef from a skeleton
+/// asset and a list of collision primitives.
+/// Runs in the editor / asset pipeline, not at
+/// runtime. Pure function: same inputs produce
+/// byte-identical output.
+///
+/// Algorithm:
+///   1. Walk the skeleton's bone hierarchy in
+///      parent-to-child order.
+///   2. For each bone pair (parent, child) with a
+///      matching collision primitive, emit a
+///      `RagdollJointDef` with a ConeTwist joint
+///      and default limits derived from bone
+///      axis direction + bone length.
+///   3. Mass per bone defaults to a density-based
+///      estimate of the collision primitive
+///      volume (1000 kg/m^3 for humanoids).
+///   4. Local anchors default to the midpoint
+///      between parent bone tail and child bone
+///      head in bind pose.
+///
+/// Authors override the result by editing the
+/// RagdollDef and flipping `manual_override` to
+/// true; auto-generation never overwrites a def
+/// whose `manual_override` flag is set.
+pub fn generate_ragdoll_def(
+    skeleton: &Skeleton,
+    collision_primitives: &[ColliderShape],
+) -> RagdollDef {
+    unimplemented!()
+}
+
+/// Editor command: regenerate a RagdollDef from
+/// the current skeleton asset. Respects the
+/// `manual_override` flag.
+pub struct RegenerateRagdollCommand {
+    pub def_handle: Handle<RagdollDef>,
+    pub skeleton_handle: Handle<Skeleton>,
+}
+```
+
+The manual override path remains the primary authoring workflow for bespoke creatures: authors can
+open any generated `RagdollDef` in the editor, hand-tune joint limits, masses, and anchors, and save
+it back. Setting `manual_override = true` in the asset locks it from future auto-regen.
 
 ### Chain Definition and Spawning
 

@@ -62,10 +62,10 @@
 |------------|--------|--------------|
 | ThreadPool | F-14.3.1 | `scope`, `spawn`, `execute_graph` |
 | TaskGraph | F-14.3.3 | `TaskGraphBuilder`, `TaskGraph` |
-| Tokio | F-14.3.5 | `tokio::fs`, `tokio::io` |
+| Platform I/O | F-1.8.x | `IoRequest`, `IoResponse` via main-thread drain |
 | BufferPool | F-1.8.9 | Page-aligned I/O buffers |
 | CAS Store | F-12.3.2 | BLAKE3-keyed content storage |
-| Reflection | F-1.3.1 | `Reflect` derive for configs |
+| Codegen | F-1.3.x | Generated type descriptors; no runtime reflection |
 | ECS | F-1.1.20 | Parallel queries, change detection |
 | Spatial Index | F-1.9.1 | Camera distance queries |
 
@@ -270,15 +270,15 @@ classDiagram
         +asset_kind() AssetKind
         +dependencies(metadata) Vec~AssetId~
         +content_hash(source, profile) ContentHash
-        +process(ctx) Future~ProcessResult~
+        +process(ctx) Result~ProcessResult~
     }
     class ProcessingManager {
         -registry ProcessorRegistry
         -cache IncrementalCache
         -pool ThreadPool
-        -runtime TokioRuntime
-        +process(ids, profile) Future~Report~
-        +process_all(profile) Future~Report~
+        -io IoChannel
+        +process(ids, profile) Result~Report~
+        +process_all(profile) Result~Report~
     }
     class ProcessorRegistry {
         -processors HashMap~AssetKind, Box~
@@ -450,17 +450,21 @@ pub struct ContentHash(pub [u8; 32]);
 pub struct ArtifactKey(pub [u8; 32]);
 
 /// Context passed to each processor invocation.
+/// Processors submit I/O via `io` and block within the
+/// job-system scope until the main thread drains the
+/// request. No async/await anywhere — see
+/// [../core-runtime/io.md](../core-runtime/io.md).
 pub struct ProcessingContext<'a> {
     pub source: &'a [u8],
     pub metadata: &'a AssetMetadata,
     pub profile: &'a PlatformProfile,
-    pub runtime: &'a tokio::runtime::Handle,
+    pub io: &'a IoChannel,
     pub cas: &'a CasStore,
     pub buffers: &'a BufferPool,
 }
 
 /// Stateless processor. All state flows through
-/// ProcessingContext.
+/// ProcessingContext. Synchronous API per constraints.md.
 pub trait AssetProcessor: Send + Sync {
     fn asset_kind(&self) -> AssetKind;
     fn dependencies(
@@ -475,10 +479,7 @@ pub trait AssetProcessor: Send + Sync {
     fn process(
         &self,
         ctx: ProcessingContext<'_>,
-    ) -> impl Future<Output = Result<
-        ProcessResult,
-        ProcessingError,
-    >> + Send;
+    ) -> Result<ProcessResult, ProcessingError>;
 }
 
 pub struct ProcessResult {
@@ -631,24 +632,26 @@ pub struct ProcessingManager {
     registry: ProcessorRegistry,
     cache: IncrementalCache,
     pool: ThreadPool,
-    runtime: tokio::runtime::Handle,
+    io: IoChannel,
     buffers: BufferPool,
     config: ProcessingManagerConfig,
 }
 
 impl ProcessingManager {
-    pub async fn process(
+    // Synchronous API. Blocks the calling thread within
+    // the job-system scope until dependents complete.
+    pub fn process(
         &mut self,
         asset_ids: &[AssetId],
         profile: &PlatformProfile,
         db: &AssetDatabase,
     ) -> Result<ProcessingReport, ProcessingError>;
-    pub async fn process_all(
+    pub fn process_all(
         &mut self,
         profile: &PlatformProfile,
         db: &AssetDatabase,
     ) -> Result<ProcessingReport, ProcessingError>;
-    pub async fn process_multi_platform(
+    pub fn process_multi_platform(
         &mut self,
         asset_ids: &[AssetId],
         profiles: &[PlatformProfile],
@@ -731,7 +734,7 @@ impl StreamingManager {
     pub fn new(
         config: StreamingConfig,
         vfs: VirtualFileSystem,
-        runtime: tokio::runtime::Handle,
+        io: IoChannel,
         buffer_pool: BufferPool,
     ) -> Self;
     pub fn load(
@@ -744,11 +747,13 @@ impl StreamingManager {
         deadline_frame: u64,
     ) -> StreamHandle;
     pub fn cancel(&self, asset_id: AssetId);
-    pub async fn tick(
+    // Synchronous tick; drains completed IoResponses
+    // from the main thread and dispatches new IoRequests.
+    pub fn tick(
         &self,
         current_frame: u64,
     ) -> u32;
-    pub async fn flush(&self);
+    pub fn flush(&self);
 }
 ```
 
@@ -791,17 +796,21 @@ pub enum CompressionCodec {
 pub struct PakArchive { /* ... */ }
 
 impl PakArchive {
-    pub async fn open(
+    // Synchronous API. Backed by IoRequest submitted to
+    // the main thread; blocks the job-system scope.
+    pub fn open(
         path: &VfsPath,
+        io: &IoChannel,
     ) -> Result<Self, PakError>;
     pub fn lookup(
         &self,
         id: AssetId,
     ) -> Option<&PakEntry>;
-    pub async fn read_entry(
+    pub fn read_entry(
         &self,
         entry: &PakEntry,
         buffer_pool: &BufferPool,
+        io: &IoChannel,
     ) -> Result<BufferSlot, PakError>;
 }
 ```
@@ -910,10 +919,14 @@ pub struct GpuTransferRequest {
 impl DirectStorageBackend {
     pub fn new(
     ) -> Result<Self, DirectStorageError>;
-    pub async fn submit(
+    // Synchronous submit. On Windows uses DirectStorage
+    // via windows-rs; on Apple uses Metal I/O; on Linux
+    // submits via io_uring. Completion is polled from
+    // the main thread and delivered via IoResponse.
+    pub fn submit(
         &self,
         request: GpuTransferRequest,
-    ) -> Result<(), DirectStorageError>;
+    ) -> Result<IoRequestId, DirectStorageError>;
     pub fn is_available(&self) -> bool;
 }
 ```
@@ -1201,19 +1214,55 @@ Test cases are defined inline below.
    priority queue?
 10. **CAS garbage collection.** Reference counting from cache vs periodic sweep for stale artifacts?
 
+## Streaming Priorities
+
+Per-request priority is computed once per tick and used to order pending loads within the bandwidth
+budget. The formula combines camera distance, screen-space area, and an asset-type weight. Higher
+scores are served first; ties are broken by deadline frame, then by `AssetId` for determinism.
+
+```text
+priority = asset_weight
+         * screen_area_factor(screen_px^2)
+         * distance_factor(1 / max(distance, min_d))
+         * deadline_bias(frames_until_deadline)
+```
+
+| Factor | Range | Notes |
+|--------|-------|-------|
+| `asset_weight` | 0.0–4.0 | Type weight: hero mesh 4.0, environment 1.0, prop 0.5 |
+| `screen_area_factor` | 0.0–1.0 | Normalized to `(screen_px^2) / viewport_area` |
+| `distance_factor` | 0.0–1.0 | `min_d / camera_distance`, clamped |
+| `deadline_bias` | 1.0–4.0 | Doubles for each frame until the deadline |
+
+### Bandwidth split
+
+`StreamingManager::tick` splits the per-frame bandwidth budget between texture mips and mesh LODs
+via a fixed quota. On a typical desktop tier the default is `0.6` textures / `0.35` meshes / `0.05`
+audio; mobile swings to `0.45` / `0.45` / `0.10` to favor meshes that are harder to re-request. The
+quota is a `ConVar` (see
+[../core-runtime/console-variables.md](../core-runtime/console-variables.md)) and may be retuned per
+title without rebuilding.
+
+### Eviction under pressure
+
+When the bandwidth or residency budget is exceeded, the manager evicts least-recently-visible
+entries first, then by inverse priority. Hero-weight assets are protected for `N` frames after last
+visibility to avoid hitching on rapid camera cuts.
+
 ## Review Feedback
 
-### RF-1: Remove all Tokio and async/await
+### RF-1: Remove all Tokio and async/await [APPLIED]
 
-Replace all 15+ Tokio references and async fn signatures with synchronous code using the
-channel-based I/O model:
+All 15+ Tokio references and `async fn` signatures have been replaced with synchronous
+request/handle APIs backed by `IoChannel` and main-thread `IoRequest` drain. The `ProcessingContext`
+now carries `io: &IoChannel` instead of a Tokio handle. `AssetProcessor::process` returns
+`Result<ProcessResult, ProcessingError>` synchronously. Pak open/read, streaming tick/flush, and
+DirectStorage submit are all sync with `IoRequestId`-based completion. The platform I/O backend
+table maps to io_uring (Linux), IOCP / DirectStorage (Windows), and dispatch2 + Metal I/O (Apple).
+See [../core-runtime/io.md](../core-runtime/io.md) for the shared request/handle protocol.
 
-- Replace `tokio::runtime::Handle` fields with `IoChannel` or `&JobScope`
-- Replace all `async fn` with synchronous `fn` that submit I/O via crossbeam-channel and return
-  `IoRequestId`
-- Replace `impl Future<Output = Result<...>>` returns with synchronous `Result<...>`
-- Replace "Tokio Runtime" in architecture diagrams with platform I/O
-- Update I/O backend table: io_uring (Linux), IOCP (Windows), GCD (Apple) — not "Tokio (xxx)"
+Historical notes (retained for audit):
+
 - Remove `tokio` from proposed dependencies
 
 ### RF-2: Remove all Reflect derives
