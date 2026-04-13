@@ -91,56 +91,63 @@ starting any design or implementation work.
   test planning, test-driven implementation, verification, documentation, and release into distinct
   phases. Do not start implementation until the design is approved and finalized.
 
-## Workflow plugin
+## Harmonize plugin
 
-Always use the workflow plugin's agents and skills when
-performing any part of the software development cycle:
-ideation, design, testing, implementation, review, or
-release. Do not perform these tasks manually.
+Always use the harmonize plugin's agents and skills for every part of the software
+development cycle: ideation, design, testing, implementation, review, or release. Do not
+perform these tasks manually — spawn the right background agent or load the right
+interactive sub-skill.
 
 ### Lifecycle
 
-1. **Specify** — generate features, requirements, and
-   user stories (`ideate` skill)
-2. **Design** — author design documents from templates
-   (`document-author` agent)
-3. **TDD** — write failing tests then implement code
-   (`coding-supervisor` agent)
-4. **Ship** — review, document, and release
-   (`release-supervisor` agent)
+| Phase | Orchestrator | Workers |
+|-------|--------------|---------|
+| 1 Specify | `specify-orchestrator` | `feature-author`, `requirement-author`, `user-story-author` |
+| 2 Design | `design-orchestrator` | `subsystem-designer`, `interface-designer`, `component-designer`, `integration-designer`, `design-reviewer`, `design-reviser` |
+| 3 Plan + TDD | `plan-orchestrator` | `plan-author`, `plan-implementer`, `pr-reviewer`, `test-writer`, `implementer`, `review-supervisor`, `correctness/standards/architecture-reviewer` |
+| 4 Release | `release-orchestrator` | `release-notes-author`, `changelog-updater`, `tagger` |
 
-Use the `workflow-supervisor` agent to orchestrate all
-phases automatically.
+The `harmonize` master agent supervises all four phases and dispatches phase orchestrators
+as background tasks.
 
-### Agents
+### Interactive sub-skills
 
-Supervisors orchestrate phases and spawn workers.
+Load the appropriate sub-skill when you want to give feedback at a specific level:
 
-| Agent | Role |
-|-------|------|
-| `workflow-supervisor` | Full lifecycle orchestration |
-| `coding-supervisor` | TDD red-green-refactor cycle |
-| `review-supervisor` | Code review orchestration |
-| `release-supervisor` | Release and quality gates |
+| Sub-skill | For |
+|-----------|-----|
+| `harmonize-specify` | Author or revise features, requirements, user stories |
+| `harmonize-design` | Author or revise subsystem / interface / component / integration designs |
+| `harmonize-plan` | Author or revise implementation plans |
+| `harmonize-implement` | Step through or observe a plan's TDD loop |
+| `harmonize-review` | Triage a draft PR's review findings interactively |
+| `harmonize-release` | Cut a release |
 
-Workers are spawned by supervisors for focused tasks.
+Each sub-skill claims a coarse `(phase, subsystem)` lock so background workers stay away
+from what the user is working on.
 
-| Agent | Role |
-|-------|------|
-| `document-author` | Guided template filling |
-| `test-writer` | Write failing tests from TC entries |
-| `implementer` | Implement code to pass tests |
-| `correctness-reviewer` | Check code vs design |
-| `standards-reviewer` | Check coding standards |
-| `architecture-reviewer` | Check engine constraints |
-
-### Workflow skills
+### Skills
 
 | Skill | Purpose |
 |-------|---------|
-| `workflow` | Development lifecycle phases |
-| `ideate` | Generate features, requirements, stories |
-| `document-templates` | Templates for all document types |
+| `harmonize` | Master entry point — routes SDLC work, boots cron, dispatches orchestrator |
+| `harmonize-specify` | Interactive Phase 1 |
+| `harmonize-design` | Interactive Phase 2 |
+| `harmonize-plan` | Interactive Phase 3 plan authoring |
+| `harmonize-implement` | Interactive Phase 3 TDD step-through |
+| `harmonize-review` | Interactive Phase 3 PR review |
+| `harmonize-release` | Interactive Phase 4 |
+| `document-templates` | Templates for every artifact type |
+
+### Harmonize trigger
+
+When the user mentions "harmonize" in any form (e.g., "harmonize", "run harmonize",
+"harmonize status", "author a harmonize plan"), you MUST invoke the `/harmonize` skill via
+the Skill tool BEFORE doing anything else. The skill is the operational playbook for the
+full SDLC. Do not act on harmonize requests from memory — always load the skill first.
+
+Similarly, when the user mentions a specific sub-skill name or a phase-scoped request,
+invoke the matching sub-skill directly (e.g., `/harmonize-design docs/design/...`).
 
 ## Markdown linting
 
