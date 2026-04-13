@@ -1,48 +1,47 @@
 {
+  "enabledPlugins": {
+    "rumdl@cjhowe-us-workflow": true
+  },
+  "extraKnownMarketplaces": {
+    "cjhowe-us-workflow": {
+      "source": {
+        "path": "/Users/cjhowe/Code/workflow",
+        "source": "directory"
+      }
+    }
+  },
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "command",
-            "command": ".claude/hooks/fmt-markdown.sh",
-            "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
             "command": ".claude/hooks/check-config.sh",
-            "timeout": 30
+            "timeout": 30,
+            "type": "command"
           }
-        ]
+        ],
+        "matcher": "Write|Edit"
       }
     ],
     "Stop": [
       {
         "hooks": [
           {
-            "type": "command",
             "command": ".claude/hooks/check-rust-stop.sh",
-            "timeout": 60
+            "timeout": 60,
+            "type": "command"
           }
         ]
       },
       {
         "hooks": [
           {
-            "type": "command",
             "command": ".claude/hooks/run-xcodegen-stop.sh",
-            "timeout": 30
+            "timeout": 30,
+            "type": "command"
           }
         ]
       }
     ]
-  },
-  "enabledPlugins": {},
-  "extraKnownMarketplaces": {}
+  }
 }
