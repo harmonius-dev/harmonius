@@ -23,8 +23,8 @@ See those files for the full test case definitions until migration is complete.
 | TC-15.8.3.1 | R-15.8.3 | Validation cycle detect |
 | TC-15.8.3.2 | R-15.8.3 | Validation dangling pin |
 | TC-15.8.3.3 | R-15.8.3 | Validation missing input |
-| TC-15.8.4.1 | R-15.8.4 | Coroutine lowering |
-| TC-15.8.4.2 | R-15.8.4 | Coroutine state variants |
+| TC-15.8.4.1 | R-15.8.4 | Suspend-state lowering |
+| TC-15.8.4.2 | R-15.8.4 | Suspend-state variants |
 | TC-15.8.12.1 | R-15.8.12 | Dead node elimination |
 | TC-15.8.12.2 | R-15.8.12 | Constant folding |
 | TC-15.8.12.3 | R-15.8.12 | Subgraph inlining |

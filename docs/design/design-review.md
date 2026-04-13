@@ -264,11 +264,20 @@ top of the data systems / simulation composition model. In practice:
   sequencer — the last three are rendering or sequencing concerns.
 - `save-system.md` pulls cloud sync, achievement queuing, and platform SDK hooks — these belong in
   `platform-services.md`.
-- `scripting.md` defines coroutines — a general-purpose core-runtime primitive.
+- `scripting.md` defines coroutines — ~~a general-purpose core-runtime primitive~~.
+  **Reversed 2026-04-12** — the corpus already decided the engine has no coroutine runtime (see the
+  "no coroutines" invariant repeated across `integration/ai-scripting.md`,
+  `integration/directed-graphs-scripting.md`, `integration/timelines-scripting.md`, and G1 in
+  `integration/high-level.md`). The scripting crate's yield lowering is a codegen-internal state
+  machine (`SuspendState`), not a shared primitive. Cross-subsystem multi-frame sequencing goes
+  through timelines (cinematics / music / timers), behavior trees (AI), or delayed events
+  (fire-and-forget). No `core-runtime/coroutines.md` exists.
 
 **Fix:** Split camera doc into `game-framework/camera.md` (brain, priority, blend) and
 `rendering/camera-rendering.md` (spring arm, lens, viewport composition). Move cloud/SDK hooks from
-save-system to platform-services. Extract coroutine support to `core-runtime/coroutines.md`.
+save-system to platform-services. ~~Extract coroutine support to `core-runtime/coroutines.md`.~~
+Rename `CoroutineState` to `SuspendState` in `scripting.md` and keep it scoped to the scripting
+crate; do not export as a shared primitive.
 
 ## 3. Per-subsystem findings
 
@@ -573,7 +582,12 @@ file(s) to touch and a one-sentence "done when" criterion.
     post-3D composite layer. Pick one and write it up in `2d.md` and `render-pipeline.md`.
 19. **Split `game-framework/camera.md`** into `game-framework/camera.md` (brain, priority, blend)
     and `rendering/camera-rendering.md` (spring arm, cine, PiP).
-20. **Extract coroutines** to `core-runtime/coroutines.md`; `scripting.md` becomes a client.
+20. ~~**Extract coroutines** to `core-runtime/coroutines.md`; `scripting.md` becomes a client.~~
+    **Reversed.** The engine has no coroutine runtime — the corpus (ai-scripting,
+    directed-graphs-scripting, timelines-scripting, high-level G1) already treats "no coroutines" as
+    an invariant. Instead: rename scripting's internal `CoroutineState` to `SuspendState` and keep
+    it scoped to the scripting crate as a codegen-internal yield-lowering state machine. For
+    cross-subsystem multi-frame sequencing, use timelines, behavior trees, or delayed events.
 21. **Move cloud sync and achievement queuing** from `save-system.md` to `platform-services.md`.
 22. **Pick the pathfinding algorithm** in `ai/navigation.md` (A* variant, heuristic, tie-breaker,
     heap type, citation). Specify nav-mesh-generation parameters (cell size, partition algorithm,

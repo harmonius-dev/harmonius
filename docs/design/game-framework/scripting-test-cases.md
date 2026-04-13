@@ -131,7 +131,7 @@ Companion test cases for [scripting.md](scripting.md).
 1. **#1** — Old layout [a:f32], new [a:bool] (type changed)
    - **Expected:** `ReloadResult::Incompatible`, instance reset
 
-### TC-15.8.4.1 Coroutine Yield Next Frame
+### TC-15.8.4.1 Suspend Yield Next Frame
 
 | # | Requirement |
 |---|-------------|
@@ -140,7 +140,7 @@ Companion test cases for [scripting.md](scripting.md).
 1. **#1** — `YieldNextFrame` at frame 10
    - **Expected:** Suspends at frame 10, resumes at frame 11
 
-### TC-15.8.4.2 Coroutine Yield Frames
+### TC-15.8.4.2 Suspend Yield Frames
 
 | # | Requirement |
 |---|-------------|
@@ -149,7 +149,7 @@ Companion test cases for [scripting.md](scripting.md).
 1. **#1** — `YieldFrames(3)` at frame 20
    - **Expected:** Resumes at frame 23
 
-### TC-15.8.4.3 Coroutine Yield Delay
+### TC-15.8.4.3 Suspend Yield Delay
 
 | # | Requirement |
 |---|-------------|
@@ -158,7 +158,7 @@ Companion test cases for [scripting.md](scripting.md).
 1. **#1** — `YieldDelay(1.0)` at t=5.0
    - **Expected:** Resumes when accumulated dt >= 1.0
 
-### TC-15.8.4.4 Coroutine Yield Event
+### TC-15.8.4.4 Suspend Yield Event
 
 | # | Requirement |
 |---|-------------|
@@ -322,7 +322,7 @@ Companion test cases for [scripting.md](scripting.md).
 1. **#1** — Graph A writes val=1, Graph B reads; A ordered before B
    - **Expected:** B reads val=1
 
-### TC-15.8.4.I1 Graph Coroutine Boss Encounter
+### TC-15.8.4.I1 Graph Suspend Boss Encounter
 
 | # | Requirement |
 |---|-------------|
@@ -435,7 +435,7 @@ Companion test cases for [scripting.md](scripting.md).
 |---|----------|--------|--------|-------------|
 | 1 | get/set on VariableStore | Per-access time | < 5 ns | R-13.4.1 |
 
-### TC-15.8.4.B1 Coroutine Suspend Resume
+### TC-15.8.4.B1 Suspend Resume
 
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|

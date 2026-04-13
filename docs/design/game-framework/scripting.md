@@ -22,7 +22,7 @@
 2. **F-13.4.2** — Visual debugging with breakpoints, watch, remote debug
 3. **F-13.4.3** — Hot reload of graph changes with state preservation
 4. **F-15.8.1** — Universal logic graph runtime (compiled graphs)
-5. **F-15.8.4** — Gameplay logic graphs (coroutines, ECS access)
+5. **F-15.8.4** — Gameplay logic graphs (yield lowering, ECS access)
 6. **F-15.8.12** — Graph compilation and optimization passes
 7. **—** — 1,000 active graphs in < 4 ms per frame at 60 fps
 8. **—** — Hot reload turnaround < 1 second
@@ -32,10 +32,17 @@
 > **Graph runtime client.** Logic graphs are a CLIENT of
 > [../core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md). The scripting subsystem
 > parameterizes the generic runtime as `GraphRuntime<LogicNode, LogicEdge, LogicGraphProgram>`; it
-> does not define graph execution primitives. Coroutines are a client of
-> [../core-runtime/coroutines.md](../core-runtime/coroutines.md). Hot reload follows
+> does not define graph execution primitives. Hot reload follows
 > [../core-runtime/hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md). Stable
 > `GraphInstanceId` values come from [../core-runtime/ids.md](../core-runtime/ids.md).
+>
+> **No coroutines.** The engine has no suspend-state runtime, no `Future`, no `.await`, and no
+> cross-subsystem suspend-state primitive. Multi-frame sequencing is handled by existing primitives:
+> use [../simulation/timelines.md](../simulation/timelines.md) for cinematics / music cues / timed
+> objectives; use [../ai/behavior.md](../ai/behavior.md) behavior trees for multi-frame agent logic;
+> use delayed ECS events for fire-and-forget deferred dispatch. Logic graphs with `yield` nodes
+> lower to codegen-internal synchronous state machines (see the Yield Lowering section below); the
+> `SuspendState` type is a private codegen helper, not a shared primitive.
 
 The logic graph system is the **universal extensibility layer for the entire engine**. Users never
 write code. All logic — gameplay, AI, shaders, asset processing, editor tools, plugins — is authored
@@ -56,9 +63,11 @@ Key architectural choices:
 4. **Sandboxed.** User graphs cannot express `unsafe`, raw pointers, or unbounded loops. The codegen
    pipeline enforces this by construction — the node palette has no unsafe operations. Generated
    modules compile with `#![forbid(unsafe_code)]`.
-5. **Coroutine support.** Multi-frame sequences (boss phases, timed objectives) use the coroutine
-   primitive from [../core-runtime/coroutines.md](../core-runtime/coroutines.md). Each yield point
-   compiles to a variant of the codegen'd state machine. No `async`/`await`, no Tokio.
+5. **Yield lowering (no coroutines).** The engine has no suspend-state runtime. Logic graphs with
+   `yield` nodes lower to a plain synchronous state machine: each yield point is a variant of a
+   codegen-internal `SuspendState` enum, and `GraphInstance::step` is a `match` on the current
+   variant. For cross-subsystem multi-frame sequencing, prefer timelines, behavior trees, or delayed
+   events (see the Overview note above). No `async`, no `await`, no Tokio, no Future.
 6. **Hot reload.** The runtime hot-reloads the middleman `.dylib` when graphs change, patching
    running `GraphInstance` state using a drain-then-swap protocol.
 7. **Dual backend.** The graph compiler supports `CompileTarget::Rust` (CPU: gameplay, ECS,
@@ -86,7 +95,7 @@ harmonius_scripting/
 │   ├── program.rs     # GraphProgram: fn-pointer table loaded from .dylib
 │   ├── instance.rs    # GraphInstance component
 │   ├── variable.rs    # VariableStore, scopes
-│   ├── coroutine.rs   # CoroutineState: synchronous state machine
+│   ├── suspend.rs    # SuspendState: codegen-internal yield state machine
 │   └── sandbox.rs     # Compile-time sandbox checks
 ├── schedule/
 │   ├── system.rs      # GraphExecutionSystem (par_iter via job system)
@@ -113,7 +122,7 @@ graph TD
         GC[GraphCompiler]
         GR[GraphRuntime]
         VM[VariableManager]
-        CO[CoroutineScheduler]
+        SM[SuspendStateMachine]
         DB[DebugBridge]
         HR[HotReloader]
         SB[Sandbox]
@@ -155,7 +164,7 @@ graph TD
     GR --> QE
     GR --> CB
     GR --> VM
-    GR --> CO
+    GR --> SM
     GR --> SB
     GR --> EC
     GR --> FP
@@ -174,7 +183,7 @@ graph TD
 
     DB --> GR
     DB --> VM
-    DB --> CO
+    DB --> SM
     DB --> PR
 ```
 
@@ -229,7 +238,7 @@ sequenceDiagram
             GS->>FP: entry_fn(instance_state, ctx)
             FP->>W: typed component queries (codegen'd)
             FP->>EC: emit events
-            FP->>FP: state machine resume (coroutine)
+            FP->>FP: state machine resume (suspend-state resume)
         end
         GS-->>SC: complete
 
@@ -260,7 +269,7 @@ classDiagram
     class GraphInstance {
         -program_handle AssetHandle~GraphProgram~
         -variables VariableStore
-        -coroutine_state Option~CoroutineState~
+        -suspend_state Option~SuspendState~
         -execution_state ExecutionState
         -instance_id GraphInstanceId
     }
@@ -274,7 +283,7 @@ classDiagram
         +layout_compatible(layout VariableLayout) bool
     }
 
-    class CoroutineState {
+    class SuspendState {
         -resume_variant u32
         -wait_condition WaitCondition
         -saved_locals SmallVec~TypedSlot~
@@ -301,7 +310,7 @@ classDiagram
 
     GraphInstance --> GraphProgram
     GraphInstance *-- VariableStore
-    GraphInstance *-- CoroutineState
+    GraphInstance *-- SuspendState
     GraphProgram *-- FnPtrTable
     GraphProgram *-- ArchivedGraphMetadata
     GraphProgram *-- VariableLayout
@@ -446,11 +455,11 @@ pub struct NodeId(pub u32);
 pub enum ExecutionState {
     /// Ready to execute this frame.
     Ready,
-    /// Suspended in a coroutine yield.
+    /// Suspended at a yield point.
     Suspended,
     /// Paused by a debugger breakpoint.
     Paused,
-    /// Completed execution (no coroutine active).
+    /// Completed execution (no suspend state active).
     Complete,
     /// Encountered a runtime error.
     Error,
@@ -466,8 +475,11 @@ pub struct GraphInstance {
     program: AssetHandle<GraphProgram>,
     /// Per-instance variable storage.
     variables: VariableStore,
-    /// Coroutine suspension state, if any.
-    coroutine: Option<CoroutineState>,
+    /// Yield-lowered suspend state, if any. This is
+    /// a codegen-internal state-machine index -- NOT
+    /// a coroutine. The engine has no coroutine
+    /// runtime and no shared suspend primitive.
+    suspend: Option<SuspendState>,
     /// Current execution state.
     state: ExecutionState,
     /// Unique instance identifier for debugging.
@@ -485,8 +497,8 @@ impl GraphInstance {
         instance_id: GraphInstanceId,
     ) -> Self;
 
-    /// Reset all local variables and coroutine
-    /// state. Graph variables are preserved.
+    /// Reset all local variables and suspend state.
+    /// Graph variables are preserved.
     pub fn reset(&mut self);
 
     /// Check if the loaded program version matches
@@ -619,17 +631,30 @@ impl VariableStore {
 }
 ```
 
-### Coroutine support
+### Yield lowering (not coroutines)
 
-The coroutine primitive (`WaitCondition`, `CoroutineState`, `coroutine_tick_system`) is defined in
-[../core-runtime/coroutines.md](../core-runtime/coroutines.md). Scripting is a client: each yield
-point in a logic graph codegen's a variant of a `ResumeVariant` enum stored inside
-`CoroutineState::resume_variant`. The generated graph entry function is a `match` on the current
-variant — pure synchronous dispatch, no `async`, no `await`.
+The engine has no suspend-state runtime. When a logic graph contains `yield` nodes, the scripting
+codegen lowers the graph into a plain synchronous state machine: each yield point becomes a variant
+of a codegen-local `SuspendState { resume_variant, wait_condition, saved_locals }` enum, and the
+generated graph entry function is a `match` on `resume_variant`. Every arm runs to its next yield
+(or to completion) and returns a `StepResult`. No `async`, no `.await`, no Future, no Tokio, no
+stackful fibers, no trampolining.
 
-The scripting subsystem adds only the codegen glue that maps authored yield nodes to `WaitCondition`
-values and stores per-graph local snapshots in the primitive's `saved_locals` slot. All tick and
-ready-check logic lives in the core primitive.
+`SuspendState`, `WaitCondition`, and the per-graph dispatch logic are
+**private to the scripting crate**. They are not exported as a shared primitive, and no other
+subsystem is a client. For cross-subsystem multi-frame sequencing:
+
+| Use case | Use this instead |
+|----------|------------------|
+| Cinematics, cutscenes, music cues, timed objectives | [../simulation/timelines.md](../simulation/timelines.md) |
+| Multi-frame agent behavior (boss phases, patrols, combat) | [../ai/behavior.md](../ai/behavior.md) behavior trees |
+| Fire-and-forget deferred logic | ECS event with a tick-delay (`EventChannel<T>`) |
+| State transitions with durations | Animation state machines or logic-graph `SuspendState` (local) |
+
+The `SuspendState` path exists so that a single logic graph can express local "wait N ticks, then
+continue" sequencing without exiting the graph. It is deliberately scoped to that niche -- anything
+that needs to coordinate across graphs, subsystems, or threads must use timelines, behavior trees,
+or events.
 
 ### Graph execution dispatch
 
@@ -642,11 +667,11 @@ eliminate entirely when disabled (RF-2 item 7).
 /// Result of a single graph execution.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StepResult {
-    /// Execution continues (non-coroutine graphs).
+    /// Execution continues (graphs without yield nodes).
     Continue,
     /// Program completed.
     Complete,
-    /// Coroutine yielded (state machine suspended).
+    /// Yielded at a suspend point.
     Yield(WaitCondition),
     /// Breakpoint hit (debug builds only).
     Breakpoint(NodeId),
@@ -738,11 +763,11 @@ pub fn graph_execution_system(
     debug: Option<Res<DebugBridge>>,
 );
 
-/// System that ticks all suspended coroutines
+/// System that ticks all suspended state machines
 /// and checks their wait conditions. Runs before
 /// graph_execution_system so that newly-ready
-/// coroutines execute this frame.
-pub fn coroutine_tick_system(
+/// suspended graphs execute this frame.
+pub fn suspend_tick_system(
     query: Query<&mut GraphInstance>,
     time: Res<Time>,
     pending_events: EventReader<AnyEvent>,
@@ -1066,7 +1091,7 @@ pub struct GraphProfile {
     pub component_reads: u16,
     /// Number of component writes (deferred).
     pub component_writes: u16,
-    /// Number of coroutine yields.
+    /// Number of yields.
     pub yield_count: u16,
 }
 
@@ -1241,7 +1266,7 @@ fn formula_<table>_<column>(
 ) -> T
 ```
 
-Node palette for formula graphs (no coroutines, no ECS writes, no side effects):
+Node palette for formula graphs (no yields, no ECS writes, no side effects):
 
 - Arithmetic: `+`, `-`, `*`, `/`, `%`
 - Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
@@ -1382,7 +1407,7 @@ The following algorithms are used in the compiler pipeline. See RF-17.
 | Constant folding | Optimization pass | <https://en.wikipedia.org/wiki/Constant_folding> |
 | Dead code elimination | Optimization pass | <https://en.wikipedia.org/wiki/Dead_code_elimination> |
 | Common subexpression elim | Optimization pass | <https://en.wikipedia.org/wiki/Common_subexpression_elimination> |
-| Coroutine state machine | Coroutine codegen | <https://without.boats/blog/coroutines-as-state-machines/> |
+| Suspend-state machine | Suspend-state codegen | <https://without.boats/blog/coroutines-as-state-machines/> |
 | Topological sort | Cycle detection, formula deps | <https://en.wikipedia.org/wiki/Topological_sorting> |
 | Type inference (HM) | Type checking pass | <https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system> |
 
@@ -1427,13 +1452,13 @@ Custom gizmos are also logic graphs that output draw commands for the debug over
 ### Frame execution flow
 
 Each frame, graph instances move through a lifecycle driven by three ECS systems. Execution order
-is: PreUpdate (coroutine tick) → Update (graph execution) → PostUpdate (command flush). See RF-15
-for resource access and sync-point details.
+is: PreUpdate (suspend tick) → Update (graph execution) → PostUpdate (command flush). See RF-15 for
+resource access and sync-point details.
 
 ```rust
 // Phase: PreUpdate
 //
-// 1. coroutine_tick_system
+// 1. suspend_tick_system
 //    - For each Suspended instance: tick timers,
 //      check wait conditions.
 //    - If condition met: transition to Ready.
@@ -1569,7 +1594,7 @@ and 2D/3D BVH spatial queries are all available. See RF-12.
 | Concern | Approach | Notes |
 |---------|----------|-------|
 | Code generation | Rust → native (rustc) | ARM/x86_64/WASM per target |
-| Coroutine yields | Sync state machine (match) | No async, no Tokio |
+| Yield lowering | Sync state machine (match) | No async, no Tokio |
 | Parallel execution | `par_iter` via job system | crossbeam-deque work-stealing |
 | Debug transport | crossbeam-channel cmd/resp | No async sockets in game runtime |
 | Hot reload file watch | `FileWatcher` | IOCP / FSEvents / inotify |
@@ -1604,7 +1629,7 @@ and 2D/3D BVH spatial queries are all available. See RF-12.
 | Component | Per instance | 1,000 instances |
 |-----------|-------------|-----------------|
 | VariableStore (64 slots) | 1,088 bytes | ~1.06 MiB |
-| CoroutineState | 96 bytes | ~93.8 KiB |
+| SuspendState | 96 bytes | ~93.8 KiB |
 | GraphInstance metadata | 64 bytes | ~62.5 KiB |
 | Total per instance | ~1,248 bytes | ~1.22 MiB |
 
@@ -1629,10 +1654,10 @@ typical 50-node graph produces ~4 KiB of compiled Rust (after LTO) + ~512 bytes 
 | `test_variable_layout_hash` | R-13.4.3 |
 | `test_variable_migration_compatible` | R-13.4.3 |
 | `test_variable_migration_incompatible` | R-13.4.3 |
-| `test_coroutine_yield_next_frame` | R-15.8.4 |
-| `test_coroutine_yield_frames` | R-15.8.4 |
-| `test_coroutine_yield_delay` | R-15.8.4 |
-| `test_coroutine_yield_event` | R-15.8.4 |
+| `test_yield_next_frame` | R-15.8.4 |
+| `test_yield_frames` | R-15.8.4 |
+| `test_yield_delay` | R-15.8.4 |
+| `test_yield_event` | R-15.8.4 |
 | `test_sandbox_budget_exhaustion` | R-13.4.1 |
 | `test_sandbox_unauthorized_component` | R-13.4.1 |
 | `test_sandbox_unbounded_loop` | R-13.4.1 |
@@ -1658,10 +1683,10 @@ typical 50-node graph produces ~4 KiB of compiled Rust (after LTO) + ~512 bytes 
 10. **`test_variable_layout_hash`** — Identical layouts produce identical hashes.
 11. **`test_variable_migration_compatible`** — Migrate variables between compatible layouts.
 12. **`test_variable_migration_incompatible`** — Detect incompatible layout, trigger reset.
-13. **`test_coroutine_yield_next_frame`** — State machine suspends at NextFrame, resumes next frame.
-14. **`test_coroutine_yield_frames`** — Frames(3) variant resumes after exactly 3 frames.
-15. **`test_coroutine_yield_delay`** — Delay(1.0) variant resumes after 1 second of delta time.
-16. **`test_coroutine_yield_event`** — Event variant suspends, resumes when event fires.
+13. **`test_yield_next_frame`** — State machine suspends at NextFrame, resumes next frame.
+14. **`test_yield_frames`** — Frames(3) variant resumes after exactly 3 frames.
+15. **`test_yield_delay`** — Delay(1.0) variant resumes after 1 second of delta time.
+16. **`test_yield_event`** — Event variant suspends, resumes when event fires.
 17. **`test_sandbox_budget_exhaustion`** — Tight loop hits budget check, returns BudgetExhausted.
 18. **`test_sandbox_unauthorized_component`** — Access to disallowed component rejected at compile.
 19. **`test_sandbox_unbounded_loop`** — Loop without budget check detected by SandboxValidator.
@@ -1684,7 +1709,7 @@ typical 50-node graph produces ~4 KiB of compiled Rust (after LTO) + ~512 bytes 
 | `test_graph_ai_blackboard` | R-13.4.1 |
 | `test_graph_state_machine_transition` | R-13.4.1 |
 | `test_graph_ecs_schedule_order` | R-13.4.1 |
-| `test_graph_coroutine_boss_encounter` | R-15.8.4 |
+| `test_graph_suspend_boss_encounter` | R-15.8.4 |
 | `test_hot_reload_compatible` | R-13.4.3 |
 | `test_hot_reload_incompatible` | R-13.4.3 |
 | `test_hot_reload_concurrent_100` | R-13.4.3 |
@@ -1704,7 +1729,7 @@ typical 50-node graph produces ~4 KiB of compiled Rust (after LTO) + ~512 bytes 
    state machine updates.
 5. **`test_graph_ecs_schedule_order`** — Two graphs with ordering constraints execute in declared
    order.
-6. **`test_graph_coroutine_boss_encounter`** — Three-phase boss encounter state machine: phase 1 (5
+6. **`test_graph_suspend_boss_encounter`** — Three-phase boss encounter state machine: phase 1 (5
    frames) → phase 2 (3 frames) → phase 3. Verify timing and state.
 7. **`test_hot_reload_compatible`** — Modify a graph (add a node, keep variables). Verify
    drain-then-swap preserves variable values.
@@ -1731,7 +1756,7 @@ typical 50-node graph produces ~4 KiB of compiled Rust (after LTO) + ~512 bytes 
 | Codegen'd fn call overhead | < 2 ns per call | R-15.8.12 |
 | Hot reload turnaround (50 nodes) | < 1 second | R-13.4.NF2 |
 | Variable store get/set | < 5 ns per access | R-13.4.1 |
-| Coroutine state machine resume | < 10 ns | R-15.8.4 |
+| Suspend-state machine resume | < 10 ns | R-15.8.4 |
 | Compiler throughput (50-node graph) | < 100 ms | R-15.8.12 |
 | GraphProgram fn-table memory (50 nodes) | < 4 KiB shared | R-13.4.NF1 |
 | GraphInstance memory (64 slots) | < 1.5 KiB per instance | R-13.4.NF1 |
@@ -1748,7 +1773,7 @@ second (R-13.4.NF2). The bundled toolchain and incremental compilation targets t
 
 **Q2. How can this design be improved?**
 
-The hot reload system (F-13.4.3) patches running instances but cannot migrate coroutine variant
+The hot reload system (F-13.4.3) patches running instances but cannot migrate suspend variant
 indices across yield-point additions. If a designer adds a new yield between two existing nodes, all
 running instances at that resume point must restart. A migration that maps old variant indices to
 new ones would reduce lost state during iteration. The sandbox enforces budget checks at loop
@@ -1777,10 +1802,10 @@ output state would enable test-driven visual logic development across all game g
 The logic graph system is deeply integrated with the ECS architecture. `GraphInstance` is a standard
 ECS component, `GraphExecutionSystem` runs in the normal system schedule, and all ECS access uses
 codegen'd typed queries that respect system ordering. The compiler shares the build cache
-(F-15.11.3) with the asset pipeline. The coroutine model uses a synchronous state machine consistent
-with the engine's synchronous-only runtime policy — no `async`/`await`, no Tokio. The compiler
-targets the same middleman `.dylib` pipeline as all other codegen'd types, making logic graphs a
-first-class part of the engine's extensibility model.
+(F-15.11.3) with the asset pipeline. The yield lowering produces a synchronous state machine
+consistent with the engine's synchronous-only runtime policy — no `async`/`await`, no Tokio. The
+compiler targets the same middleman `.dylib` pipeline as all other codegen'd types, making logic
+graphs a first-class part of the engine's extensibility model.
 
 ## Open questions
 
@@ -1793,9 +1818,9 @@ first-class part of the engine's extensibility model.
    reference). Larger types (strings, arrays) require heap allocation. Is 16 bytes sufficient for
    the majority of gameplay variables, or should we support 32-byte slots for matrix types?
 
-3. **Coroutine nesting** — The current design supports a single coroutine per graph instance. Should
-   nested coroutines (a coroutine that calls a subgraph which also yields) be supported? This adds a
-   coroutine state stack to each instance.
+3. **Nested yield graphs** — The current design supports a single suspend stack per graph instance.
+   Should nested yield graphs (a graph that calls a subgraph which also yields) be supported? This
+   adds a suspend-state state stack to each instance.
 
 4. **Event-triggered entry points** — Should event-triggered graph executions run in the same frame
    as the event emission, or be deferred to the next frame? Same-frame execution enables tighter
@@ -1810,9 +1835,9 @@ first-class part of the engine's extensibility model.
    particles), should `GraphInstance` components use a pool to avoid allocation overhead? The
    `VariableStore` heap allocation is the main cost per instance.
 
-7. **Coroutine variant migration across hot-reload** — Adding a yield point to a live graph changes
+7. **Suspend variant migration across hot-reload** — Adding a yield point to a live graph changes
    the `ResumeVariant` enum layout. Running instances at old variant indices cannot resume
-   correctly. Should hot-reload record a variant remapping table to preserve running coroutines
+   correctly. Should hot-reload record a variant remapping table to preserve running suspend states
    across structural changes?
 
 ## Review feedback
@@ -1840,7 +1865,7 @@ scripting design needs a "Formula graph" execution mode alongside the existing g
    - Explicit cast: `as` (no implicit coercion)
    - Table lookup: codegen'd accessor for foreign key row columns
    - Aggregates: `iter().filter().map().sum()` / `.min()` / `.max()`
-   - No coroutines, no side effects, no ECS writes.
+   - Pure, no side effects, no ECS writes.
 3. **Input nodes** — read column values from the current row or cross-table via foreign key. Input
    node types are generated by the codegen pipeline from the table schema.
 4. **Output node** — produces the formula column's computed value. Type must match the formula
@@ -1876,19 +1901,19 @@ bytecode VM" and "codegen is the preferred method for all dynamic content."
 RF-1 already describes the correct pattern. Extend it to all graphs:
 
 1. **Graph compiler** emits `.rs` source for each logic graph asset. Each graph becomes one or more
-   Rust functions. Coroutine graphs become state machines (enum variants per yield point).
+   Rust functions. Graphs with yield nodes become state machines (enum variants per yield point).
 2. **Bundled rustc** compiles the generated `.rs` into the middleman .dylib. Hot-reload recompiles
    only changed graphs.
 3. **`GraphProgram`** becomes a function pointer table loaded from the .dylib — not a bytecode
    buffer. Each entry point is a `fn` pointer.
-4. **`GraphInstance`** stores state (variable slots, coroutine resume point) as a plain struct. The
-   generated Rust function reads and writes this state directly — no interpreter loop.
+4. **`GraphInstance`** stores state (variable slots, suspend-state resume point) as a plain struct.
+   The generated Rust function reads and writes this state directly — no interpreter loop.
 5. **ECS access** in generated code uses codegen'd typed queries (not opcode-based
    `EcsRead`/`EcsWrite` instructions). The codegen pipeline knows which components each graph
    reads/writes and generates the appropriate `Query<&T>` / `Query<&mut T>` calls.
-6. **Coroutines** become Rust state machines: each yield point is an enum variant. The
-   `CoroutineState` stores the current variant + saved locals. Resume dispatches to the correct
-   match arm. No Tokio, no async/await — pure synchronous state machine.
+6. **Yield lowering** produces Rust state machines: each yield point is an enum variant. The
+   `SuspendState` stores the current variant + saved locals. Resume dispatches to the correct match
+   arm. No Tokio, no async/await — pure synchronous state machine.
 7. **Debug breakpoints** in the native model are compiled as conditional calls:
    `if debug_enabled { check_breakpoint(node_id); }`. When debugging is disabled, these compile away
    entirely (dead code elimination). When enabled, `check_breakpoint` reads from a sorted Vec or
@@ -1982,19 +2007,19 @@ codegen'd enum.
 
 ### RF-15: Frame-boundary handoff [APPLIED]
 
-Execution order: PreUpdate (coroutine tick) → Update (graph execution) → PostUpdate (command flush).
+Execution order: PreUpdate (suspend tick) → Update (graph execution) → PostUpdate (command flush).
 Specify which resources are read-only vs read-write per phase. Document sync point where deferred
 writes become visible.
 
 ### RF-16: Fix Q5 factual error [APPLIED]
 
-Delete "consistent with the engine's async/await everywhere policy." Replace with: "The coroutine
-model uses a synchronous state machine consistent with the engine's synchronous-only runtime
-policy."
+Delete "consistent with the engine's async/await everywhere policy." Replace with: "The synchronous
+suspend-state machine model uses a synchronous state machine consistent with the engine's
+synchronous-only runtime policy."
 
 ### RF-17: Algorithm reference URLs [APPLIED]
 
-Add URLs for: coroutine state machine implementation, constant folding, dead code elimination, type
+Add URLs for: suspend-state machine implementation, constant folding, dead code elimination, type
 specialization/monomorphization.
 
 ### RF-18: ConstantPool alignment [APPLIED]

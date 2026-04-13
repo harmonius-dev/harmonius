@@ -26,7 +26,7 @@
 1. **F-15.8.1** -- Universal logic graph runtime
 2. **F-15.8.2** -- Static type system with bidirectional inference
 3. **F-15.8.3** -- Strict validation before save/compile
-4. **F-15.8.4** -- Gameplay graphs with coroutine execution
+4. **F-15.8.4** -- Gameplay graphs with yield lowering
 5. **F-15.8.5a** -- Shader graph core (vertex, fragment, compute)
 6. **F-15.8.5b** -- Shader graph to HLSL via DXC + Metal Shader Converter
 7. **F-15.8.5c** -- Material graph variant with PBR and live preview
@@ -210,7 +210,7 @@ graph TD
 
     subgraph harmonius_logic_graph_compiler
         CMP[ECS Compiler]
-        COR[Coroutine Lowering]
+        COR[Suspend-State Lowering]
         EMT[System Emitter]
     end
 
@@ -313,7 +313,7 @@ flowchart LR
     E --> F[Const Fold]
     F --> G[Subgraph Inline]
     G --> H[Monomorphize]
-    H --> I[Coroutine Lower]
+    H --> I[Suspend Lower]
     I --> J[Emit Rust Source .rs]
     J --> K[Compile via bundled rustc]
     K --> L[Link into middleman .dylib]
@@ -324,7 +324,7 @@ flowchart LR
 
 All compiled graph output flows through the codegen pipeline into the middleman .dylib:
 
-1. **Visual graph → Rust source** — `EcsCompiler` emits `.rs` files (systems, coroutine state
+1. **Visual graph → Rust source** — `EcsCompiler` emits `.rs` files (systems, suspend-state
    machines, query closures). Bundled `rustc` compiles them. Output is linked into the middleman
    `.dylib`.
 2. **Material graph → HLSL source** — `HlslEmitter` emits `.hlsl` source. `dxc` CLI produces
@@ -996,7 +996,7 @@ impl EcsCompiler {
 pub struct CompiledGraph {
     pub graph_id: GraphId,
     pub systems: Vec<CompiledSystem>,
-    pub coroutine_states: Vec<CoroutineStateDesc>,
+    pub suspend_states: Vec<SuspendStateDesc>,
     pub debug_info: DebugInfo,
 }
 
@@ -1203,7 +1203,8 @@ inspector, preview at multiple screen resolutions. Widgets are ECS entities (`ui
 1. `EcsCompiler` transforms validated graph into `CompiledGraph`.
 2. Tick-driven systems register with the ECS scheduler.
 3. Event-driven systems subscribe to typed event channels.
-4. Multi-frame coroutines are lowered to state machine components.
+4. Multi-frame yield lowering produces state machine components. The engine has no coroutine
+   runtime; yields lower to plain synchronous match dispatch.
 
 ### Editor operations and game loop phases
 
@@ -1536,7 +1537,7 @@ Test cases are in [visual-editors-test-cases.md](visual-editors-test-cases.md).
 | Integration tests | 18 |
 | Benchmarks | 10 |
 
-1. **Unit** -- Graph IR CRUD, type inference, validation passes, optimizer passes, coroutine
+1. **Unit** -- Graph IR CRUD, type inference, validation passes, optimizer passes, suspend-state
    lowering, HLSL emission, material compile, animation timeline, curve editor, graph/table widget
    ops. All test cases use explicit `TC-X.Y.Z.N` IDs with defined input/expected output — no prose
    test descriptions.
