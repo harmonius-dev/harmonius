@@ -1,0 +1,7 @@
+error: telemetry schema fields may not use PiiClass::Sensitive; relocate the field
+ --> tests/compile_fail/sensitive_field.rs:3:1
+  |
+3 | field_pii_check!(Sensitive);
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `field_pii_check` (in Nightly builds, run with -Z macro-backtrace for more info)

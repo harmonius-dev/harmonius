@@ -69,6 +69,7 @@ members = [
   "crates/integration_ui_physics",
   "crates/net-physics",
   "crates/networking_ecs",
+  "crates/platform-telemetry",
   "crates/render-effects",
   "crates/rendering_camera",
   "crates/rendering_ui",
