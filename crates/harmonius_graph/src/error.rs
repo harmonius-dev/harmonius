@@ -25,7 +25,8 @@ pub struct CycleError {
     pub cycle_path: Vec<NodeId>,
 }
 
-/// Errors when mutating [`crate::GraphTraversalState`].
+/// Errors when mutating graph traversal state carried by ECS components (see design
+/// `docs/design/data-systems/directed-graphs.md`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TransitionError<S> {
     /// Unknown node handle.
