@@ -1,7 +1,11 @@
 //! Threshold scanning for event logs.
+//!
+//! Production runs resolve [`PredicateId`](crate::PredicateId) via editor codegen; the `pred`
+//! argument to [`check_thresholds`] is the in-process bridge until that pipeline is wired.
 
 use core::marker::PhantomData;
 
+use rkyv::{Archive, Deserialize, Serialize};
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 
@@ -9,7 +13,7 @@ use crate::log::EventLog;
 use crate::types::{AssetId, GameplayTag, PredicateId};
 
 /// Action executed when a threshold fires.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Archive, Serialize, Deserialize)]
 pub enum ThresholdAction {
     /// Fire a named engine event.
     FireEvent(SmolStr),
@@ -20,7 +24,7 @@ pub enum ThresholdAction {
 }
 
 /// Declarative threshold evaluated against a log.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Archive, Serialize, Deserialize)]
 pub struct ThresholdTrigger<T> {
     /// Predicate resolved by codegen.
     pub predicate: PredicateId,
@@ -30,6 +34,7 @@ pub struct ThresholdTrigger<T> {
     pub window_ticks: u64,
     /// Action emitted when the threshold is satisfied.
     pub action: ThresholdAction,
+    #[archive(skip)]
     _marker: PhantomData<T>,
 }
 

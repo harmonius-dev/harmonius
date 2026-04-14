@@ -66,14 +66,25 @@ fn serialize_log(log: &EventLog<CombatEvent>) -> rkyv::AlignedVec {
 /// # Safety
 /// `bytes` must be produced by `serialize_log` for the same concrete `EventLog` shape.
 unsafe fn archived_log(bytes: &rkyv::AlignedVec) -> &rkyv::Archived<EventLog<CombatEvent>> {
-    rkyv::archived_root::<EventLog<CombatEvent>>(bytes.as_slice())
+    // SAFETY: Caller guarantees `bytes` matches `serialize_log` output for `EventLog<CombatEvent>`
+    // (see function `# Safety`).
+    unsafe { rkyv::archived_root::<EventLog<CombatEvent>>(bytes.as_slice()) }
 }
 
 #[test]
 fn test_push_under_capacity() {
     let mut log = EventLog::new(EventLogId(1), 8, linear_decay(), 1);
     for t in [100_u64, 101, 102] {
-        log.push(CombatEvent { damage: 1.0, kind: 0, target: Entity(0) }, t, None, None);
+        log.push(
+            CombatEvent {
+                damage: 1.0,
+                kind: 0,
+                target: Entity(0),
+            },
+            t,
+            None,
+            None,
+        );
     }
     assert_eq!(log.count(), 3);
     assert!(!log.is_full());
@@ -85,7 +96,16 @@ fn test_push_under_capacity() {
 fn test_push_evicts_oldest_when_full() {
     let mut log = EventLog::new(EventLogId(1), 4, linear_decay(), 1);
     for t in [10_u64, 20, 30, 40, 50] {
-        log.push(CombatEvent { damage: 1.0, kind: 0, target: Entity(0) }, t, None, None);
+        log.push(
+            CombatEvent {
+                damage: 1.0,
+                kind: 0,
+                target: Entity(0),
+            },
+            t,
+            None,
+            None,
+        );
     }
     assert_eq!(log.count(), 4);
     assert!(log.is_full());
@@ -97,7 +117,16 @@ fn test_push_evicts_oldest_when_full() {
 fn test_entries_in_timestamp_order() {
     let mut log = EventLog::new(EventLogId(1), 4, linear_decay(), 1);
     for t in 1_u64..=6 {
-        log.push(CombatEvent { damage: 1.0, kind: 0, target: Entity(0) }, t, None, None);
+        log.push(
+            CombatEvent {
+                damage: 1.0,
+                kind: 0,
+                target: Entity(0),
+            },
+            t,
+            None,
+            None,
+        );
     }
     let ts: Vec<u64> = log.entries().map(|e| e.timestamp).collect();
     assert_eq!(ts, vec![3, 4, 5, 6]);
@@ -107,7 +136,16 @@ fn test_entries_in_timestamp_order() {
 fn test_clear_resets_count_and_head() {
     let mut log = EventLog::new(EventLogId(1), 8, linear_decay(), 1);
     for t in [1_u64, 2, 3] {
-        log.push(CombatEvent { damage: 1.0, kind: 0, target: Entity(0) }, t, None, None);
+        log.push(
+            CombatEvent {
+                damage: 1.0,
+                kind: 0,
+                target: Entity(0),
+            },
+            t,
+            None,
+            None,
+        );
     }
     log.clear();
     assert_eq!(log.count(), 0);
@@ -138,7 +176,16 @@ fn test_decay_linear_half_life() {
         },
         1,
     );
-    log.push(CombatEvent { damage: 0.0, kind: 0, target: Entity(0) }, 0, None, None);
+    log.push(
+        CombatEvent {
+            damage: 0.0,
+            kind: 0,
+            target: Entity(0),
+        },
+        0,
+        None,
+        None,
+    );
     log.decay_tick(5);
     assert!((log.entries().next().unwrap().accuracy - 0.5).abs() < 1e-6);
 }
@@ -155,7 +202,16 @@ fn test_decay_exponential_curve() {
         },
         1,
     );
-    log.push(CombatEvent { damage: 0.0, kind: 0, target: Entity(0) }, 0, None, None);
+    log.push(
+        CombatEvent {
+            damage: 0.0,
+            kind: 0,
+            target: Entity(0),
+        },
+        0,
+        None,
+        None,
+    );
     log.decay_tick(2);
     assert!((log.entries().next().unwrap().accuracy - 0.25).abs() < 1e-6);
 }
@@ -168,7 +224,16 @@ fn test_decay_step_threshold() {
         curve_type: DecayCurveType::Step,
     };
     let mut log = EventLog::new(EventLogId(1), 8, curve, 1);
-    log.push(CombatEvent { damage: 0.0, kind: 0, target: Entity(0) }, 0, None, None);
+    log.push(
+        CombatEvent {
+            damage: 0.0,
+            kind: 0,
+            target: Entity(0),
+        },
+        0,
+        None,
+        None,
+    );
     log.decay_tick(9);
     assert!((log.entries().next().unwrap().accuracy - 1.0).abs() < 1e-6);
     log.decay_tick(10);
@@ -187,7 +252,16 @@ fn test_decay_clamps_to_zero() {
         },
         1,
     );
-    log.push(CombatEvent { damage: 0.0, kind: 0, target: Entity(0) }, 0, None, None);
+    log.push(
+        CombatEvent {
+            damage: 0.0,
+            kind: 0,
+            target: Entity(0),
+        },
+        0,
+        None,
+        None,
+    );
     log.decay_tick(1000);
     assert!((log.entries().next().unwrap().accuracy - 0.0).abs() < 1e-6);
 }
@@ -204,7 +278,16 @@ fn test_decay_min_accuracy_floor() {
         },
         1,
     );
-    log.push(CombatEvent { damage: 0.0, kind: 0, target: Entity(0) }, 0, None, None);
+    log.push(
+        CombatEvent {
+            damage: 0.0,
+            kind: 0,
+            target: Entity(0),
+        },
+        0,
+        None,
+        None,
+    );
     log.decay_tick(100);
     assert!((log.entries().next().unwrap().accuracy - 0.3).abs() < 1e-6);
 }
@@ -212,7 +295,16 @@ fn test_decay_min_accuracy_floor() {
 #[test]
 fn test_prune_below_removes_weak_entries() {
     let mut log = EventLog::new(EventLogId(1), 8, linear_decay(), 1);
-    log.push(CombatEvent { damage: 0.0, kind: 0, target: Entity(0) }, 0, None, None);
+    log.push(
+        CombatEvent {
+            damage: 0.0,
+            kind: 0,
+            target: Entity(0),
+        },
+        0,
+        None,
+        None,
+    );
     log.decay_tick(5);
     assert!((log.entries().next().unwrap().accuracy - 0.5).abs() < 1e-6);
     log.prune_below(0.6);
@@ -230,7 +322,16 @@ fn test_propagate_single_hop() {
     };
     let mut source = EventLog::new(EventLogId(1), 8, linear_decay(), 1);
     let mut target = EventLog::new(EventLogId(2), 8, linear_decay(), 1);
-    source.push(CombatEvent { damage: 1.0, kind: 0, target: Entity(1) }, 0, None, None);
+    source.push(
+        CombatEvent {
+            damage: 1.0,
+            kind: 0,
+            target: Entity(1),
+        },
+        0,
+        None,
+        None,
+    );
     propagate_entries(&source, &mut target, &rule, 1);
     assert_eq!(target.count(), 1);
     assert!((target.entries().next().unwrap().accuracy - 0.5).abs() < 1e-6);
@@ -249,7 +350,16 @@ fn test_propagate_increments_hops() {
     let mut a = EventLog::new(EventLogId(1), 8, linear_decay(), 1);
     let mut b = EventLog::new(EventLogId(2), 8, linear_decay(), 1);
     let mut c = EventLog::new(EventLogId(3), 8, linear_decay(), 1);
-    a.push(CombatEvent { damage: 1.0, kind: 0, target: Entity(0) }, 0, None, None);
+    a.push(
+        CombatEvent {
+            damage: 1.0,
+            kind: 0,
+            target: Entity(0),
+        },
+        0,
+        None,
+        None,
+    );
     propagate_entries(&a, &mut b, &rule, 1);
     propagate_entries(&b, &mut c, &rule, 2);
     assert_eq!(b.entries().next().unwrap().hop_count, 1);
@@ -270,7 +380,16 @@ fn test_propagate_max_hops_stops() {
     let mut c = EventLog::new(EventLogId(3), 8, linear_decay(), 1);
     let mut d = EventLog::new(EventLogId(4), 8, linear_decay(), 1);
     let mut e = EventLog::new(EventLogId(5), 8, linear_decay(), 1);
-    a.push(CombatEvent { damage: 1.0, kind: 0, target: Entity(0) }, 0, None, None);
+    a.push(
+        CombatEvent {
+            damage: 1.0,
+            kind: 0,
+            target: Entity(0),
+        },
+        0,
+        None,
+        None,
+    );
     propagate_entries(&a, &mut b, &rule, 1);
     propagate_entries(&b, &mut c, &rule, 2);
     propagate_entries(&c, &mut d, &rule, 3);
@@ -291,7 +410,16 @@ fn test_propagate_dedupes_entries() {
     };
     let mut source = EventLog::new(EventLogId(1), 8, linear_decay(), 1);
     let mut target = EventLog::new(EventLogId(2), 8, linear_decay(), 1);
-    source.push(CombatEvent { damage: 1.0, kind: 0, target: Entity(0) }, 0, None, None);
+    source.push(
+        CombatEvent {
+            damage: 1.0,
+            kind: 0,
+            target: Entity(0),
+        },
+        0,
+        None,
+        None,
+    );
     propagate_entries(&source, &mut target, &rule, 1);
     propagate_entries(&source, &mut target, &rule, 2);
     assert_eq!(target.count(), 1);
@@ -310,20 +438,8 @@ fn test_propagate_filter_tags() {
     };
     let mut source = EventLog::new(EventLogId(1), 8, linear_decay(), 1);
     let mut target = EventLog::new(EventLogId(2), 8, linear_decay(), 1);
-    source.push_with_tags(
-        TaggedEvent { value: 1 },
-        0,
-        None,
-        None,
-        vec![HOSTILE],
-    );
-    source.push_with_tags(
-        TaggedEvent { value: 2 },
-        1,
-        None,
-        None,
-        vec![FRIENDLY],
-    );
+    source.push_with_tags(TaggedEvent { value: 1 }, 0, None, None, vec![HOSTILE]);
+    source.push_with_tags(TaggedEvent { value: 2 }, 1, None, None, vec![FRIENDLY]);
     propagate_entries(&source, &mut target, &rule, 2);
     assert_eq!(target.count(), 1);
     assert_eq!(target.entries().next().unwrap().data.value, 1);
@@ -381,7 +497,7 @@ fn test_threshold_window_excludes() {
 }
 
 #[test]
-fn test_threshold_fires_once_only() {
+fn test_threshold_scan_stable_for_static_log_across_ticks() {
     let trigger = ThresholdTrigger::new(
         PredicateId(0),
         3,
@@ -400,6 +516,27 @@ fn test_threshold_fires_once_only() {
 }
 
 #[test]
+fn test_threshold_trigger_rkyv_roundtrip() {
+    let trigger = ThresholdTrigger::<HostileStamp>::new(
+        PredicateId(7),
+        2,
+        30,
+        ThresholdAction::FireEvent("npc_alert".into()),
+    );
+    let bytes = rkyv::to_bytes::<_, 256>(&trigger).unwrap();
+    // SAFETY: `bytes` is the output of `rkyv::to_bytes` for `ThresholdTrigger<HostileStamp>`.
+    let archived = unsafe {
+        rkyv::archived_root::<ThresholdTrigger<HostileStamp>>(bytes.as_slice())
+    };
+    let deserialized: ThresholdTrigger<HostileStamp> =
+        archived.deserialize(&mut Infallible).unwrap();
+    assert_eq!(deserialized.predicate, trigger.predicate);
+    assert_eq!(deserialized.count, trigger.count);
+    assert_eq!(deserialized.window_ticks, trigger.window_ticks);
+    assert_eq!(deserialized.action, trigger.action);
+}
+
+#[test]
 fn test_rkyv_roundtrip_empty_log() {
     let log = EventLog::new(
         EventLogId(7),
@@ -412,6 +549,7 @@ fn test_rkyv_roundtrip_empty_log() {
         1,
     );
     let buf = serialize_log(&log);
+    // SAFETY: `buf` comes from `serialize_log` for `EventLog<CombatEvent>`.
     let archived = unsafe { archived_log(&buf) };
     assert_eq!(archived.capacity, 32);
     assert_eq!(archived.entries.len(), 0);
@@ -431,9 +569,10 @@ fn test_rkyv_roundtrip_full_log() {
             Some(Entity(u64::from(i + 1))),
             None,
         );
-        log.entries.back_mut().unwrap().accuracy = (i as f32) * 0.01;
+        log.test_set_entry_accuracy(i as usize, (i as f32) * 0.01);
     }
     let buf = serialize_log(&log);
+    // SAFETY: `buf` comes from `serialize_log` for `EventLog<CombatEvent>`.
     let archived = unsafe { archived_log(&buf) };
     assert_eq!(archived.entries.len(), 16);
     let deserialized: EventLog<CombatEvent> = archived.deserialize(&mut Infallible).unwrap();
@@ -477,7 +616,16 @@ fn test_query_filter_event_type() {
 fn test_query_filter_time_range() {
     let mut log = EventLog::new(EventLogId(1), 16, linear_decay(), 1);
     for t in [10_u64, 60, 80, 110] {
-        log.push(CombatEvent { damage: 0.0, kind: 0, target: Entity(0) }, t, None, None);
+        log.push(
+            CombatEvent {
+                damage: 0.0,
+                kind: 0,
+                target: Entity(0),
+            },
+            t,
+            None,
+            None,
+        );
     }
     let hits = log.entries_in_window(50, 100);
     assert_eq!(hits.len(), 2);
@@ -490,8 +638,17 @@ fn test_query_filter_min_accuracy() {
     let mut log = EventLog::new(EventLogId(1), 16, linear_decay(), 1);
     let accs = [0.9_f32, 0.6, 0.4, 0.1];
     for (i, a) in accs.iter().enumerate() {
-        log.push(CombatEvent { damage: 0.0, kind: 0, target: Entity(0) }, i as u64, None, None);
-        log.entries.back_mut().unwrap().accuracy = *a;
+        log.push(
+            CombatEvent {
+                damage: 0.0,
+                kind: 0,
+                target: Entity(0),
+            },
+            i as u64,
+            None,
+            None,
+        );
+        log.test_set_entry_accuracy(i, *a);
     }
     let hits = log.entries_above_accuracy(0.5);
     assert_eq!(hits.len(), 2);
@@ -504,12 +661,7 @@ fn test_threat_table_modifiers() {
     let base = 10.0_f32;
     let mut log = EventLog::new(EventLogId(1), 8, linear_decay(), 1);
     for (i, m) in modifiers.iter().enumerate() {
-        log.push(
-            AbilityHit { modifier: *m },
-            i as u64,
-            None,
-            None,
-        );
+        log.push(AbilityHit { modifier: *m }, i as u64, None, None);
     }
     let aggregated: f32 = log.entries().map(|e| base * e.data.modifier).sum();
     assert!((aggregated - 60.0).abs() < 1e-4);
