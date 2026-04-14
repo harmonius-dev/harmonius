@@ -12,8 +12,8 @@ mod snap_hysteresis;
 mod visual_binding;
 mod visual_override;
 
-pub use attachment_transform::{GlobalTransform, SocketDefinition, compute_attachment_transform};
-pub use render_layers::{RenderLayers, inherit_render_layers};
+pub use attachment_transform::{compute_attachment_transform, GlobalTransform, SocketDefinition};
+pub use render_layers::{inherit_render_layers, RenderLayers};
 pub use snap_hysteresis::snap_preview_is_active;
-pub use visual_binding::visual_binding_write_transform;
+pub use visual_binding::{visual_binding_write_transform, PreviousGlobalTransform};
 pub use visual_override::{AssetHandle, Material, Mesh, VisualOverride};
