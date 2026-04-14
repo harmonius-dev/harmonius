@@ -2,11 +2,13 @@
 
 use input_ui::{
     gameplay_context, gameplay_observes_move_forward_key, menu_context, observe_gameplay_inputs,
-    ray_panel_hit, ContextId, ContextStack, DispatchLog, DragDropManager, Entity, EventPhase,
-    EventRouter, FocusCommitPolicy, FocusGroup, FocusManager, Focusable, GestureEvent,
-    GesturePhase, GestureType, HandlerPolicy, InputConsumption, InputDebugFlags, MappingContext,
-    MouseButton, PanelSpec, Rect, ScrollView, SwipeDirection, TextInput, UiPointerEvent, Vec2,
-    VrControllerState, WidgetCommand, WidgetSpec, WidgetTree,
+    ray_panel_hit, ui_input_dispatch_system_body, ContextId, ContextStack, DispatchLog,
+    DragDropManager, Entity, EventPhase, EventRouter, FocusCommitPolicy, FocusGroup, FocusManager,
+    Focusable, GestureEvent, GesturePhase, GestureType, HandlerPolicy, InputConsumption,
+    InputDebugFlags, MappingContext, MouseButton, PanelSpec, PointerDispatchCursor,
+    PointerDispatchEnv, PointerEventReceiver, Rect, ScrollView, SwipeDirection, TextInput,
+    UiInputContext, UiPointerEvent, Vec2, VrControllerState, WidgetCommand, WidgetSpec, WidgetTree,
+    POINTER_CHANNEL_CAPACITY,
 };
 
 const ROOT: Entity = Entity(0);
@@ -473,7 +475,7 @@ fn tc_ir_4_2_5_1_ui_context_blocks_gameplay_pointer() {
         10,
         InputConsumption::all(),
     ));
-    let obs = observe_gameplay_inputs(&stack, true, false);
+    let obs = observe_gameplay_inputs(&stack, true, false, false);
     assert!(!obs.pointer_move);
 }
 
@@ -487,7 +489,7 @@ fn tc_ir_4_2_5_2_pop_restores_pointer() {
     ));
     let mut flags = InputDebugFlags::default();
     stack.pop(&mut flags);
-    let obs = observe_gameplay_inputs(&stack, true, false);
+    let obs = observe_gameplay_inputs(&stack, true, false, false);
     assert!(obs.pointer_move);
 }
 
@@ -499,9 +501,106 @@ fn tc_ir_4_2_5_3_chat_window_granularity() {
         10,
         InputConsumption::chat_window(),
     ));
-    let obs = observe_gameplay_inputs(&stack, true, true);
+    let obs = observe_gameplay_inputs(&stack, true, true, false);
     assert!(obs.pointer_move);
     assert!(!obs.key_press);
+}
+
+#[test]
+fn tc_ir_4_2_5_4_gamepad_blocked_when_ui_consumes() {
+    let mut stack = ContextStack::new();
+    stack.push(MappingContext::ui(
+        ContextId(4),
+        10,
+        InputConsumption {
+            pointer: false,
+            keyboard: false,
+            gamepad: true,
+        },
+    ));
+    let obs = observe_gameplay_inputs(&stack, false, false, true);
+    assert!(!obs.gamepad_action);
+}
+
+#[test]
+fn ui_input_context_round_trips_to_mapping_context() {
+    let ui = UiInputContext {
+        context_id: ContextId(3),
+        priority: 5,
+        consumption: InputConsumption::chat_window(),
+    };
+    let m = ui.into_mapping_context();
+    assert_eq!(m.context_id, ContextId(3));
+    assert_eq!(m.priority, 5);
+    assert!(m.consumption.keyboard);
+}
+
+#[test]
+fn dispatch_drain_routes_pointer_when_ui_consumes() {
+    let mut rx = PointerEventReceiver::new();
+    rx.try_enqueue(UiPointerEvent::Down {
+        position: Vec2::new(10.0, 10.0),
+        button: MouseButton::Primary,
+    })
+    .expect("enqueue");
+    let mut stack = ContextStack::new();
+    stack.push(menu_context(ContextId(1)));
+    let tree = tree_two_buttons();
+    let mut router = EventRouter::new();
+    let mut focus = FocusManager::new(vec![]);
+    let mut cursor = PointerDispatchCursor::default();
+    let mut log = DispatchLog::default();
+    let policy = HandlerPolicy::default();
+    let env = PointerDispatchEnv {
+        stack: &stack,
+        tree: &tree,
+        policy: &policy,
+    };
+    ui_input_dispatch_system_body(
+        &mut rx,
+        &mut cursor,
+        &mut router,
+        &mut focus,
+        &env,
+        &mut log,
+    );
+    assert!(log.records().iter().any(|r| r.phase == EventPhase::Target));
+}
+
+#[test]
+fn dispatch_drain_skips_pointer_when_ui_does_not_consume() {
+    let mut rx = PointerEventReceiver::new();
+    rx.try_enqueue(UiPointerEvent::Down {
+        position: Vec2::new(10.0, 10.0),
+        button: MouseButton::Primary,
+    })
+    .expect("enqueue");
+    let stack = ContextStack::new();
+    let tree = tree_two_buttons();
+    let mut router = EventRouter::new();
+    let mut focus = FocusManager::new(vec![]);
+    let mut cursor = PointerDispatchCursor::default();
+    let mut log = DispatchLog::default();
+    let policy = HandlerPolicy::default();
+    let env = PointerDispatchEnv {
+        stack: &stack,
+        tree: &tree,
+        policy: &policy,
+    };
+    ui_input_dispatch_system_body(
+        &mut rx,
+        &mut cursor,
+        &mut router,
+        &mut focus,
+        &env,
+        &mut log,
+    );
+    assert!(log.records().is_empty());
+}
+
+#[test]
+fn pointer_channel_capacity_matches_design() {
+    assert_eq!(POINTER_CHANNEL_CAPACITY, 256);
 }
 
 #[test]
@@ -600,8 +699,5 @@ fn tc_ir_4_2_8_3_underflow_warning() {
         ..InputDebugFlags::default()
     };
     assert!(stack.pop(&mut flags).is_none());
-    assert!(stack
-        .warnings
-        .iter()
-        .any(|w| *w == "context stack underflow"));
+    assert!(stack.warnings.contains(&"context stack underflow"));
 }

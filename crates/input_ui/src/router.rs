@@ -55,6 +55,9 @@ impl WidgetTree {
     }
 
     /// Picks the top-most widget under `position`, preferring highest `z_order`.
+    ///
+    /// When `z_order` ties, the greater raw [`Entity`] id wins as a deterministic stand-in for
+    /// paint order until layout exports explicit stacking keys.
     pub fn hit_test(&self, position: Vec2) -> Option<Entity> {
         let mut best: Option<(i32, Entity)> = None;
         for w in &self.widgets {
@@ -64,18 +67,19 @@ impl WidgetTree {
             if !w.rect.contains(position) {
                 continue;
             }
-            let candidate = (w.z_order, w.id);
-            if best.is_none_or(|b| {
-                candidate.0 > b.0 || (candidate.0 == b.0 && candidate.1 .0 > b.1 .0)
+            let candidate_z = w.z_order;
+            let candidate_id = w.id;
+            if best.is_none_or(|(best_z, best_id)| {
+                candidate_z > best_z || (candidate_z == best_z && candidate_id.0 > best_id.0)
             }) {
-                best = Some(candidate);
+                best = Some((candidate_z, candidate_id));
             }
         }
         best.map(|b| b.1)
     }
 }
 
-/// Per-widget handler policy used by deterministic tests.
+/// Capture/bubble stop hooks for deterministic tests and engine bring-up.
 #[derive(Clone, Debug, Default)]
 pub struct HandlerPolicy {
     /// Stop capture traversal **before** visiting this widget (handler runs without delivery).
@@ -167,9 +171,7 @@ impl EventRouter {
         if let Some(spec) = tree.spec(hit) {
             if !spec.disabled {
                 log.push(hit, EventPhase::Target, event);
-                let mut bubble_chain: Vec<Entity> = path[..path.len() - 1].to_vec();
-                bubble_chain.reverse();
-                for node in bubble_chain {
+                for &node in path[..path.len() - 1].iter().rev() {
                     log.push(node, EventPhase::Bubble, event);
                     if policy.bubble_stop_after.contains(&node) {
                         break;

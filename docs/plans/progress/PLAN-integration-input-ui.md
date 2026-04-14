@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-input-ui
-last_updated: 2026-04-14T11:38:47Z
+last_updated: 2026-04-14T18:02:50Z
 plan_id: PLAN-integration-input-ui
 pr_number: 48
 pr_review_status: complete
@@ -50,13 +50,16 @@ Plan file: [input-ui.md](../integration/input-ui.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test --workspace` (2026-04-14, local) — 31 integration tests in `input_ui`.
+- Test reports: `cargo test --workspace` (2026-04-14, local) — 36 integration tests in `input_ui`.
 - Benchmarks: not exercised in this slice (TC-IR-4.2.*.B* deferred to CI bench harness).
 - Screenshots: deferred (manual validation checklist open).
 - Videos: deferred (manual validation checklist open).
-- Review notes: pr-reviewer added `docs/design/test-case-coverage-audit.md` and normalized the
-  README audit link to `./docs/design/test-case-coverage-audit.md` so `rumdl check .` passes
-  (MD057).
+- Review notes: pr-reviewer addressed Clippy `manual_contains`, added bounded `PointerEventReceiver`
+  and portable `ui_input_dispatch_system_body` in `crates/input_ui/src/dispatch.rs`, exported
+  `UiInputContext`, extended `observe_gameplay_inputs` for gamepad consumption (IR-4.2.5), switched
+  `ContextStack::push` to sorted insert, removed per-dispatch bubble `Vec` allocation in
+  `EventRouter`, and documented 2D VR/pose scope. Follow-up: full 3D pose, Criterion benches, and
+  deeper TC assertions remain for later PRs.
 
 ## Event log
 
@@ -67,7 +70,8 @@ Plan file: [input-ui.md](../integration/input-ui.md)
   push (branch previously matched `main`, so PR creation followed the implementation commit).
 - 2026-04-14T05:21:56Z — plan-implementer — code complete, awaiting review; see
   [PR #48](https://github.com/cjhowe-us/harmonius/pull/48).
-- 2026-04-14T11:38:47Z — pr-reviewer — submitted for human review; 1 finding addressed (MD057:
-  missing audit doc + README relative link form); `cargo test`, `cargo clippy`, `rumdl check`
-  verified clean; PR undrafted.
+- 2026-04-14T18:02:50Z — pr-reviewer — submitted for human review; consolidated review findings
+  addressed in-repo (Clippy, dispatch spine, `UiInputContext`, IR-4.2.5 gamepad path, perf/docs);
+  `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`, `rumdl check .` clean; PR #48
+  already non-draft.
 - Append ISO-8601 UTC entries with actor, action, and outcome.
