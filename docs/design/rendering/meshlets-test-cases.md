@@ -42,7 +42,8 @@ Test case IDs use `TC-2.4.Z.N` format.
    i.
 8. **TC-2.4.4.1** `test_builder_determinism_cube` -- Build a unit cube twice. Assert the two assets
    are byte-identical.
-9. **TC-2.4.4.2** `test_builder_determinism_sphere` -- Same for a 1024-triangle sphere.
+9. **TC-2.4.4.2** `test_builder_determinism_sphere` -- Same for `uv_sphere_mesh(32, 32)` (~2048
+   triangles).
 10. **TC-2.4.4.3** `test_builder_rejects_non_manifold` -- Input with a non-manifold edge.
     - Expected: `Err(BuildError::InvalidTopology)`
 11. **TC-2.4.4.4** `test_builder_simplify_failure` -- Input where simplification can't hit the

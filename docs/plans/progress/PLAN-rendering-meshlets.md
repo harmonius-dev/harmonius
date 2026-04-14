@@ -1,6 +1,6 @@
 ---
 branch: plan/rendering-meshlets
-last_updated: 2026-04-14T11:36:32Z
+last_updated: 2026-04-14T18:45:00Z
 plan_id: PLAN-rendering-meshlets
 pr_number: 91
 pr_review_status: complete
@@ -50,7 +50,7 @@ Plan file: [meshlets.md](../rendering/meshlets.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius_meshlets` in worktree (17 passed, 6 ignored integration
+- Test reports: `cargo test -p harmonius_meshlets` in worktree (19 passed, 6 ignored integration
   stubs).
 - Benchmarks: not run (benchmark TCs deferred).
 - Screenshots: deferred (manual validation checklist).
@@ -68,3 +68,6 @@ Plan file: [meshlets.md](../rendering/meshlets.md)
   GPU and physics integration tests ignored until harness exists.
 - 2026-04-14T11:36:32Z — pr-reviewer — undrafted PR after inline review; rumdl fmt on 31 progress
   files touched by this PR; full-tree rumdl still has baseline issues (README.md MD057).
+- 2026-04-14T18:45:00Z — pr-reviewer — review-supervisor follow-up: persist meshlet vertex index
+  table, per-LOD `index_byte_*`, LE `source_hash` floats, `BufferView`s for meshlet streams,
+  stricter `meshlet_asset_gpu_layout_valid`, design + TC doc alignment, two new unit tests.

@@ -254,6 +254,8 @@ fn test_builder_determinism_sphere() {
     assert_eq!(a.vertex_data, b.vertex_data);
     assert_eq!(a.index_data, b.index_data);
     assert_eq!(a.meshlet_data, b.meshlet_data);
+    assert_eq!(a.meshlet_vertex_index_data, b.meshlet_vertex_index_data);
+    assert_eq!(a.meshlet_triangle_data, b.meshlet_triangle_data);
 }
 
 /// TC-2.4.4.3
@@ -292,6 +294,44 @@ fn test_buffer_view_stride_matches() {
     let mesh = unit_cube_mesh();
     let asset = MeshletBuilder::new(mesh).build().expect("build");
     assert_eq!(asset.vertex_buffer.stride, 32);
+}
+
+/// Verifies packed LOD index ranges cover the full global index stream without gaps.
+#[test]
+fn test_lod_index_ranges_partition_index_data() {
+    let mesh = unit_cube_mesh();
+    let asset = MeshletBuilder::new(mesh)
+        .simplify_lods(1)
+        .build()
+        .expect("build");
+    let mut expect = 0u64;
+    for g in &asset.lod_groups {
+        assert_eq!(g.index_byte_start, expect);
+        assert_eq!(g.index_byte_count % 4, 0);
+        expect += g.index_byte_count;
+    }
+    assert_eq!(expect as usize, asset.index_data.len());
+}
+
+/// Meshoptimizer stores a per-meshlet global vertex index list; we persist it verbatim.
+#[test]
+fn test_meshlet_vertex_index_table_matches_meshopt() {
+    let mesh = unit_cube_mesh();
+    let asset = MeshletBuilder::new(mesh.clone()).build().expect("build");
+    let (_compact, meshlets) = meshopt_lod0_session(&mesh);
+    assert_eq!(asset.lod_groups[0].meshlets.len(), meshlets.len());
+    for i in 0..meshlets.len() {
+        let mh = meshlets.get(i);
+        let mm = &asset.lod_groups[0].meshlets[i];
+        let start = mm.vertex_start as usize;
+        let byte_len = (mm.vertex_count as usize) * 4;
+        let slice = &asset.meshlet_vertex_index_data[start..start + byte_len];
+        let decoded: Vec<u32> = slice
+            .chunks_exact(4)
+            .map(|c| u32::from_le_bytes(c.try_into().unwrap()))
+            .collect();
+        assert_eq!(decoded.as_slice(), mh.vertices, "meshlet {i}");
+    }
 }
 
 /// TC-2.4.8.1

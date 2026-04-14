@@ -31,6 +31,10 @@ pub struct LodGroup {
     pub level: u8,
     /// Screen-space error metric for this level (must increase with `level`).
     pub screen_error: f32,
+    /// Byte offset into [`MeshletAsset::index_data`] where this LOD's packed `u32` indices begin.
+    pub index_byte_start: u64,
+    /// Span in bytes of this LOD's packed `u32` triangle indices (`index_byte_count % 12 == 0`).
+    pub index_byte_count: u64,
     /// Meshlets referencing the shared vertex/index streams for this LOD.
     pub meshlets: Vec<Meshlet>,
     /// Conservative bounds for the entire LOD level.
@@ -43,7 +47,9 @@ pub struct LodGroup {
 #[repr(C)]
 #[derive(Archive, Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Pod, Zeroable)]
 pub struct Meshlet {
-    /// Global vertex buffer offset for this meshlet's local vertices.
+    /// Byte offset into [`MeshletAsset::meshlet_vertex_index_data`] for this meshlet's packed
+    /// global vertex indices (`u32` LE, [`Meshlet::vertex_count`] entries). Micro-triangles index
+    /// this list (meshoptimizer layout).
     pub vertex_start: u32,
     /// Number of vertices referenced by this meshlet (≤ 64).
     pub vertex_count: u8,
@@ -88,6 +94,10 @@ pub struct MeshletAsset {
     pub index_buffer: BufferView,
     /// Packed [`Meshlet`] headers.
     pub meshlet_buffer: BufferView,
+    /// Packed global vertex indices per meshlet (`u32` LE; see each [`Meshlet::vertex_start`]).
+    pub meshlet_vertex_index_buffer: BufferView,
+    /// Packed meshoptimizer micro-triangle indices (`u8`; see each [`Meshlet::triangle_start`]).
+    pub meshlet_triangle_buffer: BufferView,
     /// Deterministic fingerprint of the authored source mesh (`R-2.4.1`).
     pub source_hash: [u8; 32],
     /// Bytes backing `vertex_buffer` (32-byte stride vertices).
@@ -96,6 +106,8 @@ pub struct MeshletAsset {
     pub index_data: Vec<u8>,
     /// Bytes backing `meshlet_buffer` (array of [`Meshlet`]).
     pub meshlet_data: Vec<u8>,
-    /// Packed meshoptimizer micro-index buffer (`u8` per corner).
+    /// Bytes backing `meshlet_vertex_index_buffer` (global indices into the compact vertex buffer).
+    pub meshlet_vertex_index_data: Vec<u8>,
+    /// Bytes backing `meshlet_triangle_buffer` (`u8` locals into each meshlet vertex list).
     pub meshlet_triangle_data: Vec<u8>,
 }
