@@ -130,7 +130,7 @@ from what the user is working on.
 
 | Skill | Purpose |
 |-------|---------|
-| `harmonize` | Master entry point — routes SDLC work, boots cron, dispatches orchestrator |
+| `harmonize` | Master entry point — routes SDLC work, boots cron, manual merge-detect backup |
 | `harmonize-specify` | Interactive Phase 1 |
 | `harmonize-design` | Interactive Phase 2 |
 | `harmonize-plan` | Interactive Phase 3 plan authoring |
@@ -148,6 +148,12 @@ full SDLC. Do not act on harmonize requests from memory — always load the skil
 
 Similarly, when the user mentions a specific sub-skill name or a phase-scoped request,
 invoke the matching sub-skill directly (e.g., `/harmonize-design docs/design/...`).
+
+The `harmonize` skill (2.0.1+) runs a **manual merge-detection backup** when `/harmonize` is invoked
+with no extra argument, when cron bootstrap cannot confirm a job, or when the user asks for
+`/harmonize merge-detect`. Refresh the installed copy after the marketplace updates:
+
+`claude plugin update harmonize@cjhowe-us-workflow`
 
 ## Markdown linting
 
@@ -178,6 +184,7 @@ not manually rewrap prose — let rumdl handle it.
 | Tool | Version |
 |------|---------|
 | Rust | stable (1.80+) |
+| harmonize plugin | 2.0.1+ (`harmonize@cjhowe-us-workflow`) |
 | jq | latest |
 | rumdl | latest |
 | taplo | latest |
