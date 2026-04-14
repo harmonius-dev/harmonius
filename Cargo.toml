@@ -53,6 +53,7 @@ members = [
   "crates/integration_attributes_effects_physics",
   "crates/integration_input_camera",
   "crates/integration_networking_save",
+  "crates/integration_physics_geometry",
   "crates/integration_physics_spatial",
   "crates/integration_timelines_camera",
   "crates/integration_ui_physics",
