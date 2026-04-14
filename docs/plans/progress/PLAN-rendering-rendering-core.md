@@ -1,6 +1,6 @@
 ---
 branch: plan/rendering-rendering-core
-last_updated: 2026-04-14T18:45:00Z
+last_updated: 2026-04-14T19:00:00Z
 plan_id: PLAN-rendering-rendering-core
 pr_number: 32
 pr_review_status: not_started
@@ -68,5 +68,9 @@ Plan file: [rendering-core.md](../rendering/rendering-core.md)
 - 2026-04-14T18:45:00Z — plan-implementer — slice 2: `view_registry`, `proxy_dirty`, `draw_batch`,
   `frame_ring`, `batch_compact` (TC-2.10.3.1, TC-2.10.2.1, TC-2.10.4.1, TC-2.10.9.1, TC-2.3.7.1);
   pushed to PR 32.
+
+- 2026-04-14T19:00:00Z — plan-implementer — slice 3: `light_buffer`, `bindless_params`,
+  `meshlet_frustum`; wired `normal_cone`, `pass_barrier` (TC-2.3.1.1, TC-2.10.5.1, TC-2.3.2.1,
+  TC-2.3.2.2, TC-2.3.3.1, TC-2.3.8.1); 16 unit tests in `harmonius_rendering_core`; pushed to PR 32.
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
