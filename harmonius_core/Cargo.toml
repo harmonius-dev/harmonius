@@ -1,0 +1,11 @@
+[package]
+authors = ["Harmonius Contributors"]
+description = "Core primitives for the Harmonius engine (handles, maps)"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_core"
+repository = "https://github.com/cjhowe/harmonius"
+version = "0.1.0"
+
+[lib]
+path = "src/lib.rs"
