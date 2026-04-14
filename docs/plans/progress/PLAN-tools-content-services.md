@@ -61,6 +61,6 @@ Plan file: [content-services.md](../tools/content-services.md)
   (orchestrator pass; no PR merge).
 - 2026-04-14T05:16:30Z — plan-implementer — started: worktree at
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-content-services`, draft PR
-  https://github.com/cjhowe-us/harmonius/pull/28; initial `content_services` crate with nine `TC-*`
-  unit tests (localization ICU/pseudo, governance bitmask/toggles/command gate, assistant tool
-  registry).
+  <https://github.com/cjhowe-us/harmonius/pull/28>; initial `content_services` crate with nine
+  `TC-*` unit tests (localization ICU/pseudo, governance bitmask/toggles/command gate, assistant
+  tool registry).
