@@ -460,6 +460,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_integration_rendering_physics"
+version = "0.1.0"
+dependencies = [
+ "glam",
+]
+
+[[package]]
 name = "harmonius_integration_rendering_vfx"
 version = "0.1.0"
 dependencies = [

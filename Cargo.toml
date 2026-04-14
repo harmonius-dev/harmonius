@@ -10,6 +10,7 @@ members = [
   "crates/harmonius_integration_editor_physics",
   "crates/harmonius_integration_rendering_geometry",
   "crates/harmonius_integration_rendering_grids_volumes",
+  "crates/harmonius_integration_rendering_physics",
   "crates/harmonius_integration_rendering_vfx",
   "crates/harmonius_platform",
   "crates/harmonius_save",
