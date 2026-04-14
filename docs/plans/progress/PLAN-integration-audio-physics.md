@@ -1,11 +1,12 @@
 ---
 branch: plan/integration-audio-physics
-last_updated: 2026-04-14T12:00:00Z
+last_updated: 2026-04-14T05:25:00Z
 plan_id: PLAN-integration-audio-physics
-pr_number: null
-pr_url: null
-started_at: 2026-04-14T12:00:00Z
-status: started
+pr_number: 43
+pr_review_status: not_started
+pr_url: https://github.com/cjhowe-us/harmonius/pull/43
+started_at: 2026-04-14T05:19:00Z
+status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-audio-physics
 ---
 
@@ -16,7 +17,7 @@ Plan file: [audio-physics.md](../integration/audio-physics.md)
 ## Status checklist
 
 - [x] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
+- [x] Draft PR opened and linked in frontmatter
 - [x] Design and companion test-case docs reviewed
 - [x] Requirement and user-story trace matrix completed
 - [x] Red phase complete with failing tests for uncovered scope
@@ -24,11 +25,11 @@ Plan file: [audio-physics.md](../integration/audio-physics.md)
 - [x] Refactor phase complete with no regressions
 - [x] Integration validation complete across documented boundaries
 - [x] Constraint conformance checks complete
-- [ ] Manual validation complete with screenshot and video evidence
+- [ ] Manual validation complete with screenshot and video evidence (deferred; CI tests only)
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [ ] `rumdl check .` passes for touched docs
-- [ ] Evidence links logged in this file
+- [x] `rumdl check .` passes for touched docs
+- [x] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
@@ -54,7 +55,9 @@ Plan file: [audio-physics.md](../integration/audio-physics.md)
 
 ## Event log
 
-- 2026-04-14T12:00:00Z — plan-implementer — started; worktree at
+- 2026-04-14T05:19:00Z — plan-implementer — started; worktree at
   `harmonius-worktrees/PLAN-integration-audio-physics`.
-- 2026-04-14T12:00:00Z — plan-implementer — added `harmonius_integration_audio_physics` crate with
+- 2026-04-14T05:19:00Z — plan-implementer — added `harmonius_integration_audio_physics` crate with
   bridge + queue + tests mapped to TC-IR-1.8.*.
+- 2026-04-14T05:25:00Z — plan-implementer — draft PR
+  <https://github.com/cjhowe-us/harmonius/pull/43> opened; `code_complete`, awaiting `pr-reviewer`.
