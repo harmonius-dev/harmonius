@@ -58,6 +58,8 @@ pub struct AssetImportRequest {
     pub options: ImportOptions,
     pub request_id: u64,
     pub source_path: PathBuf,
+    /// When set, `only_if_stale` compares this against the last recorded watcher time (IR-9.2.5).
+    pub watcher_mtime: Option<SystemTime>,
 }
 
 /// Terminal status for an import attempt.

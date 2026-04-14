@@ -1,7 +1,7 @@
 //! Deterministic importer that emits stable "rkyv-like" blobs without serde/rkyv.
 
 use std::collections::HashSet;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::contracts::{ImportKind, ImportOptions};
 
@@ -14,7 +14,7 @@ pub enum FakeImportError {
 /// Tracks which source paths should fail parsing.
 #[derive(Clone, Debug, Default)]
 pub struct FakeImporter {
-    parse_failures: HashSet<String>,
+    parse_failures: HashSet<PathBuf>,
 }
 
 impl FakeImporter {
@@ -24,7 +24,7 @@ impl FakeImporter {
 
     /// Marks `path` to fail during parse.
     pub fn fail_parse_for<P: AsRef<Path>>(&mut self, path: P) {
-        self.parse_failures.insert(path_key(path.as_ref()));
+        self.parse_failures.insert(path.as_ref().to_path_buf());
     }
 
     /// Produces a deterministic blob from bytes + options.
@@ -35,7 +35,7 @@ impl FakeImporter {
         options: &ImportOptions,
         bytes: &[u8],
     ) -> Result<Vec<u8>, FakeImportError> {
-        if self.parse_failures.contains(&path_key(source_path)) {
+        if self.parse_failures.contains(source_path) {
             return Err(FakeImportError::Parse);
         }
         let mut out = Vec::new();
@@ -47,8 +47,4 @@ impl FakeImporter {
         out.extend_from_slice(bytes);
         Ok(out)
     }
-}
-
-fn path_key(path: &Path) -> String {
-    path.to_string_lossy().to_string()
 }

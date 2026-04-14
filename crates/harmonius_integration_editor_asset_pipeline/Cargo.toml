@@ -6,3 +6,10 @@ name = "harmonius_integration_editor_asset_pipeline"
 version = "0.0.1"
 
 [dependencies]
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+harness = false
+name = "editor_asset_pipeline"
