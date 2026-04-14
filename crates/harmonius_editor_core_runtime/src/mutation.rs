@@ -31,6 +31,13 @@ pub enum EditorMutationKind {
         /// Serialized payload (test harness bytes, not rkyv yet).
         bytes: Vec<u8>,
     },
+    /// Drops a component slot from an entity without despawning the entity.
+    RemoveComponent {
+        /// Target entity.
+        entity: crate::world::EntityId,
+        /// Stable component type id for tests.
+        component_id: u32,
+    },
     /// Placeholder for resource writes (integration stub).
     SetResource {
         /// Resource key for tests.

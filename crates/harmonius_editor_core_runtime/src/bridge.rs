@@ -1,4 +1,8 @@
 //! Bounded one-way queue modeling `CH-22` from the integration design.
+//!
+//! This is a deterministic, single-threaded `VecDeque` stand-in for the threaded MPSC handoff in
+//! the full engine. Backpressure (`FM-1`) is modeled without draining into `GameWorld` outside
+//! `HeadlessHarness::run_frame` pre-phase drains (see `harness` module).
 
 use std::collections::VecDeque;
 

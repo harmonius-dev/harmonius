@@ -4,6 +4,8 @@
 //! [`GameWorld`](world::GameWorld), [`EventBridge`](bridge::EventBridge), and snapshot plumbing
 //! described in `docs/design/integration/editor-core-runtime.md`. It exists so CI can exercise
 //! `IR-9.1.x` ordering contracts before the full ECS stack lands.
+//!
+//! `EventBridge` is an in-process queue, not a cross-thread channel; see `bridge` module docs.
 
 #![deny(clippy::all)]
 #![deny(missing_docs)]

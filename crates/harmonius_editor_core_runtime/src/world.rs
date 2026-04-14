@@ -55,10 +55,15 @@ pub struct EditorWorld {
     pub force_next_clone_failure: bool,
 }
 
-/// Single undo record expressed as editor-local mutations to apply on undo/redo.
+/// Single undo record: `forward` replays on redo; `inverse` restores prior state on undo.
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum EditorUndoOp {
-    Forward(EditorMutation),
+    Pair {
+        /// Mutation last applied to the shadow world (replayed on redo).
+        forward: EditorMutation,
+        /// Mutation that reverses `forward` when applied to the current shadow world.
+        inverse: EditorMutation,
+    },
 }
 
 impl Default for EditorWorld {
@@ -105,33 +110,104 @@ impl EditorWorld {
 
     /// Spawns an entity in the editor world and records undo metadata.
     pub fn spawn_with_undo(&mut self, mutation: EditorMutation) {
+        let inverse = self.inverse_before_apply(&mutation);
         self.apply_mutation_local(&mutation);
         while self.undo.len() >= self.undo_cap {
             self.undo.remove(0);
             self.fm7_undo_overflow_events = self.fm7_undo_overflow_events.saturating_add(1);
         }
-        self.undo.push(EditorUndoOp::Forward(mutation));
+        self.undo.push(EditorUndoOp::Pair {
+            forward: mutation,
+            inverse,
+        });
         self.redo.clear();
     }
 
     /// Undoes the last editor-local change.
     pub fn undo_last(&mut self) -> Result<(), UndoError> {
-        let Some(EditorUndoOp::Forward(m)) = self.undo.pop() else {
+        let Some(EditorUndoOp::Pair { forward, inverse }) = self.undo.pop() else {
             return Err(UndoError::StackEmpty);
         };
-        self.apply_inverse(&m);
-        self.redo.push(EditorUndoOp::Forward(m));
+        self.apply_mutation_local(&inverse);
+        self.redo.push(EditorUndoOp::Pair { forward, inverse });
         Ok(())
     }
 
     /// Replays one undone change.
     pub fn redo_last(&mut self) -> Result<(), UndoError> {
-        let Some(EditorUndoOp::Forward(m)) = self.redo.pop() else {
+        let Some(EditorUndoOp::Pair { forward, inverse }) = self.redo.pop() else {
             return Err(UndoError::StackEmpty);
         };
-        self.apply_mutation_local(&m);
-        self.undo.push(EditorUndoOp::Forward(m));
+        self.apply_mutation_local(&forward);
+        self.undo.push(EditorUndoOp::Pair { forward, inverse });
         Ok(())
+    }
+
+    fn inverse_before_apply(&self, mutation: &EditorMutation) -> EditorMutation {
+        let mutation_id = mutation.mutation_id;
+        match &mutation.kind {
+            EditorMutationKind::SpawnEntity { id: entity } => EditorMutation {
+                mutation_id,
+                kind: EditorMutationKind::DespawnEntity { id: *entity },
+            },
+            EditorMutationKind::DespawnEntity { id } => EditorMutation {
+                mutation_id,
+                kind: EditorMutationKind::SpawnEntity { id: *id },
+            },
+            EditorMutationKind::InsertComponent {
+                entity,
+                component_id,
+                ..
+            } => EditorMutation {
+                mutation_id,
+                kind: EditorMutationKind::RemoveComponent {
+                    entity: *entity,
+                    component_id: *component_id,
+                },
+            },
+            EditorMutationKind::UpdateComponent {
+                entity,
+                component_id,
+                ..
+            } => {
+                let prior = self
+                    .inner
+                    .components
+                    .get(&(*entity, *component_id))
+                    .cloned()
+                    .unwrap_or_default();
+                EditorMutation {
+                    mutation_id,
+                    kind: EditorMutationKind::UpdateComponent {
+                        entity: *entity,
+                        component_id: *component_id,
+                        bytes: prior,
+                    },
+                }
+            }
+            EditorMutationKind::RemoveComponent {
+                entity,
+                component_id,
+            } => {
+                let prior = self
+                    .inner
+                    .components
+                    .get(&(*entity, *component_id))
+                    .cloned()
+                    .unwrap_or_default();
+                EditorMutation {
+                    mutation_id,
+                    kind: EditorMutationKind::InsertComponent {
+                        entity: *entity,
+                        component_id: *component_id,
+                        bytes: prior,
+                    },
+                }
+            }
+            EditorMutationKind::SetResource { .. }
+            | EditorMutationKind::PushScene { .. }
+            | EditorMutationKind::PopScene => mutation.clone(),
+        }
     }
 
     fn apply_mutation_local(&mut self, m: &EditorMutation) {
@@ -154,23 +230,12 @@ impl EditorWorld {
                     .components
                     .insert((*entity, *component_id), bytes.clone());
             }
-            EditorMutationKind::SetResource { .. } | EditorMutationKind::PushScene { .. } => {}
-            EditorMutationKind::PopScene => {}
-        }
-    }
-
-    fn apply_inverse(&mut self, m: &EditorMutation) {
-        match &m.kind {
-            EditorMutationKind::SpawnEntity { id } => {
-                self.inner.entities.remove(id);
-                self.selection.remove(id);
-                self.inner.components.retain(|k, _| k.0 != *id);
-            }
-            EditorMutationKind::DespawnEntity { .. } => {}
-            EditorMutationKind::InsertComponent { entity, component_id, .. } => {
+            EditorMutationKind::RemoveComponent {
+                entity,
+                component_id,
+            } => {
                 self.inner.components.remove(&(*entity, *component_id));
             }
-            EditorMutationKind::UpdateComponent { .. } => {}
             EditorMutationKind::SetResource { .. } | EditorMutationKind::PushScene { .. } => {}
             EditorMutationKind::PopScene => {}
         }
@@ -249,6 +314,12 @@ impl GameWorld {
                 self.inner
                     .components
                     .insert((*entity, *component_id), bytes.clone());
+            }
+            EditorMutationKind::RemoveComponent {
+                entity,
+                component_id,
+            } => {
+                self.inner.components.remove(&(*entity, *component_id));
             }
             EditorMutationKind::SetResource { .. }
             | EditorMutationKind::PushScene { .. }
