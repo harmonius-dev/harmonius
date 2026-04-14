@@ -1,0 +1,8 @@
+[package]
+description = "Headless editor ↔ asset pipeline integration harness (IR-9.2.x)"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_integration_editor_asset_pipeline"
+version = "0.0.1"
+
+[dependencies]
