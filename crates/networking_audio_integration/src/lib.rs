@@ -18,6 +18,7 @@ mod spatial;
 mod voice_activity_detector;
 mod voice_channel_router;
 mod voice_packet;
+mod voice_stream_mixer;
 
 pub use acoustic_echo_canceller::AcousticEchoCanceller;
 pub use auth::{compute_voice_auth_tag, voice_auth_tag_valid};
@@ -31,3 +32,4 @@ pub use spatial::{SpatialParams, Vec3, VoiceSpatialCommand, VoiceSpatialQueue};
 pub use voice_activity_detector::VoiceActivityDetector;
 pub use voice_channel_router::{ConnectionSlot, VoiceChannelRouter};
 pub use voice_packet::{VoiceChannelId, VoiceChannelResult, VoiceChannelRpc, VoicePacket};
+pub use voice_stream_mixer::mix_voice_streams;

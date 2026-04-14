@@ -66,13 +66,10 @@ mod tests {
     #[test]
     fn tc_ir_4_3_2_3_aec_residual() {
         let len = 960usize;
-        let mut reference = vec![0.0f32; len];
-        for i in 0..len {
-            reference[i] = (i as f32 * 0.01).sin();
-        }
+        let reference: Vec<f32> = (0..len).map(|i| (i as f32 * 0.01).sin()).collect();
         let mut mic = reference.clone();
         let mut aec = AcousticEchoCanceller::new(64);
-        aec.process(&mut mic, &reference);
+        aec.process(&mut mic, reference.as_slice());
         let db = db_energy_ratio(&mic, &reference);
         assert!(db < -6.0, "residual ratio {db} dB");
     }

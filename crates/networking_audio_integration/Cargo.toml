@@ -8,7 +8,7 @@ version = "0.1.0"
 crossbeam-channel = "0.5"
 hmac = "0.12"
 opus-rs = "0.1.12"
-rkyv = { version = "0.8.15", default-features = false, features = ["std"] }
+rkyv = { version = "0.8.15", default-features = false, features = ["bytecheck", "std"] }
 sha2 = "0.10"
 
 [dev-dependencies]
