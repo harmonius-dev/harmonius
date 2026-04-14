@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T01:53:07Z
+last_updated: 2026-04-14T02:01:13Z
 phase: release
 started_at: null
 ---
@@ -30,3 +30,6 @@ on every pass; read by the harmonize master agent to compute the next ready set.
 - 2026-04-14T01:51:25Z — harmonize `mode: run` root: release-orchestrator still not auto-dispatched.
 - 2026-04-14T01:53:07Z — harmonize `post-merge-dispatch`: release-orchestrator still not
   auto-dispatched (explicit user request only).
+- 2026-04-14T02:00:50Z — harmonize `mode: stop`: no release-phase rows in `in-flight.md`; locks
+  unchanged.
+- 2026-04-14T02:01:13Z — harmonize `mode: run`: release-orchestrator not auto-dispatched.

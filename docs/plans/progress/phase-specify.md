@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T01:53:07Z
+last_updated: 2026-04-14T02:01:13Z
 phase: specify
 started_at: null
 ---
@@ -35,3 +35,7 @@ on every pass; read by the harmonize master agent to compute the next ready set.
 - 2026-04-14T01:53:07Z — harmonize `post-merge-dispatch`: awaited merge-detection transcript
   `f85f0aa7-d9ee-45b3-b747-552b925dad2f` (no terminal line yet); `rg` found no numeric `pr_number`
   in `PLAN-*`; specify ready set empty; no specify-orchestrator dispatch.
+- 2026-04-14T02:00:50Z — harmonize `mode: stop`: no specify-phase rows in `in-flight.md`; locks
+  unchanged.
+- 2026-04-14T02:01:13Z — harmonize `mode: run`: specify ready set empty (`(bootstrap)`
+  `not_started`); no specify-orchestrator dispatch.

@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T01:53:07Z
+last_updated: 2026-04-14T02:01:13Z
 phase: design
 started_at: null
 ---
@@ -34,3 +34,7 @@ on every pass; read by the harmonize master agent to compute the next ready set.
   scheduled; no design-orchestrator in this root pass (continuation may dispatch).
 - 2026-04-14T01:53:07Z — harmonize `post-merge-dispatch`: Phase 1 gate still closed (`(bootstrap)`
   `not_started` in `phase-specify.md`); design ready set empty; no design-orchestrator dispatch.
+- 2026-04-14T02:00:50Z — harmonize `mode: stop`: no design-phase rows in `in-flight.md`; locks
+  unchanged.
+- 2026-04-14T02:01:13Z — harmonize `mode: run`: Phase 1 gate closed; design ready set empty; no
+  design-orchestrator dispatch.
