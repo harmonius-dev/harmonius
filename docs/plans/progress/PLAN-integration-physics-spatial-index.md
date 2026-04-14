@@ -1,11 +1,11 @@
 ---
 branch: plan/integration-physics-spatial-index
-last_updated: 2026-04-14T17:45:04Z
+last_updated: 2026-04-14T05:24:34Z
 plan_id: PLAN-integration-physics-spatial-index
 pr_number: 62
 pr_review_status: not_started
 pr_url: https://github.com/cjhowe-us/harmonius/pull/62
-started_at: 2026-04-14T17:45:04Z
+started_at: 2026-04-14T05:24:34Z
 status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-physics-spatial-index
 ---
@@ -33,7 +33,6 @@ Plan file: [physics-spatial-index.md](../integration/physics-spatial-index.md)
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
-- [x] Code complete marker set
 
 ## Implementation readiness gate
 
@@ -51,16 +50,18 @@ Plan file: [physics-spatial-index.md](../integration/physics-spatial-index.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test --workspace` in worktree on 2026-04-14 (18 lib + 1 trybuild tests).
-- Benchmarks: not run for this verification pass (no `cargo bench` in CI scope).
-- Screenshots: deferred (manual validation checklist open).
-- Videos: deferred (manual validation checklist open).
-- Review notes: awaiting `pr-reviewer`.
+- Test reports: add command output paths or CI URLs.
+- Benchmarks: add artifacts and expected vs observed thresholds.
+- Screenshots: add image paths with acceptance notes.
+- Videos: add capture paths with scenario IDs.
+- Review notes: add previously unmapped issues, waivers, and rationale.
 
 ## Event log
 
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
   (orchestrator pass; no PR merge).
-- 2026-04-14T17:45:04Z — plan-implementer — adopted existing worktree and draft PR #62; verified
-  `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`, `rumdl check .`, and
-  `cargo fmt --check` in worktree; marked `code_complete`, awaiting review.
+- 2026-04-14T05:24:34Z — plan-implementer — started: worktree at
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-physics-spatial-index`, draft PR
+  <https://github.com/cjhowe-us/harmonius/pull/62>.
+- 2026-04-14T05:24:34Z — plan-implementer — code complete: `integration_physics_spatial` crate with
+  TC-IR-3.9.* coverage; manual screenshot/video evidence deferred.
