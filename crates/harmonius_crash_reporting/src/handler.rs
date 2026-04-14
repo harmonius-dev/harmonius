@@ -25,9 +25,11 @@ pub struct CrashConfig {
     pub rotation_cap: u32,
     /// Path to the `harmonius_crashmon` binary.
     pub monitor_binary: PathBuf,
-    /// Upload endpoint for dumps (not used by the initial unit slice).
+    /// Upload endpoint for dumps (reserved for monitor-side uploads).
+    #[allow(dead_code)]
     pub upload_url: Url,
-    /// Whether to scrub PII fields in metadata.
+    /// Whether to scrub PII fields in metadata (reserved for monitor-side redaction).
+    #[allow(dead_code)]
     pub anonymize: bool,
     /// Shared memory backing file used for breadcrumbs and lightweight metadata.
     pub shared_state_path: PathBuf,
@@ -58,8 +60,8 @@ pub enum CrashInstallError {
     #[error("crash handler install failed: {0}")]
     Io(#[from] io::Error),
     /// Failed to spawn the monitor process.
-    #[error("failed to spawn monitor binary")]
-    Spawn,
+    #[error("failed to spawn monitor binary: {0}")]
+    Spawn(#[source] io::Error),
 }
 
 impl CrashHandler {
@@ -85,7 +87,7 @@ impl CrashHandler {
             .arg("idle")
             .stdin(Stdio::piped())
             .spawn()
-            .map_err(|_| CrashInstallError::Spawn)?;
+            .map_err(CrashInstallError::Spawn)?;
 
         Ok(Self { child, mmap })
     }

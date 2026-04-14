@@ -15,14 +15,25 @@ pub fn normalize_frame_name(frame: &str) -> String {
     s
 }
 
+/// Prefix for frames attributed to the in-process crash stub (`harmonius::crash::*`).
+pub const HANDLER_FRAME_PREFIX: &str = "harmonius::crash::";
+
 /// Drops frames that belong to the Harmonius crash stub namespace.
 #[must_use]
 pub fn drop_handler_frames(frames: &[String]) -> Vec<String> {
     frames
         .iter()
-        .filter(|f| !f.contains("harmonius::crash::"))
+        .filter(|f| !f.contains(HANDLER_FRAME_PREFIX))
         .cloned()
         .collect()
+}
+
+/// Normalizes frame names, drops stub-namespace frames, then fingerprints the remainder.
+#[must_use]
+pub fn fingerprint_stack(frames: &[String]) -> StackFingerprint {
+    let normalized: Vec<String> = frames.iter().map(|f| normalize_frame_name(f)).collect();
+    let trimmed = drop_handler_frames(&normalized);
+    fingerprint_frames(&trimmed)
 }
 
 /// Computes a deterministic fingerprint for `frames` (already normalized or not).
@@ -141,5 +152,6 @@ mod tests {
                 .collect::<Vec<_>>(),
         );
         assert_ne!(fp_with_stub, fp_without_stub);
+        assert_eq!(fingerprint_stack(&dirty), fp_without_stub);
     }
 }

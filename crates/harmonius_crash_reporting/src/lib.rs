@@ -19,6 +19,7 @@ pub mod stub_fault_path;
 pub mod symbol_server;
 pub mod symbols;
 
+pub use fingerprint::fingerprint_stack;
 pub use handler::{BreadcrumbHandle, CrashConfig, CrashHandler, CrashInstallError, UserId};
 pub use monitor::{FaultNotification, MonitorArgs};
 pub use symbols::{BuildId, SymbolBundleEntry};
