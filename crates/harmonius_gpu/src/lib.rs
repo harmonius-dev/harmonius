@@ -1,4 +1,8 @@
-//! GPU abstraction traits and CPU-side helpers aligned with `docs/design/rendering/render-pipeline.md`.
+//! GPU abstraction traits and CPU-side helpers aligned with
+//! `docs/design/rendering/render-pipeline.md`.
+//!
+//! Runtime services the design names `harmonius_gpu_runtime` live in this crate for now. A split
+//! crate can follow once the backend surface stabilizes.
 
 #![deny(clippy::all)]
 #![deny(unsafe_code)]

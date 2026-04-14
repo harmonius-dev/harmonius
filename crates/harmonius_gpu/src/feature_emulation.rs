@@ -81,14 +81,7 @@ mod tests {
     #[test]
     fn test_traceray_compute_fallback() {
         let mut em = TraceRaysEmulator::new();
-        em.trace_rays(
-            RtCapabilities {
-                ray_tracing: false,
-            },
-            64,
-            64,
-            1,
-        );
+        em.trace_rays(RtCapabilities { ray_tracing: false }, 64, 64, 1);
         assert_eq!(
             em.recorded(),
             &[TraceDispatch::ComputeDispatch { x: 8, y: 8, z: 1 }]
