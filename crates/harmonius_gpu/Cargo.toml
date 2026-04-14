@@ -1,18 +1,10 @@
 [package]
+description = "GPU backend traits and CPU-side render pipeline helpers (allocators, state, barriers)."
+edition = "2021"
+license = "MIT OR Apache-2.0"
 name = "harmonius_gpu"
-description = "Vulkan GPU backend for the Harmonius engine"
 publish = false
-
-edition.workspace = true
-license.workspace = true
-rust-version.workspace = true
-version.workspace = true
+rust-version = "1.80"
+version = "0.1.0"
 
 [dependencies]
-ash.workspace = true
-bitflags.workspace = true
-harmonius_core.workspace = true
-harmonius_gpu_runtime.workspace = true
-harmonius_platform.workspace = true
-raw-window-handle.workspace = true
-thiserror.workspace = true

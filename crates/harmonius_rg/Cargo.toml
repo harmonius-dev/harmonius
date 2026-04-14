@@ -1,0 +1,13 @@
+[package]
+description = "Declarative render graph: compile-time ordering, barriers, aliasing, and scheduling."
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_rg"
+publish = false
+rust-version = "1.80"
+version = "0.1.0"
+
+[dependencies]
+
+[dev-dependencies]
+trybuild = "1.0"
