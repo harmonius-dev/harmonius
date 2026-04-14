@@ -1,12 +1,15 @@
 [package]
-description = "Networking infrastructure for Harmonius (MMO mesh, persistence seams, anti-cheat)"
-edition = "2021"
-license = "MIT OR Apache-2.0"
 name = "harmonius_net"
-repository = "https://github.com/cjhowe/harmonius"
 version = "0.1.0"
-
-[lib]
-path = "src/lib.rs"
+edition = "2021"
+description = "Harmonius network transport, replication, prediction, and RPC (sans-io building blocks)."
+license = "Apache-2.0"
 
 [dependencies]
+aes-gcm = "0.10"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "deny"
