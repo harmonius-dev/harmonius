@@ -44,7 +44,10 @@ pub struct RagdollBone {
     pub restitution: f32,
 }
 
-/// Ragdoll joint limits between parent and child bones.
+/// Ragdoll joint limits between parent and child bones (authoring data).
+///
+/// Swing limits map to [`crate::clamp_orientation_swing`]; twist limits map to
+/// [`crate::clamp_joint_twist`] on the child-in-parent rotation.
 #[derive(Archive, Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[archive_attr(derive(Debug, PartialEq))]
 pub struct RagdollConstraint {
@@ -68,7 +71,10 @@ pub struct RagdollDef {
     pub constraints: Vec<RagdollConstraint>,
 }
 
-/// Generational index handle into `RagdollDefStore`.
+/// Generational slot handle into `RagdollDefStore`.
+///
+/// Stand-in until the engine-wide asset `Handle<T>` type is shared here; use
+/// [`RagdollDefHandle`](crate::RagdollDefHandle) for ragdoll definitions.
 #[derive(Debug, Eq, PartialEq)]
 pub struct Handle<T> {
     /// Slot index.

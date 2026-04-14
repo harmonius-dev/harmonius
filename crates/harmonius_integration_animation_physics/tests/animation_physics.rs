@@ -2,13 +2,13 @@
 
 use glam::{Mat4, Quat, Vec3};
 use harmonius_integration_animation_physics::{
-    animation_eval_policy, apply_root_motion_for_body, bone_collider_sync,
-    clamp_linear_angular_velocity, clamp_orientation_swing, clamp_to_swing_cone,
+    animation_eval_policy, apply_root_motion_for_body, blend_ragdoll_pose, bone_collider_sync,
+    clamp_joint_twist, clamp_linear_angular_velocity, clamp_orientation_swing, clamp_to_swing_cone,
     compose_root_motion, inherit_root_linear_velocity, init_ragdoll_isometries_from_palette,
-    ragdoll_recovery_fallback, recovery_blend_weight, AnimationEvalPolicy, BodyKind, BoneIndex,
-    CharacterController, ColliderShape, Handle, LinearAngular, LogSink, RagdollBone,
-    RagdollConstraint, RagdollDef, RagdollDefStore, RagdollRef, RagdollTransition, RootMotionDelta,
-    RootMotionPipeline, WeaponColliderState,
+    ragdoll_recovery_fallback, recovery_blend_weight, root_rotation_delta_to_angular_impulse,
+    AnimationEvalPolicy, BodyKind, BoneIndex, CharacterController, ColliderShape, Handle,
+    LinearAngular, LogSink, RagdollBone, RagdollConstraint, RagdollDef, RagdollDefStore,
+    RagdollRef, RagdollTransition, RootMotionDelta, RootMotionPipeline, WeaponColliderState,
 };
 use rkyv::ser::serializers::AllocSerializer;
 use rkyv::ser::Serializer;
@@ -65,6 +65,8 @@ fn tc_ir_1_3_1_u1_ragdoll_def_rkyv_round_trip() {
     let mut serializer = AllocSerializer::<4096>::default();
     serializer.serialize_value(&def).unwrap();
     let bytes = serializer.into_serializer().into_inner();
+    // SAFETY: `bytes` holds the serialized value from `AllocSerializer` above; root is aligned
+    // for `RagdollDef` and the buffer is not mutated before `deserialize`.
     let archived = unsafe { rkyv::archived_root::<RagdollDef>(&bytes) };
     let round: RagdollDef = archived.deserialize(&mut Infallible).unwrap();
     assert_eq!(def, round);
@@ -156,11 +158,14 @@ fn tc_ir_1_3_1_1_ragdoll_init_from_pose() {
         Mat4::from_translation(Vec3::X),
         Mat4::from_translation(Vec3::Y * 2.0),
     ];
+    let mut log = VecLog::default();
     let out = init_ragdoll_isometries_from_palette(
         &store,
         RagdollRef { def: h },
         &palette,
+        None,
         "test_skeleton",
+        &mut log,
     );
     assert_eq!(out.body_transforms.len(), 2);
     assert!((out.body_transforms[0].w_axis.truncate() - Vec3::X).length() < 1e-4);
@@ -296,27 +301,44 @@ fn tc_ir_1_3_3_2_root_rotation_turns_character() {
     assert!(out.desired_speed < 1e-3);
 }
 
-/// TC-IR-1.3.1.N1 — missing bone index logs warning and freezes to identity.
+/// TC-IR-1.3.1.N1 — missing palette row uses pose fallback and logs a warning.
 #[test]
 fn tc_ir_1_3_1_n1_ragdoll_def_missing_bone() {
     let mut store = RagdollDefStore::default();
     let h = store.insert(sample_ragdoll_def());
     let palette = vec![Mat4::IDENTITY]; // bone 1 missing
-    let out = init_ragdoll_isometries_from_palette(&store, RagdollRef { def: h }, &palette, "sk");
+    let fallback = vec![
+        Mat4::IDENTITY,
+        Mat4::from_translation(Vec3::new(0.0, 2.0, 0.0)),
+    ];
+    let mut sink = VecLog::default();
+    let out = init_ragdoll_isometries_from_palette(
+        &store,
+        RagdollRef { def: h },
+        &palette,
+        Some(&fallback),
+        "sk",
+        &mut sink,
+    );
     assert_eq!(out.log.missing_bones.len(), 1);
-    assert_eq!(out.body_transforms[1], Mat4::IDENTITY);
+    assert!(sink.0.iter().any(|s| s.contains("missing palette")));
+    assert!(
+        (out.body_transforms[1].w_axis.truncate() - Vec3::new(0.0, 2.0, 0.0)).length() < 1e-3
+    );
 }
 
-/// TC-IR-1.3.1.N2 — invalid handle: no bodies, stale flagged.
+/// TC-IR-1.3.1.N2 — invalid handle: no bodies, stale flagged, error logged.
 #[test]
 fn tc_ir_1_3_1_n2_invalid_ragdoll_ref() {
     let store = RagdollDefStore::default();
     let stale = RagdollRef {
         def: Handle::new(0, 99),
     };
-    let out = init_ragdoll_isometries_from_palette(&store, stale, &[], "sk");
+    let mut sink = VecLog::default();
+    let out = init_ragdoll_isometries_from_palette(&store, stale, &[], None, "sk", &mut sink);
     assert!(out.body_transforms.is_empty());
     assert!(out.log.stale_handle);
+    assert!(sink.0.iter().any(|s| s.contains("stale RagdollRef")));
 }
 
 /// TC-IR-1.3.3.N1 — sleeping dynamic body triggers wake path in outcome.
@@ -388,6 +410,82 @@ fn tc_ir_1_3_4_n3_swing_beyond_cone() {
     let world = clamped * local_forward;
     let angle = world.dot(parent_twist).clamp(-1.0, 1.0).acos();
     assert!(angle <= 0.15 + 0.05);
+}
+
+/// TC-IR-1.3.4 — per-bone SLERP blend between physics and animation poses.
+#[test]
+fn tc_ir_1_3_4_blend_ragdoll_pose_slerp() {
+    let phys = vec![
+        Mat4::from_rotation_translation(Quat::IDENTITY, Vec3::ZERO),
+        Mat4::from_rotation_translation(Quat::IDENTITY, Vec3::X),
+    ];
+    let anim = vec![
+        Mat4::from_rotation_translation(Quat::from_rotation_y(0.5), Vec3::Y),
+        Mat4::from_rotation_translation(Quat::IDENTITY, Vec3::Z),
+    ];
+    let blended = blend_ragdoll_pose(&phys, &anim, 0.5);
+    assert_eq!(blended.len(), 2);
+    let (_, r, t) = blended[0].to_scale_rotation_translation();
+    assert!(t.y > 0.2 && t.y < 0.6);
+    assert!(r.xyz().length() > 0.05);
+}
+
+/// TC-IR-1.3.1 — twist component clamped about parent axis.
+#[test]
+fn tc_ir_1_3_1_joint_twist_clamp() {
+    let q = Quat::from_rotation_y(1.0);
+    let c = clamp_joint_twist(q, Vec3::Y, 0.3);
+    let (_, ang) = c.to_axis_angle();
+    assert!(ang.abs() <= 0.31);
+}
+
+/// TC-IR-1.3.3 — dynamic root rotation contributes angular impulse vector.
+#[test]
+fn tc_ir_1_3_3_dynamic_root_rotation_angular() {
+    let rot = Quat::from_rotation_z(core::f32::consts::FRAC_PI_2);
+    let v = root_rotation_delta_to_angular_impulse(rot);
+    assert!(v.length() > 0.5);
+    let mut log = VecLog::default();
+    let delta = RootMotionDelta {
+        translation: Vec3::ZERO,
+        rotation: rot,
+    };
+    let (out, _) = apply_root_motion_for_body(delta, BodyKind::Dynamic { sleeping: false }, &mut log);
+    assert!((out.external_angular - v).length() < 1e-4);
+}
+
+/// TC-IR-1.3.2.2 — shield collider tracks forearm bone row (palette read).
+#[test]
+fn tc_ir_1_3_2_2_shield_follows_forearm() {
+    let forearm = Mat4::from_translation(Vec3::new(0.4, 1.1, -0.1));
+    let palette = vec![Mat4::IDENTITY, forearm];
+    let mut log = VecLog::default();
+    let mut warned = false;
+    let out = bone_collider_sync(
+        Some(&palette),
+        1,
+        Mat4::IDENTITY,
+        &mut log,
+        "shield_forearm",
+        &mut warned,
+    );
+    assert!(!out.skipped_missing_palette);
+    assert!(
+        (out.world.expect("world").w_axis.truncate() - forearm.w_axis.truncate()).length() < 1e-3
+    );
+}
+
+/// TC-IR-1.3.4.2 — recovery clip driving eval: animation runs while timer active (get-up playing).
+#[test]
+fn tc_ir_1_3_4_2_get_up_recovery_timer_runs_animation() {
+    let recovering = RagdollTransition {
+        blend_weight: 0.5,
+        recovery_timer: Some(0.1),
+    };
+    assert_eq!(
+        animation_eval_policy(Some(recovering)),
+        AnimationEvalPolicy::Run
+    );
 }
 
 /// Character controller mapping helper for root-motion integration sketches.

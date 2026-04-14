@@ -3,7 +3,9 @@
 use glam::{Mat4, Vec3};
 
 use crate::ragdoll::{Handle, RagdollDef, RagdollDefStore};
-use crate::root_motion::{RootMotionApplyOutcome, RootMotionDelta};
+use crate::root_motion::{
+    root_rotation_delta_to_angular_impulse, RootMotionApplyOutcome, RootMotionDelta,
+};
 
 /// Collects warning/error strings for tests and hosts.
 pub trait LogSink {
@@ -23,6 +25,8 @@ pub enum AnimationEvalPolicy {
 }
 
 /// Ragdoll blend + optional recovery timer (seconds).
+///
+/// Alias for design `RagdollActive` component fields in this stub crate.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RagdollTransition {
     /// 0 = physics, 1 = animation during recovery.
@@ -79,15 +83,24 @@ pub struct RagdollInitOutcome {
 }
 
 /// Builds world `Mat4` poses for each `RagdollBone` using palette matrices.
+///
+/// Missing palette rows use `pose_fallback` (bind pose or last animated row) when provided,
+/// else identity. Warnings and errors go to `sink` for host visibility.
 pub fn init_ragdoll_isometries_from_palette(
     store: &RagdollDefStore,
     ragdoll_ref: RagdollRef,
     palette: &[Mat4],
+    pose_fallback: Option<&[Mat4]>,
     skeleton_name: &str,
+    sink: &mut dyn LogSink,
 ) -> RagdollInitOutcome {
     let mut log = RagdollInitLog::default();
     let Some(def) = store.get(ragdoll_ref.def) else {
         log.stale_handle = true;
+        sink.error(format!(
+            "ragdoll init failed: stale RagdollRef (index {} generation {})",
+            ragdoll_ref.def.index, ragdoll_ref.def.generation
+        ));
         return RagdollInitOutcome {
             body_transforms: Vec::new(),
             log,
@@ -99,9 +112,21 @@ pub fn init_ragdoll_isometries_from_palette(
         let idx = bone.bone_index.0 as usize;
         if let Some(m) = palette.get(idx) {
             body_transforms.push(*m);
+        } else if let Some(fb) = pose_fallback.and_then(|rows| rows.get(idx)) {
+            log.missing_bones
+                .push((bone.bone_index.0, skeleton_name.to_string()));
+            sink.warn(format!(
+                "ragdoll init: missing palette row for bone index {idx} skeleton \
+                 {skeleton_name}; using pose_fallback row"
+            ));
+            body_transforms.push(*fb);
         } else {
             log.missing_bones
                 .push((bone.bone_index.0, skeleton_name.to_string()));
+            sink.warn(format!(
+                "ragdoll init: missing palette row for bone index {idx} skeleton \
+                 {skeleton_name}; using identity (no pose_fallback)"
+            ));
             body_transforms.push(Mat4::IDENTITY);
         }
     }
@@ -192,9 +217,10 @@ pub fn apply_root_motion_for_body(
             if sleeping {
                 log.warn("wake_body invoked before applying root motion delta".to_string());
             }
-            let linear = delta.translation + delta.rotation * Vec3::ZERO;
+            let linear = delta.translation;
+            let angular = root_rotation_delta_to_angular_impulse(delta.rotation);
             (
-                RootMotionApplyOutcome::dynamic_force(linear, woke),
+                RootMotionApplyOutcome::dynamic_force(linear, angular, woke),
                 RootMotionDelta::identity(),
             )
         }
@@ -215,6 +241,26 @@ pub fn recovery_blend_weight(elapsed: f32, duration: f32) -> f32 {
         return 1.0;
     }
     (elapsed / duration).clamp(0.0, 1.0)
+}
+
+/// Blends physics bone isometries toward animated targets with translation lerp + rotation SLERP.
+///
+/// Length is `min(phys.len(), anim.len())`. Extra rows are ignored.
+#[must_use]
+pub fn blend_ragdoll_pose(phys: &[Mat4], anim: &[Mat4], w: f32) -> Vec<Mat4> {
+    let w = w.clamp(0.0, 1.0);
+    let n = phys.len().min(anim.len());
+    (0..n)
+        .map(|i| blend_isometry(phys[i], anim[i], w))
+        .collect()
+}
+
+fn blend_isometry(phys: Mat4, anim: Mat4, w: f32) -> Mat4 {
+    let (_, r0, t0) = phys.to_scale_rotation_translation();
+    let (_, r1, t1) = anim.to_scale_rotation_translation();
+    let r = r0.slerp(r1, w);
+    let t = t0.lerp(t1, w);
+    Mat4::from_rotation_translation(r, t)
 }
 
 /// Missing recovery clip: snap to bind pose matrices and mark ragdoll finished.
