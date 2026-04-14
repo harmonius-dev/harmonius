@@ -98,7 +98,9 @@ impl DiskIndex {
             }
             let version = read_u32_le(&header, 8)?;
             if version != INDEX_VERSION {
-                return Err(CacheError::VersionMismatch);
+                drop(file);
+                Self::reset_corrupted_dir(&device_dir)?;
+                return Self::open(root, format_version, fp);
             }
             let count = read_u32_le(&header, 12)? as usize;
             let expected_crc = read_u32_le(&header, 16)?;

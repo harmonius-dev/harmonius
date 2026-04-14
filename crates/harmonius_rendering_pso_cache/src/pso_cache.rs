@@ -7,16 +7,23 @@ use crate::disk_index::DiskIndex;
 use crate::pso_key::PsoKey;
 use crate::sorted_vec_map::SortedVecMap;
 
+/// Default disk LRU cap (design default 512 MiB until [`PsoCache::set_caps`] overrides it).
+const DEFAULT_DISK_CAP_BYTES: u64 = 512 * 1024 * 1024;
+
 /// Opaque GPU handle placeholder tracked by tests.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct PsoHandle(pub u32);
 
 /// Minimal pipeline description inputs used for [`PsoKey`] derivation.
+///
+/// Vertex layout, render-target formats, blend state, and other fixed-function
+/// inputs must be folded into `shader_hash` and/or `signature_hash` by the
+/// embedding compiler so equal keys imply equal GPU pipeline identity.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PipelineDesc {
-    /// Shader bytecode digest.
+    /// Shader bytecode digest (must cover all stage bytecode inputs).
     pub shader_hash: crate::content_hash::ContentHash,
-    /// Root signature digest.
+    /// Root signature / pipeline-layout digest (must cover bind layout inputs).
     pub signature_hash: crate::content_hash::ContentHash,
 }
 
@@ -75,7 +82,7 @@ impl PsoCache {
             device_fp: fp,
             tick: 0,
             memory_cap_bytes: u64::MAX,
-            disk_cap_bytes: u64::MAX,
+            disk_cap_bytes: DEFAULT_DISK_CAP_BYTES,
             deferred_remove: Vec::new(),
         })
     }
@@ -202,7 +209,10 @@ impl PsoCache {
                     self.memory.insert(key, entry);
                     Ok(handle)
                 }
-                Err(err) => Err(err),
+                Err(_err) => {
+                    let _ = self.disk.remove_key(&key);
+                    self.compile_store(desc, compiler, key)
+                }
             },
             Err(CacheError::Missing) => self.compile_store(desc, compiler, key),
             Err(CacheError::Corrupted(_)) => {

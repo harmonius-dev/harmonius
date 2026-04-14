@@ -1,6 +1,6 @@
 ---
 branch: plan/rendering-pipeline-state-cache
-last_updated: 2026-04-14T11:35:50Z
+last_updated: 2026-04-14T12:10:00Z
 plan_id: PLAN-rendering-pipeline-state-cache
 pr_number: 80
 pr_review_status: complete
@@ -50,11 +50,13 @@ Plan file: [pipeline-state-cache.md](../rendering/pipeline-state-cache.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius_rendering_pso_cache` (28 integration tests) in worktree.
+- Test reports: `cargo test -p harmonius_rendering_pso_cache` (32 integration tests) in worktree.
 - Benchmarks: not implemented in this slice (TC-2.3.9.*.B* deferred).
 - Screenshots: pending manual validation.
 - Videos: pending manual validation.
-- Review notes: inline pr-reviewer pass (no code changes); design-aligned PSO cache crate and tests.
+- Review notes: follow-up pass landed API token in cache paths, 512 MiB default disk cap, revive
+  failure tombstone + recompile, index version skew reset, `PipelineDesc` hash contract docs, and
+  `SortedVecMap` coverage for the memory tier; `TC-*` bench rows still deferred without `criterion`.
 
 ## Event log
 
@@ -67,3 +69,8 @@ Plan file: [pipeline-state-cache.md](../rendering/pipeline-state-cache.md)
   review.
 - 2026-04-14T11:35:50Z — pr-reviewer — submitted for human review; 0 findings; `cargo test`,
   `cargo clippy -D warnings` verified in worktree; PR undrafted.
+- 2026-04-14T12:10:00Z — pr-reviewer — secondary review fixes merged on branch: API-aware cache
+  subdirectory names, default `disk_cap_bytes` 512 MiB, `revive` failure removes stale blob then
+  recompiles, wrong `INDEX_VERSION` resets device dir like other corruption paths, added tests for
+  those paths plus `SortedVecMap<PsoKey, PsoEntry>` type coverage; workspace `rumdl check .` still
+  reports unrelated doc debt outside this plan.

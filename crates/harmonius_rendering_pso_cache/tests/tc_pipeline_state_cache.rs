@@ -98,6 +98,11 @@ fn test_memory_cache_lookup_is_sorted_vec() {
 }
 
 #[test]
+fn test_pso_cache_memory_tier_is_sorted_vec() {
+    type_assert::assert_sorted_vec_map::<SortedVecMap<PsoKey, PsoEntry>>();
+}
+
+#[test]
 fn test_disk_layout_versioned_directory() {
     let tmp = tempfile::tempdir().expect("tmp");
     let _fp = DeviceFingerprint {
@@ -121,7 +126,7 @@ fn test_disk_layout_fingerprint_subdirectory() {
     };
     let path = DiskIndex::fingerprint_dir(tmp.path(), 3, &fp);
     let name = path.file_name().expect("name").to_string_lossy();
-    assert!(name.starts_with("vendor_8086_dev_0412_drv_"));
+    assert!(name.starts_with("vendor_8086_dev_0412_api_0000000c_drv_"));
 }
 
 struct CountingCompiler {
@@ -244,6 +249,30 @@ fn test_invalidate_on_driver_upgrade() {
     let cache_v2 = PsoCache::new(tmp.path(), &dev_v2).expect("open");
     let dir_v2 = cache_v2.disk_dir();
     assert_ne!(dir_v1, dir_v2);
+}
+
+#[test]
+fn test_invalidate_on_api_change() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let dev_d3d = GpuDevice {
+        ids: DeviceId {
+            vendor: 0x10de,
+            device: 0x2488,
+        },
+        driver_version: pack_version(31, 0, 0),
+        api_version: 1,
+    };
+    let dev_vk = GpuDevice {
+        ids: DeviceId {
+            vendor: 0x10de,
+            device: 0x2488,
+        },
+        driver_version: pack_version(31, 0, 0),
+        api_version: 2,
+    };
+    let cache_d3d = PsoCache::new(tmp.path(), &dev_d3d).expect("open");
+    let cache_vk = PsoCache::new(tmp.path(), &dev_vk).expect("open");
+    assert_ne!(cache_d3d.disk_dir(), cache_vk.disk_dir());
 }
 
 #[test]
@@ -376,6 +405,101 @@ fn test_bad_magic_resets_directory() {
     std::fs::write(&index_path, b"BADMAGIX").expect("write");
     let reopened = DiskIndex::open(tmp.path(), 3, &fp).expect("reopen");
     assert!(reopened.read(&sample_key()).is_err());
+}
+
+#[test]
+fn test_index_version_skew_resets_directory() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let fp = gpu().fingerprint();
+    let mut disk = DiskIndex::open(tmp.path(), 3, &fp).expect("open");
+    disk.write(&sample_key(), b"payload", 1).expect("write");
+    let index_path = disk.device_dir().join("index.bin");
+    let mut bytes = std::fs::read(&index_path).expect("read");
+    bytes[8] = 0xFE;
+    bytes[9] = 0xFE;
+    bytes[10] = 0xFE;
+    bytes[11] = 0xFE;
+    std::fs::write(&index_path, bytes).expect("write");
+    let reopened = DiskIndex::open(tmp.path(), 3, &fp).expect("reopen");
+    assert!(reopened.read(&sample_key()).is_err());
+}
+
+struct FailReviveCompiler {
+    next: u32,
+    compiles: u32,
+    revives: u32,
+}
+
+impl FailReviveCompiler {
+    fn new() -> Self {
+        Self {
+            next: 1,
+            compiles: 0,
+            revives: 0,
+        }
+    }
+}
+
+impl PsoCompiler for FailReviveCompiler {
+    fn compile(
+        &mut self,
+        desc: &PipelineDesc,
+    ) -> Result<PsoEntry, harmonius_rendering_pso_cache::PsoError> {
+        self.compiles += 1;
+        let handle = PsoHandle(self.next);
+        self.next += 1;
+        Ok(PsoEntry {
+            handle,
+            bytecode: desc.shader_hash.0.to_vec(),
+            desc_layout: DescriptorLayout {
+                bindings: Vec::new(),
+                push_constants: 0,
+            },
+            last_used_tick: 0,
+            size_bytes: 64,
+        })
+    }
+
+    fn revive(
+        &mut self,
+        _blob: &[u8],
+        _desc: &PipelineDesc,
+    ) -> Result<PsoEntry, harmonius_rendering_pso_cache::PsoError> {
+        self.revives += 1;
+        Err(harmonius_rendering_pso_cache::PsoError::Compiler(
+            "revive rejected",
+        ))
+    }
+
+    fn serialize(&self, entry: &PsoEntry) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(&entry.handle.0.to_le_bytes());
+        out.extend_from_slice(&entry.bytecode);
+        out
+    }
+}
+
+#[test]
+fn test_revive_failure_tombstones_and_recompiles() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let desc = PipelineDesc {
+        shader_hash: hash_a(),
+        signature_hash: hash_b(),
+    };
+    {
+        let mut cache = PsoCache::new(tmp.path(), &gpu()).expect("open");
+        let mut compiler = CountingCompiler::new();
+        cache.get_or_build(&desc, &mut compiler).expect("build");
+        assert_eq!(compiler.compiles, 1);
+    }
+    let mut cache = PsoCache::new(tmp.path(), &gpu()).expect("open");
+    let mut compiler = FailReviveCompiler::new();
+    let handle = cache
+        .get_or_build(&desc, &mut compiler)
+        .expect("recompile after revive failure");
+    assert_eq!(compiler.revives, 1);
+    assert_eq!(compiler.compiles, 1);
+    assert_eq!(handle.0, 1);
 }
 
 #[test]
