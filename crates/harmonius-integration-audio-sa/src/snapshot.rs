@@ -36,7 +36,7 @@ impl PropagationSnapshot {
         self.map.get(&source)
     }
 
-    /// Returns a reference to the internal map for tests.
+    /// Number of stored propagation results.
     #[must_use]
     pub fn len(&self) -> usize {
         self.map.len()

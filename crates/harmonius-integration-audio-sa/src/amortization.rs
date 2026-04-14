@@ -51,6 +51,26 @@ pub fn should_retrace_source(
     false
 }
 
+/// Returns `true` when a propagation trace should run for this source/listener pair.
+///
+/// Combines [`should_retrace_source`] for the emitter with listener movement (same 1 cm epsilon).
+/// Initialize `listener_state` at the current listener position before the first call.
+#[must_use]
+pub fn should_retrace_audio_propagation(
+    last_result_frame: Option<u64>,
+    source_state: &mut SourceTraceState,
+    source_pos: Vec3,
+    listener_state: &mut SourceTraceState,
+    listener_pos: Vec3,
+) -> bool {
+    let source_retrace = should_retrace_source(last_result_frame, source_state, source_pos);
+    let listener_moved = listener_state.position_changed(listener_pos);
+    if listener_moved {
+        listener_state.commit_position(listener_pos);
+    }
+    source_retrace || listener_moved
+}
+
 /// Returns how many sources should be traced this frame under `1/N` rotation scheduling.
 #[must_use]
 pub fn amortized_trace_count(source_count: usize, frame: u64, n: u32) -> usize {

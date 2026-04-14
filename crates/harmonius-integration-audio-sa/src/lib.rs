@@ -16,10 +16,16 @@ pub mod snapshot;
 pub mod spatial_audio;
 pub mod spatial_index;
 pub mod store;
+pub mod system;
 pub mod voice;
 
-pub use amortization::{amortized_trace_count, should_retrace_source, SourceTraceState};
-pub use channel::{propagation_channel_pair, MPSC_CAPACITY};
+pub use amortization::{
+    amortized_trace_count, should_retrace_audio_propagation, should_retrace_source,
+    SourceTraceState,
+};
+pub use channel::{
+    propagation_channel_pair, AudioPropagationReceiver, AudioPropagationSender, MPSC_CAPACITY,
+};
 pub use entity::Entity;
 pub use material::{AcousticMaterial, AcousticMaterialTable};
 pub use propagation::{
@@ -30,6 +36,7 @@ pub use snapshot::PropagationSnapshot;
 pub use spatial_audio::SpatialAudio;
 pub use spatial_index::{AxisAlignedSurface, SharedSpatialIndex, SurfaceHit};
 pub use store::PropagationResultStore;
+pub use system::{run_audio_propagation_tick, AudioPropagationEnvironment, PropagationSourceView};
 pub use voice::{apply_propagation_to_voice, VoiceFilterState, MAX_VOICE_LPF_HZ, MIN_VOICE_LPF_HZ};
 
 use glam::Vec3;
