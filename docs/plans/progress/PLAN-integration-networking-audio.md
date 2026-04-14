@@ -1,12 +1,12 @@
 ---
-branch: null
-last_updated: 2026-04-14T02:02:00Z
+branch: plan/integration-networking-audio
+last_updated: 2026-04-14T05:25:49Z
 plan_id: PLAN-integration-networking-audio
-pr_number: null
-pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+pr_number: 72
+pr_url: https://github.com/cjhowe-us/harmonius/pull/72
+started_at: 2026-04-14T05:25:49Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-networking-audio
 ---
 
 # Progress: Integration Networking Audio
@@ -15,18 +15,18 @@ Plan file: [networking-audio.md](../integration/networking-audio.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
-- [ ] Design and companion test-case docs reviewed
+- [x] Worktree created and branch aligned with plan metadata
+- [x] Draft PR opened and linked in frontmatter
+- [x] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
 - [ ] Red phase complete with failing tests for uncovered scope
-- [ ] Green phase complete with minimal passing implementation
+- [x] Green phase complete with minimal passing implementation
 - [ ] Refactor phase complete with no regressions
 - [ ] Integration validation complete across documented boundaries
 - [ ] Constraint conformance checks complete
 - [ ] Manual validation complete with screenshot and video evidence
-- [ ] `cargo test --workspace` passes
-- [ ] `cargo clippy --workspace -- -D warnings` passes
+- [x] `cargo test --workspace` passes
+- [x] `cargo clippy --workspace -- -D warnings` passes
 - [ ] `rumdl check .` passes for touched docs
 - [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
@@ -57,5 +57,6 @@ Plan file: [networking-audio.md](../integration/networking-audio.md)
 
 ## Event log
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
+- 2026-04-14T05:25:49Z — plan-implementer — started: worktree + draft PR #72; first `networking_audio_integration` crate with IR-4.3.x subset tests (Opus via `opus-rs`, jitter, VAD, router, auth, spatial queue, MPSC, frame pool, AEC, channel RPC hooks). Deferred: `quinn-proto` loopback, dhat alloc assertions, bench gates, full 32-stream mixer.
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
