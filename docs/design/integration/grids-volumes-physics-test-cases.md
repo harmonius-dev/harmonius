@@ -15,6 +15,7 @@ in-memory `PhysicsWorld` fake that implements the production `PhysicsEngine` tra
 | TC-IR-3.10.U5 | LOS zero-distance | from == to | Returns true | IR-3.10.5 |
 | TC-IR-3.10.U6 | LOS cache hit | Insert then get | Cached value | IR-3.10.5 |
 | TC-IR-3.10.U7 | LOS cache miss | Empty cache | None | IR-3.10.5 |
+| TC-IR-3.10.5.2 | Open LOS propagation | +x, empty BVH | `true` | IR-3.10.5 |
 
 1. **TC-IR-3.10.U1** -- Round-trip a `VoxelDestructionRequest { Sphere, radius 3, coord (8,8,8) }`
    through `rkyv::Archive`/`Deserialize`. Verify bitwise equality to the original.
@@ -27,6 +28,9 @@ in-memory `PhysicsWorld` fake that implements the production `PhysicsEngine` tra
 5. **TC-IR-3.10.U5** -- Call `propagation_los_check(p, p, ...)`. Expect early-out `true`.
 6. **TC-IR-3.10.U6** -- Insert `(a, b) -> true` into `LosCache`. Assert `get(a, b) == Some(true)`.
 7. **TC-IR-3.10.U7** -- Query empty `LosCache`. Assert `get(a, b) == None`.
+8. **TC-IR-3.10.5.2** -- `tests/tc_ir_3_10_5_2_propagation.rs` exercises `propagation_los_check`
+   with a `PhysicsQueries` fake and empty BVH. Full fire-kernel acceptance stays deferred to later
+   integration rows.
 
 ## Integration Tests
 
@@ -47,7 +51,6 @@ in-memory `PhysicsWorld` fake that implements the production `PhysicsEngine` tra
 | TC-IR-3.10.4.3 | Multiple bodies in one cell | IR-3.10.4 |
 | TC-IR-3.10.4.4 | Five bodies in one cell | IR-3.10.4 |
 | TC-IR-3.10.5.1 | Propagation blocked by wall | IR-3.10.5 |
-| TC-IR-3.10.5.2 | Propagation passes open space | IR-3.10.5 |
 | TC-IR-3.10.5.3 | LOS ray uses physics-private BVH | IR-3.10.5 |
 | TC-IR-3.10.5.4 | LOS cache amortizes cost | IR-3.10.5 |
 
@@ -82,10 +85,9 @@ in-memory `PhysicsWorld` fake that implements the production `PhysicsEngine` tra
     spilled to heap.
 15. **TC-IR-3.10.5.1** -- Fire propagation kernel with a wall collider between cells A and B. Assert
     cell B's fire value stays zero after N ticks.
-16. **TC-IR-3.10.5.2** -- Same kernel, no obstacles. Assert cell B's fire value increases.
-17. **TC-IR-3.10.5.3** -- Fire an LOS raycast; assert the resulting `RayHit.entity` matches the wall
+16. **TC-IR-3.10.5.3** -- Fire an LOS raycast; assert the resulting `RayHit.entity` matches the wall
     entity inserted into the physics-private BVH. Confirm the shared BVH is never consulted.
-18. **TC-IR-3.10.5.4** -- Query the same cell pair twice in one tick. Assert the second call is
+17. **TC-IR-3.10.5.4** -- Query the same cell pair twice in one tick. Assert the second call is
     served from `LosCache` (instrument a counter on the physics `ray_cast` path).
 
 ## Negative Tests

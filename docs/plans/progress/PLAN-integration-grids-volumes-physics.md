@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-grids-volumes-physics
-last_updated: 2026-04-14T11:34:44Z
+last_updated: 2026-04-14T18:00:07Z
 plan_id: PLAN-integration-grids-volumes-physics
 pr_number: 20
 pr_review_status: complete
@@ -64,7 +64,7 @@ for follow-up PRs.
 
 - **Worktree:** `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-grids-volumes-physics`
 - **Commands (2026-04-14Z):** `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`,
-  `cargo fmt` in the plan worktree after the integration crate landed.
+  `cargo fmt`, `rumdl check .` in the plan worktree after review fixes.
 - **PR:** <https://github.com/cjhowe-us/harmonius/pull/20>
 
 ## Event log
@@ -83,3 +83,11 @@ for follow-up PRs.
 - 2026-04-14T11:34:44Z — pr-reviewer — submitted for human review; 1 minor finding addressed (README
   broken relative link for `rumdl check .`); inline review pass on IR-3.10 seam types vs
   `docs/design/integration/grids-volumes-physics.md` (no blockers). Progress file added on branch.
+
+- 2026-04-14T18:00:07Z — pr-reviewer — review-supervisor pass: 9 findings (0 blocker, 2 substantive,
+  3 moderate, 4 minor). Landed `PhysicsQueries::aabb_overlap` + `WorldAabb`, `LosCache` on
+  `rustc_hash::FxHashMap`, TC-IR-3.10.5.2 as crate integration test + companion doc row move,
+  `DestructionPattern` exhaustive test hook, stable rkyv byte round-trip assert, `AtomicBool` guard
+  instead of `panic!` in U5, `CollisionFilterFn` export + stub docs, `Entity` seam documented as
+  opaque `u64` (newtype deferred: rkyv `as = u64` derive limits). PR already non-draft on GitHub;
+  verification: `cargo test`, `cargo clippy -D warnings`, `rumdl check .`.

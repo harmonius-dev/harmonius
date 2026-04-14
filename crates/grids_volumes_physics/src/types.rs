@@ -2,7 +2,8 @@
 
 use rkyv::{Archive, Deserialize, Serialize};
 
-/// Stable entity identifier used in occupancy and hit results.
+/// Opaque `u64` entity id for occupancy and hit results (wire seam until ECS publishes a shared
+/// `Entity` newtype).
 pub type Entity = u64;
 
 /// Integer coordinates of a cell in a uniform tactical grid (XY; Z extruded at integration sites).
@@ -69,6 +70,15 @@ pub const fn destruction_pattern_tag(pattern: DestructionPattern) -> u8 {
 }
 
 #[cfg(test)]
+fn assert_destruction_pattern_exhaustive(pattern: DestructionPattern) {
+    match pattern {
+        DestructionPattern::Sphere => {}
+        DestructionPattern::Cone { .. } => {}
+        DestructionPattern::Column => {}
+    }
+}
+
+#[cfg(test)]
 #[allow(missing_docs)]
 mod tests {
     use super::*;
@@ -87,6 +97,8 @@ mod tests {
         let deserialized = rkyv::from_bytes::<VoxelDestructionRequest, Failure>(bytes.as_slice())
             .expect("deserialize");
         assert_eq!(orig, deserialized);
+        let again = rkyv::to_bytes::<Failure>(&deserialized).expect("re-serialize");
+        assert_eq!(bytes.as_slice(), again.as_slice(), "stable archive bytes");
     }
 
     #[test]
@@ -97,5 +109,8 @@ mod tests {
             1,
         );
         assert_eq!(destruction_pattern_tag(DestructionPattern::Column), 2);
+        assert_destruction_pattern_exhaustive(DestructionPattern::Sphere);
+        assert_destruction_pattern_exhaustive(DestructionPattern::Cone { half_angle: 0.1 });
+        assert_destruction_pattern_exhaustive(DestructionPattern::Column);
     }
 }
