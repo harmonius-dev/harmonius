@@ -89,7 +89,7 @@ fn unix_millis() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)
-        .unwrap_or(0)
+        .unwrap_or(u64::MAX)
 }
 
 #[cfg(test)]
