@@ -1,4 +1,7 @@
 //! Cross-entity log propagation.
+//!
+//! `PropagationRule::range` is reserved for future spatial filtering; callers must pass only
+//! eligible source entries (for example after querying a spatial index).
 
 use rkyv::{Archive, Deserialize, Serialize};
 
@@ -66,8 +69,8 @@ pub fn propagate_entries<T: Clone + rkyv::Archive + PartialEq>(
             return;
         }
         if target_log.entries.len() == cap {
-            target_log.entries.remove(0);
+            target_log.entries.pop_front();
         }
-        target_log.entries.push(pushed);
+        target_log.entries.push_back(pushed);
     }
 }
