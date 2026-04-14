@@ -1,9 +1,9 @@
 ---
 branch: plan/data-systems-containers-slots
-last_updated: 2026-04-14T17:57:10Z
+last_updated: 2026-04-14T05:20:00Z
 plan_id: PLAN-data-systems-containers-slots
 pr_number: 39
-pr_review_status: pending_scope
+pr_review_status: not_started
 pr_url: https://github.com/cjhowe-us/harmonius/pull/39
 started_at: 2026-04-14T05:18:53Z
 status: code_complete
@@ -52,11 +52,11 @@ Plan file: [containers-slots.md](../data-systems/containers-slots.md)
 ## Evidence registry
 
 - Test reports: `cargo test --workspace` in worktree
-  `harmonius-worktrees/PLAN-data-systems-containers-slots` (33 integration tests).
+  `harmonius-worktrees/PLAN-data-systems-containers-slots` (30 integration tests).
 - Benchmarks: not run (no targets in plan unit scope).
 - Screenshots: deferred (manual validation checklist open).
 - Videos: deferred (manual validation checklist open).
-- Review notes: `pr-reviewer` pass logged below; two design-scope blockers remain before undraft.
+- Review notes: pending `pr-reviewer`.
 
 ## Event log
 
@@ -69,23 +69,5 @@ Plan file: [containers-slots.md](../data-systems/containers-slots.md)
 
 - 2026-04-14T05:20:00Z — plan-implementer — code complete, awaiting review (`harmonius_containers`,
   30 `TC-*` integration tests, workspace clippy clean).
-
-- 2026-04-14T17:57:10Z — pr-reviewer — review-supervisor severities: 2 blocker, 4 substantive, 4
-  moderate, 3 minor.
-
-- 2026-04-14T17:57:10Z — pr-reviewer — landed: stack-aware `process_drag_drop`.
-
-- 2026-04-14T17:57:10Z — pr-reviewer — landed: `EquipmentOccupied` / `SocketOccupied` errors.
-
-- 2026-04-14T17:57:10Z — pr-reviewer — landed: occupied `try_equip` guard; grid `debug_assert`.
-
-- 2026-04-14T17:57:10Z — pr-reviewer — landed: docs (`validate_transfer`, nesting, socket 2D, stats
-  stub, crate scope); MSRV 1.80 / edition 2021.
-
-- 2026-04-14T17:57:10Z — pr-reviewer — open: CR-01 API vs ECS design doc.
-
-- 2026-04-14T17:57:10Z — pr-reviewer — open: CR-02 R-16.2.7 / R-16.2.8 / R-16.2.10 depth.
-
-- 2026-04-14T17:57:10Z — pr-reviewer — PR stays draft pending scope; pushed `d70893c`.
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
