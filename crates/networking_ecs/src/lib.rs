@@ -1,6 +1,7 @@
 //! Networking ↔ ECS integration primitives (replication, deltas, interest, snapshots).
 //!
-//! This crate tracks [`docs/design/integration/networking-ecs.md`]. Phase 1 covers dense
+//! This crate tracks the repository design at `docs/design/integration/networking-ecs.md`. Phase 1
+//! covers dense
 //! baselines and XOR/RLE deltas (IR-4.4.2), brute-force interest over a [`NetworkGrid`]
 //! (IR-4.4.3), indexed snapshots (IR-4.4.5), dormancy (IR-4.4.6), and bounded ACK plumbing
 //! (IR-4.4.8 subset). IR-4.4.1, IR-4.4.4, IR-4.4.7, full reconciliation, and grid-neighbor AOI
