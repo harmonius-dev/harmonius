@@ -1,12 +1,12 @@
 ---
 branch: plan/core-runtime-events-plugins
-last_updated: 2026-04-14T05:27:19Z
+last_updated: 2026-04-14T11:33:44Z
 plan_id: PLAN-core-runtime-events-plugins
 pr_number: 75
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/75
 started_at: 2026-04-14T05:27:19Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-events-plugins
 ---
 
@@ -30,8 +30,8 @@ Plan file: [events-plugins.md](../core-runtime/events-plugins.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check` on this progress file passes
 - [x] Evidence links logged in this file (test run + PR)
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 - [x] Code complete marker set
 
@@ -52,9 +52,12 @@ Plan file: [events-plugins.md](../core-runtime/events-plugins.md)
 ## Evidence registry
 
 - Tests: `cargo test -p harmonius-core` — 41 integration tests (`tc_plan_events_plugins.rs`).
-- PR: <https://github.com/cjhowe-us/harmonius/pull/75> (draft).
+- PR: <https://github.com/cjhowe-us/harmonius/pull/75> (ready for review).
 
 ## Event log
 
 - 2026-04-14T05:27:19Z — started, worktree + draft PR created
 - 2026-04-14T05:27:19Z — code complete, awaiting review (harmonius-core + TC tests)
+- 2026-04-14T11:33:44Z — submitted for human review, 0 findings addressed (automated review:
+  `cargo test --workspace`, `cargo clippy -D warnings`; repo-wide `rumdl check .` still fails on
+  `main` baseline)
