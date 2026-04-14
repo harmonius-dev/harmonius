@@ -78,15 +78,33 @@ mod tests {
         let mut a = FreelistAllocator::new(128);
         let first = a.allocate(100);
         assert_eq!(first.len(), 100);
-        assert_eq!(a.stats(), FreelistStats { alive: 100, free: 28 });
+        assert_eq!(
+            a.stats(),
+            FreelistStats {
+                alive: 100,
+                free: 28
+            }
+        );
 
         let killed: Vec<usize> = first.iter().copied().take(50).collect();
         a.release(&killed);
-        assert_eq!(a.stats(), FreelistStats { alive: 50, free: 78 });
+        assert_eq!(
+            a.stats(),
+            FreelistStats {
+                alive: 50,
+                free: 78
+            }
+        );
 
         let second = a.allocate(50);
         assert_eq!(second.len(), 50);
-        assert_eq!(a.stats(), FreelistStats { alive: 100, free: 28 });
+        assert_eq!(
+            a.stats(),
+            FreelistStats {
+                alive: 100,
+                free: 28
+            }
+        );
 
         let recycled: std::collections::HashSet<usize> = second.iter().copied().collect();
         let killed_set: std::collections::HashSet<usize> = killed.iter().copied().collect();
