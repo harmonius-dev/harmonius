@@ -1,4 +1,10 @@
 //! Main-thread I/O request and response protocol.
+//!
+//! ## Bring-up limitations
+//!
+//! The dispatcher uses **synchronous** [`std::fs`] calls on the main thread in this slice to
+//! validate the request/response protocol. A later milestone swaps in platform-native non-blocking
+//! I/O while preserving these channel boundaries.
 
 mod buffer;
 mod dispatcher;

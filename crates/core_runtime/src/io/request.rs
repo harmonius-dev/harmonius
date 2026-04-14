@@ -131,6 +131,9 @@ pub enum IoRequest {
         path: VPath,
     },
     /// Request cancellation of an in-flight request.
+    ///
+    /// The dispatcher emits [`super::IoResponse::Cancelled`] only when `target` matches a stalled
+    /// read; otherwise this is a no-op with no completion.
     CancelRequest {
         /// Request id to cancel.
         target: IoRequestId,
@@ -155,13 +158,11 @@ impl IoRequest {
         }
     }
 
-    /// Returns the caller correlation id when this variant participates in in-flight tracking.
+    /// Returns the caller correlation id for this request, if any.
     ///
-    /// # Panics
-    ///
-    /// Panics for [`IoRequest::CancelRequest`] which carries a `target` instead.
+    /// [`IoRequest::CancelRequest`] returns [`None`]; use [`Self::cancel_target`] for its target.
     #[must_use]
-    pub fn id(&self) -> IoRequestId {
+    pub fn id(&self) -> Option<IoRequestId> {
         match self {
             Self::ReadFile { id, .. }
             | Self::WriteFile { id, .. }
@@ -174,10 +175,8 @@ impl IoRequest {
             | Self::SwapChainPresent { id, .. }
             | Self::GpuAssetUpload { id, .. }
             | Self::SpawnProcess { id, .. }
-            | Self::SignalFile { id, .. } => *id,
-            Self::CancelRequest { .. } => {
-                panic!("CancelRequest does not have a request id; inspect `CancelRequest::target`")
-            }
+            | Self::SignalFile { id, .. } => Some(*id),
+            Self::CancelRequest { .. } => None,
         }
     }
 

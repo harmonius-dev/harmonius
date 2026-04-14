@@ -1,11 +1,19 @@
 //! Main-thread dispatcher that drains requests and emits responses.
+//!
+//! ## Phase-1 limitations
+//!
+//! - Request and response [`crossbeam_channel`] queues are **unbounded**; subsystems must apply
+//!   their own backpressure until a bounded design is integrated.
+//! - File operations use **blocking** [`std::fs`] APIs here to exercise the protocol on every host.
+//!   This is an intentional bring-up shortcut relative to the engine’s non-blocking I/O goals; treat
+//!   latency as non-representative of the final platform backends.
 
 use crossbeam_channel::{Receiver, Sender};
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Write as _;
 
-use crate::error::IoError;
+use crate::error::{map_std_io_error, IoError};
 use crate::primitives::SortedVecMap;
 
 use super::buffer::{IoBuffer, IoBufferPool};
@@ -19,7 +27,9 @@ use super::{IoRequestId, SocketHandle};
 pub enum IoBackendKind {
     /// Completes supported operations immediately after ingestion.
     Loopback,
-    /// Queues read requests in `in_flight` without completing them until cancellation.
+    /// Queues **only** [`IoRequest::ReadFile`] requests in `in_flight` without completing them until
+    /// cancellation. Every other request follows the same immediate completion path as
+    /// [`IoBackendKind::Loopback`] so buffers are never stranded.
     StallReads,
 }
 
@@ -68,6 +78,9 @@ pub struct IoDispatcher {
 
 impl IoDispatcher {
     /// Creates a dispatcher plus the channel pair used by subsystems.
+    ///
+    /// Both channels are [`crossbeam_channel::unbounded`]; see the module-level note on
+    /// backpressure.
     #[must_use]
     pub fn new(config: IoDispatcherConfig) -> (Self, IoDispatcherChannels) {
         let (request_tx, request_rx) = crossbeam_channel::unbounded();
@@ -131,6 +144,9 @@ impl IoDispatcher {
     }
 
     /// Drains pending requests and advances completions for the current frame.
+    ///
+    /// `now_tick` is stored on [`Ticket::submitted_at_tick`] when [`IoBackendKind::StallReads`]
+    /// queues a [`IoRequest::ReadFile`].
     pub fn poll_completions(&mut self, now_tick: u64) {
         let mut pending = Vec::new();
         while let Ok(r) = self.request_rx.try_recv() {
@@ -142,6 +158,15 @@ impl IoDispatcher {
         }
     }
 
+    /// Returns `true` when non-`ReadFile` work should complete immediately for the active backend.
+    #[inline]
+    fn completes_non_read_file_immediately(&self) -> bool {
+        matches!(
+            self.backend,
+            IoBackendKind::Loopback | IoBackendKind::StallReads
+        )
+    }
+
     fn dispatch_one(&mut self, req: IoRequest, tick: u64) {
         match req {
             IoRequest::CancelRequest { target } => {
@@ -151,9 +176,14 @@ impl IoDispatcher {
                     }
                     let _ = self.response_tx.send(IoResponse::Cancelled { id: target });
                 }
+                // No response when `target` is unknown or already completed: explicit no-op.
             }
             IoRequest::ReadFile { id, path, buffer } => match self.backend {
                 IoBackendKind::StallReads => {
+                    debug_assert!(
+                        self.in_flight.get(id).is_none(),
+                        "duplicate IoRequestId while stalling reads"
+                    );
                     self.in_flight.insert(
                         id,
                         Ticket {
@@ -169,12 +199,12 @@ impl IoDispatcher {
                 }
             },
             IoRequest::WriteFile { id, path, buffer } => {
-                if self.backend == IoBackendKind::Loopback {
+                if self.completes_non_read_file_immediately() {
                     self.complete_write_file(id, path, buffer);
                 }
             }
             IoRequest::OpenSocket { id, endpoint: _ } => {
-                if self.backend == IoBackendKind::Loopback {
+                if self.completes_non_read_file_immediately() {
                     let handle = SocketHandle(self.next_socket);
                     self.next_socket = self.next_socket.wrapping_add(1);
                     let _ = self
@@ -183,7 +213,9 @@ impl IoDispatcher {
                 }
             }
             IoRequest::SendPacket { id, socket, buffer } => {
-                if self.backend == IoBackendKind::Loopback {
+                if self.completes_non_read_file_immediately() {
+                    // Loopback stores a copy for deterministic recv; a pooled arena can replace this
+                    // if this path becomes hot.
                     let len = buffer.len;
                     let bytes = self.buffers.as_slice(&buffer).to_vec();
                     self.buffers.release(buffer);
@@ -199,7 +231,7 @@ impl IoDispatcher {
                 socket,
                 mut buffer,
             } => {
-                if self.backend == IoBackendKind::Loopback {
+                if self.completes_non_read_file_immediately() {
                     let payload = self
                         .loopback_payloads
                         .get(&socket)
@@ -217,23 +249,23 @@ impl IoDispatcher {
                 }
             }
             IoRequest::CloseSocket { socket, .. } => {
-                if self.backend == IoBackendKind::Loopback {
+                if self.completes_non_read_file_immediately() {
                     self.loopback_payloads.remove(&socket);
                 }
             }
             IoRequest::SwapChainPresent { id, .. } => {
-                if self.backend == IoBackendKind::Loopback {
+                if self.completes_non_read_file_immediately() {
                     let _ = self.response_tx.send(IoResponse::PresentOk { id });
                 }
             }
             IoRequest::GpuAssetUpload { id, source, .. } => {
-                if self.backend == IoBackendKind::Loopback {
+                if self.completes_non_read_file_immediately() {
                     self.buffers.release(source);
                     let _ = self.response_tx.send(IoResponse::UploadOk { id });
                 }
             }
             IoRequest::SpawnProcess { id, .. } => {
-                if self.backend == IoBackendKind::Loopback {
+                if self.completes_non_read_file_immediately() {
                     let mut stdout = self.buffers.acquire(1);
                     self.buffers.write_all(&mut stdout, b"\n");
                     let mut stderr = self.buffers.acquire(1);
@@ -246,11 +278,17 @@ impl IoDispatcher {
                     });
                 }
             }
-            IoRequest::SignalFile { .. } => {
-                // Loopback does not model cross-process signalling yet.
+            IoRequest::SignalFile { id, .. } => {
+                if self.completes_non_read_file_immediately() {
+                    // Loopback has no cross-process watcher; acknowledge with zero bytes touched.
+                    let _ = self.response_tx.send(IoResponse::WriteOk {
+                        id,
+                        bytes_written: 0,
+                    });
+                }
             }
             IoRequest::AppendFile { id, path, buffer } => {
-                if self.backend == IoBackendKind::Loopback {
+                if self.completes_non_read_file_immediately() {
                     self.complete_append_file(id, path, buffer);
                 }
             }
@@ -261,7 +299,7 @@ impl IoDispatcher {
                 len,
                 buffer,
             } => {
-                if self.backend == IoBackendKind::Loopback {
+                if self.completes_non_read_file_immediately() {
                     self.complete_read_range(id, path, offset, len, buffer);
                 }
             }
@@ -348,15 +386,15 @@ impl IoDispatcher {
     }
 
     fn read_bytes_for_path(&self, path: &VPath) -> Result<Vec<u8>, IoError> {
+        // Deterministic test fixture: not routed through the mount table.
         if path.0.starts_with("mem://") {
             return Ok(vec![0xAB; 1024]);
         }
         let resolved = self.vfs.resolve(path).ok_or_else(|| IoError::NotFound {
             path: path.0.clone(),
         })?;
-        fs::read(&resolved).map_err(|_| IoError::NotFound {
-            path: resolved.display().to_string(),
-        })
+        let path_str = resolved.display().to_string();
+        fs::read(&resolved).map_err(|e| map_std_io_error(path_str, e))
     }
 
     fn write_bytes_for_path(
@@ -393,24 +431,15 @@ impl IoDispatcher {
                 .truncate(true)
                 .open(&resolved)
         };
+        let path_str = resolved.display().to_string();
         let mut file = match open {
             Ok(f) => f,
-            Err(_) => {
-                return Err((
-                    buffer,
-                    IoError::NotFound {
-                        path: resolved.display().to_string(),
-                    },
-                ));
+            Err(e) => {
+                return Err((buffer, map_std_io_error(path_str, e)));
             }
         };
-        if file.write_all(&payload).is_err() {
-            return Err((
-                buffer,
-                IoError::NotFound {
-                    path: resolved.display().to_string(),
-                },
-            ));
+        if let Err(e) = file.write_all(&payload) {
+            return Err((buffer, map_std_io_error(path_str, e)));
         }
         self.buffers.release(buffer);
         Ok(len)
