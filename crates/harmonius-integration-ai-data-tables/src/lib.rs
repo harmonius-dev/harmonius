@@ -27,7 +27,10 @@ pub use bt::BtTableLookup;
 pub use cache::{AiTableCache, CachedValue, CachedValueKind, ColumnError};
 pub use component_store::ComponentStore;
 pub use events::{EntityEventQueue, TableReloaded};
-pub use goap::{bake_goap_action_cost, BakeError, FormulaId, GoapAction};
+pub use goap::{
+    bake_goap_action_cost, bake_goap_action_from_formula, read_goap_planning_cost, BakeError,
+    FormulaId, GoapAction,
+};
 pub use ids::{ColumnId, RowId, TableId};
 pub use table::{ColumnSchema, DataTable, DatabaseRow, Row, TableRegistry, Value};
 pub use trace::AiDataTraceFlag;

@@ -1,11 +1,12 @@
 //! Integration tests mapped from `docs/design/integration/ai-data-tables-test-cases.md`.
 
 use harmonius_integration_ai_data_tables::{
-    bake_goap_action_cost, AiDataTraceFlag, AiTableCache, BakeError, Blackboard, BlackboardBinding,
-    BlackboardBindings, BlackboardKey, BlackboardTableBindingSystem, BlackboardValue,
-    BtTableLookup, CachedValue, ColumnError, ColumnId, ColumnSchema, ComponentStore, DataTable,
-    DatabaseRow, EntityEventQueue, EntityId, FormulaId, GoapAction, ResponseCurve, Row, RowId,
-    TableColumnConsideration, TableId, TableRegistry, TableReloaded, Value,
+    bake_goap_action_cost, bake_goap_action_from_formula, read_goap_planning_cost, AiDataTraceFlag,
+    AiTableCache, BakeError, Blackboard, BlackboardBinding, BlackboardBindings, BlackboardKey,
+    BlackboardTableBindingSystem, BlackboardValue, BtTableLookup, CachedValue, ColumnError,
+    ColumnId, ColumnSchema, ComponentStore, DataTable, DatabaseRow, EntityEventQueue, EntityId,
+    FormulaId, GoapAction, ResponseCurve, Row, RowId, TableColumnConsideration, TableId,
+    TableRegistry, TableReloaded, Value,
 };
 use smallvec::smallvec;
 
@@ -67,6 +68,40 @@ fn tc_ir_2_1_3_u1_bake_formula() {
 fn tc_ir_2_1_3_u2_unknown_formula() {
     let err = bake_goap_action_cost(FormulaId(99), &[]).unwrap_err();
     assert_eq!(err, BakeError::UnknownFormula(FormulaId(99)));
+}
+
+#[test]
+fn tc_ir_2_1_1_2_bt_missing_row_uses_schema_default() {
+    let cols = vec![ColumnSchema {
+        id: ColumnId(1),
+        default: Some(Value::Float(42.0)),
+    }];
+    let rows = vec![Row {
+        id: RowId(1),
+        parent: None,
+        values: vec![Value::Float(1.0)],
+    }];
+    let table = DataTable::new(cols, rows, 1);
+    let mut reg = TableRegistry::default();
+    reg.insert(TableId(1), table);
+    let db_row = DatabaseRow {
+        table: TableId(1),
+        row: RowId(999),
+        bound_columns: smallvec![],
+        overrides: smallvec![],
+    };
+    let leaf = BtTableLookup {
+        column: ColumnId(1),
+        target_key: BlackboardKey(0),
+    };
+    let mut cache = AiTableCache::new(TableId(1));
+    let v = leaf
+        .lookup(&reg, &db_row, &mut cache)
+        .expect("default when row missing");
+    match v {
+        CachedValue::Float(f) => assert!((f - 42.0).abs() < 1e-4),
+        _ => panic!("expected float default"),
+    }
 }
 
 #[test]
@@ -184,7 +219,68 @@ fn tc_ir_2_1_3_1_goap_baked_cost() {
 
 #[test]
 fn tc_ir_2_1_3_n1_goap_runtime_f32_only() {
+    let a = GoapAction { cost: 2.5 };
+    let GoapAction { cost } = a;
+    let _: f32 = cost;
     assert_eq!(std::mem::size_of::<GoapAction>(), 4);
+}
+
+#[test]
+fn tc_ir_2_1_3_2_goap_formula_baked() {
+    let action = bake_goap_action_from_formula(FormulaId(2), &[2.0, 2.5, 2.0]).expect("bake");
+    assert!((action.cost - 10.0).abs() < f32::EPSILON);
+}
+
+#[test]
+fn tc_ir_2_1_3_3_goap_bake_pipeline_e2e() {
+    let baked = bake_goap_action_from_formula(FormulaId(1), &[1.0, 2.0, 2.0]).expect("bake");
+    let read = read_goap_planning_cost(&baked);
+    assert!((read - 5.0).abs() < f32::EPSILON);
+}
+
+#[test]
+fn tc_ir_2_1_4_2_ability_fk_chain_two_hops() {
+    let cols = vec![
+        ColumnSchema {
+            id: ColumnId(1),
+            default: None,
+        },
+        ColumnSchema {
+            id: ColumnId(2),
+            default: None,
+        },
+    ];
+    let rows = vec![
+        Row {
+            id: RowId(1),
+            parent: None,
+            values: vec![Value::Float(100.0), Value::Float(1.0)],
+        },
+        Row {
+            id: RowId(2),
+            parent: Some(RowId(1)),
+            values: vec![Value::Null, Value::Float(2.0)],
+        },
+        Row {
+            id: RowId(3),
+            parent: Some(RowId(2)),
+            values: vec![Value::Null, Value::Null],
+        },
+    ];
+    let table = DataTable::new(cols, rows, 1);
+    let mut reg = TableRegistry::default();
+    reg.insert(TableId(1), table);
+    let cd = reg.get(TableId(1)).expect("table");
+    let v1 = cd.get_resolved(RowId(3), ColumnId(1)).expect("merged col1");
+    match v1 {
+        Value::Float(f) => assert!((f - 100.0).abs() < 1e-4),
+        _ => panic!("expected inherited float"),
+    }
+    let v2 = cd.get_resolved(RowId(3), ColumnId(2)).expect("merged col2");
+    match v2 {
+        Value::Float(f) => assert!((f - 2.0).abs() < 1e-4),
+        _ => panic!("expected float"),
+    }
 }
 
 #[test]
@@ -361,6 +457,56 @@ fn tc_ir_2_1_6_1_hot_reload_clears_cache() {
     let c = caches.get_mut(entity).expect("cache");
     assert!(c.cleared);
     assert!(c.entries.is_empty());
+}
+
+#[test]
+fn tc_ir_2_1_6_n1_reload_dangling_row_defaults() {
+    let mut reg = TableRegistry::default();
+    reg.insert(TableId(1), npc_table());
+    let bindings = BlackboardBindings {
+        bindings: vec![BlackboardBinding {
+            key: BlackboardKey(1),
+            column: ColumnId(1),
+        }],
+    };
+    let row = DatabaseRow {
+        table: TableId(1),
+        row: RowId(1),
+        bound_columns: smallvec![],
+        overrides: smallvec![],
+    };
+    let mut bb = Blackboard::default();
+    let mut cache = AiTableCache::new(TableId(1));
+    let trace = AiDataTraceFlag::new();
+    trace.set_enabled(true);
+    BlackboardTableBindingSystem::bind_entity(&reg, &row, &bindings, &mut bb, &mut cache, &trace);
+    let new_table = DataTable::new(
+        vec![ColumnSchema {
+            id: ColumnId(1),
+            default: Some(Value::Float(3.0)),
+        }],
+        vec![Row {
+            id: RowId(2),
+            parent: None,
+            values: vec![Value::Float(8.0)],
+        }],
+        2,
+    );
+    reg.swap(TableId(1), new_table);
+    let ev = TableReloaded {
+        table: TableId(1),
+        old_version: 1,
+        new_version: 2,
+    };
+    BlackboardTableBindingSystem::rebind_on_reload(
+        &reg, &ev, &row, &bindings, &mut bb, &mut cache, &trace,
+    );
+    assert_eq!(bb.get(BlackboardKey(1)), BlackboardValue::None);
+    let notes = trace.drain_notes();
+    assert!(
+        notes.iter().any(|n| n.contains("missing row")),
+        "expected missing row trace, got {notes:?}"
+    );
 }
 
 #[test]

@@ -16,6 +16,9 @@ pub struct BtTableLookup {
 
 impl BtTableLookup {
     /// Resolves a column value using `DatabaseRow` + read-through cache.
+    ///
+    /// When the primary key row is absent, the column's schema default is used (IR-2.1.1.2). When
+    /// the row exists, `get_resolved` applies inheritance and column defaults for null cells.
     pub fn lookup(
         &self,
         registry: &TableRegistry,
@@ -33,13 +36,9 @@ impl BtTableLookup {
             .get(db_row.table)
             .ok_or(ColumnError::MissingTable(db_row.table))?;
 
-        if table.column_index(self.column).is_none() {
-            return Err(ColumnError::MissingColumn(db_row.table, self.column));
-        }
-
-        if table.get(db_row.row).is_none() {
-            return Err(ColumnError::MissingRow(db_row.table, db_row.row));
-        }
+        let col_idx = table
+            .column_index(self.column)
+            .ok_or(ColumnError::MissingColumn(db_row.table, self.column))?;
 
         if cache.version != table.version() {
             cache.version = table.version();
@@ -53,14 +52,17 @@ impl BtTableLookup {
             }
         }
 
-        let resolved = table.get_resolved(db_row.row, self.column).or_else(|| {
-            table
-                .column_index(self.column)
-                .and_then(|ci| table.columns().get(ci))
-                .and_then(|c| c.default.clone())
-        });
+        let row_exists = table.get(db_row.row).is_some();
+        let mut base = if row_exists {
+            table.get_resolved(db_row.row, self.column)
+        } else {
+            None
+        };
+        if base.is_none() {
+            base = table.columns().get(col_idx).and_then(|c| c.default.clone());
+        }
 
-        let resolved = match resolved {
+        let resolved = match base {
             Some(v) => db_row.apply_overrides(self.column, Some(v)),
             None => db_row.apply_overrides(self.column, None),
         };
