@@ -153,6 +153,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "block-buffer"
+version = "0.10.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
+dependencies = [
+ "generic-array",
+]
+
+[[package]]
 name = "borsh"
 version = "1.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -472,6 +481,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "digest"
+version = "0.10.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292"
+dependencies = [
+ "block-buffer",
+ "crypto-common",
+]
+
+[[package]]
 name = "displaydoc"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -612,6 +631,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "glam"
+version = "0.32.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f70749695b063ecbf6b62949ccccde2e733ec3ecbbd71d467dca4e5c6c97cca0"
+dependencies = [
+ "rkyv 0.8.16",
+]
+
+[[package]]
 name = "half"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -653,7 +681,7 @@ name = "harmonius_containers"
 version = "0.1.0"
 dependencies = [
  "fixedbitset",
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -667,7 +695,7 @@ dependencies = [
 name = "harmonius_core"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
  "serde",
  "serde_json",
  "smallvec",
@@ -697,7 +725,7 @@ version = "0.1.0"
 name = "harmonius_editor_core"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
  "smallvec",
 ]
 
@@ -724,7 +752,7 @@ dependencies = [
 name = "harmonius_game"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -761,7 +789,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "crossbeam-channel",
- "glam",
+ "glam 0.29.3",
  "log",
 ]
 
@@ -769,7 +797,7 @@ dependencies = [
 name = "harmonius_integration_rendering_geometry"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -778,14 +806,14 @@ version = "0.1.0"
 dependencies = [
  "crossbeam-channel",
  "fixedbitset",
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
 name = "harmonius_integration_rendering_physics"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -801,7 +829,7 @@ dependencies = [
 name = "harmonius_integration_rendering_vfx"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -812,7 +840,7 @@ version = "0.1.0"
 name = "harmonius_physics"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -830,7 +858,7 @@ version = "0.1.0"
 name = "harmonius_rendering_core"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -886,7 +914,7 @@ version = "0.1.0"
 name = "harmonius_sim"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
  "rkyv 0.8.16",
  "rkyv_derive 0.8.16",
  "smallvec",
@@ -929,7 +957,7 @@ dependencies = [
 name = "harmonius_vfx"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -1131,7 +1159,7 @@ version = "0.1.0"
 name = "integration_ai_animation"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
  "smallvec",
 ]
 
@@ -1140,7 +1168,7 @@ name = "integration_input_camera"
 version = "0.1.0"
 dependencies = [
  "crossbeam-channel",
- "glam",
+ "glam 0.29.3",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1157,7 +1185,7 @@ dependencies = [
 name = "integration_timelines_camera"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -1334,6 +1362,16 @@ dependencies = [
  "strum",
  "termcolor",
  "thiserror",
+]
+
+[[package]]
+name = "net-physics"
+version = "0.1.0"
+dependencies = [
+ "glam 0.32.1",
+ "rkyv 0.8.16",
+ "rkyv_derive 0.8.16",
+ "sha2",
 ]
 
 [[package]]
@@ -1599,7 +1637,7 @@ version = "0.1.0"
 name = "rendering_ui"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -1760,6 +1798,17 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
+]
+
+[[package]]
+name = "sha2"
+version = "0.10.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283"
+dependencies = [
+ "cfg-if",
+ "cpufeatures 0.2.17",
+ "digest",
 ]
 
 [[package]]
@@ -2138,7 +2187,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 name = "visual_editors"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.29.3",
  "smallvec",
  "uuid",
 ]

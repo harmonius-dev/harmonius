@@ -1,0 +1,15 @@
+[package]
+name = "net-physics"
+version = "0.1.0"
+edition = "2024"
+description = "Networking ↔ physics integration primitives (snapshots, rollback, interpolation)."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/cjhowe/harmonius"
+
+[dependencies]
+glam = { version = "0.32", default-features = false, features = ["std", "rkyv"] }
+rkyv = { version = "0.8", default-features = false, features = ["std"] }
+rkyv_derive = "0.8"
+
+[dev-dependencies]
+sha2 = "0.10"
