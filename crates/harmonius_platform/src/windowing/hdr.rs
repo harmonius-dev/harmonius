@@ -13,6 +13,22 @@ pub enum ColorSpace {
     ExtendedLinearSrgb,
 }
 
+/// Errors from HDR negotiation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum HdrError {
+    /// The current display does not support HDR.
+    DisplayNotHdrCapable,
+    /// The OS does not support the requested color space.
+    UnsupportedColorSpace(ColorSpace),
+    /// The GPU driver rejected the swapchain format change.
+    SwapchainFormatRejected,
+    /// Platform-specific error with OS error code.
+    Platform {
+        /// OS or driver error code.
+        code: i32,
+    },
+}
+
 /// HDR output configuration.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct HdrConfig {
