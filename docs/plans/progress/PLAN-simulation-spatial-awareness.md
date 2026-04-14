@@ -27,7 +27,7 @@ Plan file: [spatial-awareness.md](../simulation/spatial-awareness.md)
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [ ] `rumdl check .` passes for touched docs
+- [x] `rumdl check .` passes for touched docs
 - [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
@@ -57,7 +57,12 @@ Plan file: [spatial-awareness.md](../simulation/spatial-awareness.md)
 
 ## Event log
 
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
-- 2026-04-14T05:17:44Z — plan-implementer — started: worktree at `/Users/cjhowe/Code/harmonius-worktrees/PLAN-simulation-spatial-awareness`, draft PR https://github.com/cjhowe-us/harmonius/pull/26, first green slice `harmonius_game::spatial_awareness::query_sense` covering TC-17.3.1.1 (R-17.3.1).
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
+
+- 2026-04-14T05:17:44Z — plan-implementer — started: worktree at
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-simulation-spatial-awareness`, draft
+  [PR 26](https://github.com/cjhowe-us/harmonius/pull/26), first green slice
+  `harmonius_game::spatial_awareness::query_sense` covering TC-17.3.1.1 (R-17.3.1).
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
