@@ -33,6 +33,16 @@ impl<E> EntityEventQueue<E> {
         self.pending.push(event);
     }
 
+    /// Pending events not yet drained (mirrors queue depth before Phase 1).
+    pub fn len(&self) -> usize {
+        self.pending.len()
+    }
+
+    /// `true` when [`Self::drain`] would return an empty vector.
+    pub fn is_empty(&self) -> bool {
+        self.pending.is_empty()
+    }
+
     /// Drains all pending events (Phase 1 PreUpdate).
     pub fn drain(&mut self) -> Vec<E> {
         std::mem::take(&mut self.pending)

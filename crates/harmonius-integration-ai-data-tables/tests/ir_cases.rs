@@ -6,7 +6,7 @@ use harmonius_integration_ai_data_tables::{
     BlackboardTableBindingSystem, BlackboardValue, BtTableLookup, CachedValue, ColumnError,
     ColumnId, ColumnSchema, ComponentStore, DataTable, DatabaseRow, EntityEventQueue, EntityId,
     FormulaId, GoapAction, ResponseCurve, Row, RowId, TableColumnConsideration, TableId,
-    TableRegistry, TableReloaded, Value,
+    TableRegistry, TableReloaded, Value, World,
 };
 use smallvec::smallvec;
 
@@ -212,6 +212,35 @@ fn tc_ir_2_1_2_n1_missing_table() {
 }
 
 #[test]
+fn tc_ir_2_1_2_n2_utility_bool_matches_bt_float_contract() {
+    let cols = vec![ColumnSchema {
+        id: ColumnId(1),
+        default: Some(Value::Bool(true)),
+    }];
+    let rows = vec![Row {
+        id: RowId(1),
+        parent: None,
+        values: vec![Value::Bool(false)],
+    }];
+    let table = DataTable::new(cols, rows, 1);
+    let mut reg = TableRegistry::default();
+    reg.insert(TableId(1), table);
+    let db_row = DatabaseRow {
+        table: TableId(1),
+        row: RowId(1),
+        bound_columns: smallvec![],
+        overrides: smallvec![],
+    };
+    let cons = TableColumnConsideration {
+        column: ColumnId(1),
+        curve: ResponseCurve::Linear,
+    };
+    let mut cache = AiTableCache::new(TableId(1));
+    let err = cons.lookup(&reg, &db_row, &mut cache).unwrap_err();
+    assert!(matches!(err, ColumnError::ColumnTypeMismatch { .. }));
+}
+
+#[test]
 fn tc_ir_2_1_3_1_goap_baked_cost() {
     let action = GoapAction { cost: 5.0 };
     assert!((action.cost - 5.0).abs() < f32::EPSILON);
@@ -223,6 +252,7 @@ fn tc_ir_2_1_3_n1_goap_runtime_f32_only() {
     let GoapAction { cost } = a;
     let _: f32 = cost;
     assert_eq!(std::mem::size_of::<GoapAction>(), 4);
+    assert_eq!(std::any::type_name_of_val(&cost), "f32");
 }
 
 #[test]
@@ -437,6 +467,41 @@ fn tc_ir_2_1_5_n1_missing_column_writes_none() {
 }
 
 #[test]
+fn tc_ir_2_1_7_snapshot_invalidated_until_rebind() {
+    let mut reg = TableRegistry::default();
+    reg.insert(TableId(1), npc_table());
+    let db_row = DatabaseRow {
+        table: TableId(1),
+        row: RowId(1),
+        bound_columns: smallvec![],
+        overrides: smallvec![],
+    };
+    let leaf = BtTableLookup {
+        column: ColumnId(1),
+        target_key: BlackboardKey(0),
+    };
+    let mut cache = AiTableCache::new(TableId(1));
+    leaf.lookup(&reg, &db_row, &mut cache).expect("seed cache");
+    let table_version = reg.get(TableId(1)).expect("table").version();
+    cache.invalidate(table_version);
+    let err = leaf.lookup(&reg, &db_row, &mut cache).unwrap_err();
+    assert_eq!(err, ColumnError::SnapshotInvalidated(TableId(1)));
+    let bindings = BlackboardBindings {
+        bindings: vec![BlackboardBinding {
+            key: BlackboardKey(1),
+            column: ColumnId(1),
+        }],
+    };
+    let mut bb = Blackboard::default();
+    let trace = AiDataTraceFlag::new();
+    BlackboardTableBindingSystem::bind_entity(
+        &reg, &db_row, &bindings, &mut bb, &mut cache, &trace,
+    );
+    leaf.lookup(&reg, &db_row, &mut cache)
+        .expect("after bind_entity repop");
+}
+
+#[test]
 fn tc_ir_2_1_6_1_hot_reload_clears_cache() {
     let mut reg = TableRegistry::default();
     reg.insert(TableId(1), npc_table());
@@ -510,7 +575,38 @@ fn tc_ir_2_1_6_n1_reload_dangling_row_defaults() {
 }
 
 #[test]
-fn tc_ir_2_1_6_2_reload_queued_for_next_frame() {
+fn tc_ir_2_1_6_2_reload_queued_until_pre_update() {
+    let mut world = World::new();
+    world.registry.insert(TableId(1), npc_table());
+    let bindings = BlackboardBindings {
+        bindings: vec![BlackboardBinding {
+            key: BlackboardKey(1),
+            column: ColumnId(1),
+        }],
+    };
+    let row = DatabaseRow {
+        table: TableId(1),
+        row: RowId(1),
+        bound_columns: smallvec![],
+        overrides: smallvec![],
+    };
+    let bb = Blackboard::default();
+    let entity = world.spawn(Some(row.clone()), Some(bindings), bb);
+    world.run_bind_entity(entity);
+    world.reload_events.push(TableReloaded {
+        table: TableId(1),
+        old_version: 1,
+        new_version: 2,
+    });
+    assert_eq!(world.reload_events.len(), 1);
+    assert!(!world.cache_mut(entity).expect("cache").cleared);
+    world.pre_update();
+    assert!(world.reload_events.is_empty());
+    assert!(world.cache_mut(entity).expect("cache").cleared);
+}
+
+#[test]
+fn tc_ir_2_1_6_2_queue_drain_fifo() {
     let mut events = EntityEventQueue::default();
     events.push(TableReloaded {
         table: TableId(1),

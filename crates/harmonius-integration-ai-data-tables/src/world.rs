@@ -1,6 +1,6 @@
 //! Minimal ECS-style `World` harness for integration tests.
 
-use crate::bindings_system::BlackboardBindings;
+use crate::bindings_system::{BlackboardBindings, BlackboardTableBindingSystem};
 use crate::blackboard::Blackboard;
 use crate::cache::AiTableCache;
 use crate::component_store::ComponentStore;
@@ -105,5 +105,28 @@ impl World {
     /// Borrows `AiTableCache` for `entity`.
     pub fn cache_mut(&mut self, entity: EntityId) -> Option<&mut AiTableCache> {
         self.caches.get_mut(entity)
+    }
+
+    /// Phase 1 (PreUpdate): drains `reload_events` into per-entity cache invalidation.
+    pub fn pre_update(&mut self) {
+        BlackboardTableBindingSystem::drain_reload_events(
+            &mut self.reload_events,
+            &mut self.caches,
+        );
+    }
+
+    /// Runs [`BlackboardTableBindingSystem::bind_entity`] for one spawned entity.
+    pub fn run_bind_entity(&mut self, entity: EntityId) {
+        let row = self.database_row(entity).expect("row").clone();
+        let bindings = self.bindings(entity).expect("bindings").clone();
+        let idx = self.index(entity).expect("entity");
+        BlackboardTableBindingSystem::bind_entity(
+            &self.registry,
+            &row,
+            &bindings,
+            &mut self.entities[idx].bb,
+            self.caches.get_mut(entity).expect("cache"),
+            &self.trace,
+        );
     }
 }
