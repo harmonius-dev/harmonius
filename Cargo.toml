@@ -51,6 +51,7 @@ members = [
   "crates/harmonius_integration",
   "crates/harmonius_integration_animation_physics",
   "crates/harmonius_integration_animation_rendering",
+  "crates/harmonius_integration_audio_camera",
   "crates/harmonius_integration_audio_physics",
   "crates/harmonius_integration_editor_animation",
   "crates/harmonius_integration_editor_asset_pipeline",
