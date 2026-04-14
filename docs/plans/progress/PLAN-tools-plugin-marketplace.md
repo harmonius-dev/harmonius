@@ -1,12 +1,12 @@
 ---
 branch: plan/tools-plugin-marketplace
-last_updated: 2026-04-14T10:45:00Z
+last_updated: 2026-04-14T11:00:00Z
 plan_id: PLAN-tools-plugin-marketplace
-pr_number: null
+pr_number: 89
 pr_review_status: not_started
-pr_url: null
+pr_url: https://github.com/cjhowe-us/harmonius/pull/89
 started_at: 2026-04-14T10:45:00Z
-status: started
+status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-plugin-marketplace
 ---
 
@@ -17,7 +17,7 @@ Plan file: [plugin-marketplace.md](../tools/plugin-marketplace.md)
 ## Status checklist
 
 - [x] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
+- [x] Draft PR opened and linked in frontmatter
 - [x] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
 - [x] Red phase complete with failing tests for uncovered scope
@@ -28,11 +28,12 @@ Plan file: [plugin-marketplace.md](../tools/plugin-marketplace.md)
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [ ] `rumdl check .` passes for touched docs
+- [x] `rumdl check .` passes for touched docs
 - [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
+- [x] Code complete marker set (unit slice; integration bench deferred)
 
 ## Implementation readiness gate
 
@@ -72,3 +73,6 @@ Plan file: [plugin-marketplace.md](../tools/plugin-marketplace.md)
   (orchestrator pass; no PR merge).
 - 2026-04-14T10:45:00Z — plan-implementer — started worktree `PLAN-tools-plugin-marketplace`, added
   `plugin_marketplace` with 22 unit tests; draft PR pending.
+- 2026-04-14T10:55:00Z — plan-implementer — opened draft PR 89 for branch
+  `plan/tools-plugin-marketplace`.
+- 2026-04-14T11:00:00Z — plan-implementer — code complete for unit slice; awaiting pr-reviewer.
