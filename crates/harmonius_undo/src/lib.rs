@@ -10,6 +10,7 @@
 pub mod collab;
 pub mod command;
 pub mod ids;
+pub mod persist;
 pub mod record;
 pub mod selection;
 pub mod stack;
@@ -19,6 +20,7 @@ pub mod world;
 pub use collab::{CollabError, CollabSession, UndoConflict};
 pub use command::{CommandError, EditorCommand};
 pub use ids::{CommandId, TxId, UserId};
+pub use persist::{FlatCommandRecord, SessionManifest};
 pub use record::CommandRecord;
 pub use selection::{EntityRef, SelectionSnapshot};
 pub use stack::{DiskSpill, UndoError, UndoStack};

@@ -3,8 +3,9 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use harmonius_undo::{
-    CollabError, CollabSession, CommandError, CommandId, CommandRecord, DiskSpill, EditorCommand,
-    EntityRef, SelectionSnapshot, TestWorld, UndoConflict, UndoError, UndoStack, UserId,
+    persist, CollabError, CollabSession, CommandError, CommandId, CommandRecord, DiskSpill,
+    EditorCommand, EntityRef, SelectionSnapshot, SessionManifest, TestWorld, UndoConflict,
+    UndoError, UndoStack, UserId,
 };
 
 static COMMAND_IDS: AtomicU64 = AtomicU64::new(1);
@@ -63,7 +64,10 @@ fn tc_15_1_3_1_2_component_set_reverts_value() {
 fn tc_15_1_3_1_3_component_insert_reverts_remove() {
     let mut world = TestWorld::default();
     let e = EntityRef(3);
-    let cmd = EditorCommand::InsertComponent { entity: e, value: 9 };
+    let cmd = EditorCommand::InsertComponent {
+        entity: e,
+        value: 9,
+    };
     cmd.apply(&mut world).unwrap();
     assert_eq!(world.get_value(e), Some(9));
     cmd.revert(&mut world).unwrap();
@@ -281,7 +285,10 @@ fn tc_15_1_3_2_4_stack_clear() {
         .unwrap();
     stack.clear();
     assert_eq!(stack.current_bytes(), 0);
-    assert!(matches!(stack.undo(&mut world), Err(UndoError::NothingToUndo)));
+    assert!(matches!(
+        stack.undo(&mut world),
+        Err(UndoError::NothingToUndo)
+    ));
 }
 
 #[test]
@@ -296,7 +303,10 @@ fn tc_15_1_3_3_1_transaction_single_undo_step() {
             &mut world,
             mk_record(
                 UserId(0),
-                EditorCommand::InsertComponent { entity: e, value: 1 },
+                EditorCommand::InsertComponent {
+                    entity: e,
+                    value: 1,
+                },
                 sel.clone(),
                 sel.clone(),
             ),
@@ -335,7 +345,10 @@ fn tc_15_1_3_3_2_transaction_rollback_on_panic() {
             &mut world,
             mk_record(
                 UserId(0),
-                EditorCommand::InsertComponent { entity: e, value: 1 },
+                EditorCommand::InsertComponent {
+                    entity: e,
+                    value: 1,
+                },
                 sel.clone(),
                 sel.clone(),
             ),
@@ -374,7 +387,8 @@ async fn tc_15_1_3_4_1_budget_evicts_oldest() {
     let tmp = tempfile::tempdir().unwrap();
     let spill = DiskSpill::new(tmp.path());
     let mut world = TestWorld::default();
-    let mut stack = UndoStack::new(1);
+    // Eight one-byte stubs fit after every full command is spilled to disk.
+    let mut stack = UndoStack::new(8);
     stack.set_disk_spill(spill);
     let sel = SelectionSnapshot::empty();
     for _ in 0..8 {
@@ -391,7 +405,7 @@ async fn tc_15_1_3_4_1_budget_evicts_oldest() {
             .unwrap();
     }
     stack.maintain_budget().await.unwrap();
-    assert!(stack.current_bytes() <= 1);
+    assert!(stack.current_bytes() <= 8);
     let mut spilled = false;
     for entry in std::fs::read_dir(tmp.path()).unwrap() {
         let entry = entry.unwrap();
@@ -485,12 +499,7 @@ fn tc_15_1_3_7_2_redo_restores_after_selection() {
     stack
         .push_record(
             &mut world,
-            mk_record(
-                UserId(0),
-                EditorCommand::BumpCounter,
-                before,
-                after.clone(),
-            ),
+            mk_record(UserId(0), EditorCommand::BumpCounter, before, after.clone()),
         )
         .unwrap();
     stack.undo(&mut world).unwrap();
@@ -595,6 +604,81 @@ fn tc_15_1_3_8_3_collab_per_user_cursor() {
 }
 
 #[test]
+fn tc_15_1_3_5_1_persistent_history_across_sessions() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut world = TestWorld::default();
+    let mut stack = UndoStack::new(1024 * 1024);
+    let sel = SelectionSnapshot::empty();
+    for _ in 0..10 {
+        stack
+            .push_record(
+                &mut world,
+                mk_record(
+                    UserId(0),
+                    EditorCommand::BumpCounter,
+                    sel.clone(),
+                    sel.clone(),
+                ),
+            )
+            .unwrap();
+    }
+    assert_eq!(world.counter, 10);
+    stack.save_atomic_session(&world, tmp.path()).unwrap();
+    let (mut stack2, mut world2) = UndoStack::load_atomic_session(tmp.path()).unwrap();
+    assert_eq!(world2.counter, 10);
+    assert_eq!(stack2.cursor(), 10);
+    stack2.undo(&mut world2).unwrap();
+    assert_eq!(world2.counter, 9);
+}
+
+#[test]
+fn tc_15_1_3_5_2_manifest_roundtrip() {
+    let tmp = tempfile::tempdir().unwrap();
+    let manifest = SessionManifest {
+        cursor: 3,
+        budget_bytes: 256,
+        next_command_id: 9,
+        next_tx: 2,
+        records: Vec::new(),
+    };
+    let path = tmp.path().join("manifest.rkyv");
+    persist::write_manifest(&path, &manifest).unwrap();
+    let loaded = persist::read_manifest(&path).unwrap();
+    assert_eq!(loaded, manifest);
+}
+
+#[tokio::test]
+async fn tc_15_1_3_5_3_load_spilled_command_on_undo() {
+    let tmp = tempfile::tempdir().unwrap();
+    let spill_root = tmp.path().join("spill");
+    tokio::fs::create_dir_all(&spill_root).await.unwrap();
+    let spill = DiskSpill::new(&spill_root);
+    let mut world = TestWorld::default();
+    let mut stack = UndoStack::new(8);
+    stack.set_disk_spill(spill);
+    let sel = SelectionSnapshot::empty();
+    for _ in 0..6 {
+        stack
+            .push_record(
+                &mut world,
+                mk_record(
+                    UserId(0),
+                    EditorCommand::BumpCounter,
+                    sel.clone(),
+                    sel.clone(),
+                ),
+            )
+            .unwrap();
+    }
+    assert_eq!(world.counter, 6);
+    stack.maintain_budget().await.unwrap();
+    for _ in 0..6 {
+        stack.undo(&mut world).unwrap();
+    }
+    assert_eq!(world.counter, 0);
+}
+
+#[test]
 fn transaction_insert_conflict_returns_command_error() {
     let mut world = TestWorld::default();
     let mut stack = UndoStack::new(1024 * 1024);
@@ -608,7 +692,10 @@ fn transaction_insert_conflict_returns_command_error() {
             &mut world,
             mk_record(
                 UserId(0),
-                EditorCommand::InsertComponent { entity: e, value: 2 },
+                EditorCommand::InsertComponent {
+                    entity: e,
+                    value: 2,
+                },
                 sel.clone(),
                 sel.clone(),
             ),
