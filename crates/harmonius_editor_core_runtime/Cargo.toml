@@ -1,0 +1,11 @@
+[package]
+description = "Headless editor ↔ core runtime integration harness (shadow world, EventBridge, PIE)."
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_editor_core_runtime"
+publish = false
+rust-version = "1.80"
+version = "0.1.0"
+
+[lib]
+path = "src/lib.rs"
