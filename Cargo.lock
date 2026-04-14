@@ -474,6 +474,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_net"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm",
+]
+
+[[package]]
 name = "harmonius_platform"
 version = "0.1.0"
 dependencies = [
