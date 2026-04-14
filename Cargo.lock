@@ -1122,6 +1122,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration_networking_save"
+version = "0.1.0"
+dependencies = [
+ "crossbeam-channel",
+ "rkyv 0.7.46",
+]
+
+[[package]]
 name = "integration_timelines_camera"
 version = "0.1.0"
 dependencies = [
