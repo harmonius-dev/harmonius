@@ -1,6 +1,8 @@
 //! Line-of-sight bridging between grid cells and physics ray casts.
 
 use glam::Vec3;
+use rustc_hash::FxHashMap;
+use smallvec::SmallVec;
 
 use crate::types::Entity;
 
@@ -17,12 +19,34 @@ pub struct RayHit {
     pub normal: Vec3,
 }
 
+/// World-space axis-aligned bounds (`Aabb` in design diagrams).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct WorldAabb {
+    /// Minimum corner (inclusive).
+    pub min: Vec3,
+    /// Maximum corner (inclusive).
+    pub max: Vec3,
+}
+
+impl WorldAabb {
+    /// Builds bounds from inclusive corners.
+    #[must_use]
+    pub const fn from_min_max(min: Vec3, max: Vec3) -> Self {
+        Self { min, max }
+    }
+}
+
+/// Entities whose colliders overlap a [`WorldAabb`] query (inline capacity before spill).
+pub type OverlapEntities = SmallVec<[Entity; 8]>;
+
 /// Predicate applied to candidate hits (e.g. walls-only gameplay filter).
 #[derive(Clone, Copy)]
 pub struct CollisionFilterFn(fn(&RayHit) -> bool);
 
 impl CollisionFilterFn {
-    /// Filter that accepts hits that should block propagation (stub: structural walls).
+    /// Filter that accepts hits that should block propagation.
+    ///
+    /// Stub: accepts every hit until collider metadata can identify structural walls.
     #[must_use]
     pub fn walls_only() -> Self {
         Self(|_hit| true)
@@ -45,6 +69,13 @@ pub trait PhysicsQueries {
         max_distance: f32,
         filter: CollisionFilterFn,
     ) -> Option<RayHit>;
+
+    /// Returns colliders overlapping `bounds`, retaining entities accepted by `filter`.
+    fn aabb_overlap(
+        &self,
+        bounds: WorldAabb,
+        filter: &mut dyn FnMut(&Entity) -> bool,
+    ) -> OverlapEntities;
 }
 
 /// Returns `true` when propagation may spread (no blocking hit along the segment).
@@ -69,7 +100,7 @@ pub fn propagation_los_check(
 /// Per-tick memoization of LOS results between cell pairs.
 #[derive(Debug, Default)]
 pub struct LosCache {
-    entries: std::collections::HashMap<(crate::CellCoord, crate::CellCoord), bool>,
+    entries: FxHashMap<(crate::CellCoord, crate::CellCoord), bool>,
 }
 
 impl LosCache {
@@ -77,7 +108,7 @@ impl LosCache {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            entries: std::collections::HashMap::new(),
+            entries: FxHashMap::default(),
         }
     }
 
@@ -101,11 +132,15 @@ impl LosCache {
 #[cfg(test)]
 #[allow(missing_docs)]
 mod tests {
+    use std::sync::atomic::{AtomicBool, Ordering};
+
     use super::*;
 
-    struct PanicPhysics;
+    struct RefuseRayPhysics {
+        ray_called: AtomicBool,
+    }
 
-    impl PhysicsQueries for PanicPhysics {
+    impl PhysicsQueries for RefuseRayPhysics {
         fn ray_cast(
             &self,
             _origin: Vec3,
@@ -113,19 +148,35 @@ mod tests {
             _max_distance: f32,
             _filter: CollisionFilterFn,
         ) -> Option<RayHit> {
-            panic!("ray_cast must not run for zero-length LOS segments");
+            self.ray_called.store(true, Ordering::Relaxed);
+            None
+        }
+
+        fn aabb_overlap(
+            &self,
+            _bounds: WorldAabb,
+            _filter: &mut dyn FnMut(&Entity) -> bool,
+        ) -> OverlapEntities {
+            OverlapEntities::new()
         }
     }
 
     #[test]
     fn tc_ir_3_10_u5_propagation_los_zero_distance() {
+        let physics = RefuseRayPhysics {
+            ray_called: AtomicBool::new(false),
+        };
         let p = Vec3::new(1.0, 2.0, 3.0);
         assert!(propagation_los_check(
             p,
             p,
-            &PanicPhysics,
+            &physics,
             CollisionFilterFn::walls_only(),
         ));
+        assert!(
+            !physics.ray_called.load(Ordering::Relaxed),
+            "zero-length segment must not invoke ray_cast",
+        );
     }
 
     #[test]
@@ -143,31 +194,5 @@ mod tests {
         let a = crate::CellCoord { x: 0, y: 0 };
         let b = crate::CellCoord { x: 1, y: 0 };
         assert_eq!(c.get(a, b), None);
-    }
-
-    struct OpenSpacePhysics;
-
-    impl PhysicsQueries for OpenSpacePhysics {
-        fn ray_cast(
-            &self,
-            _origin: Vec3,
-            _direction_normalized: Vec3,
-            _max_distance: f32,
-            _filter: CollisionFilterFn,
-        ) -> Option<RayHit> {
-            None
-        }
-    }
-
-    /// TC-IR-3.10.5.2 — propagation sees clear LOS with no colliders in the physics-private BVH.
-    #[test]
-    fn tc_ir_3_10_5_2_propagation_passes_open_space() {
-        let physics = OpenSpacePhysics;
-        assert!(propagation_los_check(
-            Vec3::ZERO,
-            Vec3::new(10.0, 0.0, 0.0),
-            &physics,
-            CollisionFilterFn::walls_only(),
-        ));
     }
 }

@@ -10,7 +10,10 @@ mod los;
 mod occupancy;
 mod types;
 
-pub use los::{propagation_los_check, LosCache, PhysicsQueries, RayHit};
+pub use los::{
+    propagation_los_check, CollisionFilterFn, LosCache, OverlapEntities, PhysicsQueries, RayHit,
+    WorldAabb,
+};
 pub use occupancy::OccupancyUpdate;
 pub use types::{
     destruction_pattern_tag, CellCoord, DestructionPattern, Entity, VoxelCoord,
