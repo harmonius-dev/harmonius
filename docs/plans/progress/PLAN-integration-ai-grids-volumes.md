@@ -50,7 +50,7 @@ Plan file: [ai-grids-volumes.md](../integration/ai-grids-volumes.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test --workspace` (31 integration tests) on 2026-04-14.
+- Test reports: `cargo test --workspace` (36 integration tests) on 2026-04-14.
 - Benchmarks: `cargo bench -p harmonius_ai_grids` (Criterion harness; not CI-gated here).
 - Screenshots: deferred (manual validation checklist still open).
 - Videos: deferred (manual validation checklist still open).
