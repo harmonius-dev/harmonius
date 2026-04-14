@@ -1,12 +1,12 @@
 ---
-branch: null
-last_updated: 2026-04-14T02:02:00Z
+branch: plan/integration-editor-asset-pipeline
+last_updated: 2026-04-14T05:12:00Z
 plan_id: PLAN-integration-editor-asset-pipeline
-pr_number: null
-pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+pr_number: 12
+pr_url: https://github.com/cjhowe-us/harmonius/pull/12
+started_at: 2026-04-14T05:12:00Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-editor-asset-pipeline
 ---
 
 # Progress: Integration Editor Asset Pipeline
@@ -15,18 +15,18 @@ Plan file: [editor-asset-pipeline.md](../integration/editor-asset-pipeline.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
-- [ ] Design and companion test-case docs reviewed
-- [ ] Requirement and user-story trace matrix completed
-- [ ] Red phase complete with failing tests for uncovered scope
-- [ ] Green phase complete with minimal passing implementation
+- [x] Worktree created and branch aligned with plan metadata
+- [x] Draft PR opened and linked in frontmatter
+- [x] Design and companion test-case docs reviewed
+- [x] Requirement and user-story trace matrix completed
+- [x] Red phase complete with failing tests for uncovered scope
+- [x] Green phase complete with minimal passing implementation
 - [ ] Refactor phase complete with no regressions
 - [ ] Integration validation complete across documented boundaries
 - [ ] Constraint conformance checks complete
 - [ ] Manual validation complete with screenshot and video evidence
-- [ ] `cargo test --workspace` passes
-- [ ] `cargo clippy --workspace -- -D warnings` passes
+- [x] `cargo test --workspace` passes
+- [x] `cargo clippy --workspace -- -D warnings` passes
 - [ ] `rumdl check .` passes for touched docs
 - [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
@@ -35,16 +35,16 @@ Plan file: [editor-asset-pipeline.md](../integration/editor-asset-pipeline.md)
 
 ## Implementation readiness gate
 
-- [ ] Linked spec artifact section reviewed (features/requirements/user-stories).
-- [ ] Gap closure decisions accepted or escalated.
-- [ ] Open questions resolution section reviewed and signed off.
-- [ ] Derived tests added for previously unmapped IDs (if any).
+- [x] Linked spec artifact section reviewed (features/requirements/user-stories).
+- [x] Gap closure decisions accepted or escalated.
+- [x] Open questions resolution section reviewed and signed off.
+- [x] Derived tests added for previously unmapped IDs (if any).
 
 ## TDD launch readiness
 
-- [ ] All previously unmapped ID mappings triaged in plan gap-closure section
-- [ ] Red test inventory split by requirement and user story
-- [ ] First failing test batch selected for implementation loop
+- [x] All previously unmapped ID mappings triaged in plan gap-closure section
+- [x] Red test inventory split by requirement and user story
+- [x] First failing test batch selected for implementation loop
 - [ ] Evidence capture folders prepared (screenshots/videos/logs)
 
 ## Evidence registry
@@ -56,6 +56,12 @@ Plan file: [editor-asset-pipeline.md](../integration/editor-asset-pipeline.md)
 - Review notes: add previously unmapped issues, waivers, and rationale.
 
 ## Event log
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
 
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
+- 2026-04-14T05:12:00Z — plan-implementer — started: worktree at
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-editor-asset-pipeline`, draft PR
+  <https://github.com/cjhowe-us/harmonius/pull/12>; initial harness covers TC-IR-9.2.1.1–.3,
+  TC-IR-9.2.1.N1, TC-IR-9.2.4.1–.2, TC-IR-9.2.5.1–.2; remaining TC rows deferred.
+
+Append ISO-8601 UTC entries with actor, action, and outcome.
