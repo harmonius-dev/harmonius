@@ -1,6 +1,6 @@
 ---
 branch: plan/core-runtime-events-plugins
-last_updated: 2026-04-14T11:33:44Z
+last_updated: 2026-04-14T17:58:13Z
 plan_id: PLAN-core-runtime-events-plugins
 pr_number: 75
 pr_review_status: complete
@@ -58,6 +58,9 @@ Plan file: [events-plugins.md](../core-runtime/events-plugins.md)
 
 - 2026-04-14T05:27:19Z — started, worktree + draft PR created
 - 2026-04-14T05:27:19Z — code complete, awaiting review (harmonius-core + TC tests)
-- 2026-04-14T11:33:44Z — submitted for human review, 0 findings addressed (automated review:
-  `cargo test --workspace`, `cargo clippy -D warnings`; repo-wide `rumdl check .` still fails on
-  `main` baseline)
+- 2026-04-14T17:58:13Z — submitted for human review after pr-reviewer pass; consolidated review
+  reported 27 findings — code fixes landed for graph determinism, non-panicking topo relaxation,
+  real cycle paths on sort failure, `BuiltApp`/`StreamConfig` `Debug`, test-only hot-reload sleep,
+  `ObserverRegisterError`, `EventWriter`/`EventReader`, and related tests; design-parity gaps
+  (propagation, full `App` surface, hot-reload fidelity) left for follow-up; repo-wide
+  `rumdl check .` still fails on baseline unrelated to this branch

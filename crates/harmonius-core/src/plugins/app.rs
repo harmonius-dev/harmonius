@@ -16,7 +16,7 @@ pub struct PluginDescriptor {
     pub name: &'static str,
     /// Semantic version of the plugin package.
     pub version: SemVer,
-    /// Stable fingerprint used for compatibility gates (TC-1.6.6).
+    /// Stable fingerprint used for compatibility gates (TC-1.6.6); aligns with test cases.
     pub abi_hash: u64,
 }
 
@@ -218,6 +218,7 @@ impl App {
 }
 
 /// Finalized application state after plugin initialization succeeds.
+#[derive(Debug)]
 pub struct BuiltApp {
     /// Simulation world owned by the app.
     pub world: World,

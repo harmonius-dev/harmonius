@@ -104,6 +104,7 @@ impl<T: Event> StreamCursor<T> {
 }
 
 /// Platform-style capacity presets (metadata for tests and hosts).
+#[derive(Debug)]
 pub struct StreamConfig {
     /// Maximum events per channel.
     pub capacity: u32,

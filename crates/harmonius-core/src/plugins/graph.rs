@@ -134,19 +134,28 @@ impl DependencyGraph {
         let mut out = Vec::new();
         while let Some(n) = queue.pop_front() {
             out.push(n);
-            for (&consumer, deps) in &self.edges {
-                if deps.contains(&n) && known.contains(&consumer) {
-                    let e = indegree.get_mut(&consumer).expect("consumer exists");
-                    *e = e.saturating_sub(1);
-                    if *e == 0 {
-                        queue.push_back(consumer);
-                    }
+            for &consumer in &self.nodes {
+                let Some(deps) = self.edges.get(&consumer) else {
+                    continue;
+                };
+                if !deps.contains(&n) || !known.contains(&consumer) {
+                    continue;
+                }
+                let Some(e) = indegree.get_mut(&consumer) else {
+                    continue;
+                };
+                *e = e.saturating_sub(1);
+                if *e == 0 {
+                    queue.push_back(consumer);
                 }
             }
         }
         if out.len() != self.nodes.len() {
+            let cycle = self
+                .find_cycle_path()
+                .unwrap_or_else(|| vec!["<unknown>"]);
             return Err(vec![PluginGraphError::CyclicDependency {
-                cycle: vec!["<unknown>"],
+                cycle,
                 suggestion: "cycle detected during sort".to_string(),
             }]);
         }
