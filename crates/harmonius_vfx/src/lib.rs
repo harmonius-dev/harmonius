@@ -7,4 +7,7 @@
 #![deny(missing_docs)]
 #![deny(unsafe_code)]
 
+pub mod effect_graph;
 pub mod effects;
+pub mod logic_eval;
+pub mod particles;
