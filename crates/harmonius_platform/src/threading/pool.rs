@@ -1,6 +1,7 @@
-//! Work-stealing [`ThreadPool`] with injector queue, scoped `std::thread::scope` helpers, and
-//! recursive pool-backed [`super::job_system::par_iter`].
+//! Work-stealing [`ThreadPool`] with injector queue and recursive pool-backed
+//! [`super::job_system::par_iter`].
 
+use std::fmt;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
@@ -44,7 +45,7 @@ pub enum ThreadPriority {
     Low,
 }
 
-/// Shared deque state used by worker threads and [`ThreadPool::submit_raw`].
+/// Shared deque state used by worker threads and [`ThreadPool::spawn`].
 pub(crate) struct PoolShared {
     injector: Injector<Job>,
     stealers: Vec<Stealer<Job>>,
@@ -125,6 +126,15 @@ pub struct ThreadPool {
     worker_count: u32,
     shared: Arc<PoolShared>,
     threads: Vec<StdJoinHandle<()>>,
+}
+
+impl fmt::Debug for ThreadPool {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ThreadPool")
+            .field("topology", &self.topology)
+            .field("worker_count", &self.worker_count)
+            .finish_non_exhaustive()
+    }
 }
 
 fn resolve_worker_count(topology: &CoreTopology, config: &ThreadPoolConfig) -> u32 {

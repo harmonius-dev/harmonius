@@ -144,6 +144,9 @@ impl PlatformIo {
     }
 
     /// Enqueues a read; completions flush when [`PlatformIo::poll_completions`] runs.
+    ///
+    /// Host builds replace the staging implementation with non-blocking OS queues; the current
+    /// path uses [`std::fs::read`] only to exercise completion ordering in tests.
     pub fn submit_read(&mut self, path: &Path, mut buffer: BufferSlot) -> IoRequestId {
         let id = IoRequestId(self.next_id.fetch_add(1, Ordering::Relaxed));
         let io = match std::fs::read(path) {

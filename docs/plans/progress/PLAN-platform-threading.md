@@ -1,6 +1,6 @@
 ---
 branch: plan/platform-threading
-last_updated: 2026-04-14T05:35:00Z
+last_updated: 2026-04-14T16:00:00Z
 plan_id: PLAN-platform-threading
 pr_number: 78
 pr_review_status: not_started
@@ -55,7 +55,14 @@ Plan file: [threading.md](../platform/threading.md)
 - Benchmarks: not run for this PR.
 - Screenshots: deferred (manual validation).
 - Videos: deferred (manual validation).
-- Review notes: none yet.
+- Review notes: `pr-reviewer` + `review-supervisor` pass on 2026-04-14. Addressed in-branch:
+  parallel DAG execution on the pool, nested subgraph sequential runner (avoids single-worker
+  deadlock), stronger fan-out test (`ThreadId` overlap when `worker_count >= 2`), `tc_14_3_5_1` via
+  `PlatformIo`, hybrid topology env RAII guard, `ThreadPool` `Debug`, pool rustdoc fix, staging note
+  on `submit_read`. **Still open vs `docs/design/platform/threading.md`:** `ThreadPool::scope` and
+  non-`'static` borrows, affinity or QoS mapping (`R-14.3.2`), real non-blocking OS I/O backends,
+  parking primitives vs `constraints.md` channel-first wording, and `Box<dyn>` job storage vs static
+  dispatch. PR **remains draft** until those are triaged or spec/design defers them explicitly.
 
 ## Event log
 
@@ -66,3 +73,7 @@ Plan file: [threading.md](../platform/threading.md)
   <https://github.com/cjhowe-us/harmonius/pull/78> opened.
 - 2026-04-14T05:35:00Z — plan-implementer — code complete, awaiting review
   (`pr_review_status: not_started`).
+- 2026-04-14T16:00:00Z — pr-reviewer — partial remediation pushed; draft retained. Supervisor tally
+  was 23 findings (3 blocker-class design gaps among them). Resolved in code: parallel graph
+  scheduling, acceptance test and doc hygiene items above. **Not** undrafted: `ThreadPool::scope`,
+  affinity or QoS, and async platform I/O remain vs design; human triage before `submitted`.

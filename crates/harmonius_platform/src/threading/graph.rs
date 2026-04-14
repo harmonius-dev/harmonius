@@ -1,10 +1,12 @@
 //! DAG-shaped [`TaskGraph`] compilation and execution.
 
 use std::collections::VecDeque;
+use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 
 use smallvec::SmallVec;
 
-use super::pool::ThreadPool;
+use super::pool::{PoolShared, ThreadPool};
 
 /// Stable identifier for a node in [`TaskGraphBuilder`].
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -29,10 +31,82 @@ pub(crate) enum GraphNode {
     Subgraph(TaskGraph),
 }
 
+/// Shared execution context for [`TaskGraph`] runs on a [`ThreadPool`].
+struct GraphExec {
+    nodes: Arc<Vec<Mutex<Option<GraphNode>>>>,
+    dependents: Arc<Vec<Vec<usize>>>,
+    rem: Arc<Vec<AtomicU32>>,
+    left: Arc<AtomicUsize>,
+    done: crossbeam_channel::Sender<()>,
+    shared: Arc<PoolShared>,
+}
+
+fn run_node(ctx: Arc<GraphExec>, idx: usize) {
+    let node = {
+        let mut slot = ctx.nodes[idx].lock().expect("graph node mutex poisoned");
+        slot.take()
+    };
+    let Some(node) = node else {
+        return;
+    };
+    match node {
+        GraphNode::Task(f) => f(),
+        GraphNode::Subgraph(g) => {
+            // Nested graphs run sequentially on the calling thread so a single worker cannot
+            // deadlock waiting for pool capacity while holding a worker slot.
+            g.execute_sequential();
+        }
+    }
+    for &v in ctx.dependents[idx].iter() {
+        if ctx.rem[v].fetch_sub(1, Ordering::AcqRel) == 1 {
+            let ctx2 = Arc::clone(&ctx);
+            ctx.shared.submit_job(Box::new(move || run_node(ctx2, v)));
+        }
+    }
+    if ctx.left.fetch_sub(1, Ordering::AcqRel) == 1 {
+        let _ = ctx.done.send(());
+    }
+}
+
+fn execute_parallel_graph(shared: Arc<PoolShared>, graph: TaskGraph) {
+    let n = graph.nodes.len();
+    let (done_tx, done_rx) = crossbeam_channel::bounded(1);
+    let nodes = Arc::new(graph.nodes.into_iter().map(Mutex::new).collect::<Vec<_>>());
+    let dependents = Arc::new(graph.dependents);
+    let rem: Arc<Vec<AtomicU32>> = Arc::new(
+        graph
+            .initial_indegree
+            .iter()
+            .map(|&d| AtomicU32::new(d))
+            .collect(),
+    );
+    let left = Arc::new(AtomicUsize::new(n));
+    let ctx = Arc::new(GraphExec {
+        nodes,
+        dependents,
+        rem,
+        left,
+        done: done_tx,
+        shared: Arc::clone(&shared),
+    });
+    for i in 0..n {
+        if ctx.rem[i].load(Ordering::Acquire) == 0 {
+            let ctx2 = Arc::clone(&ctx);
+            shared.submit_job(Box::new(move || run_node(ctx2, i)));
+        }
+    }
+    let _ = done_rx.recv();
+}
+
 /// Immutable task graph ready for [`ThreadPool::execute_graph`].
 pub struct TaskGraph {
     pub(crate) nodes: Vec<Option<GraphNode>>,
+    /// Topological visit order for sequential subgraph execution.
     pub(crate) order: Vec<usize>,
+    /// For each node `u`, dependents `v` with edge `(u, v)`.
+    pub(crate) dependents: Vec<Vec<usize>>,
+    /// Indegree snapshot after validation (before Kahn drains counts).
+    pub(crate) initial_indegree: Vec<u32>,
 }
 
 /// Builder for [`TaskGraph`].
@@ -138,6 +212,12 @@ impl TaskGraphBuilder {
             adj[a as usize].push(b as usize);
             indeg[b as usize] += 1;
         }
+        let initial_indegree = indeg.clone();
+
+        let mut dependents = vec![Vec::new(); n];
+        for &(TaskNodeId(a), TaskNodeId(b)) in &self.edges {
+            dependents[a as usize].push(b as usize);
+        }
 
         let mut queue: VecDeque<usize> = indeg
             .iter()
@@ -173,6 +253,8 @@ impl TaskGraphBuilder {
         Ok(TaskGraph {
             nodes: nodes_out,
             order,
+            dependents,
+            initial_indegree,
         })
     }
 }
@@ -184,17 +266,24 @@ impl Default for TaskGraphBuilder {
 }
 
 impl TaskGraph {
-    #[allow(clippy::only_used_in_recursion)]
-    pub(crate) fn execute_on(self, pool: &ThreadPool) {
-        let TaskGraph { mut nodes, order } = self;
+    /// Runs this graph on the calling thread without nested parallel scheduling (avoids pool
+    /// deadlocks when worker count is low).
+    fn execute_sequential(self) {
+        let TaskGraph {
+            mut nodes, order, ..
+        } = self;
         for idx in order {
             let node = nodes[idx]
                 .take()
                 .expect("topological order visits each node once");
             match node {
                 GraphNode::Task(f) => f(),
-                GraphNode::Subgraph(g) => g.execute_on(pool),
+                GraphNode::Subgraph(g) => g.execute_sequential(),
             }
         }
+    }
+
+    pub(crate) fn execute_on(self, pool: &ThreadPool) {
+        execute_parallel_graph(pool.shared(), self);
     }
 }
