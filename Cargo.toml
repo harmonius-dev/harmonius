@@ -67,6 +67,7 @@ members = [
   "crates/harmonius_shared_messaging_capacities",
   "crates/harmonius_sim",
   "crates/harmonius_team_tools",
+  "crates/harmonius_timeline",
   "crates/harmonius_timelines_scripting",
   "crates/harmonius_ui",
   "crates/harmonius_undo",
