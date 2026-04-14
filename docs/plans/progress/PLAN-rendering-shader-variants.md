@@ -1,12 +1,12 @@
 ---
 branch: plan/rendering-shader-variants
-last_updated: 2026-04-14T14:43:31Z
+last_updated: 2026-04-14T17:50:21Z
 plan_id: PLAN-rendering-shader-variants
 pr_number: 57
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/57
 started_at: 2026-04-14T12:00:00Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-rendering-shader-variants
 ---
 
@@ -30,8 +30,8 @@ Plan file: [shader-variants.md](../rendering/shader-variants.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
 - [ ] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -54,7 +54,12 @@ Plan file: [shader-variants.md](../rendering/shader-variants.md)
 - Benchmarks: add artifacts and expected vs observed thresholds.
 - Screenshots: add image paths with acceptance notes.
 - Videos: add capture paths with scenario IDs.
-- Review notes: add previously unmapped issues, waivers, and rationale.
+- Review notes:
+  - Full-tree `rumdl check .` fails on unrelated plan progress templates (also on `main`); this
+    plan’s progress file passes `rumdl` when checked alone.
+  - On-disk bundle uses a versioned HMNS layout plus mmap; design diagrams still mention `rkyv` for
+    the index — track alignment when the format hardens.
+  - Manual screenshot/video checklist stays open for the human reviewer if release gates require it.
 
 ## Event log
 
@@ -70,3 +75,5 @@ Plan file: [shader-variants.md](../rendering/shader-variants.md)
 - 2026-04-14T12:15:00Z — plan-implementer — code complete, awaiting review (pr-reviewer).
 - 2026-04-14T14:43:31Z — plan-implementer — re-verified `cargo test --workspace` and
   `cargo clippy --workspace -- -D warnings` in worktree; synced progress to primary checkout.
+- 2026-04-14T17:50:21Z — pr-reviewer — submitted for human review; 3 informational findings
+  addressed in review notes (no code changes); PR #57 marked ready via `gh pr ready`.
