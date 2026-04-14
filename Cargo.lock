@@ -666,6 +666,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_containers_slots_ui"
+version = "0.1.0"
+dependencies = [
+ "smallvec",
+]
+
+[[package]]
 name = "harmonius_core"
 version = "0.1.0"
 dependencies = [
