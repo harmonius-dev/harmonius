@@ -34,7 +34,9 @@ pub struct DrainStats {
 
 /// Drains all pending messages from a receiver without applying them.
 #[must_use]
-pub fn drain_influence_writes(receiver: &Receiver<InfluenceWriteCommand>) -> Vec<InfluenceWriteCommand> {
+pub fn drain_influence_writes(
+    receiver: &Receiver<InfluenceWriteCommand>,
+) -> Vec<InfluenceWriteCommand> {
     let mut out = Vec::new();
     while let Ok(msg) = receiver.try_recv() {
         out.push(msg);
@@ -69,9 +71,20 @@ pub fn apply_pending_writes(
             end += 1;
         }
         let slice = &batch[idx..end];
-        if let CellOrVoxel::Cell(coord) = cell {
-            if apply_cell_batch(grid, coord, slice, &mut stats) {
-                stats.drained += slice.len();
+        match cell {
+            CellOrVoxel::Cell(coord) => {
+                if apply_cell_batch(grid, coord, slice, &mut stats) {
+                    stats.drained += slice.len();
+                }
+            }
+            CellOrVoxel::Voxel(_) => {
+                stats.dropped_oob += slice.len();
+                tracing::warn!(
+                    target: "harmonius_ai_grids::drain",
+                    reason = "voxel_command_on_uniform_applier",
+                    count = slice.len(),
+                    "influence writes dropped (wrong geometry for 2D applier)"
+                );
             }
         }
         idx = end;
@@ -88,14 +101,21 @@ fn apply_cell_batch(
 ) -> bool {
     if grid.get_back(coord).is_none() {
         stats.dropped_oob += slice.len();
+        tracing::warn!(
+            target: "harmonius_ai_grids::drain",
+            reason = "oob_cell_write",
+            count = slice.len(),
+            "influence writes dropped (cell out of bounds)"
+        );
         return false;
     }
 
     let base = grid.get_back(coord).unwrap_or(0.0);
 
     let mut additive_sum = 0.0_f32;
-    let mut max_candidates: Vec<f32> = Vec::new();
-    let mut overwrites: Vec<InfluenceWriteCommand> = Vec::new();
+    let mut max_val = f32::NEG_INFINITY;
+    let mut has_max = false;
+    let mut best_overwrite: Option<InfluenceWriteCommand> = None;
 
     for cmd in slice {
         match cmd.mode {
@@ -103,29 +123,29 @@ fn apply_cell_batch(
                 additive_sum += cmd.value;
             }
             InfluenceWriteMode::Max => {
-                max_candidates.push(cmd.value);
+                has_max = true;
+                max_val = max_val.max(cmd.value);
             }
             InfluenceWriteMode::Overwrite => {
-                overwrites.push(*cmd);
+                let replace = match best_overwrite {
+                    None => true,
+                    Some(prev) => {
+                        (cmd.seq, cmd.sender_entity_index) < (prev.seq, prev.sender_entity_index)
+                    }
+                };
+                if replace {
+                    best_overwrite = Some(*cmd);
+                }
             }
         }
     }
 
     let mut value = base + additive_sum;
-    if !max_candidates.is_empty() {
-        let local_max = max_candidates
-            .iter()
-            .copied()
-            .fold(f32::NEG_INFINITY, f32::max);
-        value = value.max(local_max);
+    if has_max {
+        value = value.max(max_val);
     }
 
-    if !overwrites.is_empty() {
-        let chosen = overwrites
-            .iter()
-            .min_by_key(|cmd| (cmd.seq, cmd.sender_entity_index))
-            .copied()
-            .expect("non-empty overwrites");
+    if let Some(chosen) = best_overwrite {
         value = chosen.value;
     }
 
@@ -159,9 +179,20 @@ pub fn apply_pending_writes_voxel(
             end += 1;
         }
         let slice = &batch[idx..end];
-        if let CellOrVoxel::Voxel(coord) = cell {
-            if apply_voxel_batch(volume, coord, slice, &mut stats) {
-                stats.drained += slice.len();
+        match cell {
+            CellOrVoxel::Voxel(coord) => {
+                if apply_voxel_batch(volume, coord, slice, &mut stats) {
+                    stats.drained += slice.len();
+                }
+            }
+            CellOrVoxel::Cell(_) => {
+                stats.dropped_oob += slice.len();
+                tracing::warn!(
+                    target: "harmonius_ai_grids::drain",
+                    reason = "cell_command_on_voxel_applier",
+                    count = slice.len(),
+                    "influence writes dropped (wrong geometry for 3D applier)"
+                );
             }
         }
         idx = end;
@@ -178,14 +209,21 @@ fn apply_voxel_batch(
 ) -> bool {
     if volume.get_back(coord).is_none() {
         stats.dropped_oob += slice.len();
+        tracing::warn!(
+            target: "harmonius_ai_grids::drain",
+            reason = "oob_voxel_write",
+            count = slice.len(),
+            "influence writes dropped (voxel out of bounds)"
+        );
         return false;
     }
 
     let base = volume.get_back(coord).unwrap_or(0.0);
 
     let mut additive_sum = 0.0_f32;
-    let mut max_candidates: Vec<f32> = Vec::new();
-    let mut overwrites: Vec<InfluenceWriteCommand> = Vec::new();
+    let mut max_val = f32::NEG_INFINITY;
+    let mut has_max = false;
+    let mut best_overwrite: Option<InfluenceWriteCommand> = None;
 
     for cmd in slice {
         match cmd.mode {
@@ -193,29 +231,29 @@ fn apply_voxel_batch(
                 additive_sum += cmd.value;
             }
             InfluenceWriteMode::Max => {
-                max_candidates.push(cmd.value);
+                has_max = true;
+                max_val = max_val.max(cmd.value);
             }
             InfluenceWriteMode::Overwrite => {
-                overwrites.push(*cmd);
+                let replace = match best_overwrite {
+                    None => true,
+                    Some(prev) => {
+                        (cmd.seq, cmd.sender_entity_index) < (prev.seq, prev.sender_entity_index)
+                    }
+                };
+                if replace {
+                    best_overwrite = Some(*cmd);
+                }
             }
         }
     }
 
     let mut value = base + additive_sum;
-    if !max_candidates.is_empty() {
-        let local_max = max_candidates
-            .iter()
-            .copied()
-            .fold(f32::NEG_INFINITY, f32::max);
-        value = value.max(local_max);
+    if has_max {
+        value = value.max(max_val);
     }
 
-    if !overwrites.is_empty() {
-        let chosen = overwrites
-            .iter()
-            .min_by_key(|cmd| (cmd.seq, cmd.sender_entity_index))
-            .copied()
-            .expect("non-empty overwrites");
+    if let Some(chosen) = best_overwrite {
         value = chosen.value;
     }
 

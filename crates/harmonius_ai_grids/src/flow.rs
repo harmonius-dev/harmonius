@@ -12,6 +12,14 @@ pub struct FlowFieldSample<V> {
     pub valid: bool,
 }
 
+impl<V> FlowFieldSample<V> {
+    /// When `true`, locomotion should run fallback seek (IR-2.3.2, TC-IR-2.3.E3).
+    #[must_use]
+    pub const fn needs_fallback_seek(&self) -> bool {
+        !self.valid
+    }
+}
+
 /// Samples a 2D flow field at the agent world position.
 #[must_use]
 pub fn sample_flow_field_2d(

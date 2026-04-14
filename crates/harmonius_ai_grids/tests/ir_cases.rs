@@ -5,14 +5,15 @@ use std::sync::Arc;
 use std::thread;
 
 use harmonius_ai_grids::{
-    apply_pending_writes, drain_influence_writes, enqueue_influence_write, fog_condition_at_world_2d,
-    fog_value_or_unexplored, max_writes_per_grid, open_influence_channel,
-    propagate_influence_2d_four_way, refresh_goap_safe_zone_2d, run_bt_influence_sample,
-    sample_flow_field_2d_cell, sample_flow_field_3d_voxel, score_grid_cell_2d, score_grid_cell_3d,
-    Blackboard, BlackboardKey, BlackboardValue, BtInfluenceSample, BtInfluenceWrite, CellCoord,
-    CellOrVoxel, EnqueueResult, Entity, FogState, GridCellConsideration, HierarchicalGrid,
-    InfluenceSource, InfluenceWriteCommand, InfluenceWriteMode, ResponseCurve, UniformGrid, Vec2,
-    Vec3, VoxelCoord, VoxelVolume,
+    apply_pending_writes, drain_influence_writes, enqueue_influence_write,
+    fog_condition_at_world_2d, fog_value_or_unexplored, max_writes_per_grid,
+    open_influence_channel, propagate_influence_2d_four_way, refresh_goap_safe_zone_2d,
+    run_bt_influence_sample, sample_flow_field_2d_cell, sample_flow_field_3d_voxel,
+    score_grid_cell_2d, score_grid_cell_3d, Blackboard, BlackboardKey, BlackboardValue,
+    BtInfluenceSample, BtInfluenceWrite, CellCoord, CellOrVoxel, EnqueueResult, Entity, FogState,
+    GridCellConsideration, HierarchicalGrid, InfluenceSource, InfluenceWriteCommand,
+    InfluenceWriteGrids, InfluenceWriteMode, ResponseCurve, UniformGrid, Vec2, Vec3, VoxelCoord,
+    VoxelVolume,
 };
 
 #[test]
@@ -122,7 +123,15 @@ fn tc_ir_2_3_1_3_bt_samples_hierarchical_lod() {
 
 #[test]
 fn tc_ir_2_3_2_1_flow_reads_direction_2d() {
-    let mut grid = UniformGrid::new(8, 8, 1.0, 0.0, 0.0, Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0));
+    let mut grid = UniformGrid::new(
+        8,
+        8,
+        1.0,
+        0.0,
+        0.0,
+        Vec2::new(0.0, 0.0),
+        Vec2::new(1.0, 0.0),
+    );
     let _ = grid.set_front(CellCoord { x: 3, y: 3 }, Vec2::new(4.0, 0.0));
     let sample = sample_flow_field_2d_cell(&grid, CellCoord { x: 3, y: 3 });
     assert!(sample.valid);
@@ -132,7 +141,17 @@ fn tc_ir_2_3_2_1_flow_reads_direction_2d() {
 
 #[test]
 fn tc_ir_2_3_2_2_flow_reads_direction_3d() {
-    let mut vol = VoxelVolume::new(8, 8, 8, 1.0, 0.0, 0.0, 0.0, Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0));
+    let mut vol = VoxelVolume::new(
+        8,
+        8,
+        8,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+    );
     let _ = vol.set_front(VoxelCoord { x: 1, y: 2, z: 3 }, Vec3::new(0.0, 3.0, 0.0));
     let sample = sample_flow_field_3d_voxel(&vol, VoxelCoord { x: 1, y: 2, z: 3 });
     assert!(sample.valid);
@@ -144,12 +163,25 @@ fn tc_ir_2_3_2_2_flow_reads_direction_3d() {
 fn tc_ir_2_3_3_1_bt_checks_visible_cell() {
     let mut grid = UniformGrid::new(8, 8, 1.0, 0.0, 0.0, FogState::Unexplored, FogState::Visible);
     let _ = grid.set_front(CellCoord { x: 2, y: 2 }, FogState::Visible);
-    assert!(fog_condition_at_world_2d(&grid, 2.5, 2.5, FogState::Visible));
+    assert!(fog_condition_at_world_2d(
+        &grid,
+        2.5,
+        2.5,
+        FogState::Visible
+    ));
 }
 
 #[test]
 fn tc_ir_2_3_3_2_bt_checks_unexplored() {
-    let grid = UniformGrid::new(8, 8, 1.0, 0.0, 0.0, FogState::Unexplored, FogState::Unexplored);
+    let grid = UniformGrid::new(
+        8,
+        8,
+        1.0,
+        0.0,
+        0.0,
+        FogState::Unexplored,
+        FogState::Unexplored,
+    );
     assert!(!fog_condition_at_world_2d(
         &grid,
         2.5,
@@ -225,7 +257,17 @@ fn tc_ir_2_3_6_1_ai_enqueues_additive_write() {
     };
     let grid = UniformGrid::new(16, 16, 1.0, 0.0, 0.0, 0.0, 0.0);
     assert_eq!(
-        enqueue_influence_write(&writer, write, &bb, 1, 1, Some(&grid), None),
+        enqueue_influence_write(
+            &writer,
+            write,
+            &bb,
+            1,
+            1,
+            InfluenceWriteGrids {
+                uniform: Some(&grid),
+                ..Default::default()
+            },
+        ),
         EnqueueResult::Accepted
     );
     let pending = drain_influence_writes(&rx);
@@ -458,14 +500,31 @@ fn tc_ir_2_3_e2_sample_outside_3d_volume() {
 
 #[test]
 fn tc_ir_2_3_e3_flow_field_unreachable() {
-    let grid = UniformGrid::new(4, 4, 1.0, 0.0, 0.0, Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.0));
+    let grid = UniformGrid::new(
+        4,
+        4,
+        1.0,
+        0.0,
+        0.0,
+        Vec2::new(0.0, 0.0),
+        Vec2::new(0.0, 0.0),
+    );
     let sample = sample_flow_field_2d_cell(&grid, CellCoord { x: 1, y: 1 });
     assert!(!sample.valid);
+    assert!(sample.needs_fallback_seek());
 }
 
 #[test]
 fn tc_ir_2_3_e4_fog_with_no_coverage() {
-    let grid = UniformGrid::new(4, 4, 1.0, 0.0, 0.0, FogState::Unexplored, FogState::Unexplored);
+    let grid = UniformGrid::new(
+        4,
+        4,
+        1.0,
+        0.0,
+        0.0,
+        FogState::Unexplored,
+        FogState::Unexplored,
+    );
     assert_eq!(
         fog_value_or_unexplored(&grid, CellCoord { x: 1, y: 1 }),
         FogState::Unexplored
@@ -492,8 +551,17 @@ fn tc_ir_2_3_e5_channel_full_drops() {
     let grid = UniformGrid::new(4, 4, 1.0, 0.0, 0.0, 0.0, 0.0);
     let mut dropped = 0_u32;
     for seq in 0..4097 {
-        if enqueue_influence_write(&writer, write, &bb, 1, seq, Some(&grid), None)
-            == EnqueueResult::DroppedChannelFull
+        if enqueue_influence_write(
+            &writer,
+            write,
+            &bb,
+            1,
+            seq,
+            InfluenceWriteGrids {
+                uniform: Some(&grid),
+                ..Default::default()
+            },
+        ) == EnqueueResult::DroppedChannelFull
         {
             dropped += 1;
         }
@@ -520,7 +588,17 @@ fn tc_ir_2_3_e6_stale_grid_entity() {
     };
     let grid = UniformGrid::new(4, 4, 1.0, 0.0, 0.0, 0.0, 0.0);
     assert_eq!(
-        enqueue_influence_write(&writer, write, &bb, 1, 1, Some(&grid), None),
+        enqueue_influence_write(
+            &writer,
+            write,
+            &bb,
+            1,
+            1,
+            InfluenceWriteGrids {
+                uniform: Some(&grid),
+                ..Default::default()
+            },
+        ),
         EnqueueResult::DroppedStaleEntity
     );
 }
@@ -541,7 +619,17 @@ fn tc_ir_2_3_e7_missing_position_key() {
     };
     let grid = UniformGrid::new(4, 4, 1.0, 0.0, 0.0, 0.0, 0.0);
     assert_eq!(
-        enqueue_influence_write(&writer, write, &bb, 1, 1, Some(&grid), None),
+        enqueue_influence_write(
+            &writer,
+            write,
+            &bb,
+            1,
+            1,
+            InfluenceWriteGrids {
+                uniform: Some(&grid),
+                ..Default::default()
+            },
+        ),
         EnqueueResult::DroppedMissingKey
     );
 }
@@ -571,6 +659,127 @@ fn tc_ir_2_3_e9_oob_write_dropped_in_drain() {
     }];
     let stats = apply_pending_writes(entity, entity, &mut grid, batch);
     assert_eq!(stats.dropped_oob, 1);
+}
+
+#[test]
+fn drain_counts_voxel_commands_on_2d_applier_as_oob() {
+    let entity = Entity::new(1, 1);
+    let mut grid = UniformGrid::new(4, 4, 1.0, 0.0, 0.0, 0.0, 0.0);
+    grid.sync_back_from_front();
+    let batch = vec![InfluenceWriteCommand {
+        cell: CellOrVoxel::Voxel(VoxelCoord { x: 0, y: 0, z: 0 }),
+        value: 1.0,
+        mode: InfluenceWriteMode::Additive,
+        sender_entity_index: 1,
+        seq: 1,
+    }];
+    let stats = apply_pending_writes(entity, entity, &mut grid, batch);
+    assert_eq!(stats.dropped_oob, 1);
+    assert_eq!(stats.drained, 0);
+}
+
+#[test]
+fn enqueue_dropped_when_receiver_disconnected() {
+    let entity = Entity::new(1, 1);
+    let (writer, rx) = open_influence_channel(entity);
+    drop(rx);
+    let mut bb = Blackboard::new();
+    bb.insert(BlackboardKey(10), BlackboardValue::F32(1.0));
+    bb.insert(BlackboardKey(1), BlackboardValue::F32(1.0));
+    bb.insert(BlackboardKey(2), BlackboardValue::F32(1.0));
+    let write = BtInfluenceWrite {
+        grid_entity: entity,
+        source: InfluenceSource::Uniform2D,
+        value_key: BlackboardKey(10),
+        position_x: BlackboardKey(1),
+        position_y: BlackboardKey(2),
+        position_z: None,
+        mode: InfluenceWriteMode::Additive,
+    };
+    let grid = UniformGrid::new(4, 4, 1.0, 0.0, 0.0, 0.0, 0.0);
+    assert_eq!(
+        enqueue_influence_write(
+            &writer,
+            write,
+            &bb,
+            1,
+            1,
+            InfluenceWriteGrids {
+                uniform: Some(&grid),
+                ..Default::default()
+            },
+        ),
+        EnqueueResult::DroppedChannelDisconnected
+    );
+}
+
+#[test]
+fn hierarchical_enqueue_requires_hierarchical_grid_ref() {
+    let entity = Entity::new(1, 1);
+    let (writer, _rx) = open_influence_channel(entity);
+    let mut bb = Blackboard::new();
+    bb.insert(BlackboardKey(10), BlackboardValue::F32(1.0));
+    bb.insert(BlackboardKey(1), BlackboardValue::F32(1.0));
+    bb.insert(BlackboardKey(2), BlackboardValue::F32(1.0));
+    let write = BtInfluenceWrite {
+        grid_entity: entity,
+        source: InfluenceSource::Hierarchical2D { lod: 0 },
+        value_key: BlackboardKey(10),
+        position_x: BlackboardKey(1),
+        position_y: BlackboardKey(2),
+        position_z: None,
+        mode: InfluenceWriteMode::Additive,
+    };
+    assert_eq!(
+        enqueue_influence_write(&writer, write, &bb, 1, 1, InfluenceWriteGrids::default(),),
+        EnqueueResult::DroppedMissingKey
+    );
+}
+
+#[test]
+fn hierarchical_enqueue_uses_finest_grid_world_to_cell() {
+    let fine = UniformGrid::new(16, 16, 1.0, 10.0, 10.0, 0.0, 0.0);
+    let mid = UniformGrid::new(8, 8, 2.0, 10.0, 10.0, 0.0, 0.0);
+    let coarse = UniformGrid::new(4, 4, 4.0, 10.0, 10.0, 0.0, 0.0);
+    let hier = HierarchicalGrid::new(vec![fine, mid, coarse]);
+    let entity = Entity::new(1, 1);
+    let (writer, rx) = open_influence_channel(entity);
+    let mut bb = Blackboard::new();
+    bb.insert(BlackboardKey(10), BlackboardValue::F32(1.0));
+    bb.insert(BlackboardKey(1), BlackboardValue::F32(11.2));
+    bb.insert(BlackboardKey(2), BlackboardValue::F32(11.2));
+    let write = BtInfluenceWrite {
+        grid_entity: entity,
+        source: InfluenceSource::Hierarchical2D { lod: 0 },
+        value_key: BlackboardKey(10),
+        position_x: BlackboardKey(1),
+        position_y: BlackboardKey(2),
+        position_z: None,
+        mode: InfluenceWriteMode::Additive,
+    };
+    assert_eq!(
+        enqueue_influence_write(
+            &writer,
+            write,
+            &bb,
+            1,
+            1,
+            InfluenceWriteGrids {
+                hierarchical: Some(&hier),
+                ..Default::default()
+            },
+        ),
+        EnqueueResult::Accepted
+    );
+    let pending = drain_influence_writes(&rx);
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0].cell, CellOrVoxel::Cell(CellCoord { x: 1, y: 1 }));
+}
+
+#[test]
+fn goap_safe_zone_2d_oob_uses_default_scalar() {
+    let grid = UniformGrid::new(8, 8, 1.0, 0.0, 0.0, 0.85, 0.0);
+    assert!(refresh_goap_safe_zone_2d(&grid, -100.0, -100.0, 0.7));
 }
 
 #[test]
@@ -661,7 +870,17 @@ fn tc_ir_2_3_d3_parallel_phase4_writes_commutative() {
                     mode: InfluenceWriteMode::Additive,
                 };
                 let s = seq.fetch_add(1, Ordering::Relaxed);
-                let _ = enqueue_influence_write(&w, write, &bb, thread_id, s, Some(grid.as_ref()), None);
+                let _ = enqueue_influence_write(
+                    &w,
+                    write,
+                    &bb,
+                    thread_id,
+                    s,
+                    InfluenceWriteGrids {
+                        uniform: Some(grid.as_ref()),
+                        ..Default::default()
+                    },
+                );
             }
         }));
     }
