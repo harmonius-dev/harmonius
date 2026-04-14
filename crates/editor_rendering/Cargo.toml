@@ -1,0 +1,8 @@
+[package]
+name = "editor_rendering"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rkyv = { version = "0.8", features = ["std", "bytecheck", "smallvec-1"] }
+smallvec = "1"
