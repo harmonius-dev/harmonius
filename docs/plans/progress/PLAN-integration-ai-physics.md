@@ -69,6 +69,6 @@ Plan file: [ai-physics.md](../integration/ai-physics.md)
 - 2026-04-14T05:26:00Z — plan-implementer — code complete; 27 tests mapping TC-IR-2.5.1–2.5.6 +
   negative cases; awaiting review.
 - 2026-04-14T12:30:00Z — plan-implementer — `rumdl check .` clean after README fixes; branch
-  `692b600` pushed.
+  `b4f486e` pushed.
 
 Entries use ISO-8601 UTC with actor, action, and outcome.
