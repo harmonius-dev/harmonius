@@ -9,7 +9,7 @@ pub struct EditorWorldId(pub u64);
 pub struct EntityRef(pub u32);
 
 /// Kind of editable sub-object element.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum SubObjectKind {
     /// Bone influence joint selection.
     BoneJoint,
@@ -22,7 +22,7 @@ pub enum SubObjectKind {
 }
 
 /// Reference to a concrete sub-object on an entity.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct SubObjectElement {
     /// Owning entity.
     pub entity: EntityRef,

@@ -25,7 +25,15 @@ pub struct SubObjectRayHit {
 }
 
 /// Moller–Trumbore ray/triangle intersection.
-pub fn ray_triangle_intersect(ray: &Ray3, v0: Vec3, v1: Vec3, v2: Vec3) -> Option<SubObjectRayHit> {
+///
+/// `triangle_index` identifies the hit within the owning mesh (caller-defined).
+pub fn ray_triangle_intersect(
+    ray: &Ray3,
+    triangle_index: u32,
+    v0: Vec3,
+    v1: Vec3,
+    v2: Vec3,
+) -> Option<SubObjectRayHit> {
     const EPSILON: f32 = 1.0e-6;
 
     let edge1 = v1 - v0;
@@ -60,7 +68,7 @@ pub fn ray_triangle_intersect(ray: &Ray3, v0: Vec3, v1: Vec3, v2: Vec3) -> Optio
     Some(SubObjectRayHit {
         barycentric,
         distance: t,
-        triangle_index: 0,
+        triangle_index,
     })
 }
 
@@ -70,8 +78,9 @@ pub fn nearest_subobject_along_ray(
     triangles: &[(SubObjectElement, [Vec3; 3])],
 ) -> Option<(SubObjectElement, SubObjectRayHit)> {
     let mut best: Option<(SubObjectElement, SubObjectRayHit)> = None;
-    for &(element, tri) in triangles {
-        if let Some(hit) = ray_triangle_intersect(ray, tri[0], tri[1], tri[2]) {
+    for (triangle_index, &(element, tri)) in triangles.iter().enumerate() {
+        let triangle_index = u32::try_from(triangle_index).unwrap_or(u32::MAX);
+        if let Some(hit) = ray_triangle_intersect(ray, triangle_index, tri[0], tri[1], tri[2]) {
             let replace = match best {
                 None => true,
                 Some((_, prev)) => hit.distance < prev.distance,
@@ -132,7 +141,7 @@ mod tests {
     }
 
     #[test]
-    fn test_subobject_vertex_picked() {
+    fn test_nearest_subobject_pre_tagged_vertex_candidate() {
         let ray = Ray3 {
             dir: Vec3::new(0.0, 0.0, -1.0),
             origin: Vec3::new(0.0, 0.0, 1.0),
@@ -147,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    fn test_subobject_edge_picked() {
+    fn test_nearest_subobject_pre_tagged_edge_candidate() {
         let ray = Ray3 {
             dir: Vec3::new(0.0, 0.0, -1.0),
             origin: Vec3::new(0.5, 0.0, 1.0),
@@ -162,7 +171,7 @@ mod tests {
     }
 
     #[test]
-    fn test_subobject_face_picked() {
+    fn test_nearest_subobject_pre_tagged_face_candidate() {
         let ray = Ray3 {
             dir: Vec3::new(0.0, 0.0, -1.0),
             origin: Vec3::new(0.2, 0.2, 1.0),
@@ -205,6 +214,18 @@ mod tests {
         let hit =
             nearest_subobject_along_ray(&ray, &[(far, far_tri), (near, near_tri)]).expect("hit");
         assert_eq!(hit.0.index, 1);
+        assert_eq!(hit.1.triangle_index, 1);
+    }
+
+    #[test]
+    fn test_ray_triangle_intersect_reports_triangle_index() {
+        let ray = Ray3 {
+            dir: Vec3::new(0.0, 0.0, -1.0),
+            origin: Vec3::new(0.25, 0.25, 1.0),
+        };
+        let tri = tri_on_xy_plane();
+        let hit = ray_triangle_intersect(&ray, 42, tri[0], tri[1], tri[2]).expect("hit");
+        assert_eq!(hit.triangle_index, 42);
     }
 
     #[test]

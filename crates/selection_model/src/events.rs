@@ -5,6 +5,9 @@ use smallvec::SmallVec;
 use crate::types::{EditorWorldId, EntityRef};
 
 /// Event emitted after a successful selection mutation.
+///
+/// When both [`SelectionChanged::added`] and [`SelectionChanged::removed`] are empty, the
+/// [`SelectionChanged::revision`] still advanced for a non-entity delta (for example sub-objects).
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SelectionChanged {
     /// Entities added to the selection in this step.
@@ -74,6 +77,16 @@ impl SelectionChanged {
         Self {
             added: SmallVec::new(),
             removed: SmallVec::from_slice(before),
+            revision,
+            world,
+        }
+    }
+
+    /// Sub-object (or other non-entity) selection changed; entity lists stay empty.
+    pub(crate) fn subobject_only(world: EditorWorldId, revision: u64) -> Self {
+        Self {
+            added: SmallVec::new(),
+            removed: SmallVec::new(),
             revision,
             world,
         }
