@@ -59,6 +59,10 @@ impl SelectionState {
     /// Removes `entity` when present.
     ///
     /// Returns `true` when the selection changed.
+    ///
+    /// When the primary entity is removed, the new primary becomes the smallest remaining
+    /// [`EntityRef`] in sorted selection order (deterministic). Prefer documenting alternate UX
+    /// rules in the editor design if needed.
     pub fn remove(&mut self, entity: EntityRef) -> bool {
         match self.entities.binary_search(&entity) {
             Ok(idx) => {
@@ -88,6 +92,8 @@ impl SelectionState {
     }
 
     /// Clears entities, sub-objects, and primary selection.
+    ///
+    /// Returns `true` when anything was cleared so callers can coalesce editor repaint work.
     pub fn clear(&mut self) -> bool {
         if self.entities.is_empty() && self.sub_objects.is_empty() && self.primary.is_none() {
             return false;
@@ -101,20 +107,96 @@ impl SelectionState {
 
     /// Clears the selection and emits [`SelectionChanged`] with every removed entity.
     pub fn clear_notify(&mut self, world: EditorWorldId) -> Option<SelectionChanged> {
-        if self.entities.is_empty() {
+        if self.entities.is_empty() && self.sub_objects.is_empty() && self.primary.is_none() {
             return None;
         }
         let before = self.entities.clone();
+        let had_entities = !self.entities.is_empty();
         self.entities.clear();
         self.sub_objects.clear();
         self.primary = None;
         self.revision += 1;
         let revision = self.revision;
-        Some(SelectionChanged::cleared(
-            world,
-            revision,
-            before.as_slice(),
-        ))
+        if had_entities {
+            return Some(SelectionChanged::cleared(
+                world,
+                revision,
+                before.as_slice(),
+            ));
+        }
+        Some(SelectionChanged::subobject_only(world, revision))
+    }
+
+    /// Inserts `element` in sorted order when absent.
+    ///
+    /// Returns `true` when sub-object selection changed.
+    pub fn add_sub_object(&mut self, element: SubObjectElement) -> bool {
+        match self.sub_objects.binary_search(&element) {
+            Ok(_) => false,
+            Err(idx) => {
+                self.sub_objects.insert(idx, element);
+                self.revision += 1;
+                true
+            }
+        }
+    }
+
+    /// Adds a sub-object and emits [`SelectionChanged`] when the revision advances.
+    pub fn add_sub_object_notify(
+        &mut self,
+        world: EditorWorldId,
+        element: SubObjectElement,
+    ) -> Option<SelectionChanged> {
+        if !self.add_sub_object(element) {
+            return None;
+        }
+        Some(SelectionChanged::subobject_only(world, self.revision))
+    }
+
+    /// Removes `element` when present.
+    ///
+    /// Returns `true` when sub-object selection changed.
+    pub fn remove_sub_object(&mut self, element: SubObjectElement) -> bool {
+        match self.sub_objects.binary_search(&element) {
+            Ok(idx) => {
+                self.sub_objects.remove(idx);
+                self.revision += 1;
+                true
+            }
+            Err(_) => false,
+        }
+    }
+
+    /// Removes a sub-object and emits [`SelectionChanged`] when successful.
+    pub fn remove_sub_object_notify(
+        &mut self,
+        world: EditorWorldId,
+        element: SubObjectElement,
+    ) -> Option<SelectionChanged> {
+        if !self.remove_sub_object(element) {
+            return None;
+        }
+        Some(SelectionChanged::subobject_only(world, self.revision))
+    }
+
+    /// Clears every selected sub-object without changing entity selection.
+    ///
+    /// Returns `true` when any sub-object was removed.
+    pub fn clear_sub_objects(&mut self) -> bool {
+        if self.sub_objects.is_empty() {
+            return false;
+        }
+        self.sub_objects.clear();
+        self.revision += 1;
+        true
+    }
+
+    /// Clears sub-objects and emits [`SelectionChanged`] when successful.
+    pub fn clear_sub_objects_notify(&mut self, world: EditorWorldId) -> Option<SelectionChanged> {
+        if !self.clear_sub_objects() {
+            return None;
+        }
+        Some(SelectionChanged::subobject_only(world, self.revision))
     }
 
     /// Adds `entity` when absent or removes it when present.
@@ -191,11 +273,18 @@ impl SelectionState {
     pub fn contains(&self, entity: EntityRef) -> bool {
         self.entities.binary_search(&entity).is_ok()
     }
+
+    /// Selected sub-objects in stable sorted order.
+    pub fn sub_objects(&self) -> &[SubObjectElement] {
+        self.sub_objects.as_slice()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::types::SubObjectKind;
 
     fn e(id: u32) -> EntityRef {
         EntityRef(id)
@@ -321,5 +410,52 @@ mod tests {
         let ev = s.replace_notify(world, [e(2), e(3)]);
         assert!(ev.added.contains(&e(3)));
         assert!(ev.removed.contains(&e(1)));
+    }
+
+    #[test]
+    fn test_sub_object_snapshot_roundtrip() {
+        let mut s = SelectionState::default();
+        let so = SubObjectElement {
+            entity: e(1),
+            kind: SubObjectKind::Vertex,
+            index: 3,
+        };
+        assert!(s.add(e(1)));
+        assert!(s.add_sub_object(so));
+        let snap = s.snapshot();
+        s.clear();
+        s.restore(snap);
+        assert_eq!(s.sub_objects(), &[so]);
+    }
+
+    #[test]
+    fn test_clear_notify_sub_objects_only() {
+        let mut s = SelectionState::default();
+        let world = EditorWorldId(3);
+        let so = SubObjectElement {
+            entity: e(9),
+            kind: SubObjectKind::Face,
+            index: 0,
+        };
+        assert!(s.add_sub_object(so));
+        let ev = s.clear_notify(world).expect("event");
+        assert!(ev.added.is_empty());
+        assert!(ev.removed.is_empty());
+        assert!(s.sub_objects().is_empty());
+    }
+
+    #[test]
+    fn test_add_sub_object_notify_emits_revision_event() {
+        let mut s = SelectionState::default();
+        let world = EditorWorldId(4);
+        let so = SubObjectElement {
+            entity: e(2),
+            kind: SubObjectKind::Edge,
+            index: 1,
+        };
+        let ev = s.add_sub_object_notify(world, so).expect("event");
+        assert!(ev.added.is_empty());
+        assert!(ev.removed.is_empty());
+        assert_eq!(ev.revision, s.revision());
     }
 }

@@ -1,12 +1,12 @@
 ---
 branch: plan/tools-selection-model
-last_updated: 2026-04-14T05:22:00Z
+last_updated: 2026-04-14T17:55:31Z
 plan_id: PLAN-tools-selection-model
 pr_number: 49
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/49
 started_at: 2026-04-14T05:21:11Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-selection-model
 ---
 
@@ -30,8 +30,8 @@ Plan file: [selection-model.md](../tools/selection-model.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs (progress only in this slice)
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 - [x] Code complete marker set
 
@@ -55,7 +55,9 @@ Plan file: [selection-model.md](../tools/selection-model.md)
 - Benchmarks: criterion targets from design doc deferred until editor host wiring.
 - Screenshots: deferred (no interactive viewport in this slice).
 - Videos: deferred.
-- Review notes: awaiting `pr-reviewer`.
+- Review notes: `pr-reviewer` addressed SEL-01..SEL-10 (sub-object API, `clear_notify`, pickable
+  filter, ray tests + `triangle_index`, viewport fan-out, crate docs for deferred host types;
+  Criterion benches still deferred per plan).
 
 ## Event log
 
@@ -67,3 +69,4 @@ Plan file: [selection-model.md](../tools/selection-model.md)
 - 2026-04-14T05:22:00Z — plan-implementer — `selection_model` crate landed with unit + integration
   tests; `status: code_complete`, `pr_review_status: not_started`; manual screenshot/video evidence
   and Criterion benches deferred until editor integration.
+- 2026-04-14T17:55:31Z — pr-reviewer — review pass (10 findings fixed); PR 49 undrafted for humans.

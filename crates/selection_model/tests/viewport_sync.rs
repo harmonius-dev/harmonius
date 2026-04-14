@@ -1,9 +1,24 @@
 use glam::{Affine3A, IVec2, Vec3};
 use selection_model::{
     aggregate_affine_for_selection, marquee_select, nearest_subobject_along_ray, raycast_spheres,
-    EditorWorldId, EntityRef, IntersectMode, Ray3, ScreenRect, SelectionState, SubObjectElement,
-    SubObjectKind,
+    EditorWorldId, EntityRef, IntersectMode, Ray3, ScreenRect, SelectionChanged, SelectionState,
+    SubObjectElement, SubObjectKind,
 };
+
+/// Minimal fan-out stand-in for multi-viewport hosts: one mutation, many identical events.
+struct SelectionFanout {
+    state: SelectionState,
+    subscribers: usize,
+}
+
+impl SelectionFanout {
+    fn dispatch_add(&mut self, world: EditorWorldId, entity: EntityRef) -> Vec<SelectionChanged> {
+        let Some(ev) = self.state.add_notify(world, entity) else {
+            return Vec::new();
+        };
+        vec![ev; self.subscribers]
+    }
+}
 
 #[test]
 fn test_two_viewport_sync_on_pick() {
@@ -14,6 +29,18 @@ fn test_two_viewport_sync_on_pick() {
     let viewport_a = shared.snapshot();
     let viewport_b = shared.snapshot();
     assert_eq!(viewport_a, viewport_b);
+}
+
+#[test]
+fn test_selection_fanout_matches_subscriber_count() {
+    let mut bus = SelectionFanout {
+        state: SelectionState::default(),
+        subscribers: 4,
+    };
+    let world = EditorWorldId(7);
+    let batch = bus.dispatch_add(world, EntityRef(3));
+    assert_eq!(batch.len(), 4);
+    assert!(batch.iter().all(|ev| *ev == batch[0]));
 }
 
 #[test]
