@@ -34,6 +34,8 @@ pub struct PlaybackState {
     pub direction: PlaybackDirection,
     /// Number of loop wraps observed for diagnostics.
     pub loop_count: u32,
+    /// `LoopMode::Once` reached the forward end (`TimelineComplete`); cleared by `seek` / `stop`.
+    pub once_completed: bool,
 }
 
 impl PlaybackState {
@@ -51,10 +53,12 @@ impl PlaybackState {
     pub fn stop(&mut self) {
         self.playing = false;
         self.current_time = 0.0;
+        self.once_completed = false;
     }
 
     /// Seeks to `time`, respecting `LoopMode` and duration.
     pub fn seek(&mut self, time: f64, timeline: &MultiTrackTimeline) {
+        self.once_completed = false;
         let duration = timeline.duration.max(0.0);
         self.current_time = match timeline.loop_mode {
             LoopMode::Loop if duration > f64::EPSILON => {
@@ -100,10 +104,6 @@ impl PlaybackState {
             let last_time = track.keyframes.last().map(|kf| kf.time).unwrap_or(0.0);
 
             for kf in &track.keyframes {
-                if !kf.trigger {
-                    continue;
-                }
-
                 if directional_cross(self.current_time, new_time, kf.time, forward_move) {
                     events.push(TimelineEvent {
                         kind: TimelineEventKind::KeyframeCrossed {
@@ -129,14 +129,26 @@ impl PlaybackState {
 
         match timeline.loop_mode {
             LoopMode::Once => {
-                if new_time > duration {
-                    new_time = duration;
-                    self.playing = false;
-                    events.push(TimelineEvent {
-                        kind: TimelineEventKind::TimelineComplete,
-                        time: duration,
-                        entity: self.entity,
-                    });
+                if forward_move {
+                    if duration > f64::EPSILON && new_time >= duration {
+                        new_time = duration;
+                        self.playing = false;
+                        self.once_completed = true;
+                        events.push(TimelineEvent {
+                            kind: TimelineEventKind::TimelineComplete,
+                            time: duration,
+                            entity: self.entity,
+                        });
+                    } else if duration <= f64::EPSILON && new_time > 0.0 {
+                        new_time = 0.0;
+                        self.playing = false;
+                        self.once_completed = true;
+                        events.push(TimelineEvent {
+                            kind: TimelineEventKind::TimelineComplete,
+                            time: 0.0,
+                            entity: self.entity,
+                        });
+                    }
                 } else if new_time < 0.0 {
                     new_time = 0.0;
                     self.playing = false;
@@ -175,6 +187,7 @@ impl PlaybackState {
                 if duration <= f64::EPSILON {
                     new_time = 0.0;
                 } else {
+                    // Cap bounce iterations for huge `dt`; rare; leaves time partially resolved.
                     let mut guard = 0;
                     while new_time > duration || new_time < 0.0 {
                         guard += 1;
@@ -221,13 +234,14 @@ impl PlaybackState {
             }
         }
 
+        sort_timeline_events(&mut events);
         self.current_time = new_time;
         events
     }
 
-    /// Returns true when `LoopMode::Once` playback has stopped at the end.
+    /// Returns true after `LoopMode::Once` emitted `TimelineComplete` at the forward end.
     pub fn is_complete(&self, timeline: &MultiTrackTimeline) -> bool {
-        matches!(timeline.loop_mode, LoopMode::Once) && !self.playing
+        matches!(timeline.loop_mode, LoopMode::Once) && self.once_completed
     }
 
     /// Normalized playback fraction in `[0, 1]` for UI scrubbers.
@@ -242,5 +256,22 @@ fn directional_cross(old: f64, new: f64, mark: f64, forward: bool) -> bool {
         old < mark && new >= mark
     } else {
         old > mark && new <= mark
+    }
+}
+
+/// Stable ordering: time, then keyframe crossings, track end, loop wraps, timeline end.
+fn sort_timeline_events(events: &mut SmallVec<[TimelineEvent; 4]>) {
+    events.sort_unstable_by_key(event_sort_tuple);
+}
+
+fn event_sort_tuple(ev: &TimelineEvent) -> (u64, u32, u32, u8) {
+    let t = ev.time.to_bits();
+    match &ev.kind {
+        TimelineEventKind::KeyframeCrossed { track, keyframe } => {
+            (t, u32::from(track.0), keyframe.0, 0)
+        }
+        TimelineEventKind::TrackComplete { track } => (t, u32::from(track.0), u32::MAX - 1, 1),
+        TimelineEventKind::LoopPoint { .. } => (t, u32::MAX - 2, 0, 2),
+        TimelineEventKind::TimelineComplete => (t, u32::MAX, 0, 3),
     }
 }

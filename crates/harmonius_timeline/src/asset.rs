@@ -46,7 +46,13 @@ impl Lerp for TrackValue {
             (Color(a), Color(b)) => Color(a.lerp(b, t)),
             (Bool(a), Bool(b)) => Bool(a.lerp(b, t)),
             (Entity(a), Entity(b)) => Entity(a.lerp(b, t)),
-            _ => panic!("TrackValue::lerp requires matching variants"),
+            _ => {
+                debug_assert!(
+                    false,
+                    "TrackValue::lerp requires matching variants (check authored track data)"
+                );
+                *self
+            }
         }
     }
 }
@@ -106,6 +112,6 @@ impl MultiTrackTimeline {
         self.track_by_id(track).map(|t| t.sample(time))
     }
 
-    /// Placeholder for ECS binding evaluation; wiring arrives with codegen integration.
+    /// ECS binding evaluation hook. Library milestone keeps a no-op until engine wiring lands.
     pub fn evaluate_all(&self, _time: f64, _entity: Entity, _world: &mut (), _bindings: &()) {}
 }
