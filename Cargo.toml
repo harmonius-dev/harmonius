@@ -65,6 +65,7 @@ members = [
   "crates/integration_ui_physics",
   "crates/net-physics",
   "crates/render-effects",
+  "crates/rendering_camera",
   "crates/rendering_ui",
   "crates/save_system_profiler",
   "crates/scene_versioning",
