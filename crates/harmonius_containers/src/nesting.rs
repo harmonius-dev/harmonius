@@ -1,4 +1,8 @@
 //! Container nesting depth and cycle detection.
+//!
+//! For container moves, call [`validate_circular`](crate::nesting::validate_circular) in addition
+//! to [`validate_nesting_insert`](crate::nesting::validate_nesting_insert) so cycles are ruled
+//! out before depth checks alone.
 
 use std::collections::HashMap;
 

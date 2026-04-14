@@ -1,4 +1,8 @@
-//! Bounded containers, grid occupancy, stacking, nesting, sorting, sockets, and transfer validation.
+//! Bounded containers, grid occupancy, stacking, nesting, sorting, sockets, and transfer
+//! validation.
+//!
+//! This crate is a deterministic numeric core; ECS components and codegen boundaries from the
+//! subsystem design are introduced in follow-on integration work.
 //!
 //! Test names map to `TC-*` identifiers in `docs/design/data-systems/containers-slots-test-cases.md`.
 

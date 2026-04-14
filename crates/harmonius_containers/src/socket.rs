@@ -1,4 +1,6 @@
 //! Typed sockets with tag compatibility and occupant tracking.
+//!
+//! Offsets use [`glam::Vec3`]; gameplay binding is 2D with `z = 0` per subsystem constraints.
 
 use glam::Vec3;
 
@@ -31,7 +33,7 @@ impl Socket {
     /// Attaches `item` when its tags satisfy `required_tags`.
     pub fn attach(&mut self, item: Entity, item_tags: &TagSet) -> Result<(), TransferError> {
         if self.occupant.is_some() {
-            return Err(TransferError::ContainerFull);
+            return Err(TransferError::SocketOccupied);
         }
         let required: Vec<String> = self.required_tags.to_vec();
         if !item_tags.contains_all(&required) {

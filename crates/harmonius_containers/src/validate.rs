@@ -1,4 +1,7 @@
 //! Pure transfer validation without mutating containers.
+//!
+//! `validate_transfer` covers linear capacity, aggregate weight, and tag gates for one inbound
+//! payload. Callers combine this with nesting, grid, and permission checks where those apply.
 
 use crate::container::Container;
 use crate::tags::TagSet;
