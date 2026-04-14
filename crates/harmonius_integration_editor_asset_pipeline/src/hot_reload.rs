@@ -1,4 +1,8 @@
 //! Hot reload barrier and request channel stubs for IR-9.2.3 and FM-4 / FM-5.
+//!
+//! `HotReloadBarrier` records a single park cycle per successful swap. A full dual-park protocol
+//! between editor and PIE threads is deferred until the editor viewport wires this crate into the
+//! runtime (see `editor-asset-pipeline.md`).
 
 use std::collections::VecDeque;
 
@@ -57,17 +61,51 @@ impl HotReloadReqChannel {
         }
     }
 
-    /// Enqueues `id`, simulating main-thread drain whenever the channel is already at capacity.
+    /// Enqueues `id` when below capacity; otherwise counts FM-5 and returns without enqueueing.
+    ///
+    /// Callers model the main thread draining via [`Self::drain_one`] before retrying bursts.
     pub fn enqueue_with_cooperative_drain(&mut self, id: u32) {
-        while self.queue.len() >= self.cap {
+        if self.queue.len() >= self.cap {
             self.fm5_backpressure_events += 1;
-            self.queue.pop_front();
+            return;
         }
         self.queue.push_back(id);
     }
 
     /// Drains one slot (main thread draining CH-20).
     pub fn drain_one(&mut self) -> Option<u32> {
+        self.queue.pop_front()
+    }
+
+    pub fn len(&self) -> usize {
+        self.queue.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.queue.is_empty()
+    }
+}
+
+/// Main → editor hot reload completion queue (`HotReloadResultCh`, CH-21).
+#[derive(Clone, Debug, Default)]
+pub struct HotReloadResultChannel {
+    queue: VecDeque<HotReloadSwapOk>,
+}
+
+/// Minimal completion token after a runtime swap attempt.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct HotReloadSwapOk {
+    pub asset_index: u32,
+}
+
+impl HotReloadResultChannel {
+    /// Pushes a completion record (bounded only by memory in this harness stub).
+    pub fn push_ok(&mut self, asset_index: u32) {
+        self.queue.push_back(HotReloadSwapOk { asset_index });
+    }
+
+    /// Pops the oldest completion, if any.
+    pub fn pop(&mut self) -> Option<HotReloadSwapOk> {
         self.queue.pop_front()
     }
 

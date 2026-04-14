@@ -2,6 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 use crate::contracts::{
     AssetId, AssetImportProgress, AssetImportRequest, AssetImportResult, AssetReloadEvent,
@@ -30,12 +31,14 @@ pub struct FallbackCounters {
 pub struct HeadlessEditorHarness {
     asset_sequence: u64,
     pub banners: Vec<String>,
+    cancelled: HashSet<u64>,
     pub counters: FallbackCounters,
     pub deps: DependencyGraph,
     pub fs: FakeFileSystem,
     pub hot_reload_barrier: HotReloadBarrier,
     pub importer: FakeImporter,
     last_hashes: HashMap<PathBuf, u64>,
+    last_watcher_mtime_on_import: HashMap<PathBuf, SystemTime>,
     /// Play-in-editor mode: reload swaps go through the barrier with runtime scope.
     pub pie_mode: bool,
     progress_cap: usize,
@@ -63,12 +66,14 @@ impl HeadlessEditorHarness {
         Self {
             asset_sequence: 1,
             banners: Vec::new(),
+            cancelled: HashSet::new(),
             counters: FallbackCounters::default(),
             deps: DependencyGraph::default(),
             fs: FakeFileSystem::default(),
             hot_reload_barrier: HotReloadBarrier::new(),
             importer: FakeImporter::new(),
             last_hashes: HashMap::new(),
+            last_watcher_mtime_on_import: HashMap::new(),
             pie_mode: false,
             progress_cap: Self::DEFAULT_PROGRESS_CAP,
             progress: Vec::new(),
@@ -84,6 +89,11 @@ impl HeadlessEditorHarness {
     /// Sets the bounded progress channel capacity (use a large value to disable drops in tests).
     pub fn set_progress_cap(&mut self, cap: usize) {
         self.progress_cap = cap;
+    }
+
+    /// Marks `request_id` as cancelled before the worker observes it (`ImportOutcome::Cancelled`).
+    pub fn cancel_request(&mut self, request_id: u64) {
+        self.cancelled.insert(request_id);
     }
 
     /// Simulates dropping a single file into the asset browser (IR-9.2.1).
@@ -103,6 +113,7 @@ impl HeadlessEditorHarness {
             options: ImportOptions::default(),
             request_id,
             source_path,
+            watcher_mtime: None,
         });
         request_id
     }
@@ -129,6 +140,7 @@ impl HeadlessEditorHarness {
             options: ImportOptions::default(),
             request_id,
             source_path: event.source_path,
+            watcher_mtime: Some(event.mtime),
         });
         request_id
     }
@@ -164,8 +176,22 @@ impl HeadlessEditorHarness {
     }
 
     fn run_one_recursive(&mut self, job: AssetImportRequest, stack: &mut Vec<PathBuf>) {
+        if self.cancelled.remove(&job.request_id) {
+            self.results.push(AssetImportResult {
+                asset_id: AssetId(0),
+                batch_id: job.batch_id,
+                duration_s: 0.0,
+                outcome: ImportOutcome::Cancelled,
+                request_id: job.request_id,
+            });
+            return;
+        }
         if stack.contains(&job.source_path) {
             self.counters.fm3_dependency_cycle_detected += 1;
+            self.banners.push(format!(
+                "import aborted: dependency cycle ({})",
+                job.source_path.display()
+            ));
             return;
         }
         stack.push(job.source_path.clone());
@@ -211,18 +237,32 @@ impl HeadlessEditorHarness {
         if job.only_if_stale {
             if let Some(prev) = self.last_hashes.get(&job.source_path) {
                 if *prev == content_hash {
-                    self.results.push(AssetImportResult {
-                        asset_id: self
-                            .registry
+                    let skip_by_mtime = match job.watcher_mtime {
+                        None => true,
+                        Some(w) => self
+                            .last_watcher_mtime_on_import
                             .get(&job.source_path)
-                            .copied()
-                            .unwrap_or(AssetId(0)),
-                        batch_id: job.batch_id,
-                        duration_s: start.elapsed().as_secs_f64(),
-                        outcome: ImportOutcome::AlreadyUpToDate,
-                        request_id: job.request_id,
-                    });
-                    return;
+                            .map(|prev_t| w <= *prev_t)
+                            .unwrap_or(true),
+                    };
+                    if skip_by_mtime {
+                        if let Some(w) = job.watcher_mtime {
+                            self.last_watcher_mtime_on_import
+                                .insert(job.source_path.clone(), w);
+                        }
+                        self.results.push(AssetImportResult {
+                            asset_id: self
+                                .registry
+                                .get(&job.source_path)
+                                .copied()
+                                .unwrap_or(AssetId(0)),
+                            batch_id: job.batch_id,
+                            duration_s: start.elapsed().as_secs_f64(),
+                            outcome: ImportOutcome::AlreadyUpToDate,
+                            request_id: job.request_id,
+                        });
+                        return;
+                    }
                 }
             }
         }
@@ -246,6 +286,10 @@ impl HeadlessEditorHarness {
                     outcome: ImportOutcome::Success,
                     request_id: job.request_id,
                 });
+                if let Some(w) = job.watcher_mtime {
+                    self.last_watcher_mtime_on_import
+                        .insert(job.source_path.clone(), w);
+                }
                 let scope = if self.pie_mode && job.kind == ImportKind::Texture {
                     ReloadScope::Both
                 } else {
@@ -317,6 +361,7 @@ impl HeadlessEditorHarness {
             options: ImportOptions::default(),
             request_id,
             source_path,
+            watcher_mtime: None,
         }
     }
 
@@ -329,20 +374,23 @@ impl HeadlessEditorHarness {
     }
 
     fn emit_progress_stages(&mut self, job: &AssetImportRequest) {
-        let stages = [
+        let linear = [
             ImportStage::Read,
             ImportStage::Parse,
             ImportStage::Process,
+            ImportStage::Compress,
             ImportStage::Bake,
             ImportStage::Link,
             ImportStage::Upload,
         ];
+        let total_steps: u8 = 9;
+        let mut step: u8 = 0;
         let mut eta = 1.0_f64;
-        for (idx, stage) in stages.iter().enumerate() {
-            let percent = (((idx + 1) * 100) / stages.len()) as u8;
-            eta = (eta - 0.1).max(0.0);
-            if *stage == ImportStage::Bake {
-                for (sub_i, sub_pct) in [(1_u8, 50_u8), (2, 66), (3, 83)] {
+        for stage in linear {
+            eta = (eta - 0.08).max(0.0);
+            if stage == ImportStage::Bake {
+                for (sub_i, sub_pct) in [(1_u8, 52_u8), (2, 68), (3, 84)] {
+                    step = step.saturating_add(1);
                     self.push_progress(AssetImportProgress {
                         batch_id: job.batch_id,
                         eta_s: (eta - f64::from(sub_i) * 0.01).max(0.0),
@@ -353,12 +401,14 @@ impl HeadlessEditorHarness {
                 }
                 continue;
             }
+            step = step.saturating_add(1);
+            let percent = ((u16::from(step) * 100) / u16::from(total_steps)) as u8;
             self.push_progress(AssetImportProgress {
                 batch_id: job.batch_id,
                 eta_s: eta,
                 percent,
                 request_id: job.request_id,
-                stage: *stage,
+                stage,
             });
         }
     }
@@ -437,7 +487,7 @@ fn hash_bytes(bytes: &[u8]) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hot_reload::HotReloadReqChannel;
+    use crate::hot_reload::{HotReloadReqChannel, HotReloadResultChannel};
     use std::time::{Duration, UNIX_EPOCH};
 
     #[test]
@@ -532,6 +582,7 @@ mod tests {
                 ImportStage::Read,
                 ImportStage::Parse,
                 ImportStage::Process,
+                ImportStage::Compress,
                 ImportStage::Bake,
                 ImportStage::Bake,
                 ImportStage::Bake,
@@ -570,7 +621,7 @@ mod tests {
             .filter(|p| p.request_id == 1 && p.stage == ImportStage::Bake)
             .map(|p| p.percent)
             .collect();
-        assert_eq!(bake, vec![50, 66, 83]);
+        assert_eq!(bake, vec![52, 68, 84]);
     }
 
     #[test]
@@ -640,6 +691,10 @@ mod tests {
         harness.drop_file("tex1.png");
         harness.drain_worker();
         assert!(!harness.registry.contains_key(&PathBuf::from("mat.mat")));
+        harness.fs.insert("tex2.png", vec![7, 8]);
+        harness.drop_file("tex2.png");
+        harness.drain_worker();
+        assert!(harness.registry.contains_key(&PathBuf::from("mat.mat")));
     }
 
     #[test]
@@ -656,6 +711,14 @@ mod tests {
         harness.drop_file("a.mat");
         harness.drain_worker();
         assert!(harness.counters.fm3_dependency_cycle_detected >= 1);
+        assert!(
+            harness
+                .banners
+                .iter()
+                .any(|b| b.contains("dependency cycle")),
+            "expected FM-3 banner, got {:?}",
+            harness.banners
+        );
     }
 
     #[test]
@@ -715,6 +778,52 @@ mod tests {
             ch.enqueue_with_cooperative_drain(i);
         }
         assert_eq!(ch.fm5_backpressure_events, 16);
+        assert_eq!(ch.len(), 16);
+    }
+
+    #[test]
+    fn hot_reload_result_ch_roundtrip() {
+        let mut ch = HotReloadResultChannel::default();
+        ch.push_ok(7);
+        assert_eq!(ch.pop().expect("pop").asset_index, 7);
+        assert!(ch.pop().is_none());
+    }
+
+    #[test]
+    fn cancel_request_emits_cancelled_outcome() {
+        let mut harness = HeadlessEditorHarness::new();
+        harness.fs.insert("z.png", vec![1]);
+        let rid = harness.drop_file("z.png");
+        harness.cancel_request(rid);
+        harness.drain_worker();
+        assert_eq!(
+            harness.results.last().expect("result").outcome,
+            ImportOutcome::Cancelled
+        );
+    }
+
+    #[test]
+    fn watcher_mtime_newer_forces_reimport_when_hash_matches() {
+        let mut harness = HeadlessEditorHarness::new();
+        harness.fs.insert("tex.png", vec![1, 2, 3]);
+        harness.drop_file("tex.png");
+        harness.drain_worker();
+        harness.on_source_changed(SourceChangedEvent {
+            mtime: UNIX_EPOCH + Duration::from_secs(3),
+            source_path: PathBuf::from("tex.png"),
+        });
+        harness.drain_worker();
+        harness.on_source_changed(SourceChangedEvent {
+            mtime: UNIX_EPOCH + Duration::from_secs(10),
+            source_path: PathBuf::from("tex.png"),
+        });
+        harness.drain_worker();
+        let outcomes: Vec<ImportOutcome> = harness.results.iter().map(|r| r.outcome).collect();
+        assert!(
+            outcomes.contains(&ImportOutcome::AlreadyUpToDate),
+            "{outcomes:?}"
+        );
+        assert!(outcomes.contains(&ImportOutcome::Success));
     }
 
     #[test]
@@ -728,6 +837,7 @@ mod tests {
             options: ImportOptions::default(),
             request_id: 1,
             source_path: PathBuf::from("x.png"),
+            watcher_mtime: None,
         };
         harness.emit_progress_flood(&job, 500);
         assert_eq!(harness.progress.len(), 256);

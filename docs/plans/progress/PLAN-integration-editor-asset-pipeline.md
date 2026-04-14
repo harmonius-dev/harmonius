@@ -1,12 +1,12 @@
 ---
 branch: plan/integration-editor-asset-pipeline
-last_updated: 2026-04-14T18:45:00Z
+last_updated: 2026-04-14T19:00:00Z
 plan_id: PLAN-integration-editor-asset-pipeline
 pr_number: 12
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/12
 started_at: 2026-04-14T05:12:00Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-editor-asset-pipeline
 ---
 
@@ -30,8 +30,8 @@ Plan file: [editor-asset-pipeline.md](../integration/editor-asset-pipeline.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -50,8 +50,10 @@ Plan file: [editor-asset-pipeline.md](../integration/editor-asset-pipeline.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius_integration_editor_asset_pipeline` (22 tests) in worktree.
-- Benchmarks: companion `TC-IR-9.2.*.B1` rows not implemented in this harness-only workspace slice.
+- Test reports: `cargo test -p harmonius_integration_editor_asset_pipeline` (25 tests) in worktree.
+- Benchmarks: `cargo bench -p harmonius_integration_editor_asset_pipeline --no-run` compiles
+  `benches/editor_asset_pipeline.rs` (Criterion) mapping `TC-IR-9.2.*.B1` rows; thresholds are not
+  enforced in CI for this slice.
 - Screenshots: not applicable; headless harness with no editor UI surface in this PR slice.
 - Videos: not applicable for the same reason.
 - Review notes: manual validation satisfied by deterministic TC coverage in
@@ -70,5 +72,10 @@ Plan file: [editor-asset-pipeline.md](../integration/editor-asset-pipeline.md)
   barrier and CH-20 stub (IR-9.2.3 / FM-4 / FM-5), bounded progress channel (FM-6), batch FM-7,
   folder drop batching (IR-9.2.6), and companion tests; `status: code_complete`, awaiting
   pr-reviewer.
+- 2026-04-14T19:00:00Z — pr-reviewer — review-supervisor: 14 findings (4 minor, 7 moderate, 3
+  substantive, 0 redesign); addressed in-tree via `SortedVecMap` dep graph,
+  `HotReloadResultChannel`, FM-3 banner, FM-5 stall semantics, `Compress` progress + `watcher_mtime`
+  stale gate, Criterion benches, docs sync, and extra tests; `cargo test`, `clippy -D warnings`,
+  `rumdl check` green; PR undrafted for human review.
 
 Append ISO-8601 UTC entries with actor, action, and outcome.

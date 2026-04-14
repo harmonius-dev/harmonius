@@ -1,18 +1,23 @@
 //! Deterministic dependency edges for IR-9.2.2 cascade and cycle detection.
+//!
+//! The product design keys dependency edges by `AssetId` with `SortedVecMap` (see
+//! `editor-asset-pipeline.md`). This harness keeps `PathBuf` keys so tests can register edges
+//! before assets exist, while still using `SortedVecMap` for deterministic ordering (SC-2).
 
-use std::collections::BTreeMap;
 use std::path::PathBuf;
+
+use crate::sorted_vec_map::SortedVecMap;
 
 /// Maps each upstream source path to sorted dependents that consume it.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct DependencyGraph {
-    downstream: BTreeMap<PathBuf, Vec<PathBuf>>,
+    downstream: SortedVecMap<PathBuf, Vec<PathBuf>>,
 }
 
 impl DependencyGraph {
     /// Registers `dependent` as consuming `upstream` (re-importing `upstream` may cascade here).
     pub fn add_edge(&mut self, dependent: PathBuf, upstream: PathBuf) {
-        let entry = self.downstream.entry(upstream).or_default();
+        let entry = self.downstream.entry_or_default(upstream);
         if !entry.contains(&dependent) {
             entry.push(dependent);
             entry.sort();

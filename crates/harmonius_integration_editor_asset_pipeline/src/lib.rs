@@ -11,6 +11,7 @@ mod fake_fs;
 mod fake_importer;
 mod harness;
 mod hot_reload;
+mod sorted_vec_map;
 
 pub use contracts::{
     AssetId, AssetImportProgress, AssetImportRequest, AssetImportResult, AssetReloadEvent,
@@ -20,4 +21,4 @@ pub use contracts::{
 pub use fake_fs::{FakeFileSystem, IoError};
 pub use fake_importer::{FakeImportError, FakeImporter};
 pub use harness::{FallbackCounters, HeadlessEditorHarness};
-pub use hot_reload::{HotReloadBarrier, HotReloadReqChannel};
+pub use hot_reload::{HotReloadBarrier, HotReloadReqChannel, HotReloadResultChannel};

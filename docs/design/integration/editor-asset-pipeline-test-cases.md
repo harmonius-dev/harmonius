@@ -48,15 +48,16 @@ uploader. Imports use a simple `FakeImporter` that produces deterministic rkyv b
 5. **TC-IR-9.2.2.2** -- Input: remove a dependency during re-import. Expected: old edge removed from
    `DependencyGraph`; old parent no longer reimports on the child change.
 6. **TC-IR-9.2.2.3** -- Input: A depends on B; B depends on A. Expected: cycle detected, both
-   imports aborted with diagnostic; `FM-3` counter increments.
+   imports aborted with a user-visible banner plus `FM-3` counter increment.
 7. **TC-IR-9.2.3.1** -- Input: PIE running; re-import texture. Expected: `HotReloadBarrier` parks
    game and editor; `Arc<Texture>` swapped; game resumes with new texture next frame.
 8. **TC-IR-9.2.3.2** -- Input: edit mode; re-import mesh. Expected: barrier, mesh `Arc` swap,
    resume.
 9. **TC-IR-9.2.3.3** -- Input: during swap, no frame observes a half-swapped asset. Expected:
    registry invariant holds (registry hash before != after; no intermediate state).
-10. **TC-IR-9.2.4.1** -- Input: import emits `Read`, `Parse`, `Process`, `Bake`, `Link`, `Upload`.
-    Expected: editor receives the six `AssetImportProgress` messages in order.
+10. **TC-IR-9.2.4.1** -- Input: import emits `Read`, `Parse`, `Process`, `Compress`, then multi-tick
+    `Bake`, then `Link`, `Upload`. Expected: editor receives ordered `AssetImportProgress` messages
+    matching that stage sequence (bake may emit multiple percent ticks).
 11. **TC-IR-9.2.4.2** -- Input: measure `eta_s` over progress stream. Expected: monotonically
     non-increasing.
 12. **TC-IR-9.2.4.3** -- Input: import with long bake stage. Expected: progress percent crosses each
@@ -76,8 +77,9 @@ uploader. Imports use a simple `FakeImporter` that produces deterministic rkyv b
 19. **TC-IR-9.2.2.N1** -- Covered by TC-IR-9.2.2.3.
 20. **TC-IR-9.2.3.N1** -- Input: hot reload barrier doesn't complete in 2s. Expected: barrier
     aborts; swap rolled back; asset registry unchanged; `FM-4` counter increments.
-21. **TC-IR-9.2.1.N3** -- Input: burst 32 hot reload reqs against `CH-20` cap=16. Expected: editor
-    worker parks; reqs eventually delivered; `FM-5` counter increments.
+21. **TC-IR-9.2.1.N3** -- Input: burst 32 hot reload reqs against `CH-20` cap=16 without draining.
+    Expected: first 16 enqueue; the next 16 each increment `FM-5` while the queue stays at capacity
+    until the main thread calls `drain_one`.
 22. **TC-IR-9.2.4.N1** -- Input: 500 progress events against `ImportProgressCh` cap=256. Expected:
     244 oldest dropped; `FM-6` counter increments by 244.
 23. **TC-IR-9.2.6.N1** -- Input: 100-file batch with one bad file. Expected: batch completes with 99
