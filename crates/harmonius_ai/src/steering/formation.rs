@@ -3,9 +3,9 @@
 use glam::Vec3;
 use smallvec::SmallVec;
 
-/// Lightweight entity handle for deterministic tests (not the ECS `Entity`).
+/// Lightweight agent id for steering math tests (not the ECS entity type).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct Entity(pub u32);
+pub struct SteeringAgentId(pub u32);
 
 /// One slot in a formation layout.
 #[derive(Clone, Debug, PartialEq)]
@@ -13,7 +13,7 @@ pub struct FormationSlot {
     /// Offset in leader-local space (x right, z back).
     pub local_offset: Vec3,
     /// Assigned agent, if any.
-    pub occupant: Option<Entity>,
+    pub occupant: Option<SteeringAgentId>,
 }
 
 /// Shape presets for slot generation.
@@ -40,7 +40,7 @@ pub struct FormationState {
     /// Current geometric template.
     pub shape: FormationShape,
     /// Leader entity id.
-    pub leader: Entity,
+    pub leader: SteeringAgentId,
     /// Distance between adjacent slots (meters).
     pub slot_spacing: f32,
     /// Slots including leader at index 0 for wedge/column presets.
@@ -90,8 +90,8 @@ pub fn compute_slot_offsets(
 /// Reassign `remaining` members to nearest free slots after removals.
 pub fn reassign_slots(
     state: &mut FormationState,
-    remaining: &[Entity],
-    positions: &[(Entity, Vec3)],
+    remaining: &[SteeringAgentId],
+    positions: &[(SteeringAgentId, Vec3)],
 ) {
     for slot in &mut state.slots {
         slot.occupant = None;
@@ -179,21 +179,22 @@ mod tests {
         }
         let mut state = FormationState {
             shape: FormationShape::Line,
-            leader: Entity(0),
+            leader: SteeringAgentId(0),
             slot_spacing: spacing,
             slots,
         };
-        let remaining: Vec<Entity> = [1_u32, 2, 4, 5].into_iter().map(Entity).collect();
+        let remaining: Vec<SteeringAgentId> =
+            [1_u32, 2, 4, 5].into_iter().map(SteeringAgentId).collect();
         let leader = Vec3::ZERO;
-        let positions: Vec<(Entity, Vec3)> = std::iter::once((Entity(0), leader))
+        let positions: Vec<(SteeringAgentId, Vec3)> = std::iter::once((SteeringAgentId(0), leader))
             .chain(offsets.iter().enumerate().map(|(i, o)| {
                 let id = (i as u32) + 1;
-                (Entity(id), leader + *o + Vec3::new(0.02, 0.0, 0.0))
+                (SteeringAgentId(id), leader + *o + Vec3::new(0.02, 0.0, 0.0))
             }))
             .collect();
         reassign_slots(&mut state, &remaining, &positions);
         let occupied: Vec<_> = state.slots.iter().filter_map(|s| s.occupant).collect();
         assert_eq!(occupied.len(), 4);
-        assert!(!occupied.contains(&Entity(3)));
+        assert!(!occupied.contains(&SteeringAgentId(3)));
     }
 }

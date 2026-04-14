@@ -22,8 +22,25 @@ pub struct AiLodConfig {
     pub mid_radius: f32,
     /// Max agents allowed at high LOD for this archetype.
     pub high_max_agents: u32,
+    /// Mid-LOD agents run every N simulation ticks (`2` = every other tick).
+    pub mid_tick_divisor: u8,
     /// When true, always assign high LOD.
     pub force_high_lod: bool,
+}
+
+/// Global AI microseconds budget (design `AiBudget`); tier fields reserved for future schedulers.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AiBudget {
+    /// Total AI microseconds per frame.
+    pub total_us: u32,
+    /// Budget allocated to high-LOD agents.
+    pub high_lod_us: u32,
+    /// Budget allocated to mid-LOD agents.
+    pub mid_lod_us: u32,
+    /// Budget allocated to low-LOD agents.
+    pub low_lod_us: u32,
+    /// Budget consumed this frame (reset by `assign_lod_tiers`).
+    pub used_us: u32,
 }
 
 /// Agent inputs for `assign_lod_tiers`.
@@ -41,10 +58,11 @@ pub struct LodAgent {
 pub fn assign_lod_tiers(
     agents: &mut [LodAgent],
     player_positions: &[Vec3],
-    global_high_cap: Option<u32>,
+    budget: &mut AiBudget,
+    global_high_lod_cap: Option<u32>,
 ) {
     let mut high_count: u32 = 0;
-    let global_cap = global_high_cap.unwrap_or(u32::MAX);
+    let global_cap = global_high_lod_cap.unwrap_or(u32::MAX);
 
     for agent in agents.iter_mut() {
         if agent.config.force_high_lod {
@@ -69,6 +87,8 @@ pub fn assign_lod_tiers(
             AiLodTier::Low
         };
     }
+
+    budget.used_us = 0;
 }
 
 #[cfg(test)]
@@ -84,11 +104,17 @@ mod tests {
                 high_radius: 20.0,
                 mid_radius: 40.0,
                 high_max_agents: 100,
+                mid_tick_divisor: 2,
                 force_high_lod: false,
             },
             tier: AiLodTier::Low,
         };
-        assign_lod_tiers(std::slice::from_mut(&mut a), &[cam], None);
+        assign_lod_tiers(
+            std::slice::from_mut(&mut a),
+            &[cam],
+            &mut AiBudget::default(),
+            None,
+        );
         assert_eq!(a.tier, AiLodTier::High);
 
         let mut b = LodAgent {
@@ -97,11 +123,17 @@ mod tests {
                 high_radius: 20.0,
                 mid_radius: 40.0,
                 high_max_agents: 100,
+                mid_tick_divisor: 2,
                 force_high_lod: false,
             },
             tier: AiLodTier::High,
         };
-        assign_lod_tiers(std::slice::from_mut(&mut b), &[cam], None);
+        assign_lod_tiers(
+            std::slice::from_mut(&mut b),
+            &[cam],
+            &mut AiBudget::default(),
+            None,
+        );
         assert_eq!(b.tier, AiLodTier::Low);
 
         let mut c = LodAgent {
@@ -110,11 +142,17 @@ mod tests {
                 high_radius: 20.0,
                 mid_radius: 40.0,
                 high_max_agents: 100,
+                mid_tick_divisor: 2,
                 force_high_lod: false,
             },
             tier: AiLodTier::Low,
         };
-        assign_lod_tiers(std::slice::from_mut(&mut c), &[cam], None);
+        assign_lod_tiers(
+            std::slice::from_mut(&mut c),
+            &[cam],
+            &mut AiBudget::default(),
+            None,
+        );
         assert_eq!(c.tier, AiLodTier::Mid);
     }
 
@@ -126,11 +164,17 @@ mod tests {
                 high_radius: 20.0,
                 mid_radius: 40.0,
                 high_max_agents: 10,
+                mid_tick_divisor: 2,
                 force_high_lod: true,
             },
             tier: AiLodTier::Low,
         };
-        assign_lod_tiers(std::slice::from_mut(&mut a), &[Vec3::ZERO], None);
+        assign_lod_tiers(
+            std::slice::from_mut(&mut a),
+            &[Vec3::ZERO],
+            &mut AiBudget::default(),
+            None,
+        );
         assert_eq!(a.tier, AiLodTier::High);
     }
 
@@ -144,12 +188,13 @@ mod tests {
                     high_radius: 100.0,
                     mid_radius: 200.0,
                     high_max_agents: 1000,
+                    mid_tick_divisor: 2,
                     force_high_lod: false,
                 },
                 tier: AiLodTier::Low,
             })
             .collect();
-        assign_lod_tiers(&mut agents, &[cam], Some(50));
+        assign_lod_tiers(&mut agents, &[cam], &mut AiBudget::default(), Some(50));
         let highs = agents.iter().filter(|a| a.tier == AiLodTier::High).count();
         assert_eq!(highs, 50);
     }
