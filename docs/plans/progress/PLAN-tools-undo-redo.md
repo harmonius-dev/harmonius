@@ -1,11 +1,11 @@
 ---
 branch: plan/tools-undo-redo
-last_updated: 2026-04-14T17:58:38Z
+last_updated: 2026-04-14T05:40:00Z
 plan_id: PLAN-tools-undo-redo
 pr_number: 88
 pr_review_status: not_started
 pr_url: https://github.com/cjhowe-us/harmonius/pull/88
-started_at: 2026-04-14T17:58:38Z
+started_at: 2026-04-14T05:32:18Z
 status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-undo-redo
 ---
@@ -29,7 +29,7 @@ Plan file: [undo-redo.md](../tools/undo-redo.md)
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
-- [ ] Evidence links logged in this file
+- [x] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
@@ -50,21 +50,18 @@ Plan file: [undo-redo.md](../tools/undo-redo.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test --workspace` in worktree
-  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-undo-redo` (28 integration tests).
-- Benchmarks: design `TC-15.1.3.6.B*` / `TC-15.1.3.4.B1` / `TC-15.1.3.5.B1` not added as Criterion
-  benches in this PR; follow-up optional.
-- Screenshots: N/A (library crate, no editor UI in this slice).
-- Videos: N/A.
-- Review notes: awaiting `pr-reviewer`.
+- Test reports: `cargo test --workspace` in worktree `PLAN-tools-undo-redo` (2026-04-14).
+- Benchmarks: not exercised in this slice (latency benches deferred).
+- Screenshots: pending manual editor validation.
+- Videos: pending manual editor validation.
+- Review notes: awaiting `pr-reviewer` pass.
 
 ## Event log
 
-- 2026-04-14T17:58:38Z — plan-implementer — adopted existing worktree and PR 88; added `persist`
-  module, spill-to-stub with undo materialization, session save/load; pushed `533bcac`; marked
-  `code_complete`.
-
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
   (orchestrator pass; no PR merge).
-
-Append ISO-8601 UTC entries with actor, action, and outcome.
+- 2026-04-14T05:32:18Z — plan-implementer — started; worktree
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-undo-redo`; draft PR
+  <https://github.com/cjhowe-us/harmonius/pull/88>.
+- 2026-04-14T05:40:00Z — plan-implementer — `harmonius_undo` crate landed with TC-keyed tests;
+  `cargo test` / `cargo clippy -D warnings` green; `status: code_complete`, awaiting review.
