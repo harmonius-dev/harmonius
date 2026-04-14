@@ -1,5 +1,7 @@
 //! Deterministic propagation tracing through [`crate::SharedSpatialIndex`].
 
+use std::cell::RefCell;
+
 use glam::Vec3;
 
 use crate::material::AcousticMaterialTable;
@@ -22,6 +24,10 @@ pub struct PropagationTraceInput {
 
 const SPEED_OF_SOUND: f32 = 343.0;
 
+thread_local! {
+    static OCCLUSION_RAY_SCRATCH: RefCell<Vec<Vec3>> = const { RefCell::new(Vec::new()) };
+}
+
 /// Converts decibel transmission loss to a linear loss term in \[0, 1\].
 #[must_use]
 pub fn db_to_linear_loss(db: f32) -> f32 {
@@ -29,12 +35,12 @@ pub fn db_to_linear_loss(db: f32) -> f32 {
     linear.clamp(0.0, 1.0)
 }
 
-/// Builds a narrow cone of occlusion ray directions around `base_dir`.
-#[must_use]
-pub fn occlusion_ray_directions(count: u32, base_dir: Vec3) -> Vec<Vec3> {
+fn fill_occlusion_ray_directions(count: u32, base_dir: Vec3, out: &mut Vec<Vec3>) {
+    out.clear();
     let forward = base_dir.normalize_or_zero();
     if forward.length_squared() < 1e-8 {
-        return vec![Vec3::X; count.max(1) as usize];
+        out.resize(count.max(1) as usize, Vec3::X);
+        return;
     }
     let mut up = Vec3::Y;
     if forward.cross(up).length_squared() < 1e-6 {
@@ -44,13 +50,19 @@ pub fn occlusion_ray_directions(count: u32, base_dir: Vec3) -> Vec<Vec3> {
     let true_up = right.cross(forward).normalize();
     let n = count.max(1);
     let cone_radius = 0.04_f32;
-    (0..n)
-        .map(|i| {
-            let a = std::f32::consts::TAU * (i as f32) / (n as f32);
-            let offset = (right * a.cos() + true_up * a.sin()) * cone_radius;
-            (forward + offset).normalize()
-        })
-        .collect()
+    for i in 0..n {
+        let a = std::f32::consts::TAU * (i as f32) / (n as f32);
+        let offset = (right * a.cos() + true_up * a.sin()) * cone_radius;
+        out.push((forward + offset).normalize());
+    }
+}
+
+/// Builds a narrow cone of occlusion ray directions around `base_dir`.
+#[must_use]
+pub fn occlusion_ray_directions(count: u32, base_dir: Vec3) -> Vec<Vec3> {
+    let mut v = Vec::new();
+    fill_occlusion_ray_directions(count, base_dir, &mut v);
+    v
 }
 
 /// Selects up to eight reflection taps by descending gain (design overflow rule).
@@ -209,6 +221,9 @@ pub fn compute_propagation(
         return r;
     }
     let base_dir = to_listener / dist;
-    let dirs = occlusion_ray_directions(input.spatial.occlusion_rays, base_dir);
-    compute_propagation_with_dirs(input, index, materials, frame, &dirs)
+    OCCLUSION_RAY_SCRATCH.with(|cell| {
+        let mut dirs = cell.borrow_mut();
+        fill_occlusion_ray_directions(input.spatial.occlusion_rays, base_dir, &mut dirs);
+        compute_propagation_with_dirs(input, index, materials, frame, &dirs)
+    })
 }

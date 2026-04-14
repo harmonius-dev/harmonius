@@ -26,7 +26,9 @@ pub struct SurfaceHit {
     pub normal: Vec3,
 }
 
-/// Minimal shared spatial index: linear sweep over axis-aligned surfaces.
+/// Shared spatial index for occlusion rays: linear sweep over axis-aligned surfaces.
+///
+/// This is a deterministic placeholder until a BVH-backed shared index is wired from the runtime.
 #[derive(Debug, Clone)]
 pub struct SharedSpatialIndex {
     surfaces: Vec<AxisAlignedSurface>,

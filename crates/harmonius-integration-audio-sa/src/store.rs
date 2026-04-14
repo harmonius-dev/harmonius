@@ -44,6 +44,25 @@ impl PropagationResultStore {
         self.slots.is_empty()
     }
 
+    /// Dense table index for `entity` (`Entity::0`); must be `< self.len()`.
+    #[must_use]
+    pub fn slot_index(entity: Entity) -> usize {
+        entity.0 as usize
+    }
+
+    /// Writes `result` into the slot keyed by `entity`.
+    ///
+    /// Uses the same index contract as [`Self::slot_index`].
+    pub fn write_entity(&self, entity: Entity, result: PropagationResult) {
+        self.write_slot(Self::slot_index(entity), result);
+    }
+
+    /// Reads the slot keyed by `entity`.
+    #[must_use]
+    pub fn read_entity(&self, entity: Entity) -> PropagationResult {
+        self.read_slot(Self::slot_index(entity))
+    }
+
     /// Writes `result` into `index` without synchronization.
     ///
     /// # Panics

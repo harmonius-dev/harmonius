@@ -7,13 +7,13 @@ use crossbeam_channel::TrySendError;
 use glam::Vec3;
 use harmonius_integration_audio_sa::{
     amortized_trace_count, apply_propagation_to_voice, compute_propagation,
-    compute_propagation_with_dirs, propagation_channel_pair, select_top_reflections,
-    should_retrace_source, AcousticMaterial, AcousticMaterialTable, AxisAlignedSurface, Entity,
-    PropagationResult, PropagationResultStore, PropagationSnapshot, PropagationTraceInput,
-    ReflectionTap, SharedSpatialIndex, SourceTraceState, SpatialAudio, VoiceFilterState,
-    MAX_VOICE_LPF_HZ, MIN_VOICE_LPF_HZ, MPSC_CAPACITY,
+    compute_propagation_with_dirs, propagation_channel_pair, run_audio_propagation_tick,
+    select_top_reflections, should_retrace_audio_propagation, should_retrace_source,
+    AcousticMaterial, AcousticMaterialTable, AudioPropagationEnvironment, AxisAlignedSurface,
+    Entity, PropagationResult, PropagationResultStore, PropagationSnapshot, PropagationSourceView,
+    PropagationTraceInput, ReflectionTap, SharedSpatialIndex, SourceTraceState, SpatialAudio,
+    VoiceFilterState, MAX_VOICE_LPF_HZ, MIN_VOICE_LPF_HZ, MPSC_CAPACITY,
 };
-use rayon::prelude::*;
 
 fn wall_entity() -> Entity {
     Entity(1)
@@ -83,7 +83,7 @@ fn tc_ir_1_9_1_3_partial_occlusion() {
 }
 
 #[test]
-fn tc_ir_1_9_1_n1_bvh_not_ready() {
+fn tc_ir_1_9_1_n1_spatial_index_not_ready() {
     let index = thick_wall_full_occlusion();
     let mut index = index;
     index.set_ready(false);
@@ -288,6 +288,71 @@ fn tc_ir_1_9_5_4_new_source_pre_trace() {
 }
 
 #[test]
+fn tc_ir_1_9_5_n1_despawn_skips_try_send() {
+    let store = PropagationResultStore::new(16);
+    let (tx, rx) = propagation_channel_pair();
+    let index = thick_wall_full_occlusion();
+    let materials = stone_table();
+    let listener = Vec3::new(10.0, 0.0, 0.0);
+    let sources = vec![
+        PropagationSourceView {
+            entity: Entity(1),
+            position: Vec3::ZERO,
+            spatial: SpatialAudio::new(8, 50.0),
+        },
+        PropagationSourceView {
+            entity: Entity(2),
+            position: Vec3::new(0.0, 2.0, 0.0),
+            spatial: SpatialAudio::new(8, 50.0),
+        },
+    ];
+    let alive = |e: Entity| e.0 != 2;
+    let env = AudioPropagationEnvironment {
+        listener_position: listener,
+        index: &index,
+        materials: &materials,
+        store: &store,
+        sender: &tx,
+        frame: 1,
+    };
+    run_audio_propagation_tick(&env, &sources, |e| e.0 as usize, alive);
+    let mut received = 0;
+    while rx.try_recv().is_ok() {
+        received += 1;
+    }
+    assert_eq!(received, 1);
+    assert_eq!(store.read_entity(Entity(1)).source, Entity(1));
+    assert_eq!(store.read_entity(Entity(2)).source, Entity(2));
+}
+
+#[test]
+fn tc_ir_1_9_5_listener_move_retraces() {
+    let mut source_state = SourceTraceState::new(Vec3::ZERO);
+    let mut listener_state = SourceTraceState::new(Vec3::ZERO);
+    assert!(should_retrace_audio_propagation(
+        None,
+        &mut source_state,
+        Vec3::ZERO,
+        &mut listener_state,
+        Vec3::ZERO,
+    ));
+    assert!(!should_retrace_audio_propagation(
+        Some(1),
+        &mut source_state,
+        Vec3::ZERO,
+        &mut listener_state,
+        Vec3::ZERO,
+    ));
+    assert!(should_retrace_audio_propagation(
+        Some(1),
+        &mut source_state,
+        Vec3::ZERO,
+        &mut listener_state,
+        Vec3::new(10.2, 0.0, 0.0),
+    ));
+}
+
+#[test]
 fn tc_ir_1_9_3_4_mpsc_drain_updates_snap() {
     let (tx, rx) = propagation_channel_pair();
     let e = Entity(7);
@@ -304,12 +369,20 @@ fn tc_ir_1_9_3_4_mpsc_drain_updates_snap() {
 #[test]
 fn tc_ir_1_9_3_5_worker_write_disjoint() {
     let store = Arc::new(PropagationResultStore::new(100));
-    let counter = AtomicUsize::new(0);
-    (0..100).into_par_iter().for_each(|i| {
-        let mut r = PropagationResult::line_of_sight_default(Entity(i as u32));
-        r.last_updated_frame = i as u64;
-        store.write_slot(i, r);
-        counter.fetch_add(1, Ordering::Relaxed);
+    let counter = Arc::new(AtomicUsize::new(0));
+    std::thread::scope(|s| {
+        for t in 0..8 {
+            let store = Arc::clone(&store);
+            let counter = Arc::clone(&counter);
+            s.spawn(move || {
+                for i in (t..100).step_by(8) {
+                    let mut r = PropagationResult::line_of_sight_default(Entity(i as u32));
+                    r.last_updated_frame = i as u64;
+                    store.write_slot(i, r);
+                    counter.fetch_add(1, Ordering::Relaxed);
+                }
+            });
+        }
     });
     assert_eq!(counter.load(Ordering::Relaxed), 100);
     for i in 0..100 {
