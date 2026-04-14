@@ -6,6 +6,7 @@ members = [
   "crates/console_stub",
   "crates/console_target",
   "crates/content_services",
+  "crates/core-runtime",
   "crates/core_runtime",
   "crates/editor_rendering",
   "crates/grids_volumes_physics",
