@@ -1,13 +1,10 @@
-//! Visual effects runtime: decals, screen effects, weather, destruction, and effect graphs.
+//! Visual effects systems for Harmonius.
 //!
-//! Behavior is traced to `docs/design/vfx/effects.md` and the `PLAN-vfx-effects` implementation
-//! plan.
+//! This crate hosts GPU particle simulation and rendering building blocks described in
+//! `docs/design/vfx/particles.md`.
 
 #![deny(clippy::all)]
 #![deny(missing_docs)]
 #![deny(unsafe_code)]
 
-pub mod effect_graph;
-pub mod effects;
-pub mod logic_eval;
 pub mod particles;

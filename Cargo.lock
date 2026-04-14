@@ -930,6 +930,9 @@ dependencies = [
 [[package]]
 name = "harmonius_vfx"
 version = "0.1.0"
+dependencies = [
+ "glam",
+]
 
 [[package]]
 name = "hashbrown"
