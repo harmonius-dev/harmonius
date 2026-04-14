@@ -19,16 +19,16 @@ impl Uploader for NoopUploader {
     }
 }
 
-/// Deterministic uploader that fails the first N attempts to exercise retry paths.
+/// Deterministic fake uploader that fails the first N attempts to exercise retry paths.
 #[derive(Debug, Default)]
-pub struct MockUploader {
+pub struct FaultInjectingUploader {
     /// Remaining simulated transport failures.
     pub fails_remaining: usize,
     /// Observed batches for assertions.
     pub batches: Vec<Vec<EventRecord>>,
 }
 
-impl Uploader for MockUploader {
+impl Uploader for FaultInjectingUploader {
     fn send_batch(&mut self, batch: &[EventRecord]) -> Result<(), UploadError> {
         if self.fails_remaining > 0 {
             self.fails_remaining -= 1;

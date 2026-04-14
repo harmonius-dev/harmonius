@@ -88,10 +88,10 @@ mod tests {
         s.first_run_ack = true;
         save_consent(&path, &s).unwrap();
         let loaded = load_consent(&path).unwrap();
-        assert_eq!(loaded.engine_scope, true);
-        assert_eq!(loaded.game_scope, false);
+        assert!(loaded.engine_scope);
+        assert!(!loaded.game_scope);
         assert_eq!(loaded.anonymous_id, s.anonymous_id);
-        assert_eq!(loaded.first_run_ack, true);
+        assert!(loaded.first_run_ack);
         assert!(loaded.consent_for(Scope::Engine));
         assert!(!loaded.consent_for(Scope::GameLogic));
     }

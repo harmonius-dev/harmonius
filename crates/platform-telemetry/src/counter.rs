@@ -7,6 +7,7 @@ use crate::error::CounterError;
 /// Registry of uniquely named integer counters.
 #[derive(Debug, Default, Clone)]
 pub struct CounterRegistry {
+    // Cold-path editor and diagnostics map; not used on deterministic simulation hot paths.
     counters: HashMap<String, u64>,
 }
 

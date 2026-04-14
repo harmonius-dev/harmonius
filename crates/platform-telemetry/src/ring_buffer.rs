@@ -1,5 +1,6 @@
 //! Bounded in-memory ring with disk spill hooks (R-14.5.3).
 
+use std::cmp::Ordering;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 
@@ -116,6 +117,17 @@ impl RingBuffer {
         self.queue.clear();
     }
 
+    /// Keep only rows matching `keep`, preserving FIFO order among kept rows.
+    pub fn retain(&mut self, mut keep: impl FnMut(&EventRecord) -> bool) {
+        let mut kept = VecDeque::new();
+        while let Some(row) = self.queue.pop_front() {
+            if keep(&row) {
+                kept.push_back(row);
+            }
+        }
+        self.queue = kept;
+    }
+
     /// Snapshot for equality checks in tests.
     pub fn snapshot(&self) -> Vec<EventRecord> {
         self.queue.iter().cloned().collect()
@@ -153,7 +165,19 @@ pub fn read_disk_spill(path: &Path) -> Result<Vec<EventRecord>, TelemetryError> 
     Ok(rows)
 }
 
-/// List spill files in lexical order for deterministic replay.
+fn spill_path_order(a: &Path, b: &Path) -> Ordering {
+    fn numeric_stem(path: &Path) -> Option<u64> {
+        path.file_stem()?.to_str()?.parse().ok()
+    }
+    match (numeric_stem(a), numeric_stem(b)) {
+        (Some(na), Some(nb)) => na.cmp(&nb).then_with(|| a.as_os_str().cmp(b.as_os_str())),
+        (Some(_), None) => Ordering::Less,
+        (None, Some(_)) => Ordering::Greater,
+        (None, None) => a.as_os_str().cmp(b.as_os_str()),
+    }
+}
+
+/// List spill files in stable order for deterministic replay (numeric stems first).
 pub fn list_spill_files(dir: &Path) -> Result<Vec<PathBuf>, TelemetryError> {
     let mut files = Vec::new();
     for entry in std::fs::read_dir(dir).map_err(|e| TelemetryError::Io(e.to_string()))? {
@@ -163,7 +187,7 @@ pub fn list_spill_files(dir: &Path) -> Result<Vec<PathBuf>, TelemetryError> {
             files.push(path);
         }
     }
-    files.sort();
+    files.sort_by(|a, b| spill_path_order(a, b));
     Ok(files)
 }
 
@@ -228,5 +252,16 @@ mod tests {
         let replayed = read_disk_spill(&files[0]).unwrap();
         assert_eq!(replayed.len(), 1);
         assert_eq!(replayed[0].payload, vec![5]);
+    }
+
+    #[test]
+    fn test_list_spill_files_orders_numeric_stems() {
+        let dir = tempdir().unwrap();
+        std::fs::write(dir.path().join("10.jsonl"), b"").unwrap();
+        std::fs::write(dir.path().join("9.jsonl"), b"").unwrap();
+        let files = list_spill_files(dir.path()).unwrap();
+        assert_eq!(files.len(), 2);
+        assert_eq!(files[0].file_stem().and_then(|s| s.to_str()), Some("9"));
+        assert_eq!(files[1].file_stem().and_then(|s| s.to_str()), Some("10"));
     }
 }

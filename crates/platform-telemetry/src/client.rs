@@ -1,6 +1,7 @@
 //! Telemetry client orchestrating consent, buffering, and uploads.
 
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::backoff::ExponentialBackoff;
 use crate::blob::BlobWriter;
@@ -11,6 +12,35 @@ use crate::ring_buffer::{list_spill_files, read_disk_spill, EventRecord, RingBuf
 use crate::schema::SchemaCatalog;
 use crate::types::{AnonId, Scope};
 use crate::uploader::{DeleteBackend, NoopDeleteBackend, NoopUploader, Uploader};
+
+fn wall_clock_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0)
+}
+
+fn first_free_spill_seq(dir: &Path) -> Result<u64, TelemetryError> {
+    if !dir.exists() {
+        return Ok(0);
+    }
+    let mut max: Option<u64> = None;
+    for entry in std::fs::read_dir(dir).map_err(|e| TelemetryError::Io(e.to_string()))? {
+        let entry = entry.map_err(|e| TelemetryError::Io(e.to_string()))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
+            continue;
+        };
+        let Ok(n) = stem.parse::<u64>() else {
+            continue;
+        };
+        max = Some(max.map_or(n, |m| m.max(n)));
+    }
+    Ok(max.map_or(0, |m| m.saturating_add(1)))
+}
 
 /// Bundle returned by [`TelemetryClient::export_local`].
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -62,6 +92,7 @@ pub struct TelemetryClient<U: Uploader = NoopUploader, D: DeleteBackend = NoopDe
     uploader: U,
     delete_backend: D,
     backoff: ExponentialBackoff,
+    next_spill_seq: u64,
 }
 
 impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
@@ -76,6 +107,7 @@ impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
         let spill_threshold = (config.memory_cap * 75).div_ceil(100).max(1);
         let mut memory = RingBuffer::new(config.memory_cap, spill_threshold);
         Self::replay_disk_spills(&config.buffer_dir, &mut memory)?;
+        let next_spill_seq = first_free_spill_seq(&config.buffer_dir)?;
         Ok(Self {
             state,
             memory,
@@ -84,6 +116,7 @@ impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
             uploader,
             delete_backend,
             backoff: ExponentialBackoff::new(100, 800),
+            next_spill_seq,
         })
     }
 
@@ -94,7 +127,9 @@ impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
         for file in list_spill_files(dir)? {
             let rows = read_disk_spill(&file)?;
             for row in rows {
-                memory.push(row).map_err(|_| TelemetryError::Config("replay overflow"))?;
+                memory
+                    .push(row)
+                    .map_err(|_| TelemetryError::Config("replay overflow"))?;
             }
         }
         Ok(())
@@ -109,8 +144,18 @@ impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
     pub fn set_consent(&mut self, scope: Scope, enabled: bool) {
         self.state.first_run_ack = true;
         match scope {
-            Scope::Engine => self.state.engine_scope = enabled,
-            Scope::GameLogic => self.state.game_scope = enabled,
+            Scope::Engine => {
+                if !enabled {
+                    self.memory.retain(|row| row.scope != Scope::Engine);
+                }
+                self.state.engine_scope = enabled;
+            }
+            Scope::GameLogic => {
+                if !enabled {
+                    self.memory.retain(|row| row.scope != Scope::GameLogic);
+                }
+                self.state.game_scope = enabled;
+            }
         }
     }
 
@@ -124,30 +169,39 @@ impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
         }
         let mut writer = BlobWriter::with_capacity(64);
         event.archive(&mut writer);
+        let timestamp_ms = wall_clock_ms();
         let record = EventRecord {
             schema_id: E::SCHEMA_ID,
-            timestamp_ms: 0,
+            timestamp_ms,
             scope: E::SCOPE,
             payload: writer.finish(),
         };
-        let _ = self.memory.push(record);
+        let spill_before = self.memory.spill_count();
+        if self.memory.push(record).is_err() {
+            return;
+        }
+        if self.memory.spill_count() > spill_before {
+            let seq = self.next_spill_seq;
+            let _ = self.flush_memory_to_disk(seq);
+        }
     }
 
     /// Force disk spill of the entire in-memory queue.
     pub fn flush_memory_to_disk(&mut self, seq: u64) -> Result<(), TelemetryError> {
         let path = self.config.buffer_dir.join(format!("{seq}.jsonl"));
-        self.memory.flush_to_disk(&path)
+        self.memory.flush_to_disk(&path)?;
+        self.next_spill_seq = self.next_spill_seq.max(seq.saturating_add(1));
+        Ok(())
     }
 
     /// Drain exactly `n` records and upload them, restoring the buffer on transport failure.
     pub fn send_batch_exact(&mut self, n: usize) -> Result<(), TelemetryError> {
-        let batch = self
-            .memory
-            .try_drain_exact(n)
-            .map_err(|e| TelemetryError::Config(match e {
+        let batch = self.memory.try_drain_exact(n).map_err(|e| {
+            TelemetryError::Config(match e {
                 BufferError::NotEnoughRecords => "not enough records for exact batch",
                 BufferError::Full => "unexpected full buffer while draining",
-            }))?;
+            })
+        })?;
         match self.uploader.send_batch(&batch) {
             Ok(()) => {
                 self.backoff.reset(100);
@@ -176,7 +230,7 @@ impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
         }
         Ok(ExportBundle {
             anonymous_id: self.state.anonymous_id,
-            exported_at_ms: 0,
+            exported_at_ms: wall_clock_ms(),
             events,
         })
     }
@@ -194,7 +248,7 @@ impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
         self.state.anonymous_id = AnonId::random();
         Ok(DeleteReceipt {
             anonymous_id: old,
-            deleted_at_ms: 0,
+            deleted_at_ms: wall_clock_ms(),
             server_ack: true,
         })
     }
@@ -225,8 +279,8 @@ mod tests {
     use super::*;
     use crate::list_spill_files;
     use crate::schema::{EventSchema, SchemaCatalog};
-    use crate::uploader::MockUploader;
     use crate::types::SchemaId;
+    use crate::uploader::FaultInjectingUploader;
     use tempfile::tempdir;
 
     struct EnginePing;
@@ -350,6 +404,49 @@ mod tests {
     }
 
     #[test]
+    fn test_disabling_scope_purges_buffered_rows() {
+        let dir = tempdir().unwrap();
+        let mut client = TelemetryClient::new(
+            ConsentState::fresh(),
+            catalog(),
+            TelemetryConfig::for_tests(dir.path().to_path_buf()),
+            NoopUploader,
+            NoopDeleteBackend,
+        )
+        .unwrap();
+        client.set_consent(Scope::Engine, true);
+        client.record(&EnginePing);
+        assert_eq!(client.memory_len(), 1);
+        client.set_consent(Scope::Engine, false);
+        assert_eq!(client.memory_len(), 0);
+    }
+
+    #[test]
+    fn test_spill_threshold_flushes_to_disk() {
+        let dir = tempdir().unwrap();
+        let mut client = TelemetryClient::new(
+            ConsentState::fresh(),
+            catalog(),
+            TelemetryConfig {
+                memory_cap: 4,
+                buffer_dir: dir.path().to_path_buf(),
+            },
+            NoopUploader,
+            NoopDeleteBackend,
+        )
+        .unwrap();
+        client.set_consent(Scope::Engine, true);
+        client.record(&EnginePing);
+        client.record(&EnginePing);
+        client.record(&EnginePing);
+        assert_eq!(client.memory_len(), 0);
+        assert_eq!(
+            list_spill_files(&client.config.buffer_dir).unwrap().len(),
+            1
+        );
+    }
+
+    #[test]
     fn test_batch_drains_buffer_atomically() {
         let dir = tempdir().unwrap();
         let mut client = TelemetryClient::new(
@@ -376,7 +473,7 @@ mod tests {
             ConsentState::fresh(),
             catalog(),
             TelemetryConfig::for_tests(dir.path().to_path_buf()),
-            MockUploader {
+            FaultInjectingUploader {
                 fails_remaining: 1,
                 batches: Vec::new(),
             },
@@ -424,10 +521,14 @@ mod tests {
         client.set_consent(Scope::Engine, true);
         client.record(&EnginePing);
         client.flush_memory_to_disk(1).unwrap();
-        assert!(!list_spill_files(&client.config.buffer_dir).unwrap().is_empty());
+        assert!(!list_spill_files(&client.config.buffer_dir)
+            .unwrap()
+            .is_empty());
         client.delete().unwrap();
         assert_eq!(client.memory_len(), 0);
-        assert!(list_spill_files(&client.config.buffer_dir).unwrap().is_empty());
+        assert!(list_spill_files(&client.config.buffer_dir)
+            .unwrap()
+            .is_empty());
     }
 
     #[test]
