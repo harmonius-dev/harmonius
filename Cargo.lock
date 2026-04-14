@@ -629,6 +629,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_directed_graphs"
+version = "0.1.0"
+
+[[package]]
 name = "harmonius_event_logs"
 version = "0.0.0"
 dependencies = [
@@ -771,6 +775,17 @@ dependencies = [
  "rkyv_derive 0.8.16",
  "thiserror",
  "zstd",
+]
+
+[[package]]
+name = "harmonius_scripting"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "harmonius_directed_graphs",
+ "rkyv 0.8.16",
+ "rkyv_derive 0.8.16",
+ "syn 2.0.117",
 ]
 
 [[package]]
