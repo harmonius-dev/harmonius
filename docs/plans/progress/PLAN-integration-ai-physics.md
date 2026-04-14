@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-ai-physics
-last_updated: 2026-04-14T05:26:00Z
+last_updated: 2026-04-14T12:30:00Z
 plan_id: PLAN-integration-ai-physics
 pr_number: 67
 pr_review_status: not_started
@@ -60,9 +60,15 @@ Plan file: [ai-physics.md](../integration/ai-physics.md)
 
 ## Event log
 
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
 - 2026-04-14T05:20:00Z — plan-implementer — started; worktree at
   `harmonius-worktrees/PLAN-integration-ai-physics`.
 - 2026-04-14T05:25:00Z — plan-implementer — draft PR opened:
   <https://github.com/cjhowe-us/harmonius/pull/67>.
 - 2026-04-14T05:26:00Z — plan-implementer — code complete; 27 tests mapping TC-IR-2.5.1–2.5.6 +
   negative cases; awaiting review.
+- 2026-04-14T12:30:00Z — plan-implementer — `rumdl check .` clean after README fixes; branch
+  `692b600` pushed.
+
+Entries use ISO-8601 UTC with actor, action, and outcome.
