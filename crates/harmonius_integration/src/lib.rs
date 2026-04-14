@@ -53,19 +53,19 @@ pub const fn game_loop_phases_ordered() -> [GameLoopPhase; GAME_LOOP_PHASE_COUNT
 }
 
 /// Input events (Main -> Workers) MPSC capacity from the channel buffer lengths table.
-pub const INPUT_EVENTS_MPSC_CAPACITY: usize = 0;
+pub const INPUT_EVENTS_MPSC_CAPACITY: usize = 1024;
 
 /// Network packets (Main -> Workers) MPSC capacity.
-pub const NETWORK_PACKETS_MPSC_CAPACITY: usize = 0;
+pub const NETWORK_PACKETS_MPSC_CAPACITY: usize = 4096;
 
 /// Render frame triple-buffer slot count (Workers -> Render).
-pub const RENDER_FRAME_TRIPLE_BUFFER_SLOTS: usize = 0;
+pub const RENDER_FRAME_TRIPLE_BUFFER_SLOTS: usize = 3;
 
 /// Audio commands (Workers -> Audio RT) MPSC capacity.
-pub const AUDIO_COMMANDS_MPSC_CAPACITY: usize = 0;
+pub const AUDIO_COMMANDS_MPSC_CAPACITY: usize = 2048;
 
 /// I/O requests (Workers -> Main) MPSC capacity.
-pub const IO_REQUESTS_MPSC_CAPACITY: usize = 0;
+pub const IO_REQUESTS_MPSC_CAPACITY: usize = 1024;
 
 /// Save writes (Workers -> Main) MPSC capacity.
-pub const SAVE_WRITES_MPSC_CAPACITY: usize = 0;
+pub const SAVE_WRITES_MPSC_CAPACITY: usize = 64;
