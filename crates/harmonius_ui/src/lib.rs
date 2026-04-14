@@ -9,5 +9,7 @@
 pub mod widget;
 
 pub use widget::{
-    DirtyFlags, Entity, UnknownParentError, WidgetId, WidgetKey, WidgetKind, WidgetNode, WidgetTree,
+    BubbleDisposition, BubblePhase, CustomWidgetId, DirtyFlags, Entity, EventRouter, Rect,
+    RemoveLeafError, StringId, UnknownParentError, WidgetId, WidgetKey, WidgetKind, WidgetNode,
+    WidgetTree,
 };
