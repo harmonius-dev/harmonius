@@ -1,0 +1,16 @@
+[package]
+description = "Harmonius core runtime primitives (I/O protocol)"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "core_runtime"
+repository = "https://github.com/cjhowe-us/harmonius"
+version = "0.1.0"
+
+[dependencies]
+crossbeam-channel = "0.5.15"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }

@@ -5,6 +5,7 @@ members = [
   "crates/console_stub",
   "crates/console_target",
   "crates/content_services",
+  "crates/core_runtime",
   "crates/editor_rendering",
   "crates/grids_volumes_physics",
   "crates/harmonius-build-deploy",
