@@ -1,0 +1,10 @@
+[package]
+edition = "2021"
+name = "harmonius_timeline"
+rust-version = "1.85"
+version = "0.1.0"
+
+[dependencies]
+rkyv = { version = "0.8", default-features = true, features = ["bytecheck", "smol_str-0_3", "smallvec-1", "std"] }
+smallvec = "1.15"
+smol_str = { version = "0.3", default-features = false, features = ["std"] }
