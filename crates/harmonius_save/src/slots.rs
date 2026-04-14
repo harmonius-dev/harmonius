@@ -86,11 +86,7 @@ impl SaveSlotManager {
     }
 
     /// Create a new slot with JSON metadata written to `slot_NN.meta`.
-    pub fn create_slot(
-        &mut self,
-        name: &str,
-        vfs: &dyn VirtualFileSystem,
-    ) -> Result<SlotId, SaveError> {
+    pub fn create_slot(&mut self, name: &str, vfs: &dyn VirtualFileSystem) -> Result<SlotId, SaveError> {
         if self.slots.len() >= self.max_slots as usize {
             return Err(SaveError::SlotLimitReached {
                 max: self.max_slots,
@@ -111,29 +107,20 @@ impl SaveSlotManager {
         Ok(id)
     }
 
-    fn write_meta(
-        &self,
-        meta: &SaveSlotMeta,
-        vfs: &dyn VirtualFileSystem,
-    ) -> Result<(), SaveError> {
+    fn write_meta(&self, meta: &SaveSlotMeta, vfs: &dyn VirtualFileSystem) -> Result<(), SaveError> {
         let path = self.meta_path(meta.id);
-        let bytes =
-            serde_json::to_vec_pretty(meta).map_err(|e| SaveError::SerializationFailed {
-                entity: meta.id.0 as u64,
-                type_hash: 0,
-                detail: e.to_string(),
-            })?;
+        let bytes = serde_json::to_vec_pretty(meta).map_err(|e| SaveError::SerializationFailed {
+            entity: meta.id.0 as u64,
+            type_hash: 0,
+            detail: e.to_string(),
+        })?;
         vfs.write_atomic(&path, &bytes)
             .map_err(SaveError::IoFailed)?;
         Ok(())
     }
 
     /// Delete slot files from disk and drop cached metadata.
-    pub fn delete_slot(
-        &mut self,
-        id: SlotId,
-        vfs: &dyn VirtualFileSystem,
-    ) -> Result<(), SaveError> {
+    pub fn delete_slot(&mut self, id: SlotId, vfs: &dyn VirtualFileSystem) -> Result<(), SaveError> {
         vfs.remove_file(&self.meta_path(id))
             .map_err(SaveError::IoFailed)?;
         vfs.remove_file(&self.save_path(id))
@@ -145,6 +132,10 @@ impl SaveSlotManager {
     }
 
     /// Copy slot `src` into a new slot named `dst` (transactional on `vfs`).
+    ///
+    /// Writes the `.save` payload before `.meta` so a failed copy never leaves
+    /// a visible slot. If meta write fails after the copy, the new `.save` is
+    /// removed (TC-13.3.4.4).
     pub fn copy_slot(
         &mut self,
         src: SlotId,
@@ -156,15 +147,6 @@ impl SaveSlotManager {
                 max: self.max_slots,
             });
         }
-        let bytes = vfs
-            .read_file(&self.meta_path(src))
-            .map_err(SaveError::IoFailed)?;
-        let mut meta: SaveSlotMeta =
-            serde_json::from_slice(&bytes).map_err(|e| SaveError::SerializationFailed {
-                entity: src.0 as u64,
-                type_hash: 0,
-                detail: e.to_string(),
-            })?;
         let new_id = SlotId(
             self.slots
                 .iter()
@@ -174,11 +156,23 @@ impl SaveSlotManager {
                 .map(|m| m + 1)
                 .unwrap_or(1),
         );
-        meta.id = new_id;
-        meta.name = dst_name.to_string();
-        self.write_meta(&meta, vfs)?;
         vfs.copy_atomic(&self.save_path(src), &self.save_path(new_id))
             .map_err(SaveError::IoFailed)?;
+        let bytes = vfs
+            .read_file(&self.meta_path(src))
+            .map_err(SaveError::IoFailed)?;
+        let mut meta: SaveSlotMeta =
+            serde_json::from_slice(&bytes).map_err(|e| SaveError::SerializationFailed {
+                entity: src.0 as u64,
+                type_hash: 0,
+                detail: e.to_string(),
+            })?;
+        meta.id = new_id;
+        meta.name = dst_name.to_string();
+        if let Err(e) = self.write_meta(&meta, vfs) {
+            let _ = vfs.remove_file(&self.save_path(new_id));
+            return Err(e);
+        }
         self.slots.push(meta);
         self.slots.sort_by_key(|m| m.id.0);
         Ok(new_id)
@@ -196,11 +190,7 @@ impl SaveSlotManager {
     }
 
     /// Import a `.save` archive from `path` into a fresh slot.
-    pub fn import_slot(
-        &mut self,
-        path: &Path,
-        vfs: &dyn VirtualFileSystem,
-    ) -> Result<SlotId, SaveError> {
+    pub fn import_slot(&mut self, path: &Path, vfs: &dyn VirtualFileSystem) -> Result<SlotId, SaveError> {
         let id = self.create_slot("imported", vfs)?;
         vfs.copy_atomic(path, &self.save_path(id))
             .map_err(SaveError::IoFailed)?;
@@ -215,12 +205,7 @@ impl SaveSlotManager {
     }
 
     /// Replace cached metadata for `id`.
-    pub fn update_meta(
-        &mut self,
-        id: SlotId,
-        meta: SaveSlotMeta,
-        vfs: &dyn VirtualFileSystem,
-    ) -> Result<(), SaveError> {
+    pub fn update_meta(&mut self, id: SlotId, meta: SaveSlotMeta, vfs: &dyn VirtualFileSystem) -> Result<(), SaveError> {
         if meta.id != id {
             return Err(SaveError::SerializationFailed {
                 entity: id.0 as u64,
@@ -242,7 +227,9 @@ impl SaveSlotManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vfs::StdVirtualFileSystem;
+    use crate::vfs::{
+        FailWriteIfContainsVirtualFileSystem, FlakyCopyVirtualFileSystem, StdVirtualFileSystem,
+    };
     use tempfile::tempdir;
 
     /// TC-13.3.4.1 Save slot metadata fields roundtrip through JSON meta file.
@@ -331,5 +318,39 @@ mod tests {
         let mut mgr = SaveSlotManager::new(8, 3, PathBuf::from("."));
         let seq: Vec<u32> = (0..5).map(|_| mgr.next_autosave_slot().0).collect();
         assert_eq!(seq, vec![0, 1, 2, 0, 1]);
+    }
+
+    /// TC-13.3.4.4 Slot copy is transactional when copy fails before any new slot files.
+    #[test]
+    fn tc_13_3_4_4_copy_fails_before_partial_slot() {
+        let dir = tempdir().unwrap();
+        let vfs = FlakyCopyVirtualFileSystem::new(dir.path().to_path_buf(), true);
+        let mut mgr = SaveSlotManager::new(8, 3, PathBuf::from("."));
+        let id1 = mgr.create_slot("src", &vfs).unwrap();
+        vfs.write_atomic(&mgr.save_path(id1), b"PAYLOAD").unwrap();
+        let err = mgr
+            .copy_slot(id1, "dst", &vfs)
+            .expect_err("copy should fail");
+        assert!(matches!(err, SaveError::IoFailed(_)));
+        mgr.refresh_from_disk(&vfs).unwrap();
+        assert_eq!(mgr.list_slots().len(), 1);
+        assert_eq!(vfs.read_file(&mgr.save_path(id1)).unwrap(), b"PAYLOAD");
+    }
+
+    /// TC-13.3.4.4 Meta write failure rolls back copied `.save` for the new slot id.
+    #[test]
+    fn tc_13_3_4_4_meta_failure_rolls_back_save() {
+        let dir = tempdir().unwrap();
+        let vfs = FailWriteIfContainsVirtualFileSystem::new(dir.path().to_path_buf(), "slot_02.meta");
+        let mut mgr = SaveSlotManager::new(8, 3, PathBuf::from("."));
+        let id1 = mgr.create_slot("src", &vfs).unwrap();
+        vfs.write_atomic(&mgr.save_path(id1), b"PAYLOAD").unwrap();
+        let err = mgr
+            .copy_slot(id1, "dst", &vfs)
+            .expect_err("meta write should fail");
+        assert!(matches!(err, SaveError::IoFailed(_)));
+        mgr.refresh_from_disk(&vfs).unwrap();
+        assert_eq!(mgr.list_slots().len(), 1);
+        assert!(vfs.read_file(&mgr.save_path(SlotId(2))).is_err());
     }
 }

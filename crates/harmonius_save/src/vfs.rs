@@ -86,9 +86,10 @@ impl VirtualFileSystem for StdVirtualFileSystem {
 
     fn read_dir_names(&self, dir: &Path) -> Result<Vec<String>, IoError> {
         let dir = self.resolve(dir);
-        let rd = std::fs::read_dir(&dir).map_err(|e| IoError {
-            message: e.to_string(),
-        })?;
+        let rd =
+            std::fs::read_dir(&dir).map_err(|e| IoError {
+                message: e.to_string(),
+            })?;
         let mut out = Vec::new();
         for ent in rd {
             let ent = ent.map_err(|e| IoError {
@@ -127,6 +128,109 @@ impl VirtualFileSystem for CountingVirtualFileSystem {
 
     fn read_file(&self, path: &Path) -> Result<Vec<u8>, IoError> {
         self.read_count.set(self.read_count.get().saturating_add(1));
+        self.inner.read_file(path)
+    }
+
+    fn remove_file(&self, path: &Path) -> Result<(), IoError> {
+        self.inner.remove_file(path)
+    }
+
+    fn copy_atomic(&self, src: &Path, dst: &Path) -> Result<(), IoError> {
+        self.inner.copy_atomic(src, dst)
+    }
+
+    fn read_dir_names(&self, dir: &Path) -> Result<Vec<String>, IoError> {
+        self.inner.read_dir_names(dir)
+    }
+}
+
+/// Removes `*.save.tmp` files under `dir` after a crash mid-write (TC-13.3.3.3).
+pub fn scrub_stale_save_temps(
+    vfs: &dyn VirtualFileSystem,
+    dir: &Path,
+) -> Result<(), IoError> {
+    for name in vfs.read_dir_names(dir)? {
+        if name.ends_with(".save.tmp") {
+            vfs.remove_file(&dir.join(name))?;
+        }
+    }
+    Ok(())
+}
+
+/// Test double: optional hard failure for [`VirtualFileSystem::copy_atomic`].
+#[derive(Debug)]
+pub struct FlakyCopyVirtualFileSystem {
+    inner: StdVirtualFileSystem,
+    fail_copy: std::cell::Cell<bool>,
+}
+
+impl FlakyCopyVirtualFileSystem {
+    /// When `fail_copy` is true, [`VirtualFileSystem::copy_atomic`] returns an error.
+    pub fn new(root: PathBuf, fail_copy: bool) -> Self {
+        Self {
+            inner: StdVirtualFileSystem::new(root),
+            fail_copy: std::cell::Cell::new(fail_copy),
+        }
+    }
+}
+
+impl VirtualFileSystem for FlakyCopyVirtualFileSystem {
+    fn write_atomic(&self, final_path: &Path, data: &[u8]) -> Result<(), IoError> {
+        self.inner.write_atomic(final_path, data)
+    }
+
+    fn read_file(&self, path: &Path) -> Result<Vec<u8>, IoError> {
+        self.inner.read_file(path)
+    }
+
+    fn remove_file(&self, path: &Path) -> Result<(), IoError> {
+        self.inner.remove_file(path)
+    }
+
+    fn copy_atomic(&self, src: &Path, dst: &Path) -> Result<(), IoError> {
+        if self.fail_copy.get() {
+            return Err(IoError {
+                message: "simulated copy failure".into(),
+            });
+        }
+        self.inner.copy_atomic(src, dst)
+    }
+
+    fn read_dir_names(&self, dir: &Path) -> Result<Vec<String>, IoError> {
+        self.inner.read_dir_names(dir)
+    }
+}
+
+/// Test double: fails [`VirtualFileSystem::write_atomic`] for paths whose lossy name contains
+/// `needle` (TC-13.3.4.4 meta failure after successful payload copy).
+#[derive(Debug)]
+pub struct FailWriteIfContainsVirtualFileSystem {
+    inner: StdVirtualFileSystem,
+    needle: String,
+}
+
+impl FailWriteIfContainsVirtualFileSystem {
+    /// Fail writes whose path contains `needle` as a substring.
+    pub fn new(root: PathBuf, needle: impl Into<String>) -> Self {
+        Self {
+            inner: StdVirtualFileSystem::new(root),
+            needle: needle.into(),
+        }
+    }
+}
+
+impl VirtualFileSystem for FailWriteIfContainsVirtualFileSystem {
+    fn write_atomic(&self, final_path: &Path, data: &[u8]) -> Result<(), IoError> {
+        let s = final_path.to_string_lossy();
+        if s.contains(self.needle.as_str()) {
+            return Err(IoError {
+                message: "simulated meta write failure".into(),
+            });
+        }
+        self.inner.write_atomic(final_path, data)
+    }
+
+    fn read_file(&self, path: &Path) -> Result<Vec<u8>, IoError> {
         self.inner.read_file(path)
     }
 
