@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-asset-pipeline-build-deploy
-last_updated: 2026-04-14T05:28:00Z
+last_updated: 2026-04-14T16:05:00Z
 plan_id: PLAN-integration-asset-pipeline-build-deploy
 pr_number: 63
 pr_url: https://github.com/cjhowe-us/harmonius/pull/63
@@ -28,7 +28,7 @@ Plan file: [asset-pipeline-build-deploy.md](../integration/asset-pipeline-build-
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace --all-targets -- -D warnings` passes
-- [ ] `rumdl check .` passes for touched docs
+- [x] `rumdl check .` passes for touched docs
 - [x] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
@@ -65,6 +65,8 @@ Plan file: [asset-pipeline-build-deploy.md](../integration/asset-pipeline-build-
 - 2026-04-14T05:23:39Z — plan-implementer — code complete: `harmonius_asset_build` +
   `harmonius-integration-tests` + `harmonius-integration-benches`; awaiting `pr-reviewer`.
 - 2026-04-14T05:28:00Z — plan-implementer — draft PR opened:
-  https://github.com/cjhowe-us/harmonius/pull/63
+  [pull/63](https://github.com/cjhowe-us/harmonius/pull/63).
+- 2026-04-14T16:05:00Z — plan-implementer — `rumdl check` clean on touched progress doc; PR link
+  uses markdown formatting in the event log.
 
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+Append ISO-8601 UTC entries with actor, action, and outcome.
