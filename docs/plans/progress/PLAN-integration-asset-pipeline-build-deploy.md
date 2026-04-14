@@ -66,8 +66,8 @@ Plan file: [asset-pipeline-build-deploy.md](../integration/asset-pipeline-build-
   `harmonius-integration-tests` + `harmonius-integration-benches`; awaiting `pr-reviewer`.
 - 2026-04-14T05:28:00Z — plan-implementer — draft PR opened:
   [pull/63](https://github.com/cjhowe-us/harmonius/pull/63).
-- 2026-04-14T16:05:00Z — plan-implementer — `rumdl check` clean on touched progress doc; PR
-  link uses markdown formatting in the event log.
+- 2026-04-14T16:05:00Z — plan-implementer — `rumdl check` clean on touched progress doc; PR link
+  uses markdown formatting in the event log.
 - 2026-04-14T17:48:50Z — plan-implementer — main checkout progress synced with branch
   `plan/integration-asset-pipeline-build-deploy` (post `rumdl fmt` on this file).
 
