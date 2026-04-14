@@ -4,12 +4,12 @@ use std::collections::BTreeSet;
 
 use harmonius_integration_ai_sa::{
     apply_hearing_perception, apply_sight_perception, awareness_blackboard_sync, evaluate_hearing,
-    evaluate_sight, neutral_target_score, run_perception_budget_slice, AiDecisionBudget,
-    AiPerception, AiPerceptionBudget, AwarenessEntry, AwarenessLevel, AwarenessState,
-    AwarenessTransitionEvent, Blackboard, BlackboardValue, Entity, HearingQueryInput,
-    PerceivedEntity, PerceptionFrameState, PerceptionSense, PropagationResultStore, ScoredTarget,
-    SenseQueryResult, SightQueryInput, Vec3, AWARENESS_LEVEL_KEY, THREAT_POSITION_KEY,
-    THREAT_TARGET_KEY,
+    evaluate_sight, neutral_target_score, run_perception_budget_slice,
+    run_perception_budget_slice_with_cursor, AiDecisionBudget, AiPerception, AiPerceptionBudget,
+    AwarenessEntry, AwarenessLevel, AwarenessState, AwarenessTransitionEvent, Blackboard,
+    BlackboardValue, Entity, HearingQueryInput, PerceivedEntity, PerceptionBudgetCursor,
+    PerceptionFrameState, PerceptionSense, PropagationResultStore, ScoredTarget, SenseQueryResult,
+    SightQueryInput, Vec3, AWARENESS_LEVEL_KEY, THREAT_POSITION_KEY, THREAT_TARGET_KEY,
 };
 
 fn forward_z() -> Vec3 {
@@ -149,10 +149,22 @@ fn tc_ir_1_10_3_2_lost_clears() {
         THREAT_POSITION_KEY,
         BlackboardValue::Vec3(Vec3::new(0.0, 1.0, 0.0)),
     );
-    let awareness = AwarenessState::default();
+    let mut awareness = AwarenessState::default();
+    awareness.entries.push(AwarenessEntry {
+        target: Entity(7),
+        level: AwarenessLevel::Lost,
+        score: 0.8,
+        last_seen_position: Vec3::new(0.0, 1.0, 0.0),
+        last_seen_tick: 2,
+    });
     awareness_blackboard_sync(&awareness, &mut bb, true);
     assert_eq!(bb.get(THREAT_TARGET_KEY), None);
     assert_eq!(bb.get(THREAT_POSITION_KEY), None);
+    assert_eq!(
+        bb.get(AWARENESS_LEVEL_KEY),
+        Some(&BlackboardValue::Int(4)),
+        "Lost maps to BB int 4"
+    );
 }
 
 #[test]
@@ -268,6 +280,26 @@ fn tc_ir_1_10_5_3_budget_split() {
 }
 
 #[test]
+fn tc_ir_1_10_5_4_round_robin_carry_over() {
+    let costs = vec![600_u32, 600, 600];
+    let mut cursor = PerceptionBudgetCursor::default();
+    let mut budget = AiPerceptionBudget {
+        budget_micros: 1_000,
+        spent_micros: 0,
+    };
+    let first = run_perception_budget_slice_with_cursor(&mut budget, &costs, &mut cursor);
+    assert_eq!(first, vec![true, false, false]);
+    assert_eq!(cursor.next_agent, 1);
+    let mut budget = AiPerceptionBudget {
+        budget_micros: 1_000,
+        spent_micros: 0,
+    };
+    let second = run_perception_budget_slice_with_cursor(&mut budget, &costs, &mut cursor);
+    assert_eq!(second, vec![false, true, false]);
+    assert_eq!(cursor.next_agent, 2);
+}
+
+#[test]
 fn tc_ir_1_10_n_1_target_despawn() {
     let mut perception = AiPerception::new(0.5);
     perception.known_entities.push(PerceivedEntity {
@@ -281,6 +313,24 @@ fn tc_ir_1_10_n_1_target_despawn() {
     assert!(
         perception.known_entities.is_empty(),
         "despawned targets must drop out after decay window"
+    );
+}
+
+#[test]
+fn tc_ir_1_10_n_1_memory_expires_while_alive() {
+    let mut perception = AiPerception::new(0.5);
+    perception.known_entities.push(PerceivedEntity {
+        entity: Entity(4),
+        last_seen_pos: Vec3::new(0.0, 0.0, 0.0),
+        last_seen_time: 0.0,
+        sense: PerceptionSense::Sight,
+    });
+    let mut alive = BTreeSet::new();
+    alive.insert(Entity(4));
+    perception.apply_memory_decay(1.0, &alive);
+    assert!(
+        perception.known_entities.is_empty(),
+        "stale last_seen_time must drop even when the entity is still alive"
     );
 }
 

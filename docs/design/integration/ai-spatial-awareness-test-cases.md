@@ -1,7 +1,7 @@
 # AI ↔ Spatial Awareness Integration Test Cases
 
-All tests are CI-runnable via `cargo test -p harmonius-integration-ai-sa`. Benchmarks run via
-`cargo bench -p harmonius-integration-ai-sa` and are gated on the perf CI job.
+All tests are CI-runnable via `cargo test -p harmonius-integration-ai-sa`. Benchmark harness targets
+for this crate are deferred; the table below keeps IDs for future `cargo bench` wiring.
 
 ## Integration Tests
 
@@ -23,6 +23,7 @@ All tests are CI-runnable via `cargo test -p harmonius-integration-ai-sa`. Bench
 | TC-IR-1.10.5.1 | Budget limits | 500 agents, 2ms | Some deferred | IR-1.10.5 |
 | TC-IR-1.10.5.2 | Deferred stale | Deferred 1 frame | Old data valid | IR-1.10.5 |
 | TC-IR-1.10.5.3 | Budget split | Perc + Dec schedule | No Res conflict | IR-1.10.5 |
+| TC-IR-1.10.5.4 | RR carry-over | Two slices + cursor | Deferred runs next | IR-1.10.5 |
 
 ## Negative Tests
 
@@ -35,8 +36,9 @@ All tests are CI-runnable via `cargo test -p harmonius-integration-ai-sa`. Bench
 | TC-IR-1.10.N.5 | Empty BVH | Zero candidates | See detail 5 | IR-1.10.1 |
 | TC-IR-1.10.N.6 | Awareness unchanged | No transition | See detail 6 | IR-1.10.3 |
 
-1. **TC-IR-1.10.N.1** -- Perceived target despawns mid-frame. Memory decay removes the stale
-   `PerceivedEntity` once `last_seen_time` exceeds `memory_duration`. The next
+1. **TC-IR-1.10.N.1** -- Perceived target despawns mid-frame **or** memory expires while the entity
+   remains alive. Memory decay removes the stale `PerceivedEntity` when the target is not in the
+   alive set **or** when `now - last_seen_time` exceeds `memory_duration`. The next
    `awareness_blackboard_sync` observes `highest_scored_target() == None` and clears
    `THREAT_TARGET_KEY` and `THREAT_POSITION_KEY`.
 2. **TC-IR-1.10.N.2** -- Target has no `FactionId` component. Perception treats it as neutral (no

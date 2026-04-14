@@ -1,4 +1,8 @@
 //! Sight / hearing perception helpers and propagation snapshot.
+//!
+//! When a sense definition is missing, [`apply_sight_perception`] increments
+//! `missing_sense_warnings` instead of emitting logs (FM-2); engine wiring may map this counter
+//! to `tracing` later.
 
 use std::collections::{BTreeMap, BTreeSet};
 
