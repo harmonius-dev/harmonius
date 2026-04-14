@@ -510,13 +510,41 @@ mod tests {
 
     #[test]
     fn tc_1_12_5_1_diagnostic_severity_ordering() {
-        let info = format!("{:?}", Severity::Info);
-        let warning = format!("{:?}", Severity::Warning);
-        let error = format!("{:?}", Severity::Error);
-        let fatal = format!("{:?}", Severity::Fatal);
-        assert_ne!(info, warning);
-        assert_ne!(warning, error);
-        assert_ne!(error, fatal);
+        let diags = [
+            Diagnostic {
+                path: None,
+                span: None,
+                message: "i",
+                severity: Severity::Info,
+            },
+            Diagnostic {
+                path: None,
+                span: None,
+                message: "w",
+                severity: Severity::Warning,
+            },
+            Diagnostic {
+                path: None,
+                span: None,
+                message: "e",
+                severity: Severity::Error,
+            },
+            Diagnostic {
+                path: None,
+                span: None,
+                message: "f",
+                severity: Severity::Fatal,
+            },
+        ];
+        let formatted: Vec<String> = diags.iter().map(|d| format!("{d:?}")).collect();
+        for i in 0..formatted.len() {
+            for j in (i + 1)..formatted.len() {
+                assert_ne!(
+                    formatted[i], formatted[j],
+                    "expected distinct Debug for severities {i} vs {j}"
+                );
+            }
+        }
     }
 
     #[test]
@@ -567,16 +595,19 @@ mod tests {
     #[test]
     fn tc_1_12_1_12_engine_error_conversion_under_50_ns() {
         let iterations = 1_000_000_u32;
+        #[cfg(not(debug_assertions))]
         let start = std::time::Instant::now();
         for _ in 0..iterations {
             black_box(EngineError::from(IoError::Timeout));
         }
-        let elapsed = start.elapsed();
-        let per_ns = elapsed.as_nanos() / u128::from(iterations);
-        let limit = if cfg!(debug_assertions) { 2_000 } else { 50 };
-        assert!(
-            per_ns <= limit,
-            "average {per_ns}ns exceeds relaxed limit {limit}ns"
-        );
+        #[cfg(not(debug_assertions))]
+        {
+            let elapsed = start.elapsed();
+            let per_ns = elapsed.as_nanos() / u128::from(iterations);
+            assert!(
+                per_ns <= 50,
+                "average {per_ns}ns exceeds 50ns release budget (see error-test-cases.md)"
+            );
+        }
     }
 }

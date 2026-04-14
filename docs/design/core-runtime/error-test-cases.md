@@ -161,8 +161,8 @@ Companion test cases for [error.md](error.md).
 |---|-------------|
 | 1 | R-1.12.1a   |
 
-1. **#1** — `EngineError::from(IoError::Timeout)` average over 1M iterations
-   - **Expected:** Under 50 ns per call
+1. **#1** — `EngineError::from(IoError::Timeout)` average over 1M iterations in **release** builds
+   - **Expected:** Under 50 ns per call (debug builds exercise the loop without a wall-clock gate)
 
 ### TC-1.12.5.2 Diagnostic Allocation Avoided
 

@@ -1,8 +1,6 @@
-//! TC-1.12.5.2 — constructing [`core_runtime::Diagnostic`] with a static message and no path must
-//! not trigger heap allocation (R-1.12.5a).
+//! TC-1.12.5.2 — `Diagnostic` with static message and no path must not heap-allocate (R-1.12.5a).
 //!
-//! This file is its own integration-test binary so we can install a counting [`GlobalAlloc`] without
-//! affecting other tests.
+//! Separate integration-test binary so a counting `GlobalAlloc` does not affect other tests.
 
 use core_runtime::{Diagnostic, Severity};
 use std::alloc::{GlobalAlloc, Layout, System};
@@ -12,13 +10,17 @@ struct CountingAlloc;
 
 static HEAP_ALLOCS: AtomicUsize = AtomicUsize::new(0);
 
+// SAFETY: This type only forwards to `System`; it preserves `GlobalAlloc` invariants from the
+// platform default allocator.
 unsafe impl GlobalAlloc for CountingAlloc {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         HEAP_ALLOCS.fetch_add(1, Ordering::SeqCst);
+        // SAFETY: `layout` satisfies `GlobalAlloc::alloc` requirements; behavior matches `System`.
         unsafe { System.alloc(layout) }
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        // SAFETY: `ptr` and `layout` came from this allocator's `alloc`; forwarded to `System`.
         unsafe { System.dealloc(ptr, layout) }
     }
 }
