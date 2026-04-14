@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T02:40:30Z
+last_updated: 2026-04-14T02:45:35Z
 phase: plan
 started_at: null
 ---
@@ -125,3 +125,31 @@ every pass; read by the harmonize master agent to compute the next ready set.
   invoked `/harmonize reset-in-flight`); dropped `plan-orchestrator` merge-detection and nested
   `harmonize` `post-merge-dispatch` rows; **cancel matching background tasks in the IDE** if still
   running — `TaskStop` unavailable in this host.
+- 2026-04-14T02:41:03Z — harmonize `mode: run` (post-merge): §0 stash gate passed (`main`, clean
+  `git status --porcelain`).
+- 2026-04-14T02:41:03Z — §3 restart sweep: `in_flight` was `[]`; `TaskList` / `TaskStop` unavailable
+  in Cursor host — no rows to reconcile or stop.
+- 2026-04-14T02:41:03Z — §5 merge-detection (foreground reconcile): 141 `PLAN-*` scanned; 0 with
+  numeric `pr_number`; 1 `pr_url` is compare-only (`PLAN-core-runtime-hot-reload-protocol`, no PR id
+  for `gh pr view`); merges 0; `gh pr view` calls 0; no worker dispatch during merge pass.
+- 2026-04-14T02:41:03Z — Cron bootstrap: skipped (no `CronList` / `CronCreate` in Cursor host);
+  logged here only — ordered merge still ran this pass.
+- 2026-04-14T02:41:03Z — §7: `specify-orchestrator` / `design-orchestrator` skipped (ready sets
+  empty; `(bootstrap)` still `not_started` in `phase-specify.md`).
+- 2026-04-14T02:41:03Z — Dispatched `plan-orchestrator` `dispatch-only` (background) task
+  `4e6b6c58-a7cb-4b31-b707-ee9b96194ca6`; registered in `docs/plans/in-flight.md`.
+- 2026-04-14T02:42:05Z — plan-orchestrator `dispatch-only`: §0 stash gate failed — dirty `main`
+  (`docs/plans/in-flight.md`, `docs/plans/progress/phase-design.md`,
+  `docs/plans/progress/phase-plan.md`, `docs/plans/progress/phase-specify.md`); skipped
+  `plan-implementer` / `pr-reviewer` dispatch; no new `task_id` rows in `in-flight.md`.
+- 2026-04-14T02:42:05Z — Static tally (locks 0): would-be ready `plan-implementer` 116;
+  `pr-reviewer` 5; blocked `not_started` 2 (`PLAN-cross-cutting-performance-budget`,
+  `PLAN-physics-constraints`); `index.md` topological order not rewritten (gate).
+- 2026-04-14T02:45:16Z — harmonize `mode: stop` (user): cleared `docs/plans/in-flight.md`; dropped
+  `plan-orchestrator` `dispatch-only` task `4e6b6c58-a7cb-4b31-b707-ee9b96194ca6`. `TaskStop`
+  unavailable in Cursor — cancel that background task (and any nested subagents) in the IDE if still
+  running; `locks.md` unchanged.
+- 2026-04-14T02:45:35Z — User **kill all background tasks**: `docs/plans/in-flight.md` already
+  `in_flight: []` (no registered task IDs).
+  **Cancel any running Background Agents in the Cursor UI** — this host cannot invoke `TaskStop` or
+  kill agent processes from the repo.
