@@ -1,10 +1,10 @@
 ---
 branch: plan/integration-animation-physics
-last_updated: 2026-04-14T12:30:00Z
+last_updated: 2026-04-14T12:35:00Z
 plan_id: PLAN-integration-animation-physics
-pr_number: null
+pr_number: 44
 pr_review_status: not_started
-pr_url: null
+pr_url: https://github.com/cjhowe-us/harmonius/pull/44
 started_at: 2026-04-14T12:00:00Z
 status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-animation-physics
@@ -25,10 +25,13 @@ Plan file: [animation-physics.md](../integration/animation-physics.md)
 - [x] Refactor phase complete with no regressions
 - [x] Integration validation complete across documented boundaries (pure-Rust contract layer)
 - [x] Constraint conformance checks complete (deterministic tests, no GPU)
-- [ ] Manual validation complete with screenshot and video evidence (deferred: docs repo has no runtime viewport)
+- [ ] Manual validation complete with screenshot and video evidence (deferred: docs repo has no
+      runtime viewport)
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [x] `rumdl check .` passes for touched docs (progress file only; repo-wide README link issue pre-existing)
+- [x] `rumdl check .` passes for touched docs (progress file only; repo-wide README link issue
+      pre-existing)
+- [x] Code complete marker set (`status: code_complete`, `pr_review_status: not_started`)
 - [x] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
@@ -50,15 +53,22 @@ Plan file: [animation-physics.md](../integration/animation-physics.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius_integration_animation_physics` — 26 integration tests (0 unit in lib.rs, 26 in `tests/animation_physics.rs`).
-- Benchmarks: companion doc lists B1 targets; **not implemented** in this slice (no `criterion` harness yet).
+- Test reports: `cargo test -p harmonius_integration_animation_physics` — 26 integration tests (0
+  unit in lib.rs, 26 in `tests/animation_physics.rs`).
+- Benchmarks: companion doc lists B1 targets; **not implemented** in this slice (no `criterion`
+  harness yet).
 - Screenshots: deferred (no engine session in this repository).
 - Videos: deferred.
 - Review notes: awaiting `pr-reviewer`.
 
 ## Event log
 
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+Format: ISO-8601 UTC entries with actor, action, and outcome.
 
-- 2026-04-14T12:00:00Z — plan-implementer — worktree adopted on `plan/integration-animation-physics`, implementation started.
-- 2026-04-14T12:30:00Z — plan-implementer — added `harmonius_integration_animation_physics` workspace crate with CI-runnable tests mapped from `animation-physics-test-cases.md`; `cargo test` / `clippy` clean; **code_complete**, awaiting review.
+- 2026-04-14T12:00:00Z — plan-implementer — worktree adopted on
+  `plan/integration-animation-physics`, implementation started.
+- 2026-04-14T12:30:00Z — plan-implementer — added `harmonius_integration_animation_physics`
+  workspace crate with CI-runnable tests mapped from `animation-physics-test-cases.md`; `cargo test`
+  / `clippy` clean; **code_complete**, awaiting review.
+- 2026-04-14T12:35:00Z — plan-implementer — draft PR
+  <https://github.com/cjhowe-us/harmonius/pull/44> opened.
