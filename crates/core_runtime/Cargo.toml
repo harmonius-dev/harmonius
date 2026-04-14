@@ -1,0 +1,16 @@
+[package]
+authors = ["Harmonius Contributors"]
+edition = "2021"
+license = "Apache-2.0"
+name = "core_runtime"
+repository = "https://github.com/harmonius/harmonius"
+version = "0.1.0"
+
+[dependencies]
+bitflags = "2.9"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "deny"
