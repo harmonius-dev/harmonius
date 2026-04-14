@@ -18,6 +18,7 @@ members = [
   "crates/harmonius_2d",
   "crates/harmonius_ai",
   "crates/harmonius_ai_grids",
+  "crates/harmonius_animation",
   "crates/harmonius_app",
   "crates/harmonius_asset_build",
   "crates/harmonius_camera",
