@@ -20,7 +20,7 @@ impl DormancyManager {
         }
     }
 
-    /// Returns true when `(current - last_change) >= threshold`.
+    /// Returns true when the entity is marked dormant or `(current - last_change) >= threshold`.
     #[must_use]
     pub fn check_dormancy(
         &self,
@@ -28,7 +28,9 @@ impl DormancyManager {
         last_change_tick: SequenceTick,
         current_tick: SequenceTick,
     ) -> bool {
-        let _ = entity;
+        if self.is_dormant(entity) {
+            return true;
+        }
         let delta = current_tick.0.saturating_sub(last_change_tick.0);
         delta >= self.threshold_ticks
     }
@@ -79,5 +81,12 @@ mod tests {
         let mut mgr = DormancyManager::new(3);
         mgr.wake(Entity(99));
         assert!(!mgr.is_dormant(Entity(99)));
+    }
+
+    #[test]
+    fn marked_dormant_short_circuits_before_threshold() {
+        let mut mgr = DormancyManager::new(100);
+        mgr.mark_dormant(Entity(3));
+        assert!(mgr.check_dormancy(Entity(3), SequenceTick(0), SequenceTick(1)));
     }
 }

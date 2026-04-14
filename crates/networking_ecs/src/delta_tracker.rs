@@ -9,6 +9,8 @@ use crate::wire::DeltaRun;
 pub enum DeltaError {
     /// Baseline length disagrees with live chunk bytes (requires full resync).
     LayoutMismatch,
+    /// Baseline index missing after insert (internal bookkeeping inconsistency).
+    BaselineNotIndexed,
 }
 
 #[derive(Debug)]
@@ -57,7 +59,8 @@ impl DeltaTracker {
                     staged_live: Vec::new(),
                 });
                 self.sort_baselines();
-                self.baseline_index(client).expect("inserted client")
+                self.baseline_index(client)
+                    .ok_or(DeltaError::BaselineNotIndexed)?
             }
         };
 
@@ -119,9 +122,10 @@ fn compute_xor_rle(baseline: &[u8], live: &[u8]) -> Vec<DeltaRun> {
         while i < baseline.len() && baseline[i] != live[i] {
             i += 1;
         }
+        let xor_bytes: Vec<u8> = (start..i).map(|j| baseline[j] ^ live[j]).collect();
         runs.push(DeltaRun {
             offset: start as u32,
-            bytes: live[start..i].to_vec(),
+            bytes: xor_bytes,
         });
     }
     runs
@@ -214,5 +218,24 @@ mod tests {
         let mut tracker = DeltaTracker::new();
         tracker.advance_baseline(ConnectionId(99), SequenceTick(1));
         assert_eq!(tracker.baseline_tick(ConnectionId(99)), None);
+    }
+
+    #[test]
+    fn xor_payload_differs_from_raw_live_when_baseline_nonzero() {
+        let mut tracker = DeltaTracker::new();
+        let client = ConnectionId(5);
+        let entity = Entity(1);
+        let live_first = vec![0xAAu8, 0xBB];
+        tracker
+            .compute_delta(client, entity, SequenceTick(1), &live_first)
+            .expect("delta");
+        tracker.advance_baseline(client, SequenceTick(2));
+        let live_second = vec![0x55u8, 0xBB];
+        let delta = tracker
+            .compute_delta(client, entity, SequenceTick(3), &live_second)
+            .expect("delta");
+        assert_eq!(delta.runs.len(), 1);
+        assert_eq!(delta.runs[0].offset, 0);
+        assert_eq!(delta.runs[0].bytes, vec![0xFF]);
     }
 }

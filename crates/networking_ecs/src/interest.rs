@@ -138,11 +138,7 @@ mod test_support {
 
         /// Registers a client position.
         pub fn set_client_pos(&mut self, client: ConnectionId, pos: (f32, f32, f32)) {
-            if let Some(row) = self
-                .client_positions
-                .iter_mut()
-                .find(|(c, _)| *c == client)
-            {
+            if let Some(row) = self.client_positions.iter_mut().find(|(c, _)| *c == client) {
                 row.1 = pos;
                 return;
             }
@@ -197,9 +193,7 @@ mod test_support {
 
 #[cfg(test)]
 mod tests {
-    use super::test_support::{
-        filter_always_false, filter_always_true, TestWorld,
-    };
+    use super::test_support::{filter_always_false, filter_always_true, TestWorld};
     use super::*;
     use crate::filters::ReplicationFilterTable;
     use crate::wire::ReplicationFilterId;
@@ -254,12 +248,16 @@ mod tests {
         static TABLE: [fn(&TestWorld, Entity, ConnectionId) -> bool; 2] =
             [filter_always_true, filter_always_false];
         let table = ReplicationFilterTable::new(&TABLE);
-        let call0 = table
-            .get(ReplicationFilterId(0))
-            .expect("fn0")(&TestWorld::new(), Entity(0), ConnectionId(0));
-        let call1 = table
-            .get(ReplicationFilterId(1))
-            .expect("fn1")(&TestWorld::new(), Entity(0), ConnectionId(0));
+        let call0 = table.get(ReplicationFilterId(0)).expect("fn0")(
+            &TestWorld::new(),
+            Entity(0),
+            ConnectionId(0),
+        );
+        let call1 = table.get(ReplicationFilterId(1)).expect("fn1")(
+            &TestWorld::new(),
+            Entity(0),
+            ConnectionId(0),
+        );
         assert!(call0);
         assert!(!call1);
         assert_eq!(table.filter_count(), 2);

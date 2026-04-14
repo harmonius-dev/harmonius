@@ -16,7 +16,9 @@ pub struct Replicated {
 }
 
 /// Opaque filter ID for codegen-resolved custom replication rules.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone, Copy, Debug, Eq, Hash, PartialEq, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+)]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Eq, Hash, PartialEq))]
 #[repr(transparent)]
@@ -72,7 +74,7 @@ pub struct Baseline {
 pub struct DeltaRun {
     /// Byte offset in the dense chunk layout.
     pub offset: u32,
-    /// New live bytes for this run.
+    /// XOR of baseline vs live for this run (`baseline[i] ^ live[i]` for each byte in the run).
     pub bytes: Vec<u8>,
 }
 
@@ -83,7 +85,7 @@ pub struct DeltaRun {
 pub struct DeltaPayload {
     /// Tick this delta applies to.
     pub tick: SequenceTick,
-    /// Encoded runs (dense-array XOR diff + RLE of non-equal bytes).
+    /// Encoded runs (dense-array XOR diff; each run holds consecutive non-equal XOR bytes).
     pub runs: Vec<DeltaRun>,
 }
 
