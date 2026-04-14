@@ -55,9 +55,12 @@ pub fn snap_position(position: Vec3, mode: SnapMode) -> Option<Vec3> {
 #[must_use]
 pub fn snap_grid(position: Vec3, cell_size: f32) -> Vec3 {
     debug_assert!(cell_size.is_finite() && cell_size > 0.0);
-    // RED: intentionally wrong until green commit (TC-15.2.1.1).
-    let _ = position;
-    Vec3::new(0.0, 0.0, 0.0)
+    let c = cell_size;
+    Vec3::new(
+        (position.x / c).round() * c,
+        (position.y / c).round() * c,
+        (position.z / c).round() * c,
+    )
 }
 
 #[cfg(test)]
