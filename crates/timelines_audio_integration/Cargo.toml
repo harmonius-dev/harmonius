@@ -1,0 +1,7 @@
+[package]
+edition = "2021"
+name = "timelines_audio_integration"
+rust-version = "1.85"
+version = "0.1.0"
+
+[dependencies]
