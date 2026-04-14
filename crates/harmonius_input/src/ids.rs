@@ -15,3 +15,7 @@ pub struct Keycode(pub u32);
 /// Touch region identifier for authored touch bindings.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct TouchRegionId(pub u32);
+
+/// Identifier for an authored combo graph (`InputSource::ComboTree`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct ComboTreeId(pub u32);

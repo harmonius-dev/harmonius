@@ -1,7 +1,7 @@
 //! Typed gameplay actions, sources, and mapping contexts.
 
 use crate::device::{GamepadAxis, GamepadButton, Scancode};
-use crate::ids::TouchRegionId;
+use crate::ids::{ComboTreeId, TouchRegionId};
 use crate::modifiers::ModifierChain;
 use crate::triggers::TriggerCondition;
 use crate::value::{ActionValue, ActionValueType};
@@ -35,7 +35,7 @@ pub struct ActionDefinition {
 }
 
 /// Physical or logical input sources bound to actions.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum InputSource {
     /// Keyboard scancode.
     Key(Scancode),
@@ -51,6 +51,8 @@ pub enum InputSource {
     GamepadStick(GamepadStickSource),
     /// Touch region (authored HUD joystick).
     TouchRegion(TouchRegionId),
+    /// Combo graph binding (evaluated via `ComboEvaluator`).
+    ComboTree(ComboTreeId),
 }
 
 /// Mouse axes that can feed analog actions.

@@ -43,6 +43,10 @@ pub enum RebindError {
     ReservedKey,
     /// Types incompatible (defensive; bindings loader should catch earlier).
     TypeMismatch,
+    /// `context_id` did not match any entry in `contexts`.
+    UnknownContext,
+    /// `RebindResolution::Fail` and `new_source` already bound to another action.
+    SourceConflict,
 }
 
 /// Stateless rebind policy evaluator and applier.
@@ -59,8 +63,15 @@ impl RebindManager {
             return RebindResult::Rejected(RebindError::ReservedKey);
         }
         let Some(ctx) = contexts.iter_mut().find(|c| c.id == req.context_id) else {
-            return RebindResult::Rejected(RebindError::TypeMismatch);
+            return RebindResult::Rejected(RebindError::UnknownContext);
         };
+        if let RebindResolution::Fail = req.resolution
+            && ctx.bindings.iter().any(|b| {
+                b.action_id != req.action_id && sources_equal(&b.source, &req.new_source)
+            })
+        {
+            return RebindResult::Rejected(RebindError::SourceConflict);
+        }
         if let RebindResolution::Swap = req.resolution
             && let Some((i_other, _)) = ctx
                 .bindings
@@ -79,8 +90,8 @@ impl RebindManager {
             if i_self == i_other {
                 return RebindResult::Success;
             }
-            let tmp = ctx.bindings[i_self].source.clone();
-            ctx.bindings[i_self].source = req.new_source.clone();
+            let tmp = ctx.bindings[i_self].source;
+            ctx.bindings[i_self].source = req.new_source;
             ctx.bindings[i_other].source = tmp;
             return RebindResult::Swapped;
         }
@@ -89,7 +100,7 @@ impl RebindManager {
             .iter_mut()
             .find(|b| b.action_id == req.action_id)
         {
-            b.source = req.new_source.clone();
+            b.source = req.new_source;
             RebindResult::Success
         } else {
             RebindResult::Rejected(RebindError::TypeMismatch)

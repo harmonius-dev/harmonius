@@ -52,6 +52,7 @@ fn source_value_type(src: &InputSource) -> ActionValueType {
         InputSource::MouseAxis(_) => ActionValueType::Axis1D,
         InputSource::GamepadStick(_) => ActionValueType::Axis2D,
         InputSource::TouchRegion(_) => ActionValueType::Axis2D,
+        InputSource::ComboTree(_) => ActionValueType::Bool,
     }
 }
 

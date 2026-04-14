@@ -3,11 +3,8 @@
 use crate::actions::ActionId;
 use crate::device::GamepadButton;
 use crate::device::Scancode;
+use crate::ids::ComboTreeId;
 use glam::Vec2;
-
-/// Identifier for an authored combo graph.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct ComboTreeId(pub u32);
 
 /// Node id inside a `ComboTree`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

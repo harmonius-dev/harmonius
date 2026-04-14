@@ -1,6 +1,7 @@
 //! Traceability tests for [PLAN-input-input] companion `input-test-cases.md` rows.
 
 use glam::{Quat, Vec2, Vec3};
+use smallvec::smallvec;
 use harmonius_input::{
     encode_dual_motor_hid, gyro_integrate_pitch, normalize_cardinal_forward_from_sources,
     normalize_intensity, normalize_native_w_key, parse_adaptive_profile_line, play_area_crossing,
@@ -13,6 +14,7 @@ use harmonius_input::{
     GamepadStickSource, GazeBehavior, GazeClassifier, GazeEvent, GazeRaySample, GestureEngine,
     GesturePhase, GestureType, GlyphResolver, HapticBackendKind, HapticCommand, HandJointPose,
     HandPinchDetector, HandSkeleton, InputBuffer, InputMapper, InputModifier, InputSource,
+    MappingLoadError,
     KeyboardState, Keycode, LongPressRecognizer, MappingContext, ModifierChain, ModifierState,
     MouseState, PatternPlayer, PlayAreaMode, RawInputEvent, RawInputKind, RebindError,
     RebindManager, RebindRequest, RebindResolution, RebindResult, ResolvedGesture, ResponseCurveType,
@@ -85,12 +87,35 @@ fn test_scroll_wheel_vs_trackpad() {
 /// TC-6.1.6.1 — south face unifies across vendors.
 #[test]
 fn test_gamepad_south_unification() {
-    let mut g = GamepadState::default();
-    g.set_button(GamepadButton::South, true);
-    assert!(g.is_pressed(GamepadButton::South));
+    for family in [
+        GamepadFamily::Xbox,
+        GamepadFamily::DualSense,
+        GamepadFamily::SwitchPro,
+    ] {
+        let mut dm = DeviceManager::new();
+        let id = dm.handle_connect(DeviceInfo {
+            id: DeviceId {
+                index: 0,
+                generation: 0,
+            },
+            device_type: DeviceType::Gamepad,
+            vendor_id: 0,
+            product_id: 0,
+            dpi_scale: 1.0,
+            gamepad_family: Some(family),
+            capabilities: DeviceCapabilities::default(),
+        });
+        let mut g = GamepadState::default();
+        g.apply_raw(&RawInputKind::GamepadButton {
+            button: GamepadButton::South,
+            pressed: true,
+        });
+        assert!(g.is_pressed(GamepadButton::South), "{family:?}");
+        dm.note_input(id, DeviceType::Gamepad);
+    }
 }
 
-/// TC-6.1.7.1 — gyro integration reaches ~90° pitch.
+/// TC-6.1.7.1 — gyro integration reaches ~90° pitch (gyro-only quaternion step; Madgwick deferred).
 #[test]
 fn test_gyro_madgwick_orientation() {
     let frames = 1000_usize;
@@ -847,6 +872,116 @@ fn test_6dof_controller_components() {
     };
     assert_eq!(s.trigger, 0.5);
     assert!(s.south && s.touch_south);
+}
+
+/// PR review — duplicate `ContextId` in one `load_contexts` batch is rejected.
+#[test]
+fn test_duplicate_context_load_rejected() {
+    let mk = |prio: i32| MappingContext {
+        id: ContextId(1),
+        priority: prio,
+        bindings: vec![],
+        consumes_input: false,
+    };
+    assert!(matches!(
+        InputMapper::load_contexts(vec![mk(0), mk(1)]),
+        Err(MappingLoadError::DuplicateContext)
+    ));
+}
+
+/// PR review — `RebindResolution::Fail` rejects an occupied source.
+#[test]
+fn test_rebind_fail_source_conflict() {
+    let mut ctx = MappingContext {
+        id: ContextId(1),
+        priority: 0,
+        bindings: vec![
+            ActionBinding {
+                action_id: ActionId(1),
+                source: InputSource::Key(Scancode::Space),
+                modifiers: ModifierChain::new(),
+                trigger: TriggerCondition::Pressed,
+            },
+            ActionBinding {
+                action_id: ActionId(2),
+                source: InputSource::Key(Scancode::C),
+                modifiers: ModifierChain::new(),
+                trigger: TriggerCondition::Pressed,
+            },
+        ],
+        consumes_input: false,
+    };
+    let req = RebindRequest {
+        context_id: ContextId(1),
+        action_id: ActionId(1),
+        new_source: InputSource::Key(Scancode::C),
+        resolution: RebindResolution::Fail,
+    };
+    let r = RebindManager::apply_request(std::slice::from_mut(&mut ctx), &req);
+    assert_eq!(r, RebindResult::Rejected(RebindError::SourceConflict));
+    assert_eq!(ctx.bindings[0].source, InputSource::Key(Scancode::Space));
+    assert_eq!(ctx.bindings[1].source, InputSource::Key(Scancode::C));
+}
+
+/// PR review — missing context id uses `RebindError::UnknownContext`.
+#[test]
+fn test_rebind_unknown_context() {
+    let mut ctx = MappingContext {
+        id: ContextId(1),
+        priority: 0,
+        bindings: vec![],
+        consumes_input: false,
+    };
+    let req = RebindRequest {
+        context_id: ContextId(99),
+        action_id: ActionId(1),
+        new_source: InputSource::Key(Scancode::Space),
+        resolution: RebindResolution::Fail,
+    };
+    let r = RebindManager::apply_request(std::slice::from_mut(&mut ctx), &req);
+    assert_eq!(r, RebindResult::Rejected(RebindError::UnknownContext));
+}
+
+/// PR review — chord trigger completes within the configured window.
+#[test]
+fn test_trigger_chord_window() {
+    let chord = TriggerCondition::Chord {
+        inputs: smallvec![
+            InputSource::Key(Scancode::A),
+            InputSource::Key(Scancode::B),
+        ],
+        window: 0.5,
+    };
+    let mut st = TriggerState::default();
+    assert_eq!(
+        chord.evaluate_chord(&[true, false], 1.0 / 60.0, &mut st),
+        TriggerPhase::Ongoing
+    );
+    assert_eq!(
+        chord.evaluate_chord(&[true, true], 1.0 / 60.0, &mut st),
+        TriggerPhase::Fired
+    );
+}
+
+/// PR review — combo sequence requires ordered edges within per-step windows.
+#[test]
+fn test_trigger_combo_sequence() {
+    let combo = TriggerCondition::Combo {
+        sequence: smallvec![
+            InputSource::Key(Scancode::A),
+            InputSource::Key(Scancode::B),
+        ],
+        window_per_step: 0.2,
+    };
+    let mut st = TriggerState::default();
+    assert_eq!(
+        combo.evaluate_combo(true, 0.0, &mut st),
+        TriggerPhase::Ongoing
+    );
+    assert_eq!(
+        combo.evaluate_combo(true, 0.0, &mut st),
+        TriggerPhase::Fired
+    );
 }
 
 /// Keep VR hand types referenced so the public surface stays intentional.
