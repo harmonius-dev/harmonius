@@ -64,5 +64,5 @@ Plan file: [threading.md](../platform/threading.md)
 - 2026-04-14T05:28:00Z — plan-implementer — started; worktree
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-platform-threading` and draft PR
   <https://github.com/cjhowe-us/harmonius/pull/78> opened.
-- 2026-04-14T05:35:00Z — plan-implementer — code complete, awaiting review (`pr_review_status`:
-  not_started`).
+- 2026-04-14T05:35:00Z — plan-implementer — code complete, awaiting review
+  (`pr_review_status: not_started`).
