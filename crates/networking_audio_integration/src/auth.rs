@@ -29,6 +29,10 @@ fn channel_wire_bytes(channel: VoiceChannelId) -> [u8; 5] {
 }
 
 /// Computes the truncated HMAC tag for a voice packet payload.
+///
+/// Authenticates `sequence`, the channel wire encoding, and `opus_payload` bytes only; the
+/// `sender` field is carried in-band for demuxing but is intentionally excluded from the MAC
+/// input (see design IR-4.3.1).
 #[must_use]
 pub fn compute_voice_auth_tag(
     session_key: &[u8; 32],

@@ -1,4 +1,5 @@
-//! In-place noise suppression placeholder (spectral model deferred).
+//! In-place noise suppression placeholder (spectral subtraction / STFT model deferred to a later
+//! slice).
 
 /// Attenuates stationary noise before Opus encoding (placeholder implementation).
 #[derive(Clone, Debug)]

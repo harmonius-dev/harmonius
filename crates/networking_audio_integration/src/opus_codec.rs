@@ -48,12 +48,20 @@ impl OpusEncoder {
     }
 
     /// Encodes one frame of `f32` PCM into `out` (Opus payload including TOC byte).
-    pub fn encode(&mut self, pcm: &[f32], out: &mut [u8; 256]) -> u8 {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the underlying encoder rejects the frame (empty output must not be
+    /// mistaken for a valid silent packet on the wire).
+    pub fn encode(&mut self, pcm: &[f32], out: &mut [u8; 256]) -> Result<u8, &'static str> {
         let n = self
             .inner
             .encode(pcm, self.frame_size as usize, out.as_mut_slice())
-            .unwrap_or(0);
-        u8::try_from(n.min(255)).unwrap_or(255)
+            .map_err(|_| "networking_audio_integration: Opus encode failed")?;
+        if n == 0 {
+            return Err("networking_audio_integration: Opus encode produced zero bytes");
+        }
+        u8::try_from(n.min(255)).map_err(|_| "networking_audio_integration: Opus frame too long")
     }
 
     /// Updates the target bitrate in bits per second.
@@ -86,11 +94,12 @@ impl fmt::Debug for OpusDecoder {
 impl OpusDecoder {
     /// Allocates a decoder for the given sample rate and channel count.
     pub fn new(sample_rate: u32, channels: u8) -> Result<Self, &'static str> {
+        let frame = (20usize * sample_rate as usize) / 1000 * channels as usize;
         Ok(Self {
             inner: opus_rs::OpusDecoder::new(sample_rate as i32, channels as usize)?,
             sample_rate,
             channels,
-            last_pcm: Vec::new(),
+            last_pcm: vec![0.0f32; frame],
         })
     }
 
@@ -103,8 +112,12 @@ impl OpusDecoder {
         match opus_data {
             Some(bytes) if !bytes.is_empty() => match self.inner.decode(bytes, frame, pcm_out) {
                 Ok(n) => {
-                    self.last_pcm.clear();
-                    self.last_pcm.extend_from_slice(&pcm_out[..n]);
+                    if self.last_pcm.len() == n {
+                        self.last_pcm.copy_from_slice(&pcm_out[..n]);
+                    } else {
+                        self.last_pcm.resize(n, 0.0);
+                        self.last_pcm.copy_from_slice(&pcm_out[..n]);
+                    }
                     n
                 }
                 Err(_) => {
@@ -152,7 +165,7 @@ mod tests {
         let mut enc = OpusEncoder::new(24_000, 48_000, 1).expect("encoder");
         let pcm = sine_frame(440.0, 960);
         let mut out = [0u8; 256];
-        let n = enc.encode(&pcm, &mut out);
+        let n = enc.encode(&pcm, &mut out).expect("encode");
         assert!(
             usize::from(n) < 80,
             "24 kbps CBR frame should stay small (got {n} bytes)"
@@ -166,7 +179,7 @@ mod tests {
         let mut dec = OpusDecoder::new(48_000, 1).expect("decoder");
         let pcm = sine_frame(220.0, 960);
         let mut pkt = [0u8; 256];
-        let n = enc.encode(&pcm, &mut pkt);
+        let n = enc.encode(&pcm, &mut pkt).expect("encode");
         let mut out = [0.0f32; 960];
         let _ = dec.decode(Some(&pkt[..usize::from(n)]), &mut out);
         let mut plc = [0.0f32; 960];
@@ -183,7 +196,7 @@ mod tests {
         let mut dec = OpusDecoder::new(48_000, 1).expect("decoder");
         let pcm = sine_frame(880.0, 960);
         let mut pkt = [0u8; 256];
-        let n = enc.encode(&pcm, &mut pkt);
+        let n = enc.encode(&pcm, &mut pkt).expect("encode");
         let mut out = [0.0f32; 960];
         let _ = dec.decode(Some(&pkt[..usize::from(n)]), &mut out);
         let num: f32 = pcm.iter().zip(out.iter()).map(|(a, b)| a * b).sum();

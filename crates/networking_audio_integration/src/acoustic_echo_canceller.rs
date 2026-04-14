@@ -6,7 +6,10 @@ pub struct AcousticEchoCanceller {
     /// Tail length in samples (determines filter order).
     pub tail_length_samples: u32,
     weights: Vec<f32>,
-    x_hist: Vec<f32>,
+    /// Reference ring buffer (`ref_ring[ring_pos]` is newest sample).
+    ref_ring: Vec<f32>,
+    /// Index of the newest reference sample in `ref_ring`.
+    ring_pos: usize,
     /// NLMS step size.
     mu: f32,
     /// Small regulariser for stability.
@@ -21,7 +24,8 @@ impl AcousticEchoCanceller {
         Self {
             tail_length_samples,
             weights: vec![0.0f32; n],
-            x_hist: vec![0.0f32; n],
+            ref_ring: vec![0.0f32; n],
+            ring_pos: 0,
             mu: 0.05,
             eps: 1e-6,
         }
@@ -31,22 +35,26 @@ impl AcousticEchoCanceller {
     pub fn process(&mut self, mic: &mut [f32], reference: &[f32]) {
         let n = self.weights.len();
         for i in 0..mic.len().min(reference.len()) {
-            if n > 1 {
-                self.x_hist.copy_within(0..n - 1, 1);
-            }
-            self.x_hist[0] = reference[i];
-            let y_hat: f32 = self
-                .weights
-                .iter()
-                .zip(self.x_hist.iter())
-                .map(|(w, x)| w * x)
+            self.ring_pos = (self.ring_pos + n - 1) % n;
+            self.ref_ring[self.ring_pos] = reference[i];
+            let y_hat: f32 = (0..n)
+                .map(|k| {
+                    self.weights[k] * self.ref_ring[(self.ring_pos + k) % n]
+                })
                 .sum();
             let e = mic[i] - y_hat;
             mic[i] = e;
-            let norm: f32 = self.x_hist.iter().map(|x| x * x).sum::<f32>() + self.eps;
+            let norm: f32 = (0..n)
+                .map(|k| {
+                    let x = self.ref_ring[(self.ring_pos + k) % n];
+                    x * x
+                })
+                .sum::<f32>()
+                + self.eps;
             let step = (self.mu / norm) * e;
-            for (w, x) in self.weights.iter_mut().zip(self.x_hist.iter()) {
-                *w += step * x;
+            for k in 0..n {
+                let x = self.ref_ring[(self.ring_pos + k) % n];
+                self.weights[k] += step * x;
             }
         }
     }
@@ -63,14 +71,17 @@ mod tests {
     }
 
     /// TC-IR-4.3.2.3 — residual energy well below reference after NLMS processing.
+    ///
+    /// Companion doc target is −30 dB; this regression asserts a stricter bound on a long tail
+    /// after ring-buffer NLMS so adaptation is exercised across many samples.
     #[test]
     fn tc_ir_4_3_2_3_aec_residual() {
-        let len = 960usize;
+        let len = 48_000usize;
         let reference: Vec<f32> = (0..len).map(|i| (i as f32 * 0.01).sin()).collect();
         let mut mic = reference.clone();
-        let mut aec = AcousticEchoCanceller::new(64);
+        let mut aec = AcousticEchoCanceller::new(256);
         aec.process(&mut mic, reference.as_slice());
         let db = db_energy_ratio(&mic, &reference);
-        assert!(db < -6.0, "residual ratio {db} dB");
+        assert!(db < -30.0, "residual ratio {db} dB");
     }
 }

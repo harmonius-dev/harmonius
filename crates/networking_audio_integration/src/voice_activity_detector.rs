@@ -13,6 +13,10 @@ pub struct VoiceActivityDetector {
 
 impl VoiceActivityDetector {
     /// Builds a detector with the given RMS threshold.
+    ///
+    /// Default `hangover_frames` is `5` (≈100 ms at 20 ms frames, 48 kHz / 960-sample frames), a
+    /// practical stand-in for WebRTC VAD mode-1 style tail; override the field after construction
+    /// for other tunings.
     #[must_use]
     pub fn new(threshold: f32) -> Self {
         Self {

@@ -20,6 +20,8 @@ impl VoiceChannelRouter {
         match channel {
             VoiceChannelId::Proximity => self.buckets[0]
                 .iter()
+                // Proximity uses a single synthetic key `0`; linear scan is O(bucket₀) with one
+                // entry today. Sorted `binary_search` would apply if multiple proximity keys exist.
                 .find(|(k, _)| *k == 0)
                 .map(|(_, slots)| slots.as_slice())
                 .unwrap_or(&[]),
