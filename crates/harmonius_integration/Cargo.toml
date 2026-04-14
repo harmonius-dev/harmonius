@@ -1,0 +1,10 @@
+[package]
+description = "High-level integration types and constants from docs/design/integration/high-level.md"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+name = "harmonius_integration"
+repository = "https://github.com/cjhowe-us/harmonius"
+version = "0.1.0"
+
+[lib]
+path = "src/lib.rs"
