@@ -1,8 +1,10 @@
 //! Plan-driven acceptance tests (`TC-14.3.*`).
 
+use std::collections::HashSet;
 use std::io::Write;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
+use std::thread::{self, ThreadId};
 
 use tempfile::NamedTempFile;
 
@@ -13,9 +15,17 @@ static TC_14_3_3_1_COUNTER: AtomicUsize = AtomicUsize::new(0);
 static TC_14_3_3_2_STATE: Mutex<String> = Mutex::new(String::new());
 
 use crate::threading::{
-    compio, par_iter, BufferPool, CoreTopology, IoResult, PlatformIo, TaskGraphBuilder,
-    TaskGraphError, ThreadPool, ThreadPoolConfig,
+    par_iter, BufferPool, CoreTopology, IoResult, PlatformIo, TaskGraphBuilder, TaskGraphError,
+    ThreadPool, ThreadPoolConfig,
 };
+
+struct HybridTopologyEnvGuard;
+
+impl Drop for HybridTopologyEnvGuard {
+    fn drop(&mut self) {
+        std::env::remove_var("HARMONIUS_TEST_HYBRID_TOPOLOGY");
+    }
+}
 
 #[test]
 fn tc_14_3_1_1_par_iter_10k_jobs() {
@@ -32,28 +42,49 @@ fn tc_14_3_1_2_worker_count_matches_perf_cores() {
     let lock = TOPOLOGY_TEST_LOCK.get_or_init(|| Mutex::new(()));
     let _guard = lock.lock().expect("topology test lock poisoned");
     std::env::set_var("HARMONIUS_TEST_HYBRID_TOPOLOGY", "1");
+    let _env_guard = HybridTopologyEnvGuard;
     let topo = CoreTopology::detect();
     let pool = ThreadPool::new(ThreadPoolConfig::default());
     assert_eq!(pool.worker_count(), topo.performance_core_count());
-    std::env::remove_var("HARMONIUS_TEST_HYBRID_TOPOLOGY");
 }
 
 #[test]
 fn tc_14_3_3_1_graph_fan_out_fan_in() {
     TC_14_3_3_1_COUNTER.store(0, Ordering::Relaxed);
     let pool = ThreadPool::new(ThreadPoolConfig::default());
+    let threads: Arc<Mutex<HashSet<ThreadId>>> = Arc::new(Mutex::new(HashSet::new()));
     let mut b = TaskGraphBuilder::new();
     let root = b.add_task("root", || {});
-    let a = b.add_task("a", || {
+    let threads_a = Arc::clone(&threads);
+    let a = b.add_task("a", move || {
+        threads_a
+            .lock()
+            .expect("threads lock poisoned")
+            .insert(thread::current().id());
         TC_14_3_3_1_COUNTER.fetch_add(1, Ordering::Relaxed);
     });
-    let c = b.add_task("c", || {
+    let threads_c = Arc::clone(&threads);
+    let c = b.add_task("c", move || {
+        threads_c
+            .lock()
+            .expect("threads lock poisoned")
+            .insert(thread::current().id());
         TC_14_3_3_1_COUNTER.fetch_add(1, Ordering::Relaxed);
     });
-    let d = b.add_task("d", || {
+    let threads_d = Arc::clone(&threads);
+    let d = b.add_task("d", move || {
+        threads_d
+            .lock()
+            .expect("threads lock poisoned")
+            .insert(thread::current().id());
         TC_14_3_3_1_COUNTER.fetch_add(1, Ordering::Relaxed);
     });
-    let e = b.add_task("e", || {
+    let threads_e = Arc::clone(&threads);
+    let e = b.add_task("e", move || {
+        threads_e
+            .lock()
+            .expect("threads lock poisoned")
+            .insert(thread::current().id());
         TC_14_3_3_1_COUNTER.fetch_add(1, Ordering::Relaxed);
     });
     let join = b.add_task("join", || {});
@@ -68,6 +99,13 @@ fn tc_14_3_3_1_graph_fan_out_fan_in() {
     let graph = b.build().expect("dag");
     pool.execute_graph(graph);
     assert_eq!(TC_14_3_3_1_COUNTER.load(Ordering::Relaxed), 4);
+    let set = threads.lock().expect("threads lock poisoned").clone();
+    if pool.worker_count() >= 2 {
+        assert!(
+            set.len() >= 2,
+            "fan-out tasks should overlap on at least two worker threads when N >= 2"
+        );
+    }
 }
 
 #[test]
@@ -121,12 +159,20 @@ fn tc_14_3_3_4_graph_empty() {
 }
 
 #[test]
-fn tc_14_3_5_1_compio_file_read() {
+fn tc_14_3_5_1_platform_io_file_read() {
     let mut file = NamedTempFile::new().expect("tempfile");
     writeln!(file, "hello-plan").expect("write");
     file.flush().expect("flush");
-    let bytes = compio::read_file(file.path()).expect("read");
-    assert_eq!(bytes, b"hello-plan\n");
+    let (tx, rx) = crossbeam_channel::unbounded::<IoResult>();
+    let mut io = PlatformIo::new(tx);
+    let pool = BufferPool::new(64, 1);
+    let buf = pool.acquire().expect("buffer");
+    io.submit_read(file.path(), buf);
+    assert!(rx.try_recv().is_err());
+    io.poll_completions();
+    let res = rx.recv().expect("completion");
+    assert!(res.status.is_ok());
+    assert_eq!(res.buffer.as_slice(), b"hello-plan\n");
 }
 
 #[test]
