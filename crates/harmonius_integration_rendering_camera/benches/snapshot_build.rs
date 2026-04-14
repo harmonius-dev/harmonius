@@ -3,9 +3,10 @@ use std::hint::black_box;
 use criterion::{criterion_group, criterion_main, Criterion};
 
 use harmonius_integration_rendering_camera::{
-    build_render_view_from_camera, drs_pi_step, extract_sorted_render_views, resolve_post_process_stack,
+    build_render_view_from_camera, drs_pi_step, extract_sorted_render_views,
+    render_view_from_camera_message, resolve_post_process_stack, view_uniform_from_render_view,
     CameraOutput, Entity, PostProcessBlend, PostProcessParams, PostProcessVolume, Projection,
-    Viewport,
+    RenderView, Viewport,
 };
 
 fn bench_snapshot_build(c: &mut Criterion) {
@@ -111,7 +112,49 @@ fn bench_multi_view_extract(c: &mut Criterion) {
 
 fn bench_drs_pi(c: &mut Criterion) {
     c.bench_function("drs_pi_step", |b| {
-        b.iter(|| black_box(drs_pi_step(black_box(1.0), black_box(20.0), black_box(16.6), black_box(0.5))))
+        b.iter(|| {
+            black_box(drs_pi_step(
+                black_box(1.0),
+                black_box(20.0),
+                black_box(16.6),
+                black_box(0.5),
+            ))
+        })
+    });
+}
+
+fn bench_view_uniform_pack(c: &mut Criterion) {
+    let projection = Projection::Perspective {
+        fov_y_radians: 1.047,
+        aspect: 16.0 / 9.0,
+        near: 0.1,
+        far: 1000.0,
+    };
+    let output = CameraOutput {
+        brain: Entity(1),
+        stable_index: 0,
+        active: true,
+        position: glam::Vec3::new(0.0, 5.0, -10.0),
+        rotation: glam::Quat::IDENTITY,
+        projection,
+        render_layers: 1,
+        render_order: 0,
+        viewport: Viewport {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        },
+    };
+    let snap = build_render_view_from_camera(&output, 1.0, 0.5).expect("snapshot");
+    let render_view = render_view_from_camera_message(&snap);
+    let views: [RenderView; 4] = std::array::from_fn(|_| render_view);
+    c.bench_function("view_uniform_pack_four_views", |b| {
+        b.iter(|| {
+            for rv in &views {
+                black_box(view_uniform_from_render_view(black_box(rv)));
+            }
+        })
     });
 }
 
@@ -120,6 +163,7 @@ criterion_group!(
     bench_snapshot_build,
     bench_post_process_resolve,
     bench_multi_view_extract,
+    bench_view_uniform_pack,
     bench_drs_pi
 );
 criterion_main!(benches);
