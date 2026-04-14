@@ -31,7 +31,8 @@ pub use pathfinder::{
     astar_grid_manhattan, HeuristicFn, Pathfinder, PathfindingBudget, QueryFilter,
 };
 pub use rebuilder::{
-    compare_incremental_to_full_tile, dirty_tiles_for_local_edit, NavMeshRebuilder,
+    compare_incremental_to_full_tile, dirty_tiles_for_local_edit, input_geometry_for_tiles,
+    NavMeshRebuilder,
 };
 pub use smoother::{PathSmoother, SmoothingMode, SmoothingTarget};
 pub use tile::{NavMeshTile, NavPoly};

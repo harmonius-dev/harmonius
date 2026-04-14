@@ -6,7 +6,10 @@ use super::area_cost::AreaCostTable;
 use super::tile_map::NavMeshTileMap;
 use super::types::{LayerId, TileCoord};
 
-/// Coarse graph over loaded tiles (one node per present `TileCoord` on a layer).
+/// Loaded-tile adjacency graph (4-neighbor BFS over present `TileCoord` keys).
+///
+/// Cost-aware HPA* clusters from the design are not implemented yet; `find_path` is uniform-cost
+/// tile hops and ignores `_area_costs` until abstract costs land.
 #[derive(Clone, Debug, Default)]
 pub struct ClusterGraph {
     /// Last rebuilt tile set fingerprint (tile coords present).
@@ -143,9 +146,9 @@ mod tests {
         map
     }
 
-    /// TC-7.1.14.1 #1 — long strip coarse path.
+    /// TC-7.1.14.1 #1 — long strip of loaded tiles yields a coarse tile path.
     #[test]
-    fn tc_7_1_14_1_long_hpa_path() {
+    fn tc_7_1_14_1_long_coarse_tile_strip() {
         let map = strip_map(50);
         let table = AreaCostTable::new();
         let mut cg = ClusterGraph::new();

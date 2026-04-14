@@ -29,6 +29,7 @@ pub enum SmoothingTarget {
 }
 
 /// Post-processes funnel output into denser samples.
+#[derive(Debug)]
 pub struct PathSmoother;
 
 impl PathSmoother {
@@ -91,12 +92,13 @@ impl PathSmoother {
         while i + 2 < waypoints.len() {
             let a = waypoints[i].position;
             let c = waypoints[i + 2].position;
-            let tile = tile_map
-                .get_tile(
-                    waypoints[i].poly_ref.tile.coord,
-                    waypoints[i].poly_ref.tile.layer,
-                )
-                .expect("tile");
+            let Some(tile) = tile_map.get_tile(
+                waypoints[i].poly_ref.tile.coord,
+                waypoints[i].poly_ref.tile.layer,
+            ) else {
+                i += 1;
+                continue;
+            };
             let hit = raycast_poly_xz(tile, waypoints[i].poly_ref.poly_index, a, c);
             if let Some(t) = hit {
                 if t >= 0.999 {

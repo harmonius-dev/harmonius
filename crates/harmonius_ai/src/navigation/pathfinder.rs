@@ -80,6 +80,7 @@ impl Pathfinder {
             self.heuristic,
             filter,
         )
+        .map(|(c, _)| c)
     }
 
     /// Finds a full path with funnel post-processing.
@@ -99,10 +100,16 @@ impl Pathfinder {
         let Some((gp, _)) = tile_map.find_nearest_poly(goal, Vec3::splat(2.0), layer) else {
             return PathResult::not_found();
         };
-        let Some(corridor) = self.find_corridor(tile_map, area_costs, sp, gp, filter) else {
+        let Some((corridor, total_cost)) = astar_poly_corridor(
+            tile_map,
+            area_costs,
+            sp,
+            gp,
+            self.heuristic,
+            filter,
+        ) else {
             return PathResult::not_found();
         };
-        let total_cost = corridor_cost(tile_map, area_costs, &corridor, filter);
         let wps = super::funnel::FunnelSmoother::smooth(tile_map, &corridor, start, goal);
         PathResult::complete(wps, corridor, total_cost)
     }
@@ -135,7 +142,7 @@ pub fn astar_grid_manhattan(
     goal: (usize, usize),
     blocked: &HashSet<(usize, usize)>,
 ) -> Option<(Vec<(usize, usize)>, f32)> {
-    #[derive(Clone, Copy, Eq, PartialEq, Hash)]
+    #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
     struct N(usize, usize);
     let mut open: Vec<(f32, N)> = vec![(0.0, N(start.0, start.1))];
     let mut came: HashMap<N, N> = HashMap::new();
@@ -177,20 +184,19 @@ pub fn astar_grid_manhattan(
     None
 }
 
-fn pop_min<T: Copy + Eq>(open: &mut Vec<(f32, T)>) -> Option<(f32, T)> {
+fn pop_min<T: Copy + Eq + Ord>(open: &mut Vec<(f32, T)>) -> Option<(f32, T)> {
     if open.is_empty() {
         return None;
     }
     let mut bi = 0usize;
-    let mut bf = open[0].0;
-    for (i, &(f, _)) in open.iter().enumerate().skip(1) {
-        if f < bf || (f == bf && open[i].1 != open[bi].1) {
-            bf = f;
+    for i in 1..open.len() {
+        let (f, t) = open[i];
+        let (bf, bt) = open[bi];
+        if f < bf || (f == bf && t < bt) {
             bi = i;
         }
     }
-    let (f, t) = open.remove(bi);
-    Some((f, t))
+    Some(open.remove(bi))
 }
 
 fn pop_min_poly(open: &mut Vec<(f32, PolySearchKey)>) -> Option<(f32, PolySearchKey)> {
@@ -215,7 +221,7 @@ fn astar_poly_corridor(
     goal: PolyRef,
     heuristic: HeuristicFn,
     filter: &QueryFilter,
-) -> Option<Vec<PolyRef>> {
+) -> Option<(Vec<PolyRef>, f32)> {
     let _start_center = poly_center(tile_map, start)?;
     let goal_center = poly_center(tile_map, goal)?;
     let mut open: Vec<(f32, PolySearchKey)> = vec![(0.0, PolySearchKey(start))];
@@ -232,7 +238,8 @@ fn astar_poly_corridor(
                 c = p;
             }
             out.reverse();
-            return Some(out);
+            let g_goal = *gscore.get(&PolySearchKey(goal)).unwrap_or(&0.0);
+            return Some((out, g_goal));
         }
         let tile = tile_map.get_tile(current.tile.coord, current.tile.layer)?;
         let poly = tile.polygon(current.poly_index)?;
@@ -405,30 +412,6 @@ fn poly_center(tile_map: &NavMeshTileMap, pref: PolyRef) -> Option<Vec3> {
     t.polygon_center(pref.poly_index)
 }
 
-fn corridor_cost(
-    tile_map: &NavMeshTileMap,
-    table: &AreaCostTable,
-    corridor: &[PolyRef],
-    filter: &QueryFilter,
-) -> f32 {
-    if corridor.len() < 2 {
-        return 0.0;
-    }
-    let mut sum = 0.0f32;
-    for w in corridor.windows(2) {
-        let a = w[0];
-        let b = w[1];
-        let Some(tile) = tile_map.get_tile(b.tile.coord, b.tile.layer) else {
-            continue;
-        };
-        let Some(poly) = tile.polygon(b.poly_index) else {
-            continue;
-        };
-        sum += move_cost(tile_map, table, filter, a, b, poly.area_type);
-    }
-    sum
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
@@ -459,10 +442,14 @@ mod tests {
         assert!((r.1 - 8.0).abs() < 1e-3);
     }
 
-    /// TC-7.1.3.1 #2 — shortcut edge preferred.
+    /// TC-7.1.3.1 #2 — stable tie-break: repeated optimal grid queries are deterministic.
     #[test]
     fn tc_7_1_3_1_shortcut() {
-        // Custom graph tested via small hand-built navmesh in tc_poly_shortcut below.
+        let blocked = HashSet::new();
+        let a = astar_grid_manhattan(5, (0, 0), (4, 4), &blocked);
+        let b = astar_grid_manhattan(5, (0, 0), (4, 4), &blocked);
+        assert_eq!(a, b);
+        assert!((a.expect("path").1 - 8.0).abs() < 1e-3);
     }
 
     fn two_route_mesh() -> (NavMeshTileMap, PolyRef, PolyRef) {
