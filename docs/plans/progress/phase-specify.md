@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T02:01:13Z
+last_updated: 2026-04-14T02:07:12Z
 phase: specify
 started_at: null
 ---
@@ -39,3 +39,8 @@ on every pass; read by the harmonize master agent to compute the next ready set.
   unchanged.
 - 2026-04-14T02:01:13Z — harmonize `mode: run`: specify ready set empty (`(bootstrap)`
   `not_started`); no specify-orchestrator dispatch.
+- 2026-04-14T02:06:36Z — harmonize `mode: run` root: merge-detection + `post-merge-dispatch`
+  scheduled; specify ready set still empty (`(bootstrap)` `not_started`); continuation may dispatch
+  specify-orchestrator if state changes after merge reconciliation.
+- 2026-04-14T02:07:12Z — harmonize `post-merge-dispatch`: specify ready set still empty; no
+  specify-orchestrator dispatch.

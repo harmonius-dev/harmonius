@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T02:02:00Z
+last_updated: 2026-04-14T02:10:38Z
 phase: plan
 started_at: null
 ---
@@ -73,4 +73,41 @@ every pass; read by the harmonize master agent to compute the next ready set.
   (`plan-orchestrator` `66a06851-cb97-44dd-a9cd-7e9144a19d87` removed).
   **Cancel that subagent in Cursor UI** if it is still running — `TaskStop` is not available in this
   host.
-- 2026-04-14T02:02:00Z — plan-orchestrator `dispatch-only`: locks 0; dispatched 113 additional `plan-implementer` (ready `not_started`, not in prior in-flight, deps satisfied) plus 2 `pr-reviewer` on `code_complete` cross-cutting plans; blocked unchanged (`PLAN-physics-constraints`, `PLAN-cross-cutting-performance-budget`).
+- 2026-04-14T02:02:00Z — plan-orchestrator `dispatch-only`: locks 0; dispatched 113 additional
+  `plan-implementer` (ready `not_started`, not in prior in-flight, deps satisfied) plus 2
+  `pr-reviewer` on `code_complete` cross-cutting plans; blocked unchanged
+  (`PLAN-physics-constraints`, `PLAN-cross-cutting-performance-budget`).
+- 2026-04-14T02:06:36Z — harmonize `mode: run` (root): §0 stash gate passed (`main`, clean);
+  `in_flight` was `[]` (no restart sweep rows); local `rg` — no `PLAN-*` with numeric `pr_number`
+  (merge-detection expects no `gh pr view` batch).
+- 2026-04-14T02:06:36Z — §5a + chain: `plan-orchestrator` `merge-detection` background task
+  `3ded6dc8-ea4f-41d9-af9f-85335290f907`; nested `harmonize` `post-merge-dispatch`
+  `115061d6-d6f8-4192-973f-3ffdd9878cb3`; root skips §6–7 (continuation owns dispatch wave).
+- 2026-04-14T02:06:36Z — Cron bootstrap: skipped (no `CronList` / `CronCreate` in Cursor host);
+  ordered merge + continuation still scheduled this pass.
+- 2026-04-14T02:07:05Z — plan-orchestrator `merge-detection` (foreground pass): §0 `main` clean; 141
+  `PLAN-*` scanned; 0 with numeric `pr_number` or `/pull/<n>` in `pr_url`; 1 non-null `pr_url` is
+  compare-only (`PLAN-core-runtime-hot-reload-protocol`, no PR id for `gh pr view`); merges 0;
+  `gh pr view` calls 0; no workers dispatched.
+- 2026-04-14T02:07:12Z — harmonize `post-merge-dispatch`: reconciled merge task
+  `3ded6dc8-ea4f-41d9-af9f-85335290f907` (merge outcome matches 2026-04-14T02:07:05Z log above);
+  removed merge
+  - nested `harmonize` continuation rows from `in-flight.md`.
+- 2026-04-14T02:07:12Z — §3 restart sweep: `TaskStop` unavailable in this Cursor host; stale rows
+  cleared after reconciliation; no lock matches (`locks: []`).
+- 2026-04-14T02:07:12Z — §7: `specify-orchestrator` / `design-orchestrator` skipped (ready sets
+  empty; Phase 1 `(bootstrap)` still `not_started`).
+- 2026-04-14T02:07:12Z — Dispatched `plan-orchestrator` `dispatch-only` (background task
+  `1b383f99-9a55-48b8-a4f3-487118a31940`, `parent_task_id` `115061d6-d6f8-4192-973f-3ffdd9878cb3`);
+  registered in `docs/plans/in-flight.md`.
+- 2026-04-14T02:08:34Z — plan-orchestrator `dispatch-only` (this pass): §0 stash gate failed — dirty
+  `main` (`docs/plans/in-flight.md`, `docs/plans/progress/phase-*.md`); no `plan-implementer` /
+  `pr-reviewer` dispatch; skipped `index.md` topo rewrite; merge-detection not re-run (per parent).
+- 2026-04-14T02:08:34Z — plan-orchestrator `dispatch-only` (this pass): `locks: []`; static tally
+  from `PLAN-*` progress — `not_started` 118, `started` 18, `code_complete` 5, merged archive 0;
+  explicit dependency blocks 2 (`PLAN-physics-constraints`,
+  `PLAN-cross-cutting-performance-budget`); would-be ready ~116 implementers + 5 reviewers if gate
+  had passed.
+- 2026-04-14T02:10:38Z — Manual **`reset-in-flight`**: cleared `docs/plans/in-flight.md` (killed
+  background agent tree / worktree restart); prior row referenced `plan-orchestrator`
+  `dispatch-only` task `1b383f99-9a55-48b8-a4f3-487118a31940`.
