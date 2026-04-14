@@ -480,6 +480,41 @@ mod tests {
     }
 
     #[test]
+    fn tc_ir_9_1_5_1_hot_reload_during_edit_mode() {
+        let mut h = HeadlessHarness::new();
+        assert_eq!(h.play_mode, PlayMode::Edit);
+        let mut dylib = 0_u32;
+        let mut fm4 = 0_u64;
+        run_hot_reload_barrier(&mut h.editor, &mut h.game, &mut dylib, &mut fm4, |e, _g| {
+            e.place_entity(EntityId(1));
+        });
+        assert_eq!(dylib, 1);
+        assert_eq!(fm4, 0);
+        assert!(h.editor.contains_entity(EntityId(1)));
+        assert_eq!(h.play_mode, PlayMode::Edit);
+    }
+
+    #[test]
+    fn tc_ir_9_1_5_2_hot_reload_during_pie() {
+        let mut h = HeadlessHarness::new();
+        h.editor.place_entity(EntityId(2));
+        h.start_pie().expect("pie");
+        assert_eq!(h.play_mode, PlayMode::Playing);
+        let mut dylib = 0_u32;
+        let mut fm4 = 0_u64;
+        run_hot_reload_barrier(&mut h.editor, &mut h.game, &mut dylib, &mut fm4, |_e, g| {
+            g.apply_editor_mutation(&EditorMutation {
+                mutation_id: 1,
+                kind: EditorMutationKind::SpawnEntity { id: EntityId(3) },
+            });
+        });
+        assert_eq!(dylib, 1);
+        assert_eq!(fm4, 0);
+        assert_eq!(h.play_mode, PlayMode::Playing);
+        assert!(h.game.has_entity(EntityId(3)));
+    }
+
+    #[test]
     fn tc_ir_9_1_5_3_migration_runs_on_both_worlds() {
         let mut ed = EditorWorld::default();
         let mut gw = GameWorld::default();
