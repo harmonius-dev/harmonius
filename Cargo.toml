@@ -10,6 +10,7 @@ members = [
   "crates/editor_rendering",
   "crates/grids_volumes_physics",
   "crates/harmonius-build-deploy",
+  "crates/harmonius-integration-ai-data-tables",
   "crates/harmonius-integration-benches",
   "crates/harmonius-integration-tests",
   "crates/harmonius-localization",
