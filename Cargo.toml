@@ -48,6 +48,7 @@ members = [
   "crates/integration_networking_save",
   "crates/integration_timelines_camera",
   "crates/integration_ui_physics",
+  "crates/net-physics",
   "crates/render-effects",
   "crates/rendering_ui",
   "crates/save_system_profiler",
