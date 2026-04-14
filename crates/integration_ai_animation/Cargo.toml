@@ -1,0 +1,18 @@
+[package]
+description = "AI behavior ↔ animation integration contracts (IR-1.1.x)"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "integration_ai_animation"
+repository = "https://github.com/cjhowe/harmonius"
+version = "0.1.0"
+
+[dependencies]
+glam = { version = "0.29", default-features = true }
+smallvec = { version = "1.14", default-features = false, features = ["const_generics"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
