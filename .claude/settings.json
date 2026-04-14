@@ -5,8 +5,8 @@
   "extraKnownMarketplaces": {
     "cjhowe-us-workflow": {
       "source": {
-        "path": "/Users/cjhowe/Code/workflow",
-        "source": "directory"
+        "repo": "cjhowe-us/workflow",
+        "source": "github"
       }
     }
   },
