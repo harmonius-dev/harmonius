@@ -1,0 +1,18 @@
+[package]
+authors = ["Harmonius Contributors"]
+description = "Containers/slots and rendering integration helpers (transforms, layers, snap hysteresis)"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+name = "containers_slots_rendering"
+repository = "https://github.com/cjhowe-us/harmonius"
+rust-version = "1.85"
+version = "0.1.0"
+
+[dependencies]
+glam = "0.29"
+
+[lints.clippy]
+all = "warn"
+
+[lints.rust]
+unsafe_code = "forbid"

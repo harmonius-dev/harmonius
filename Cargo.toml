@@ -7,6 +7,7 @@ members = [
   "crates/console_sdk",
   "crates/console_stub",
   "crates/console_target",
+  "crates/containers_slots_rendering",
   "crates/content_services",
   "crates/core-runtime",
   "crates/core_runtime",
