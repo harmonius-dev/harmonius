@@ -30,7 +30,7 @@ fn tc_1_8_1_1_io_request_read_file_construction() {
         buffer,
     };
     assert_eq!(req.kind(), IoRequestKind::Read);
-    assert_eq!(req.id(), expected_id);
+    assert_eq!(req.id(), Some(expected_id));
 }
 
 // TC-1.8.1.2
@@ -79,6 +79,7 @@ fn tc_1_8_1_4_io_request_cancel_request_carries_target() {
     let req = IoRequest::CancelRequest {
         target: IoRequestId(42),
     };
+    assert_eq!(req.id(), None);
     assert_eq!(req.cancel_target(), Some(IoRequestId(42)));
 }
 

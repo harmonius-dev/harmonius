@@ -14,7 +14,7 @@ Companion test cases for [io.md](io.md).
 1. **#1** — Build `IoRequest::ReadFile { id, path: VPath("asset://mesh.bin"), buffer }`
    - **Expected:** Enum discriminant matches `IoRequestKind::Read`
 2. **#2** — Request carries caller-owned `IoRequestId`
-   - **Expected:** `req.id() == expected_id`
+   - **Expected:** `req.id() == Some(expected_id)`
 
 ### TC-1.8.1.2 IoRequest SendPacket Construction
 
@@ -41,7 +41,7 @@ Companion test cases for [io.md](io.md).
 | 1 | F-1.8.4     |
 
 1. **#1** — Build `IoRequest::CancelRequest { target: IoRequestId(42) }`
-   - **Expected:** `target == IoRequestId(42)`; no buffer required
+   - **Expected:** `target == IoRequestId(42)`; `req.id() == None`; no buffer required
 
 ### TC-1.8.2.1 IoResponse ReadOk Parsing
 
