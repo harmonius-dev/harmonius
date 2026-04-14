@@ -1,12 +1,12 @@
 ---
 branch: plan/core-runtime-reflection-serialization
-last_updated: 2026-04-14T05:19:01Z
+last_updated: 2026-04-14T11:35:32Z
 plan_id: PLAN-core-runtime-reflection-serialization
 pr_number: 36
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/36
 started_at: 2026-04-14T05:10:00Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-reflection-serialization
 ---
 
@@ -33,8 +33,8 @@ Plan file: [reflection-serialization.md](../core-runtime/reflection-serializatio
 - [x] `rumdl check .` passes for touched docs
 - [x] Evidence links logged in this file
 - [x] Code complete marker set
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -63,12 +63,13 @@ until a separate codegen or tooling plan owns them.
 
 ## Evidence registry
 
-- Test reports: `cargo test --workspace` (2026-04-14, local) — 13 tests in `harmonius_serialize`.
+- Test reports: `cargo test --workspace` (2026-04-14, local) — 15 tests in `harmonius_serialize`.
 - Benchmarks: TC-1.4.1.3 throughput assertion runs in **release** only (`cfg!(debug_assertions)`
   skip in debug).
 - Screenshots: not applicable (no UI).
 - Videos: not applicable.
-- Review notes: pending `pr-reviewer`; draft PR <https://github.com/cjhowe-us/harmonius/pull/36>
+- Review notes: pr-reviewer complete; PR <https://github.com/cjhowe-us/harmonius/pull/36> ready for
+  human review.
 
 ## Event log
 
@@ -79,3 +80,6 @@ until a separate codegen or tooling plan owns them.
 - `2026-04-14T05:18:00Z` — draft PR opened: <https://github.com/cjhowe-us/harmonius/pull/36>
 - `2026-04-14T05:19:01Z` — code complete, awaiting review; `harmonius_serialize` crate merged into
   plan branch.
+- `2026-04-14T11:35:32Z` — pr-reviewer: submitted for human review, 3 findings addressed (binary
+  deserialize ignored registry schema vs header; missing `UnsupportedSchemaVersion` guard for newer
+  payloads; README dead link for `rumdl` MD057); PR undrafted.
