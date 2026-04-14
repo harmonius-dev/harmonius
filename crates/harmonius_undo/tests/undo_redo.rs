@@ -184,7 +184,6 @@ fn tc_15_1_3_2_1_stack_push_and_undo() {
     let before = snap(&[e]);
     let after = snap(&[e]);
     let record = mk_record(
-        &mut stack,
         UserId(0),
         EditorCommand::SetComponentValue {
             entity: e,
@@ -207,7 +206,6 @@ fn tc_15_1_3_2_2_stack_undo_then_redo() {
     let e = EntityRef(8);
     let sel = snap(&[e]);
     let record = mk_record(
-        &mut stack,
         UserId(0),
         EditorCommand::SetComponentValue {
             entity: e,
@@ -233,7 +231,6 @@ fn tc_15_1_3_2_3_stack_push_after_undo_clears_redo() {
         .push_record(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::SetComponentValue {
                     entity: e,
@@ -250,7 +247,6 @@ fn tc_15_1_3_2_3_stack_push_after_undo_clears_redo() {
         .push_record(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::SetComponentValue {
                     entity: e,
@@ -276,7 +272,6 @@ fn tc_15_1_3_2_4_stack_clear() {
         .push_record(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::BumpCounter,
                 sel.clone(),
@@ -300,7 +295,6 @@ fn tc_15_1_3_3_1_transaction_single_undo_step() {
         tx.push(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::InsertComponent { entity: e, value: 1 },
                 sel.clone(),
@@ -311,7 +305,6 @@ fn tc_15_1_3_3_1_transaction_single_undo_step() {
         tx.push(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::SetComponentValue {
                     entity: e,
@@ -341,7 +334,6 @@ fn tc_15_1_3_3_2_transaction_rollback_on_panic() {
         tx.push(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::InsertComponent { entity: e, value: 1 },
                 sel.clone(),
@@ -365,7 +357,6 @@ fn tc_15_1_3_3_3_transaction_label_preserved() {
         tx.push(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::BumpCounter,
                 sel.clone(),
@@ -391,7 +382,6 @@ async fn tc_15_1_3_4_1_budget_evicts_oldest() {
             .push_record(
                 &mut world,
                 mk_record(
-                    &mut stack,
                     UserId(0),
                     EditorCommand::BumpCounter,
                     sel.clone(),
@@ -424,7 +414,6 @@ async fn tc_15_1_3_4_2_budget_spill_to_disk() {
         .push_record(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::BumpCounter,
                 sel.clone(),
@@ -451,7 +440,6 @@ fn tc_15_1_3_4_3_budget_tracks_total_bytes() {
     let mut sum = 0u64;
     for _ in 0..4 {
         let record = mk_record(
-            &mut stack,
             UserId(0),
             EditorCommand::BumpCounter,
             sel.clone(),
@@ -475,7 +463,6 @@ fn tc_15_1_3_7_1_undo_restores_before_selection() {
         .push_record(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::BumpCounter,
                 before.clone(),
@@ -499,7 +486,6 @@ fn tc_15_1_3_7_2_redo_restores_after_selection() {
         .push_record(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::BumpCounter,
                 before,
@@ -522,7 +508,6 @@ fn tc_15_1_3_8_1_collab_two_user_independent_undo() {
     let sel1 = snap(&[e1]);
     let sel2 = snap(&[e2]);
     let r1 = mk_record(
-        session.stacks.get_mut(&UserId(1)).unwrap(),
         UserId(1),
         EditorCommand::SetComponentValue {
             entity: e1,
@@ -534,7 +519,6 @@ fn tc_15_1_3_8_1_collab_two_user_independent_undo() {
     );
     session.push_for_user(UserId(1), r1).unwrap();
     let r2 = mk_record(
-        session.stacks.get_mut(&UserId(2)).unwrap(),
         UserId(2),
         EditorCommand::SetComponentValue {
             entity: e2,
@@ -558,7 +542,6 @@ fn tc_15_1_3_8_2_collab_conflict_detection_touches() {
     let e = EntityRef(5);
     let sel = snap(&[e]);
     let r1 = mk_record(
-        session.stacks.get_mut(&UserId(1)).unwrap(),
         UserId(1),
         EditorCommand::SetComponentValue {
             entity: e,
@@ -570,7 +553,6 @@ fn tc_15_1_3_8_2_collab_conflict_detection_touches() {
     );
     session.push_for_user(UserId(1), r1).unwrap();
     let r2 = mk_record(
-        session.stacks.get_mut(&UserId(2)).unwrap(),
         UserId(2),
         EditorCommand::SetComponentValue {
             entity: e,
@@ -595,7 +577,6 @@ fn tc_15_1_3_8_3_collab_per_user_cursor() {
     session.insert_stack(UserId(2), UndoStack::new(1024 * 1024));
     let sel = SelectionSnapshot::empty();
     let r1 = mk_record(
-        session.stacks.get_mut(&UserId(1)).unwrap(),
         UserId(1),
         EditorCommand::BumpCounter,
         sel.clone(),
@@ -603,7 +584,6 @@ fn tc_15_1_3_8_3_collab_per_user_cursor() {
     );
     session.push_for_user(UserId(1), r1).unwrap();
     let r2 = mk_record(
-        session.stacks.get_mut(&UserId(2)).unwrap(),
         UserId(2),
         EditorCommand::BumpCounter,
         sel.clone(),
@@ -627,7 +607,6 @@ fn transaction_insert_conflict_returns_command_error() {
         .push(
             &mut world,
             mk_record(
-                &mut stack,
                 UserId(0),
                 EditorCommand::InsertComponent { entity: e, value: 2 },
                 sel.clone(),
