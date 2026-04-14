@@ -1,12 +1,12 @@
 ---
 branch: plan/geometry-procedural-generation
-last_updated: 2026-04-14T05:35:00Z
+last_updated: 2026-04-14T11:37:10Z
 plan_id: PLAN-geometry-procedural-generation
 pr_number: 86
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/86
 started_at: 2026-04-14T05:20:00Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-geometry-procedural-generation
 ---
 
@@ -30,8 +30,8 @@ Plan file: [procedural-generation.md](../geometry/procedural-generation.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 - [x] Code complete marker set
 
@@ -63,3 +63,5 @@ Plan file: [procedural-generation.md](../geometry/procedural-generation.md)
 - 2026-04-14T05:20:00Z — plan-implementer — started, worktree + draft PR created (`harmonius_pcg`
   crate bootstrap).
 - 2026-04-14T05:35:00Z — plan-implementer — code complete, awaiting review (PR #86).
+- 2026-04-14T11:37:10Z — pr-reviewer — submitted for human review, 1 low-severity finding addressed
+  (README dead link for `rumdl` MD057); PR #86 undrafted.
