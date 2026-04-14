@@ -467,7 +467,8 @@ sequenceDiagram
 ### Cloud Save Sync
 
 All platform cloud API calls use the channel-submission pattern. `CloudSyncAdapter::sync()` submits
-a `CloudIoRequest` via crossbeam-channel (MPSC, capacity 256) and returns immediately. The
+a `CloudIoRequest` via crossbeam-channel (MPSC, capacity 64; `CH-17` in
+[shared-messaging-capacities.md](shared-messaging-capacities.md)) and returns immediately. The
 main-thread I/O worker polls completions at the frame boundary using platform-native non-blocking
 I/O (`io_uring` / IOCP / `dispatch_io`). No arrow in the diagram is a blocking call from the
 game-loop thread; every `MT->>API` arrow is a non-blocking kernel submission followed by a
