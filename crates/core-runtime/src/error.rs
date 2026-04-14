@@ -310,28 +310,27 @@ pub enum Severity {
     Fatal,
 }
 
-// Red phase: intentionally incorrect `From` mapping (PLAN-core-runtime-error).
 impl From<IoError> for EngineError {
-    fn from(_: IoError) -> Self {
-        EngineError::Network(NetworkError::ConnectionDropped)
+    fn from(value: IoError) -> Self {
+        EngineError::Io(value)
     }
 }
 
 impl From<SerializationError> for EngineError {
-    fn from(_: SerializationError) -> Self {
-        EngineError::Network(NetworkError::ConnectionDropped)
+    fn from(value: SerializationError) -> Self {
+        EngineError::Serialization(value)
     }
 }
 
 impl From<ValidationError> for EngineError {
-    fn from(_: ValidationError) -> Self {
-        EngineError::Network(NetworkError::ConnectionDropped)
+    fn from(value: ValidationError) -> Self {
+        EngineError::Validation(value)
     }
 }
 
 impl From<CodegenError> for EngineError {
-    fn from(_: CodegenError) -> Self {
-        EngineError::Network(NetworkError::ConnectionDropped)
+    fn from(value: CodegenError) -> Self {
+        EngineError::Codegen(value)
     }
 }
 
@@ -342,26 +341,26 @@ impl From<CompileError> for CodegenError {
 }
 
 impl From<CompileError> for EngineError {
-    fn from(_: CompileError) -> Self {
-        EngineError::Network(NetworkError::ConnectionDropped)
+    fn from(value: CompileError) -> Self {
+        EngineError::Codegen(CodegenError::Compile(value))
     }
 }
 
 impl From<PlatformError> for EngineError {
-    fn from(_: PlatformError) -> Self {
-        EngineError::Network(NetworkError::ConnectionDropped)
+    fn from(value: PlatformError) -> Self {
+        EngineError::Platform(value)
     }
 }
 
 impl From<AssetError> for EngineError {
-    fn from(_: AssetError) -> Self {
-        EngineError::Network(NetworkError::ConnectionDropped)
+    fn from(value: AssetError) -> Self {
+        EngineError::Asset(value)
     }
 }
 
 impl From<NetworkError> for EngineError {
-    fn from(_: NetworkError) -> Self {
-        EngineError::Network(NetworkError::ConnectionDropped)
+    fn from(value: NetworkError) -> Self {
+        EngineError::Network(value)
     }
 }
 
@@ -396,7 +395,10 @@ mod tests {
 
     #[test]
     fn tc_1_12_1_2_serialization_error_converts() {
-        let err = EngineError::from(SerializationError::BadMagic { expected: 1, got: 2 });
+        let err = EngineError::from(SerializationError::BadMagic {
+            expected: 1,
+            got: 2,
+        });
         assert!(matches!(
             err,
             EngineError::Serialization(SerializationError::BadMagic {
@@ -422,7 +424,9 @@ mod tests {
         });
         assert!(matches!(
             err,
-            EngineError::Codegen(CodegenError::SymbolConflict { symbol: SymbolId(9) })
+            EngineError::Codegen(CodegenError::SymbolConflict {
+                symbol: SymbolId(9)
+            })
         ));
     }
 
@@ -442,7 +446,10 @@ mod tests {
     #[test]
     fn tc_1_12_1_6_platform_error_converts() {
         let err = EngineError::from(PlatformError::DeviceLost);
-        assert!(matches!(err, EngineError::Platform(PlatformError::DeviceLost)));
+        assert!(matches!(
+            err,
+            EngineError::Platform(PlatformError::DeviceLost)
+        ));
     }
 
     #[test]
@@ -472,9 +479,7 @@ mod tests {
     #[test]
     fn tc_1_12_3_1_io_error_not_found_carries_path() {
         let path = PathBuf::from("/tmp/foo");
-        let err = IoError::NotFound {
-            path: path.clone(),
-        };
+        let err = IoError::NotFound { path: path.clone() };
         let formatted = format!("{err:?}");
         assert!(formatted.contains("/tmp/foo"));
     }
@@ -568,11 +573,7 @@ mod tests {
         }
         let elapsed = start.elapsed();
         let per_ns = elapsed.as_nanos() / u128::from(iterations);
-        let limit = if cfg!(debug_assertions) {
-            2_000
-        } else {
-            50
-        };
+        let limit = if cfg!(debug_assertions) { 2_000 } else { 50 };
         assert!(
             per_ns <= limit,
             "average {per_ns}ns exceeds relaxed limit {limit}ns"
