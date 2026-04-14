@@ -13,7 +13,11 @@ pub struct TriMeshData {
     pub indices: Vec<[u32; 3]>,
 }
 
-/// Physics collider shape variants referenced by the integration design.
+/// Physics collider shape variants for the physics–geometry integration boundary.
+///
+/// This crate ships a **bootstrap subset** (sphere, box, triangle mesh, heightfield). The
+/// integration design also lists capsule, cylinder, cone, convex hull, and compound variants
+/// for the full engine; those will extend this enum in a follow-up plan once producers exist.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ColliderShape {
     /// Sphere primitive.

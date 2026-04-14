@@ -3,6 +3,14 @@
 //! This crate materializes the data contracts from
 //! `docs/design/integration/physics-geometry.md` as executable Rust types and pure helpers so CI can
 //! enforce the integration surface before the full engine wiring lands.
+//!
+//! # Scope notes
+//!
+//! - [`ColliderShape`] is a bootstrap subset of the design enum until additional producers land.
+//! - Persistent `rkyv` derives on mesh and terrain payloads are tracked for a follow-up once the
+//!   workspace policy for integration crates is fixed; this pass focuses on types and pure helpers.
+//! - `glam` is listed in `docs/design/constraints.md` core deps; the integrating PR description
+//!   records maintainer approval for new workspace dependencies.
 
 #![deny(clippy::all)]
 #![deny(unsafe_code)]

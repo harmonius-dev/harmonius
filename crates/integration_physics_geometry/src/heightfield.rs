@@ -157,6 +157,9 @@ pub struct HeightfieldCollider {
     /// Number of height samples along +Z.
     pub samples_z: u32,
     /// Quantized `u16` heights from geometry (`TerrainTile.heights`).
+    ///
+    /// Owned `Vec` here matches the bootstrap contract crate; the integration design
+    /// describes `Arc<[u16]>` for thread handoff from streaming geometry into physics.
     pub quantized_heights: Vec<u16>,
     /// Minimum world height corresponding to quantized `0`.
     pub min_height: f32,
@@ -174,12 +177,21 @@ pub struct HeightfieldCollider {
 
 impl HeightfieldCollider {
     /// Dequantizes the height sample at column `ix`, row `iz`.
+    ///
+    /// Returns [`None`] when `ix` or `iz` is out of range for this field, or when the
+    /// height buffer is shorter than `samples_x * samples_z` (should not occur after a
+    /// successful build from [`heightfield_collider_from_tile`]).
     #[must_use]
-    pub fn sample_height(&self, ix: u32, iz: u32) -> f32 {
+    pub fn sample_height(&self, ix: u32, iz: u32) -> Option<f32> {
+        if ix >= self.samples_x || iz >= self.samples_z {
+            return None;
+        }
         let index = (iz * self.samples_x + ix) as usize;
-        let sample = self.quantized_heights[index];
-        self.min_height
-            + (f32::from(sample) / 65535.0) * (self.max_height - self.min_height)
+        let sample = *self.quantized_heights.get(index)?;
+        Some(
+            self.min_height
+                + (f32::from(sample) / 65535.0) * (self.max_height - self.min_height),
+        )
     }
 }
 
@@ -213,7 +225,7 @@ mod tests {
             },
         )
         .expect("build");
-        let value = hf.sample_height(0, 0);
+        let value = hf.sample_height(0, 0).expect("in bounds");
         assert!((value - 500.0).abs() < 0.02, "got {value}");
     }
 
@@ -242,8 +254,24 @@ mod tests {
             },
         )
         .expect("build");
-        let peak = hf.sample_height(center, center);
+        let peak = hf.sample_height(center, center).expect("in bounds");
         assert!((peak - 250.0).abs() < 0.02);
+    }
+
+    #[test]
+    fn sample_height_returns_none_when_out_of_range() {
+        let tile = flat_tile(2, 1000);
+        let hf = heightfield_collider_from_tile(
+            &tile,
+            PhysicsMaterialHandle { id: 1 },
+            CollisionLayers {
+                mask: 1,
+                filter: !0,
+            },
+        )
+        .expect("build");
+        assert!(hf.sample_height(2, 0).is_none());
+        assert!(hf.sample_height(0, 2).is_none());
     }
 
     #[test]

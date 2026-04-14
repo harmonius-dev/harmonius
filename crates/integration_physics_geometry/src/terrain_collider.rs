@@ -1,4 +1,7 @@
-//! ECS-facing bridge component between geometry producers and physics consumers.
+//! Bridge between geometry producers and physics consumers.
+//!
+//! The integration design attaches this as an ECS component on terrain entities. This
+//! crate stays free of the ECS crate, so the derive lives in the middleman layer when wired.
 
 use crate::{BvhHandle, CollisionLayers, HeightfieldCollider, VoxelCollisionMesh};
 
