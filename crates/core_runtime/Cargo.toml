@@ -1,0 +1,18 @@
+[package]
+description = "Core runtime primitives: ID taxonomy and StableId policies"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "core_runtime"
+version = "0.1.0"
+
+[dependencies]
+rkyv = { version = "0.8.10", default-features = false, features = [
+    "alloc",
+    "bytecheck",
+    "std",
+] }
+twox-hash = "2.1.0"
+uuid = { version = "1.11.0", default-features = false, features = ["v4"] }
+
+[dev-dependencies]
+static_assertions = "1.1.0"
