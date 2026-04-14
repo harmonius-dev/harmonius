@@ -316,6 +316,9 @@ impl EditorCommand {
     /// Returns an estimate of retained bytes for budgeting.
     #[must_use]
     pub fn memory_bytes(&self) -> u32 {
+        if matches!(self, Self::SpilledArchive { .. }) {
+            return 1;
+        }
         let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(self)
             .map(|b| b.len())
             .unwrap_or(0);
