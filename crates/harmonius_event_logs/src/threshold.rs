@@ -3,7 +3,7 @@
 use core::marker::PhantomData;
 
 use smallvec::SmallVec;
-use smol_str::SmolStr;
+use std::string::String;
 
 use crate::log::EventLog;
 use crate::types::{AssetId, GameplayTag, PredicateId};
@@ -12,7 +12,7 @@ use crate::types::{AssetId, GameplayTag, PredicateId};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ThresholdAction {
     /// Fire a named engine event.
-    FireEvent(SmolStr),
+    FireEvent(String),
     /// Apply an effect asset.
     ApplyEffect(AssetId),
     /// Apply a gameplay tag.
