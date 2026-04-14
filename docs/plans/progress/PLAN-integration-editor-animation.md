@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-editor-animation
-last_updated: 2026-04-14T11:36:21Z
+last_updated: 2026-04-14T14:42:22Z
 plan_id: PLAN-integration-editor-animation
 pr_number: 35
 pr_review_status: complete
@@ -57,10 +57,11 @@ Plan file: [editor-animation.md](../integration/editor-animation.md)
   harness wiring).
 - Screenshots: deferred until editor viewport consumes these types end-to-end.
 - Videos: deferred for the same reason as screenshots.
-- Review notes: pr-reviewer pass complete; one minor standards finding (README MD057 dead link)
-  fixed by pointing audits item at `docs/design/integration/PROMPT-test-cases.md`. Design contracts
-  in `harmonius_integration_editor_animation` match `docs/design/integration/editor-animation.md`
-  for the implemented slice.
+- Review notes: pr-reviewer pass complete; README MD057 audits link fixed to
+  `docs/design/integration/PROMPT-test-cases.md`. Follow-up correctness fix: transition walk records
+  the terminal state when stopping on `max_steps` (`state_graph.rs` + regression test). Design
+  contracts in `harmonius_integration_editor_animation` match
+  `docs/design/integration/editor-animation.md` for the implemented slice.
 
 ## Event log
 
@@ -78,5 +79,8 @@ Plan file: [editor-animation.md](../integration/editor-animation.md)
 - 2026-04-14T11:36:21Z — pr-reviewer — submitted for human review; 1 minor finding addressed (README
   MD057); `cargo test --workspace`, `cargo clippy -D warnings`, and `rumdl check .` green;
   `gh pr ready 35` issued.
+- 2026-04-14T14:42:22Z — pr-reviewer — 1 moderate finding addressed: `walk_always_true_transitions`
+  omitted the terminal state from `visited` when the step budget exhausted; fixed + regression test;
+  re-ran `cargo test --workspace`, `cargo clippy -D warnings`, `rumdl check .`; pushed to PR #35.
 
 Append ISO-8601 UTC entries with actor, action, and outcome.
