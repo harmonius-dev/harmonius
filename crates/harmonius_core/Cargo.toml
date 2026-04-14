@@ -1,18 +1,18 @@
 [package]
-description = "Core engine primitives including spatial indexing for Harmonius"
+authors = ["Harmonius Contributors"]
+description = "Core memory management and platform I/O primitives for Harmonius"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 name = "harmonius_core"
+readme = "README.md"
 repository = "https://github.com/cjhowe/harmonius"
-version = "0.1.0"
+rust-version = "1.85"
+version = "0.0.1"
 
 [dependencies]
-glam = { version = "0.29", default-features = false, features = ["std"] }
-smallvec = { version = "1.13", default-features = false, features = ["union"] }
 
 [lints.rust]
-missing_docs = "warn"
 unsafe_code = "forbid"
 
 [lints.clippy]
-all = { level = "deny", priority = -1 }
+all = "deny"

@@ -1,12 +1,12 @@
 ---
 branch: plan/core-runtime-memory-async-io
-last_updated: 2026-04-14T18:00:00Z
+last_updated: 2026-04-14T05:26:40Z
 plan_id: PLAN-core-runtime-memory-async-io
-pr_number: 77
-pr_review_status: complete
-pr_url: https://github.com/cjhowe-us/harmonius/pull/77
+pr_number: null
+pr_review_status: not_started
+pr_url: null
 started_at: 2026-04-14T05:26:40Z
-status: submitted
+status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-memory-async-io
 ---
 
@@ -28,12 +28,10 @@ Plan file: [memory-async-io.md](../core-runtime/memory-async-io.md)
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [ ] `rumdl check .` passes for touched docs (repo-wide progress templates have pre-existing
-      findings)
-- [x] `rumdl check` passes for Markdown touched by this PR branch
+- [ ] `rumdl check .` passes for touched docs (repo-wide progress templates have pre-existing findings)
 - [ ] Evidence links logged in this file
-- [x] Review findings addressed and checklist re-verified
-- [x] PR marked ready for human review (`status: submitted`)
+- [ ] Review findings addressed and checklist re-verified
+- [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 - [x] Code complete marker set
 
@@ -53,14 +51,9 @@ Plan file: [memory-async-io.md](../core-runtime/memory-async-io.md)
 
 ## Evidence registry
 
-- Unit tests: `cargo test -p harmonius_core` (30 tests, TC-* mapped in
-  `plan_memory_async_io_tests.rs`).
+- Unit tests: `cargo test -p harmonius_core` (30 tests, TC-* mapped in `plan_memory_async_io_tests.rs`).
 
 ## Event log
 
-- 2026-04-14T05:26:40Z — started, worktree + implementation branch; draft PR
-  <https://github.com/cjhowe-us/harmonius/pull/77> opened.
-- 2026-04-14T05:30:00Z — code complete, awaiting review (`harmonius_core` crate with memory,
-  primitives, platform_io).
-- 2026-04-14T18:00:00Z — submitted for human review, 3 findings addressed (progress rumdl wrap,
-  event timestamp correction, `harmonius_core` Cargo.toml repository URL).
+- 2026-04-14T05:26:40Z — started, worktree + implementation branch; draft PR opened after first push.
+- 2026-04-14T05:26:40Z — code complete, awaiting review (`harmonius_core` crate with memory, primitives, platform_io).
