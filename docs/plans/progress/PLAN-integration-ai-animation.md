@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-ai-animation
-last_updated: 2026-04-14T17:43:43Z
+last_updated: 2026-04-14T05:20:00Z
 plan_id: PLAN-integration-ai-animation
 pr_number: 40
 pr_review_status: not_started
@@ -50,8 +50,8 @@ Plan file: [ai-animation.md](../integration/ai-animation.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p integration_ai_animation` (17 unit tests); see
-  [PR #40](https://github.com/cjhowe-us/harmonius/pull/40) (branch `plan/integration-ai-animation`).
+- Test reports: `cargo test -p integration_ai_animation` (17 unit tests) in worktree
+  `PLAN-integration-ai-animation` at commit `24ef6b4`.
 - Benchmarks: not run (TC-IR-1.1.5.B* rows require Criterion harness; wall-clock TC-IR-1.1.5.1
   covered via deterministic `FrameBudget` accounting).
 - Screenshots: N/A for this library-only slice.
@@ -68,8 +68,3 @@ Plan file: [ai-animation.md](../integration/ai-animation.md)
   (`https://github.com/cjhowe-us/harmonius/pull/40`).
 - 2026-04-14T05:20:00Z — plan-implementer — code complete, awaiting review (crate
   `integration_ai_animation` with TC-IR-1.1.1.1–TC-IR-1.1.5.1 and TC-IR-1.1.E1–E4 unit tests).
-- 2026-04-14T11:37:24Z — plan-implementer — reconciled main-repo progress with worktree
-  (`PLAN-integration-ai-animation`); pushed matching progress updates on the PR branch.
-- 2026-04-14T17:43:43Z — plan-implementer — main checkout progress synced to `code_complete` after
-  verify (`cargo test`, `cargo clippy -D warnings`, `rumdl check` on worktree; branch matches
-  `origin/plan/integration-ai-animation`).
