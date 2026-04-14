@@ -440,6 +440,10 @@ name = "harmonius_integration"
 version = "0.1.0"
 
 [[package]]
+name = "harmonius_integration_editor_physics"
+version = "0.1.0"
+
+[[package]]
 name = "harmonius_integration_rendering_geometry"
 version = "0.1.0"
 dependencies = [

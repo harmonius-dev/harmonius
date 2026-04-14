@@ -1,0 +1,11 @@
+[package]
+description = "Headless editor ↔ physics integration (commands, debug data, CI test harness)."
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_integration_editor_physics"
+publish = false
+rust-version = "1.80"
+version = "0.1.0"
+
+[lib]
+path = "src/lib.rs"
