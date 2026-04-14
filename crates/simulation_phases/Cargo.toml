@@ -1,0 +1,9 @@
+[package]
+edition = "2021"
+name = "simulation_phases"
+version = "0.0.0"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
