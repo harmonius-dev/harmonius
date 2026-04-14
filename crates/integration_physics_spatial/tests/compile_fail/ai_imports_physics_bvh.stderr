@@ -1,0 +1,8 @@
+error[E0432]: unresolved import `integration_physics_spatial::PhysicsBvh`
+ --> tests/compile_fail/ai_imports_physics_bvh.rs:1:5
+  |
+1 | use integration_physics_spatial::PhysicsBvh;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^----------
+  |     |                            |
+  |     |                            help: a similar name exists in the module: `physics_bvh`
+  |     no `PhysicsBvh` in the root
