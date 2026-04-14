@@ -44,6 +44,11 @@ pub fn try_equip(
     item: Entity,
     item_tags: &TagSet,
 ) -> Result<(), TransferError> {
+    if slot.occupant.is_some() {
+        return Err(TransferError::EquipmentOccupied {
+            slot: slot_name.to_string(),
+        });
+    }
     let allowed = slot.allowed_tags.to_vec();
     if !item_tags.contains_all(&allowed) {
         return Err(TransferError::SlotConstraintMismatch(Box::new(

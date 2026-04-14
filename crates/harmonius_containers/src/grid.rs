@@ -57,6 +57,10 @@ impl GridOccupancy {
 
     /// Marks a region occupied.
     pub fn occupy(&mut self, x: u16, y: u16, w: u16, h: u16) {
+        debug_assert!(
+            x.saturating_add(w) <= self.width && y.saturating_add(h) <= self.height,
+            "GridOccupancy::occupy region must lie inside the grid"
+        );
         for yy in y..y + h {
             for xx in x..x + w {
                 let idx = Self::idx(self.width, xx, yy);
@@ -67,6 +71,10 @@ impl GridOccupancy {
 
     /// Clears a region.
     pub fn vacate(&mut self, x: u16, y: u16, w: u16, h: u16) {
+        debug_assert!(
+            x.saturating_add(w) <= self.width && y.saturating_add(h) <= self.height,
+            "GridOccupancy::vacate region must lie inside the grid"
+        );
         for yy in y..y + h {
             for xx in x..x + w {
                 let idx = Self::idx(self.width, xx, yy);

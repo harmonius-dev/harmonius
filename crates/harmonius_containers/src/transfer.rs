@@ -45,6 +45,13 @@ pub enum TransferError {
     CircularNesting,
     /// Equipment slot tags did not accept the item.
     SlotConstraintMismatch(Box<SlotConstraintMismatch>),
+    /// Equipment slot already holds an item.
+    EquipmentOccupied {
+        /// Slot label used in diagnostics (for example `"helmet"`).
+        slot: String,
+    },
+    /// Socket already holds an attachment.
+    SocketOccupied,
     /// Requested entity was not present in the container.
     ItemNotFound,
 }

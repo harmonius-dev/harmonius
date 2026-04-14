@@ -787,6 +787,76 @@ fn test_drag_drop_validator_routed() {
     assert_eq!(target_ids, vec![2]);
 }
 
+#[test]
+fn test_drag_drop_moves_stack_by_kind() {
+    let ammo = Entity::from_raw(700);
+    let mut source = Container::new(ContainerDef {
+        capacity: 8,
+        weight_limit: 100.0,
+        required_tags: TagSet::default(),
+    });
+    let mut target = Container::new(ContainerDef {
+        capacity: 8,
+        weight_limit: 100.0,
+        required_tags: TagSet::default(),
+    });
+    source
+        .insert(ItemStack::Stack {
+            kind: ammo,
+            count: 10,
+            max_stack: 30,
+            per_unit_weight: 0.05,
+            name: "ammo".to_string(),
+            rarity: Rarity::Common,
+            tags: TagSet::default(),
+        })
+        .unwrap();
+    let event = process_drag_drop(DragDropRequest {
+        source: &mut source,
+        target: &mut target,
+        item: ammo,
+    })
+    .unwrap();
+    assert_eq!(event, ItemTransferred { item: ammo });
+    assert!(source.is_empty());
+    match &target.slots()[0] {
+        SlotEntry::Stack { count, .. } => assert_eq!(*count, 10),
+        _ => panic!("expected stack in target"),
+    }
+}
+
+#[test]
+fn test_equipment_slot_rejects_second_equip() {
+    let mut slot = EquipmentSlot::new(tag_set(&["helmet"]));
+    let helm = Entity::from_raw(1);
+    try_equip(&mut slot, "helmet", helm, &tag_set(&["helmet"])).unwrap();
+    let err = try_equip(
+        &mut slot,
+        "helmet",
+        Entity::from_raw(2),
+        &tag_set(&["helmet"]),
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        TransferError::EquipmentOccupied {
+            slot: "helmet".to_string(),
+        }
+    );
+    assert_eq!(slot.occupant, Some(helm));
+}
+
+#[test]
+fn test_socket_rejects_double_attach() {
+    let mut socket = Socket::new(tag_set(&["gem"]), Vec3::ZERO);
+    let g1 = Entity::from_raw(501);
+    let g2 = Entity::from_raw(502);
+    socket.attach(g1, &tag_set(&["gem"])).unwrap();
+    let err = socket.attach(g2, &tag_set(&["gem"])).unwrap_err();
+    assert_eq!(err, TransferError::SocketOccupied);
+    assert_eq!(socket.occupant, Some(g1));
+}
+
 // TC-13.10.3.1
 #[test]
 fn test_stat_propagate_flat_add() {

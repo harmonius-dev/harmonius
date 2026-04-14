@@ -1,4 +1,7 @@
 //! Flat stat modifiers applied while items are socketed.
+//!
+//! `StatModifier` is a minimal numeric stand-in; authored stat ids and modifier ops from the
+//! subsystem design integrate in later plans.
 
 /// Authoring-time base attributes plus runtime socket bonuses.
 #[derive(Clone, Debug, PartialEq, Eq)]
