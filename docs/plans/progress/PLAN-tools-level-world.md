@@ -57,7 +57,6 @@ Plan file: [level-world.md](../tools/level-world.md)
 
 ## Event log
 
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
 - 2026-04-14T05:12:46Z — plan-implementer — started, worktree + draft PR created (PR #11).
-
-- Append ISO-8601 UTC entries with actor, action, and outcome.
