@@ -1,6 +1,6 @@
 ---
 branch: plan/tools-level-world
-last_updated: 2026-04-14T05:12:46Z
+last_updated: 2026-04-14T05:18:07Z
 plan_id: PLAN-tools-level-world
 pr_number: 11
 pr_url: https://github.com/cjhowe-us/harmonius/pull/11
@@ -17,7 +17,7 @@ Plan file: [level-world.md](../tools/level-world.md)
 
 - [x] Worktree created and branch aligned with plan metadata
 - [x] Draft PR opened and linked in frontmatter
-- [ ] Design and companion test-case docs reviewed
+- [x] Design and companion test-case docs reviewed (initial slice: snap / TC-15.2.1.1)
 - [ ] Requirement and user-story trace matrix completed
 - [ ] Red phase complete with failing tests for uncovered scope
 - [ ] Green phase complete with minimal passing implementation
@@ -25,9 +25,9 @@ Plan file: [level-world.md](../tools/level-world.md)
 - [ ] Integration validation complete across documented boundaries
 - [ ] Constraint conformance checks complete
 - [ ] Manual validation complete with screenshot and video evidence
-- [ ] `cargo test --workspace` passes
-- [ ] `cargo clippy --workspace -- -D warnings` passes
-- [ ] `rumdl check .` passes for touched docs
+- [x] `cargo test --workspace` passes (workspace: `harmonius_editor` only)
+- [x] `cargo clippy --workspace -- -D warnings` passes
+- [x] `rumdl check .` passes for touched docs (this progress file)
 - [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
@@ -44,7 +44,7 @@ Plan file: [level-world.md](../tools/level-world.md)
 
 - [ ] All previously unmapped ID mappings triaged in plan gap-closure section
 - [ ] Red test inventory split by requirement and user story
-- [ ] First failing test batch selected for implementation loop
+- [x] First failing test batch selected for implementation loop (TC-15.2.1.1)
 - [ ] Evidence capture folders prepared (screenshots/videos/logs)
 
 ## Evidence registry
@@ -60,3 +60,5 @@ Plan file: [level-world.md](../tools/level-world.md)
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
   (orchestrator pass; no PR merge).
 - 2026-04-14T05:12:46Z — plan-implementer — started, worktree + draft PR created (PR #11).
+- 2026-04-14T05:18:07Z — plan-implementer — red/green: TC-15.2.1.1 grid snap in `harmonius_editor`;
+  commits on `plan/tools-level-world`, branch pushed.
