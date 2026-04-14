@@ -1,12 +1,12 @@
 ---
 branch: plan/core-runtime-spatial-index
-last_updated: 2026-04-14T05:26:26Z
+last_updated: 2026-04-14T20:02:00Z
 plan_id: PLAN-core-runtime-spatial-index
 pr_number: 73
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/73
 started_at: 2026-04-14T05:26:26Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-spatial-index
 ---
 
@@ -28,10 +28,10 @@ Plan file: [spatial-index.md](../core-runtime/spatial-index.md)
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [x] `rumdl check .` passes for touched docs
+- [x] `rumdl check .` passes (repo-wide; see review commit)
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -54,7 +54,8 @@ Plan file: [spatial-index.md](../core-runtime/spatial-index.md)
 - Benchmarks: not run for this pass (no criterion harness in repo).
 - Screenshots: deferred (no UI surface).
 - Videos: deferred (no temporal UI validation).
-- Review notes: awaiting `pr-reviewer`.
+- Review notes: `pr-reviewer` ran final verification; `rumdl fmt` plus README and event-log list
+  spacing fixes for repo-wide `rumdl check .`; PR undrafted for human review.
 
 ## Event log
 
@@ -66,3 +67,6 @@ Plan file: [spatial-index.md](../core-runtime/spatial-index.md)
 - 2026-04-14T05:26:26Z — plan-implementer — `cargo test --workspace` and
   `cargo clippy --workspace -- -D warnings` passed in worktree.
 - 2026-04-14T05:26:26Z — plan-implementer — code complete, awaiting review.
+- 2026-04-14T20:02:00Z — pr-reviewer — submitted for human review; 10 findings addressed (1 README
+  MD057 dead link, 9 MD076 event-log list spacing) plus `rumdl fmt` across progress templates;
+  `cargo test` / `cargo clippy` / `rumdl check .` re-verified; `gh pr ready` for PR #73.
