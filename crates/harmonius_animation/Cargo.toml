@@ -1,0 +1,8 @@
+[package]
+description = "Deterministic CPU-side procedural animation building blocks for Harmonius."
+edition = "2021"
+name = "harmonius_animation"
+version = "0.1.0"
+
+[lib]
+path = "src/lib.rs"
