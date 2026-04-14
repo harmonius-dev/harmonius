@@ -1,0 +1,3 @@
+[submodule ".cursor/plugins/local/workflow"]
+	path = .cursor/plugins/local/workflow
+	url = https://github.com/cjhowe-us/workflow.git
