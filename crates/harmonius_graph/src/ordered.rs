@@ -163,7 +163,8 @@ impl<N, E> OrderedGraph<N, E> {
                         .expect("child edge")
                         .1
                         .clone();
-                    out.add_child(map[old], map[&och], data).expect("subtree edge");
+                    out.add_child(map[old], map[&och], data)
+                        .expect("subtree edge");
                 }
             }
         }
@@ -185,11 +186,7 @@ impl<N, E> OrderedGraph<N, E> {
     fn unique_parent(&self, node: NodeId) -> Option<NodeId> {
         let mut ps: Vec<NodeId> = self.graph.in_edges(node).map(|(f, _)| f).collect();
         ps.sort();
-        if ps.len() == 1 {
-            Some(ps[0])
-        } else {
-            None
-        }
+        if ps.len() == 1 { Some(ps[0]) } else { None }
     }
 
     /// Lowest common ancestor in a tree-shaped ordered graph.

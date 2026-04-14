@@ -115,9 +115,7 @@ impl<N, E> DirectedGraph<N, E> {
             return Err(GraphError::DuplicateEdge { from, to });
         }
         if self.reachable_on_graph(to, from) {
-            let path = self
-                .find_path_on_graph(to, from)
-                .unwrap_or_default();
+            let path = self.find_path_on_graph(to, from).unwrap_or_default();
             return Err(GraphError::CycleDetected(CycleError {
                 cycle_path: normalize_cycle(path),
             }));
@@ -129,8 +127,7 @@ impl<N, E> DirectedGraph<N, E> {
     /// Removes a node and all incident edges.
     pub fn remove_node(&mut self, id: NodeId) -> Option<N> {
         let removed = self.nodes.remove(id)?;
-        self.edges
-            .retain(|edge| edge.from != id && edge.to != id);
+        self.edges.retain(|edge| edge.from != id && edge.to != id);
         Some(removed)
     }
 
@@ -227,9 +224,7 @@ impl<N, E> DirectedGraph<N, E> {
         queue.push_back(start);
         while let Some(node) = queue.pop_front() {
             out.push(node);
-            let mut outs: Vec<(NodeId, &E)> = self.out_edges(node).collect();
-            outs.sort_by_key(|(to, _)| *to);
-            for (to, data) in outs {
+            for (to, data) in self.out_edges(node) {
                 if !filter(node, to, data) {
                     continue;
                 }
@@ -264,8 +259,7 @@ impl<N, E> DirectedGraph<N, E> {
                 continue;
             }
             order.push(node);
-            let mut outs: Vec<(NodeId, &E)> = self.out_edges(node).collect();
-            outs.sort_by_key(|(to, _)| *to);
+            let outs: Vec<(NodeId, &E)> = self.out_edges(node).collect();
             for (to, data) in outs.into_iter().rev() {
                 if filter(node, to, data) {
                     stack.push(to);
@@ -305,8 +299,7 @@ impl<N, E> DirectedGraph<N, E> {
                         continue;
                     }
                     stack.push(Frame::Exit(node));
-                    let mut outs: Vec<(NodeId, &E)> = self.out_edges(node).collect();
-                    outs.sort_by_key(|(to, _)| *to);
+                    let outs: Vec<(NodeId, &E)> = self.out_edges(node).collect();
                     for (to, data) in outs.into_iter().rev() {
                         if filter(node, to, data) {
                             stack.push(Frame::Enter(to));
@@ -329,7 +322,10 @@ impl<N, E> DirectedGraph<N, E> {
         self.bfs(start, filter)
     }
 
-    /// Nodes not reachable from any root along outgoing edges.
+    /// Dead nodes for output-rooted graphs: nodes that never feed any id in `live_roots`.
+    ///
+    /// Marks nodes live by walking **backward** along incoming edges from each root, matching
+    /// `docs/design/data-systems/directed-graphs.md` (render/material dead pass elimination).
     pub fn dead_node_elimination(&self, live_roots: &[NodeId]) -> Vec<NodeId> {
         let mut live = HashSet::new();
         let mut queue = VecDeque::new();
@@ -339,9 +335,9 @@ impl<N, E> DirectedGraph<N, E> {
             }
         }
         while let Some(n) = queue.pop_front() {
-            for to in self.out_neighbors(n) {
-                if live.insert(to) {
-                    queue.push_back(to);
+            for (pred, _) in self.in_edges(n) {
+                if live.insert(pred) {
+                    queue.push_back(pred);
                 }
             }
         }
@@ -355,7 +351,8 @@ impl<N, E> DirectedGraph<N, E> {
         dead
     }
 
-    /// Removes every node reported by [`Self::dead_node_elimination`].
+    /// Removes every node reported by [`Self::dead_node_elimination`] for the given output
+    /// roots.
     pub fn prune_unreachable(&mut self, live_roots: &[NodeId]) {
         let dead = self.dead_node_elimination(live_roots);
         for id in dead {
@@ -375,17 +372,9 @@ impl<N, E> DirectedGraph<N, E> {
             .iter()
             .map(|(old, data)| (old, out.add_node(data.clone())))
             .collect();
-        for edge in &self.edges {
+        for (skip, edge) in self.edges.iter().enumerate() {
             let from = id_map[&edge.from];
             let to = id_map[&edge.to];
-            let mut skip = None;
-            for (i, e) in self.edges.iter().enumerate() {
-                if e.from == edge.from && e.to == edge.to {
-                    skip = Some(i);
-                    break;
-                }
-            }
-            let skip = skip.expect("edge exists");
             let redundant = self
                 .path_without_edge(edge.from, edge.to, skip)
                 .map(|p| p.len() > 1)
@@ -473,9 +462,11 @@ fn extract_cycle<N, E>(graph: &DirectedGraph<N, E>) -> CycleError {
         parent: &mut HashMap<NodeId, NodeId>,
     ) -> Option<Vec<NodeId>> {
         *color.get_mut(&u).unwrap() = DfsColor::Gray;
-        let mut outs: Vec<NodeId> = graph.out_neighbors(u).collect();
-        outs.sort();
-        for v in outs {
+        for edge in &graph.edges {
+            if edge.from != u {
+                continue;
+            }
+            let v = edge.to;
             match *color.get(&v).unwrap_or(&DfsColor::White) {
                 DfsColor::Gray => {
                     let mut path = Vec::new();
@@ -510,7 +501,9 @@ fn extract_cycle<N, E>(graph: &DirectedGraph<N, E>) -> CycleError {
             return CycleError { cycle_path: c };
         }
     }
-    CycleError { cycle_path: Vec::new() }
+    CycleError {
+        cycle_path: Vec::new(),
+    }
 }
 
 #[cfg(test)]

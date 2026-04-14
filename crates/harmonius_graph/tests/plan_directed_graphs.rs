@@ -55,19 +55,9 @@ fn test_cycle_detect_three_node() {
 #[test]
 fn test_dag_acyclic_passes() {
     let mut g = DirectedGraph::<char, ()>::new();
-    let ids: Vec<NodeId> = (b'A'..=b'E')
-        .map(|ch| g.add_node(ch as char))
-        .collect();
+    let ids: Vec<NodeId> = (b'A'..=b'E').map(|ch| g.add_node(ch as char)).collect();
     let e = |i: usize| ids[i];
-    let edges = [
-        (0, 1),
-        (0, 2),
-        (1, 3),
-        (2, 3),
-        (1, 4),
-        (3, 4),
-        (2, 4),
-    ];
+    let edges = [(0, 1), (0, 2), (1, 3), (2, 3), (1, 4), (3, 4), (2, 4)];
     for (a, b) in edges {
         assert!(g.add_edge(e(a), e(b), ()).is_ok());
     }
@@ -137,13 +127,8 @@ fn test_conditional_edge_skipped() {
     let mut g = harmonius_graph::ConditionalGraph::<(), ()>::new();
     let a = g.add_node(());
     let b = g.add_node(());
-    g.add_conditional_edge(
-        a,
-        b,
-        ConditionExpr::HasFlag("key".into()),
-        (),
-    )
-    .unwrap();
+    g.add_conditional_edge(a, b, ConditionExpr::HasFlag("key".into()), ())
+        .unwrap();
     let ctx = ConditionContext {
         flags: HashMap::new(),
     };
@@ -157,13 +142,8 @@ fn test_conditional_edge_taken() {
     let mut g = harmonius_graph::ConditionalGraph::<(), ()>::new();
     let a = g.add_node(());
     let b = g.add_node(());
-    g.add_conditional_edge(
-        a,
-        b,
-        ConditionExpr::HasFlag("key".into()),
-        (),
-    )
-    .unwrap();
+    g.add_conditional_edge(a, b, ConditionExpr::HasFlag("key".into()), ())
+        .unwrap();
     let ctx = ConditionContext {
         flags: HashMap::from([("key".into(), true)]),
     };
@@ -301,10 +281,7 @@ fn test_traversal_with_filter() {
     g.add_edge(b, d, ()).unwrap();
     g.add_edge(c, e, ()).unwrap();
     let c_id = c;
-    assert_eq!(
-        g.bfs_filtered(a, |_, to, _| to != c_id),
-        vec![a, b, d]
-    );
+    assert_eq!(g.bfs_filtered(a, |_, to, _| to != c_id), vec![a, b, d]);
 }
 
 #[test]
@@ -369,7 +346,8 @@ fn test_dead_node_elimination() {
     let d = g.add_node('D');
     g.add_edge(r, a, ()).unwrap();
     g.add_edge(r, b, ()).unwrap();
-    g.prune_unreachable(&[r]);
+    // `live_roots` are sink/output nodes; walk backward to keep feeders (R, A, B).
+    g.prune_unreachable(&[a, b]);
     assert_eq!(g.node_count(), 3);
     assert!(g.get_node(d).is_none());
 }
@@ -483,10 +461,7 @@ fn test_ability_composition_graph() {
     g.add_edge(c, b, ()).unwrap();
     g.add_edge(b, e, ()).unwrap();
     let order = g.dfs_pre(c, |_| true);
-    let effects: Vec<_> = order
-        .iter()
-        .map(|id| *g.get_node(*id).unwrap())
-        .collect();
+    let effects: Vec<_> = order.iter().map(|id| *g.get_node(*id).unwrap()).collect();
     assert_eq!(
         effects,
         vec![Effect::Cast, Effect::ApplyBurn, Effect::Explode]

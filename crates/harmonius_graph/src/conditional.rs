@@ -82,15 +82,16 @@ impl<N, E> ConditionalGraph<N, E> {
         condition: ConditionExpr,
         data: E,
     ) -> Result<(), GraphError> {
-        self.graph
-            .add_edge(from, to, CondEdge { condition, data })
+        self.graph.add_edge(from, to, CondEdge { condition, data })
     }
 
-    #[allow(clippy::only_used_in_recursion)]
-    fn eval(expr: &ConditionExpr, ctx: &ConditionContext, reg: &ConditionRegistry) -> bool {
+    fn eval(expr: &ConditionExpr, ctx: &ConditionContext, registry: &ConditionRegistry) -> bool {
         match expr {
-            ConditionExpr::HasFlag(name) => *ctx.flags.get(name).unwrap_or(&false),
-            ConditionExpr::Not(inner) => !Self::eval(inner, ctx, reg),
+            ConditionExpr::HasFlag(name) => {
+                let _ = registry;
+                *ctx.flags.get(name).unwrap_or(&false)
+            }
+            ConditionExpr::Not(inner) => !Self::eval(inner, ctx, registry),
         }
     }
 
@@ -102,14 +103,11 @@ impl<N, E> ConditionalGraph<N, E> {
         ctx: &ConditionContext,
         registry: &ConditionRegistry,
     ) -> Vec<NodeId> {
-        let mut out: Vec<NodeId> = self
-            .graph
+        self.graph
             .out_edges(node)
             .filter(|(_, ce)| Self::eval(&ce.condition, ctx, registry))
             .map(|(to, _)| to)
-            .collect();
-        out.sort();
-        out
+            .collect()
     }
 
     /// BFS reachability with conditional edges.
@@ -130,9 +128,7 @@ impl<N, E> ConditionalGraph<N, E> {
         queue.push_back(start);
         while let Some(n) = queue.pop_front() {
             out.push(n);
-            let mut succ = self.successors(n, ctx, registry);
-            succ.sort();
-            for s in succ {
+            for s in self.successors(n, ctx, registry) {
                 if visited.insert(s) {
                     queue.push_back(s);
                 }
