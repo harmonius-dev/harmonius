@@ -1,11 +1,12 @@
 [workspace]
 resolver = "3"
 members = [
+  "crates/harmonius_app",
   "crates/harmonius_core",
-  "crates/harmonius_platform",
+  "crates/harmonius_data_tables",
   "crates/harmonius_gpu",
   "crates/harmonius_gpu_runtime",
-  "crates/harmonius_app",
+  "crates/harmonius_platform",
 ]
 
 [workspace.package]
