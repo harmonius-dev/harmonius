@@ -51,7 +51,7 @@ Plan file: [render-styles.md](../rendering/render-styles.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p render_styles` in worktree (59 unit tests).
+- Test reports: `cargo test -p render_styles` in worktree (61 unit tests).
 - Benchmarks: not run (no NFR thresholds in this slice).
 - Screenshots: deferred (CPU-only acceptance).
 - Videos: deferred (CPU-only acceptance).
