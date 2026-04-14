@@ -19,7 +19,10 @@ impl VersionStore {
 
     /// Record a new version.
     pub fn record(&mut self, asset_key: u64, hash: ContentHash, bytes: Vec<u8>) {
-        self.versions.entry(asset_key).or_default().push((hash, bytes));
+        self.versions
+            .entry(asset_key)
+            .or_default()
+            .push((hash, bytes));
     }
 
     /// List all versions for an asset.

@@ -1,12 +1,12 @@
 ---
 branch: plan/content-pipeline-asset-pipeline
-last_updated: 2026-04-14T11:38:49Z
+last_updated: 2026-04-14T17:56:32Z
 plan_id: PLAN-content-pipeline-asset-pipeline
 pr_number: 79
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/79
 started_at: 2026-04-14T05:27:58Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-content-pipeline-asset-pipeline
 ---
 
@@ -30,8 +30,8 @@ Plan file: [asset-pipeline.md](../content-pipeline/asset-pipeline.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs (no markdown edits in this PR)
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 - [x] Code complete marker set
 
@@ -54,7 +54,7 @@ Plan file: [asset-pipeline.md](../content-pipeline/asset-pipeline.md)
 - **Tests:** 44 unit tests in `crates/harmonius_content/src/tc.rs` (names match companion test-case
   table).
 - **Commands:** `cargo test --workspace`, `cargo clippy --workspace -- -D warnings` (worktree).
-- **PR:** <https://github.com/cjhowe-us/harmonius/pull/79> (draft).
+- **PR:** <https://github.com/cjhowe-us/harmonius/pull/79> (ready for review).
 - **Worktree:** `/Users/cjhowe/Code/harmonius-worktrees/PLAN-content-pipeline-asset-pipeline`
 
 ## Event log
@@ -66,3 +66,9 @@ Plan file: [asset-pipeline.md](../content-pipeline/asset-pipeline.md)
   `pr-reviewer`.
 - `2026-04-14T11:38:49Z` — plan-implementer: re-verified `cargo test` (44), `clippy -D warnings`,
   `rumdl check .` after README MD057 fix; pushed `83c6d2e`.
+- `2026-04-14T17:56:32Z` — pr-reviewer: review-supervisor pass; 10 findings (2 blocker, 3
+  substantive, 4 moderate, 1 minor). Fixed clippy `map_identity`, `cargo fmt` drift, `tempfile`
+  dev-dependency, `ImportError::{InvalidNativeContainer,Io}`, `MergeResult` stub variants,
+  `visual_inspector` doc wording, crate scope note for `std::fs`/rkyv follow-ups; substantive
+  design-surface gaps flagged for human triage vs later plans. Re-ran `cargo test --workspace`,
+  `clippy -D warnings`, `rumdl check .`; undrafted PR #79; `status: submitted`.

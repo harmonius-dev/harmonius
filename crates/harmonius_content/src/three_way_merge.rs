@@ -8,14 +8,20 @@ pub enum MergeResult {
         /// Merged payload.
         merged: Vec<u8>,
     },
+    /// Conflicting edits (full `git_merge_driver` wiring is deferred).
+    Conflict {
+        /// Human-readable summary.
+        summary: String,
+    },
+    /// Policy auto-merge (placeholder for driver-class merges).
+    AutoResolved {
+        /// Merged payload.
+        merged: Vec<u8>,
+    },
 }
 
 /// Merge logic graphs encoded as comma-separated node lists after `nodes:` prefix.
-pub fn three_way_merge_disjoint_graphs(
-    ancestor: &[u8],
-    ours: &[u8],
-    theirs: &[u8],
-) -> MergeResult {
+pub fn three_way_merge_disjoint_graphs(ancestor: &[u8], ours: &[u8], theirs: &[u8]) -> MergeResult {
     fn nodes(line: &[u8]) -> Vec<String> {
         let s = std::str::from_utf8(line).unwrap_or("");
         s.trim_start_matches("nodes:")

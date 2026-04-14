@@ -84,21 +84,26 @@ impl MetadataStore {
 
     /// Return ids matching `filter`.
     pub fn query(&self, filter: &SearchFilter) -> Vec<AssetId> {
-        let mut ids: Vec<AssetId> = self.entries.iter().filter_map(|(id, m)| {
-            let ok = match filter {
-                SearchFilter::Text(q) => {
-                    m.name.contains(q.as_str()) || m.tags.iter().any(|t| t.contains(q.as_str()))
+        let mut ids: Vec<AssetId> = self
+            .entries
+            .iter()
+            .filter_map(|(id, m)| {
+                let ok = match filter {
+                    SearchFilter::Text(q) => {
+                        m.name.contains(q.as_str()) || m.tags.iter().any(|t| t.contains(q.as_str()))
+                    }
+                    SearchFilter::Facet { asset_type, tag } => {
+                        m.asset_type == *asset_type
+                            && m.tags.iter().any(|t| t.contains(tag.as_str()))
+                    }
+                };
+                if ok {
+                    Some(*id)
+                } else {
+                    None
                 }
-                SearchFilter::Facet { asset_type, tag } => {
-                    m.asset_type == *asset_type && m.tags.iter().any(|t| t.contains(tag.as_str()))
-                }
-            };
-            if ok {
-                Some(*id)
-            } else {
-                None
-            }
-        }).collect();
+            })
+            .collect();
         ids.sort_by_key(|a| a.0);
         ids
     }

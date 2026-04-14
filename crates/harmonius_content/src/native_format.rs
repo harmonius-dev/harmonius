@@ -20,17 +20,20 @@ fn body_hash(body: &[u8]) -> ContentHash {
 }
 
 /// Parses `bytes` as native `HAST` v1: magic, version u32 LE, content_hash, body.
-pub fn parse_native(bytes: &[u8]) -> Result<(u32, ContentHash, &[u8]), ImportError> {
+pub fn parse_native<'a>(
+    bytes: &'a [u8],
+    path: &Path,
+) -> Result<(u32, ContentHash, &'a [u8]), ImportError> {
     if bytes.len() < 40 {
-        return Err(ImportError::HashMismatch {
-            expected: ContentHash { bytes: [0; 32] },
-            actual: ContentHash { bytes: [0; 32] },
+        return Err(ImportError::InvalidNativeContainer {
+            path: path.to_path_buf(),
+            reason: "native asset smaller than 40-byte HAST header",
         });
     }
     if &bytes[0..4] != NATIVE_MAGIC {
-        return Err(ImportError::HashMismatch {
-            expected: ContentHash { bytes: [0; 32] },
-            actual: ContentHash { bytes: [0; 32] },
+        return Err(ImportError::InvalidNativeContainer {
+            path: path.to_path_buf(),
+            reason: "expected HAST magic",
         });
     }
     let version = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
@@ -48,15 +51,15 @@ pub fn parse_native(bytes: &[u8]) -> Result<(u32, ContentHash, &[u8]), ImportErr
 /// Validates and returns import metadata for a native asset file bytes.
 pub fn import_native_asset(bytes: &[u8], path: &Path) -> Result<NativeImportOutput, ImportError> {
     if bytes.len() < 8 {
-        return Err(ImportError::HashMismatch {
-            expected: ContentHash { bytes: [0; 32] },
-            actual: ContentHash { bytes: [0; 32] },
+        return Err(ImportError::InvalidNativeContainer {
+            path: path.to_path_buf(),
+            reason: "native asset too small for HAST magic and version",
         });
     }
     if &bytes[0..4] != NATIVE_MAGIC {
-        return Err(ImportError::HashMismatch {
-            expected: ContentHash { bytes: [0; 32] },
-            actual: ContentHash { bytes: [0; 32] },
+        return Err(ImportError::InvalidNativeContainer {
+            path: path.to_path_buf(),
+            reason: "expected HAST magic",
         });
     }
     let version = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
@@ -67,7 +70,7 @@ pub fn import_native_asset(bytes: &[u8], path: &Path) -> Result<NativeImportOutp
             suggestion: Some("Set format_version to 1 for supported native assets.".into()),
         });
     }
-    let (_v, content_hash, _body) = parse_native(bytes)?;
+    let (_v, content_hash, _body) = parse_native(bytes, path)?;
     Ok(NativeImportOutput {
         asset_id: AssetId(1),
         content_hash,

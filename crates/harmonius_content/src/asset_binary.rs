@@ -87,7 +87,10 @@ impl AssetWriter {
             toc_bytes.extend_from_slice(&off.to_le_bytes());
             toc_bytes.extend_from_slice(&len.to_le_bytes());
         }
-        let body: Vec<u8> = sections_blob.into_iter().chain(toc_bytes.iter().copied()).collect();
+        let body: Vec<u8> = sections_blob
+            .into_iter()
+            .chain(toc_bytes.iter().copied())
+            .collect();
         let content_hash = *blake3::hash(&body).as_bytes();
         let total_size = (HEADER_LEN + body.len()) as u64;
         let toc_count = toc_entries.len() as u32;

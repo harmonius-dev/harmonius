@@ -3,6 +3,11 @@
 //!
 //! This crate implements the behaviors covered by `docs/design/content-pipeline/asset-pipeline-test-cases.md`
 //! for Harmonius plan `PLAN-content-pipeline-asset-pipeline`.
+//!
+//! **Scope note:** CAS and related helpers use synchronous `std::fs` in this crate so unit tests stay
+//! hermetic without the platform I/O bridge. Full non-blocking platform I/O and rkyv-backed baked
+//! payloads remain integration follow-ups tracked against `docs/design/constraints.md` and the
+//! asset pipeline design.
 
 #![forbid(unsafe_code)]
 #![deny(clippy::all)]
@@ -40,10 +45,14 @@ pub mod validation;
 pub mod version_store;
 pub mod visual_inspector;
 
-pub use asset_binary::{AssetError, AssetHeader, AssetReader, AssetWriter, ASSET_MAGIC, FORMAT_VERSION};
+pub use asset_binary::{
+    AssetError, AssetHeader, AssetReader, AssetWriter, ASSET_MAGIC, FORMAT_VERSION,
+};
 pub use audio_flac::parse_flac_loop_comments;
 pub use audio_wav::{parse_wav_with_cue, WavMeta};
-pub use auto_resolve::{auto_resolve_lww, auto_resolve_union_tags, AutoResolution, ResolutionStrategy};
+pub use auto_resolve::{
+    auto_resolve_lww, auto_resolve_union_tags, AutoResolution, ResolutionStrategy,
+};
 pub use batch_import::{BatchImportHandle, BatchImportState, ImportEntry};
 pub use bundle::{BundleDecodeStats, BundleReader, BundleWriter};
 pub use cas::{ContentAddressableStore, GcResult, StoreResult};
@@ -72,7 +81,9 @@ pub use texture_decode::{
 pub use three_way_merge::{three_way_merge_disjoint_graphs, MergeResult};
 pub use thumbnail::{generate_thumbnail_for_mesh_import, ThumbnailJob};
 pub use ui_reload::{reload_ui_panel_style, PanelState, UiDocument};
-pub use validation::{import_with_optional_tags_validation, validate_native_version, ValidationWarning};
+pub use validation::{
+    import_with_optional_tags_validation, validate_native_version, ValidationWarning,
+};
 pub use version_store::VersionStore;
 pub use visual_inspector::{visual_inspector_fields, InspectorRow, WidgetKind};
 
@@ -142,9 +153,7 @@ pub enum ImportResult {
         content_hash: ContentHash,
     },
     /// Import cache hit; no processor work.
-    CacheHit {
-        artifact_key: ContentHash,
-    },
+    CacheHit { artifact_key: ContentHash },
 }
 
 /// Import failures for native and coordinated paths.
@@ -155,6 +164,10 @@ pub enum ImportError {
         expected: ContentHash,
         actual: ContentHash,
     },
+    /// Bytes are not a well-formed native HAST container (too short, wrong magic, etc.).
+    InvalidNativeContainer { path: PathBuf, reason: &'static str },
+    /// Storage or transport I/O failure.
+    Io { path: PathBuf, message: String },
     /// Validation failed with structured diagnostics.
     ValidationFailed {
         path: PathBuf,

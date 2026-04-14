@@ -43,7 +43,10 @@ impl DataTable {
 /// Edit one cell; returns new serialized table.
 pub fn edit_data_table_cell(table: &DataTable, row: u32, col: &str, value: &str) -> String {
     let mut t = table.clone();
-    t.rows.entry(row).or_default().insert(col.to_string(), value.to_string());
+    t.rows
+        .entry(row)
+        .or_default()
+        .insert(col.to_string(), value.to_string());
     t.to_hat()
 }
 
