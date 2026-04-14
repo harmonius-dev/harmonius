@@ -28,6 +28,7 @@ impl BtEventMemoryCheck {
             min_accuracy: Some(self.min_accuracy),
             source: None,
             predicate: Some(self.predicate),
+            event_type: None,
             max_results: 0,
         }
     }

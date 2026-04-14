@@ -2,7 +2,7 @@
 
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 
-use crate::event_log::{DecayingEntry, EventLog};
+use crate::event_log::{DecayingEntry, EventLog, Vec3};
 use crate::ids::Entity;
 
 /// Which subsystem produced a decision entry.
@@ -39,7 +39,14 @@ pub fn write_ai_decision(
     entry: AiDecisionEntry,
     current_tick: u64,
     source_entity: Entity,
+    position: Option<Vec3>,
 ) {
-    let cell = DecayingEntry::new(entry, current_tick, Some(source_entity));
-    log.push(cell);
+    let cell = DecayingEntry::with_spatial(
+        entry,
+        current_tick,
+        Some(source_entity),
+        position,
+        None,
+    );
+    let _ = log.push(cell);
 }

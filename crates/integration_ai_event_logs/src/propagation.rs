@@ -17,6 +17,11 @@ impl PropagationBuffer {
         self.pending.push((target, key, value));
     }
 
+    /// Pending triples waiting for [`Self::flush`].
+    pub fn pending_len(&self) -> usize {
+        self.pending.len()
+    }
+
     /// Flushes pending writes with stable sort on `(Entity, BlackboardKey)`; last writer wins.
     pub fn flush(&mut self, blackboards: &mut BTreeMap<Entity, Blackboard>) {
         self.pending

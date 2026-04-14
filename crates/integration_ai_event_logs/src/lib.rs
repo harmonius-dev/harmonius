@@ -1,8 +1,8 @@
 //! AI behavior ↔ event logs integration primitives.
 //!
 //! This crate captures the contracts from `docs/design/integration/ai-event-logs.md` as
-//! dependency-free, testable logic (bounded logs, queries, thresholds, propagation buffer, and
-//! rkyv-backed decision entries).
+//! small, testable logic: bounded logs, queries, thresholds, propagation buffer, and rkyv-backed
+//! decision entries. Dependencies stay explicit (`rkyv`, `crossbeam-channel`, `smallvec`, …).
 
 #![deny(clippy::all)]
 #![deny(missing_docs)]
@@ -27,10 +27,10 @@ pub use channels::{ThresholdChannel, THRESHOLD_CHANNEL_CAP};
 pub use debug_flags::EventLogDebugFlags;
 pub use event_log::{
     DecayingEntry, EventLog, EventLogQuery, EventPredicate, PredicateId, PredicateTable,
-    QueryContext, QueryWarnings, TimeRange,
+    QueryContext, QueryWarnings, TimeRange, Vec3,
 };
 pub use goap::GoapThreatBits;
-pub use ids::{ActionId, Entity};
+pub use ids::{ActionId, Entity, EventTypeId};
 pub use propagation::PropagationBuffer;
 pub use threshold::{evaluate_threshold_trigger, ThresholdFired, ThresholdTrigger};
 pub use utility::{score_event_log_consideration, EventLogConsideration, ResponseCurve};
