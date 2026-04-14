@@ -16,17 +16,8 @@
       {
         "hooks": [
           {
-            "command": ".claude/hooks/check-rust-stop.sh",
-            "timeout": 60,
-            "type": "command"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "command": ".claude/hooks/run-xcodegen-stop.sh",
-            "timeout": 30,
+            "command": ".claude/hooks/verify.sh",
+            "timeout": 90,
             "type": "command"
           }
         ]
