@@ -7,6 +7,7 @@
 //! `docs/design/tools/content-services-test-cases.md`.
 
 pub mod assistant;
+pub mod documentation;
 pub mod governance;
 pub mod localization;
 
