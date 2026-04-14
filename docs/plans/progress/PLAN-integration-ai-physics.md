@@ -1,12 +1,12 @@
 ---
 branch: plan/integration-ai-physics
-last_updated: 2026-04-14T12:30:00Z
+last_updated: 2026-04-14T20:05:00Z
 plan_id: PLAN-integration-ai-physics
 pr_number: 67
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/67
 started_at: 2026-04-14T05:20:00Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-ai-physics
 ---
 
@@ -30,8 +30,8 @@ Plan file: [ai-physics.md](../integration/ai-physics.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -50,13 +50,13 @@ Plan file: [ai-physics.md](../integration/ai-physics.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test --workspace` (2026-04-14, local) — 27 unit tests in
+- Test reports: `cargo test --workspace` (2026-04-14, local) — 32 unit tests in
   `integration_ai_physics`.
 - Benchmarks: `cargo bench -p integration_ai_physics` (Criterion targets TC-IR-2.5.*.B1 in
   `benches/ai_physics.rs`).
 - Screenshots: deferred (no runtime viewport in this harness).
 - Videos: deferred.
-- Review notes: awaiting `pr-reviewer` pass.
+- Review notes: `pr-reviewer` pass (2026-04-14); PR undrafted for human review.
 
 ## Event log
 
@@ -70,5 +70,7 @@ Plan file: [ai-physics.md](../integration/ai-physics.md)
   negative cases; awaiting review.
 - 2026-04-14T12:30:00Z — plan-implementer — `rumdl check .` clean after README fixes; branch
   `b4f486e` pushed.
+- 2026-04-14T20:05:00Z — pr-reviewer — submitted for human review; 19 review findings addressed
+  (blocker/major/moderate/minor); `gh pr ready` on PR 67.
 
 Entries use ISO-8601 UTC with actor, action, and outcome.

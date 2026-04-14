@@ -1,4 +1,7 @@
 //! IR-2.5.1 walkability queries against a shared spatial index + material policy.
+//!
+//! [`WalkabilityScene::resolve`] uses a **downward `-Y` ray** over an unordered patch list (BVH
+//! leaf list surrogate), not a full broadphase traversal.
 
 use glam::Vec3;
 
@@ -13,6 +16,8 @@ pub struct WalkabilityQuery {
     pub foot_position: Vec3,
     pub max_slope_deg: f32,
     pub agent_mask: AgentMask,
+    /// When set, the surface owned by this entity is rejected (`EntityExcluded`).
+    pub excluded_entity: Option<Entity>,
 }
 
 /// Reason a surface is rejected for traversal.
@@ -26,7 +31,7 @@ pub enum UnwalkableReason {
     SlopeTooSteep,
     /// Material disallowed for this `AgentMask`.
     MaterialExcluded,
-    /// Reserved for entity filter exclusions (not exercised in the reference harness).
+    /// Surface entity matches [`WalkabilityQuery::excluded_entity`].
     EntityExcluded,
 }
 
@@ -84,20 +89,20 @@ impl WalkabilityScene {
         let ray_origin = query.foot_position;
         let ray_dir = Vec3::new(0.0, -1.0, 0.0);
         let mut best_t = f32::MAX;
-        let mut best: Option<(Vec3, Vec3, MaterialId)> = None;
+        let mut best: Option<(Vec3, Vec3, MaterialId, Entity)> = None;
 
         for surface in &self.surfaces {
-            if let Some((t, hit, normal, material)) =
+            if let Some((t, hit, normal, material, entity)) =
                 intersect_planar_patch(ray_origin, ray_dir, surface)
             {
                 if t < best_t {
                     best_t = t;
-                    best = Some((hit, normal, material));
+                    best = Some((hit, normal, material, entity));
                 }
             }
         }
 
-        let Some((_, normal, material)) = best else {
+        let Some((_, normal, material, entity)) = best else {
             return WalkabilityResult {
                 request_id: query.request_id,
                 walkable: false,
@@ -106,6 +111,16 @@ impl WalkabilityScene {
                 reason: UnwalkableReason::NoSurface,
             };
         };
+
+        if query.excluded_entity == Some(entity) {
+            return WalkabilityResult {
+                request_id: query.request_id,
+                walkable: false,
+                surface_normal: normal,
+                material,
+                reason: UnwalkableReason::EntityExcluded,
+            };
+        }
 
         if !query.agent_mask.allows(material) {
             return WalkabilityResult {
@@ -145,7 +160,7 @@ fn intersect_planar_patch(
     origin: Vec3,
     dir: Vec3,
     patch: &PlanarPatch,
-) -> Option<(f32, Vec3, Vec3, MaterialId)> {
+) -> Option<(f32, Vec3, Vec3, MaterialId, Entity)> {
     let t = patch.plane.ray_hit_t(origin, dir, f32::MAX)?;
     let hit = origin + dir * t;
     let dx = (hit.x - patch.center.x).abs();
@@ -158,5 +173,6 @@ fn intersect_planar_patch(
         hit,
         patch.plane.normal.normalize_or_zero(),
         patch.material,
+        patch.entity,
     ))
 }

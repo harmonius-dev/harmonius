@@ -29,7 +29,7 @@ pub struct FootContact {
 ///
 /// - `None` means the physics worker did not publish a contact list for this frame (`FM-4`).
 /// - `Some(&[])` means the agent is airborne with a published (empty) snapshot.
-/// - `Some([..])` selects the strongest supporting contact as the first slice element.
+/// - `Some([..])` picks the contact whose `ground_normal` best aligns with world up (`+Y`).
 #[must_use]
 pub fn read_ai_grounded_state(
     contacts: Option<&[FootContact]>,
@@ -41,7 +41,11 @@ pub fn read_ai_grounded_state(
         return prev;
     };
 
-    let Some(contact) = list.first() else {
+    let Some(contact) = list.iter().max_by(|a, b| {
+        let da = a.ground_normal.normalize_or_zero().dot(Vec3::Y);
+        let db = b.ground_normal.normalize_or_zero().dot(Vec3::Y);
+        da.total_cmp(&db)
+    }) else {
         return airborne_state();
     };
 

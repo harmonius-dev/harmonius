@@ -1,4 +1,8 @@
 //! IR-2.5.3 climb detection via a vertical capsule-style sweep surrogate.
+//!
+//! [`ClimbScene::sweep`] is a **fixed-step ray surrogate** along `direction` (not a swept capsule
+//! against triangle soup). It matches the design intent for deterministic tests; runtime geometry
+//! uses the full cast described in `docs/design/integration/ai-physics.md`.
 
 use glam::Vec3;
 
@@ -88,7 +92,11 @@ impl CylinderClimbFixture {
         let r = self.radius;
         let x0 = agent_xz.x;
         let z0 = agent_xz.z;
-        let len = (x0 * x0 + z0 * z0).sqrt();
+        let len_sq = x0 * x0 + z0 * z0;
+        if len_sq < 1e-12 {
+            return Vec3::new(r, self.ledge_height, 0.0);
+        }
+        let len = len_sq.sqrt();
         let scale = r / len;
         Vec3::new(x0 * scale, self.ledge_height, z0 * scale)
     }

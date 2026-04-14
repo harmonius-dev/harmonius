@@ -1,4 +1,7 @@
 //! IR-2.5.6 line-of-sight queries against simplified occluder geometry.
+//!
+//! Perception pipeline wiring lives in `docs/design/integration/ai-spatial-awareness.md`; this
+//! crate only holds the LOS query contract exercised in tests.
 
 use glam::Vec3;
 

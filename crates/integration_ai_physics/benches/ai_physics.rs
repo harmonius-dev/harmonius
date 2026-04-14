@@ -1,3 +1,6 @@
+//! Criterion benches for AI ↔ physics harness hot paths (dev-dependency only; **not** CI
+//! threshold gates — see `docs/design/integration/ai-physics-test-cases.md`).
+
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use glam::Vec3;
 use integration_ai_physics::{
@@ -22,6 +25,7 @@ fn bench_walkability_1000(c: &mut Criterion) {
         foot_position: Vec3::new(0.0, 0.01, 0.0),
         max_slope_deg: 45.0,
         agent_mask: AgentMask::default().with_material(MaterialId(0)),
+        excluded_entity: None,
     };
     let mut metrics = integration_ai_physics::FallbackMetrics::default();
     c.bench_function("tc_ir_2_5_1_b1_walkability_1000", |b| {
