@@ -1,6 +1,10 @@
 //! Input subsystem: devices, action mapping, gestures, haptics, and VR-facing helpers.
 //!
-//! Implements the API shapes from `docs/design/input/input.md` for [PLAN-input-input].
+//! Delivers deterministic, test-first primitives aligned with `docs/design/input/input.md`.
+//! ECS systems, `InputChannel` / main-thread drain (RF-1), recording, and full rebind
+//! persistence are **not** in this crate yet; integrate them in follow-up plans.
+//!
+//! Plan: [PLAN-input-input].
 //!
 //! [PLAN-input-input]: https://github.com/cjhowe-us/harmonius/blob/main/docs/plans/input/input.md
 
