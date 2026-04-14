@@ -37,9 +37,19 @@ trait so subsystems keep their native enums.
 |------------------------|------------------------------------------------------------|
 | Non-invasive           | Existing subsystem enums remain valid                      |
 | Enum dispatch          | No `dyn Error` trait objects                               |
-| `no_std` compatible    | No `std::error::Error` requirement                         |
-| rkyv compatible        | Serializable for editor diagnostics                        |
+| Std-light modeling     | No `std::error::Error` bound; `#![no_std]` is a later port |
+| rkyv friendly          | See “Global constraint notes” for v1 vs archive mapping    |
 | Cheap conversion       | `impl From<SubsystemError> for EngineError`                |
+
+### Global constraint notes (v1)
+
+1. **Localization** — `docs/design/constraints.md` reserves user-visible copy for
+   `LocalizedStringId`. v1 `Diagnostic::message` and `&'static str` reason fields are
+   **English diagnostic tokens** for logs and developer surfaces only; UI integration must map them
+   to IDs before shipping localized player text.
+2. **rkyv** — `EngineError` graphs may carry `PathBuf`, `String`, and nested `Vec` payloads. v1 does
+   not archive them with rkyv; a follow-up milestone will add surrogate IDs or archived mirrors at
+   editor persistence boundaries.
 
 ## Architecture
 
@@ -104,6 +114,7 @@ classDiagram
         SymbolConflict
         IoFailed
         SubprocessExit
+        Compile
     }
 
     class CompileError {
@@ -365,6 +376,20 @@ impl From<NetworkError> for EngineError {
     fn from(e: NetworkError) -> Self { EngineError::Network(e) }
 }
 
+// -------- Integration boundary helpers -----------------------------------
+
+#[must_use]
+pub fn asset_pipeline_report_hash_mismatch(expected: u64, got: u64) -> EngineError { .. }
+
+#[must_use]
+pub fn save_system_report_version_mismatch(expected: u16, got: u16) -> EngineError { .. }
+
+#[must_use]
+pub fn shader_compile_report_subprocess_failure(
+    exit_code: i32,
+    stderr: String,
+) -> EngineError { .. }
+
 // -------- Diagnostic ----------------------------------------------------
 
 #[derive(Debug, Clone)]
@@ -437,7 +462,7 @@ Full test cases live in [error-test-cases.md](error-test-cases.md). Summary:
 | Unit        | `Diagnostic` formatting                                             |
 | Integration | Asset pipeline error bubbles through EngineError into editor UI    |
 | Integration | Save system error produces SerializationError variant               |
-| Benchmark   | `EngineError` conversion overhead under 50 ns                       |
+| Benchmark   | `EngineError` conversion overhead under 50 ns (release builds only) |
 
 ## Open Questions
 
