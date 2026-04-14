@@ -7,6 +7,6 @@ version = "0.0.0"
 path = "src/lib.rs"
 
 [dependencies]
-rkyv = { version = "0.7", features = ["validation"] }
+rkyv = { version = "0.7", features = ["smol_str", "validation"] }
 smallvec = { version = "1.14", default-features = false, features = ["const_generics"] }
 smol_str = "0.2"

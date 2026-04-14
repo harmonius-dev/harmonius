@@ -2202,6 +2202,7 @@ dependencies = [
  "rend 0.4.2",
  "rkyv_derive 0.7.46",
  "seahash",
+ "smol_str",
  "tinyvec",
  "uuid",
 ]

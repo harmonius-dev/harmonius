@@ -1,6 +1,6 @@
 ---
 branch: plan/simulation-event-logs
-last_updated: 2026-04-14T12:00:00Z
+last_updated: 2026-04-14T18:03:17Z
 plan_id: PLAN-simulation-event-logs
 pr_number: 83
 pr_review_status: complete
@@ -28,7 +28,7 @@ Plan file: [event-logs.md](../simulation/event-logs.md)
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [x] `rumdl check` passes for this progress file (full-tree `rumdl check .` not required here)
+- [x] `rumdl check docs/plans/progress/PLAN-simulation-event-logs.md` passes
 - [ ] Evidence links logged in this file
 - [x] Review findings addressed and checklist re-verified
 - [x] PR marked ready for human review (`status: submitted`)
@@ -50,14 +50,16 @@ Plan file: [event-logs.md](../simulation/event-logs.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius_event_logs` (27 tests) after pr-reviewer fixes.
+- Test reports: `cargo test -p harmonius_event_logs` (28 tests) after pr-reviewer pass.
 - Benchmarks: add artifacts and expected vs observed thresholds.
 - Screenshots: add image paths with acceptance notes.
 - Videos: add capture paths with scenario IDs.
-- Review notes: addressed review-supervisor findings — VecDeque FIFO, `tick_rate` gating in
-  `decay_tick`, `FireEvent(SmolStr)`, clippy, `prune_below` test, propagation `range` module note.
-- Deferred for follow-up: criterion benches, ECS event surface, main-workspace crate membership at
-  merge.
+- Review notes: resolved review-supervisor **blocker** — `rkyv` `smol_str` feature plus
+  `Archive`/`Serialize`/`Deserialize` on `ThresholdAction` / `ThresholdTrigger`; moderate/minor —
+  `// SAFETY` on `rkyv::archived_root`, `EventLog::test_set_entry_accuracy`, clearer threshold test
+  name, `test_threshold_trigger_rkyv_roundtrip`, module notes for codegen bridges. **Deferred**
+  (follow-up plans / merge): criterion benches, ECS event payload types, NPC deed/gossip harness
+  tests, tag footprint hardening, `powf` determinism policy, glam boundary alignment.
 
 ## Event log
 
@@ -68,7 +70,8 @@ Plan file: [event-logs.md](../simulation/event-logs.md)
   <https://github.com/cjhowe-us/harmonius/pull/83>.
 - 2026-04-14T05:29:59Z — plan-implementer — code complete: `harmonius_event_logs` crate with unit
   tests for plan `TC-*` scope; awaiting `pr-reviewer`.
-- 2026-04-14T12:00:00Z — pr-reviewer — addressed 14 review findings (1 blocker, 4 substantive, 5
-  moderate, 4 minor): VecDeque FIFO, `tick_rate` gating in `decay_tick`, `FireEvent(SmolStr)`,
-  clippy clean, `prune_below` test, propagation module note; submitted for human review (PR
-  undrafted).
+- 2026-04-14T18:03:17Z — pr-reviewer — submitted for human review: 1 blocker cleared in-code; 6
+  moderate/minor items fixed; remaining substantive items deferred with rationale (see Evidence
+  registry); PR undrafted.
+
+Append ISO-8601 UTC entries with actor, action, and outcome.

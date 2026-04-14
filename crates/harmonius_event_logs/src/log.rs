@@ -98,7 +98,11 @@ impl<T: Clone + rkyv::Archive> EventLog<T> {
     }
 
     /// Entries whose timestamps fall in `from_tick..=to_tick` inclusive.
-    pub fn entries_in_window(&self, from_tick: u64, to_tick: u64) -> SmallVec<[&DecayingEntry<T>; 8]> {
+    pub fn entries_in_window(
+        &self,
+        from_tick: u64,
+        to_tick: u64,
+    ) -> SmallVec<[&DecayingEntry<T>; 8]> {
         self.entries
             .iter()
             .filter(|e| e.timestamp >= from_tick && e.timestamp <= to_tick)
@@ -143,5 +147,15 @@ impl<T: Clone + rkyv::Archive> EventLog<T> {
     /// Clears all entries without resetting identifiers.
     pub fn clear(&mut self) {
         self.entries.clear();
+    }
+}
+
+#[cfg(test)]
+impl<T: Clone + rkyv::Archive> EventLog<T> {
+    /// Sets `accuracy` on the entry at `index` in oldest-first storage order.
+    pub(crate) fn test_set_entry_accuracy(&mut self, index: usize, accuracy: f32) {
+        if let Some(entry) = self.entries.get_mut(index) {
+            entry.accuracy = accuracy;
+        }
     }
 }

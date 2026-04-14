@@ -1,4 +1,7 @@
 //! Structured queries over log entries.
+//!
+//! Optional [`PredicateId`](crate::PredicateId) filters are evaluated through `pred`, which codegen
+//! owns in production builds.
 
 use rkyv::{Archive, Deserialize, Serialize};
 use smallvec::SmallVec;
