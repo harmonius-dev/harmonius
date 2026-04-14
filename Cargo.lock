@@ -638,6 +638,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_event_logs_ui"
+version = "0.1.0"
+dependencies = [
+ "harmonius_event_logs",
+ "rkyv 0.7.46",
+ "smallvec",
+ "smol_str 0.2.2",
+]
+
+[[package]]
 name = "harmonius_gpu"
 version = "0.1.0"
 dependencies = [
