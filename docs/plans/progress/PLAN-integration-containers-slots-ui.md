@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-containers-slots-ui
-last_updated: 2026-04-14T05:17:47Z
+last_updated: 2026-04-14T17:43:57Z
 plan_id: PLAN-integration-containers-slots-ui
 pr_number: 29
 pr_review_status: not_started
@@ -30,6 +30,7 @@ Plan file: [containers-slots-ui.md](../integration/containers-slots-ui.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
 - [x] Evidence links logged in this file
+- [x] Code complete marker set
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
@@ -50,11 +51,13 @@ Plan file: [containers-slots-ui.md](../integration/containers-slots-ui.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius_containers_slots_ui` (11 unit tests, local).
+- Test reports: `cargo test --workspace` (11 unit tests, local worktree).
 - Benchmarks: not run in this slice (targets in companion test-case doc).
 - Screenshots: deferred (no interactive UI host in repo yet).
 - Videos: deferred (no interactive UI host in repo yet).
-- Review notes: add previously unmapped issues, waivers, and rationale.
+- Review notes: awaiting `pr-reviewer` on [PR #29](https://github.com/cjhowe-us/harmonius/pull/29).
+- Review notes (cont.): full-repo `rumdl check .` reports pre-existing issues outside this slice; no
+  Markdown changed in the Rust crate PR.
 
 ## Event log
 
@@ -62,3 +65,7 @@ Plan file: [containers-slots-ui.md](../integration/containers-slots-ui.md)
   (orchestrator pass; no PR merge).
 - 2026-04-14T05:05:29Z — plan-implementer — started; worktree + draft PR created.
 - 2026-04-14T05:17:47Z — plan-implementer — code complete; awaiting review (`pr-reviewer`).
+- 2026-04-14T06:15:00Z — plan-implementer — merged `origin/main` into plan branch; re-ran
+  `cargo test --workspace` and `cargo clippy --workspace -- -D warnings` (green).
+- 2026-04-14T17:43:57Z — plan-implementer — reconciled primary checkout progress with worktree after
+  fresh-start dispatch (branch and crate already present; no duplicate worktree).
