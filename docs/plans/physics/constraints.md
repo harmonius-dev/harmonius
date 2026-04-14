@@ -113,29 +113,15 @@ worktree_branch: plan/physics-constraints
 ### User stories (`docs/user-stories`)
 
 - [constraints-and-joints.md](../../user-stories/physics/constraints-and-joints.md) — covers
-  `US-4.3.7.3`, `US-4.3.4.3`, `US-4.3.4.4`, `US-4.3.4.9`, `US-4.3.5.12`, `US-4.3.5.3`
+  `US-4.3.1`, `US-4.3.2`, `US-4.3.3`, `US-4.3.4`, `US-4.3.5`, `US-4.3.7`, `US-4.3.7.3`
+- Parent-story mapping resolves child IDs not explicitly listed in the source file: `US-4.3.1.5` ->
+  `US-4.3.1`; `US-4.3.2.4` and `US-4.3.2.9` -> `US-4.3.2`; `US-4.3.3.4` and `US-4.3.3.5` ->
+  `US-4.3.3`; `US-4.3.4.3`, `US-4.3.4.4`, and `US-4.3.4.9` -> `US-4.3.4`; `US-4.3.5.3` and
+  `US-4.3.5.12` -> `US-4.3.5`.
 
 ### Test case sources
 
 - [constraints-test-cases.md](../../design/physics/constraints-test-cases.md)
-
-### Gap closure decisions
-
-- `US-4.3.1.5` resolved to canonical user-story anchor
-  [constraints-and-joints.md](../../user-stories/physics/constraints-and-joints.md) for TDD
-  derivation.
-- `US-4.3.2.4` resolved to canonical user-story anchor
-  [constraints-and-joints.md](../../user-stories/physics/constraints-and-joints.md) for TDD
-  derivation.
-- `US-4.3.2.9` resolved to canonical user-story anchor
-  [constraints-and-joints.md](../../user-stories/physics/constraints-and-joints.md) for TDD
-  derivation.
-- `US-4.3.3.4` resolved to canonical user-story anchor
-  [constraints-and-joints.md](../../user-stories/physics/constraints-and-joints.md) for TDD
-  derivation.
-- `US-4.3.3.5` resolved to canonical user-story anchor
-  [constraints-and-joints.md](../../user-stories/physics/constraints-and-joints.md) for TDD
-  derivation.
 
 ## Traceability coverage
 
@@ -370,7 +356,7 @@ worktree_branch: plan/physics-constraints
 
 ### Remaining open questions
 
-- None. All declared IDs are mapped with explicit implementation-time resolution paths.
+- None. All declared IDs are mapped directly or through hierarchical parents.
 
 ### TDD implementation defaults
 

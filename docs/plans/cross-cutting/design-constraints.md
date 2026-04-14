@@ -142,7 +142,7 @@ worktree_branch: plan/cross-cutting-design-constraints
 
 ### Remaining open questions
 
-- None. All declared IDs are mapped with explicit implementation-time resolution paths.
+- None. All declared IDs are mapped directly or through hierarchical parents.
 
 ### TDD implementation defaults
 

@@ -35,7 +35,7 @@ Plan file: [performance-budget.md](../cross-cutting/performance-budget.md)
 
 ## TDD launch readiness
 
-- [ ] All ID mappings verified with zero unresolved entries
+- [ ] All unresolved ID mappings triaged in plan gap-closure section
 - [ ] Red test inventory split by requirement and user story
 - [ ] First failing test batch selected for implementation loop
 - [ ] Evidence capture folders prepared (screenshots/videos/logs)
