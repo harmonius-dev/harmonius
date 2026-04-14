@@ -32,6 +32,13 @@ pub enum EmitterShape {
         /// Triangle corners in emitter-local space (three vertices per triangle).
         triangles: Vec<[Vec3; 3]>,
     },
+    /// Triangle mesh that changes per animation frame (`TC-11.1.1.6`).
+    SkinnedMeshSurface {
+        /// One triangle list per pose frame, in emitter-local space.
+        frames: Vec<Vec<[Vec3; 3]>>,
+        /// Frame index used for sampling.
+        active_frame: usize,
+    },
 }
 
 /// Golden ratio helper for stable low-discrepancy sequences.
@@ -44,12 +51,12 @@ const PHI: f32 = 1.618_034;
 pub fn spawn_positions(shape: &EmitterShape, origin: Vec3, count: usize) -> Vec<Vec3> {
     match shape {
         EmitterShape::Point => vec![origin; count],
-        EmitterShape::SphereSurface { radius } => {
-            (0..count).map(|i| origin + fibonacci_sphere(i, count) * *radius).collect()
-        }
-        EmitterShape::BoxVolume { half_extents } => {
-            (0..count).map(|i| origin + stratified_box(i, count, *half_extents)).collect()
-        }
+        EmitterShape::SphereSurface { radius } => (0..count)
+            .map(|i| origin + fibonacci_sphere(i, count) * *radius)
+            .collect(),
+        EmitterShape::BoxVolume { half_extents } => (0..count)
+            .map(|i| origin + stratified_box(i, count, *half_extents))
+            .collect(),
         EmitterShape::Cone {
             opening_angle_radians,
             length,
@@ -64,26 +71,39 @@ pub fn spawn_positions(shape: &EmitterShape, origin: Vec3, count: usize) -> Vec<
                 })
                 .collect()
         }
-        EmitterShape::MeshSurface { triangles } => {
-            if triangles.is_empty() || count == 0 {
+        EmitterShape::MeshSurface { triangles } => spawn_from_triangles(triangles, origin, count),
+        EmitterShape::SkinnedMeshSurface {
+            frames,
+            active_frame,
+        } => {
+            if frames.is_empty() || count == 0 {
                 return Vec::new();
             }
-            (0..count)
-                .map(|i| {
-                    let tri = &triangles[i % triangles.len()];
-                    let (a, b, c) = (tri[0], tri[1], tri[2]);
-                    let u = fract01(i as f32 * 0.618_034);
-                    let v = fract01(i as f32 * 0.379_682);
-                    if u + v > 1.0 {
-                        sample_triangle_point(a, b, c, 1.0 - u, 1.0 - v)
-                    } else {
-                        sample_triangle_point(a, b, c, u, v)
-                    }
-                })
-                .map(|p| origin + p)
-                .collect()
+            let fi = active_frame % frames.len();
+            let tris = &frames[fi];
+            spawn_from_triangles(tris, origin, count)
         }
     }
+}
+
+fn spawn_from_triangles(triangles: &[[Vec3; 3]], origin: Vec3, count: usize) -> Vec<Vec3> {
+    if triangles.is_empty() || count == 0 {
+        return Vec::new();
+    }
+    (0..count)
+        .map(|i| {
+            let tri = &triangles[i % triangles.len()];
+            let (a, b, c) = (tri[0], tri[1], tri[2]);
+            let u = fract01(i as f32 * 0.618_034);
+            let v = fract01(i as f32 * 0.379_682);
+            if u + v > 1.0 {
+                sample_triangle_point(a, b, c, 1.0 - u, 1.0 - v)
+            } else {
+                sample_triangle_point(a, b, c, u, v)
+            }
+        })
+        .map(|p| origin + p)
+        .collect()
 }
 
 fn fract01(x: f32) -> f32 {
@@ -115,7 +135,11 @@ fn stratified_box(i: usize, n: usize, h: Vec3) -> Vec3 {
     let fx = (ix as f32 + 0.5) / nx as f32;
     let fy = (iy as f32 + 0.5) / ny as f32;
     let fz = (iz as f32 + 0.5) / nz.max(1) as f32;
-    Vec3::new((fx * 2.0 - 1.0) * h.x, (fy * 2.0 - 1.0) * h.y, (fz * 2.0 - 1.0) * h.z)
+    Vec3::new(
+        (fx * 2.0 - 1.0) * h.x,
+        (fy * 2.0 - 1.0) * h.y,
+        (fz * 2.0 - 1.0) * h.z,
+    )
 }
 
 fn uniform_cone_direction(i: usize, n: usize, cos_limit: f32) -> Vec3 {
@@ -161,11 +185,7 @@ mod tests {
     #[test]
     fn tc_11_1_1_2_emit_sphere_surface() {
         let origin = Vec3::ZERO;
-        let pts = spawn_positions(
-            &EmitterShape::SphereSurface { radius: 5.0 },
-            origin,
-            1000,
-        );
+        let pts = spawn_positions(&EmitterShape::SphereSurface { radius: 5.0 }, origin, 1000);
         assert_eq!(pts.len(), 1000);
         for p in pts {
             let d = (p - origin).length();
@@ -246,17 +266,41 @@ mod tests {
             [p001, p111, p011],
         ];
         let origin = Vec3::ZERO;
-        let pts = spawn_positions(
-            &EmitterShape::MeshSurface { triangles: tris },
-            origin,
-            600,
-        );
+        let pts = spawn_positions(&EmitterShape::MeshSurface { triangles: tris }, origin, 600);
         assert_eq!(pts.len(), 600);
         for p in pts {
             let on_face = (p.x.abs() - unit).abs() < 1e-3
                 || (p.y.abs() - unit).abs() < 1e-3
                 || (p.z.abs() - unit).abs() < 1e-3;
             assert!(on_face, "point {p:?} not on cube shell");
+        }
+    }
+
+    /// `TC-11.1.1.6` — skinned mesh uses the active pose triangles.
+    #[test]
+    fn tc_11_1_1_6_emit_skinned_mesh() {
+        let tri_z0 = vec![[
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(1.0, 0.0, 0.0),
+            Vec3::new(0.0, 1.0, 0.0),
+        ]];
+        let tri_z5 = vec![[
+            Vec3::new(0.0, 0.0, 5.0),
+            Vec3::new(1.0, 0.0, 5.0),
+            Vec3::new(0.0, 1.0, 5.0),
+        ]];
+        let origin = Vec3::ZERO;
+        let pts = spawn_positions(
+            &EmitterShape::SkinnedMeshSurface {
+                frames: vec![tri_z0, tri_z5],
+                active_frame: 1,
+            },
+            origin,
+            50,
+        );
+        assert_eq!(pts.len(), 50);
+        for p in pts {
+            assert!((p.z - 5.0).abs() < 0.01, "expected pose z=5, got {p:?}");
         }
     }
 }
