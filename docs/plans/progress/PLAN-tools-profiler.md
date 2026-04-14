@@ -1,12 +1,13 @@
 ---
-branch: null
-last_updated: 2026-04-14T02:02:00Z
+branch: plan/tools-profiler
+last_updated: 2026-04-14T12:00:00Z
 plan_id: PLAN-tools-profiler
-pr_number: null
-pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+pr_number: 17
+pr_url: https://github.com/cjhowe-us/harmonius/pull/17
+pr_review_status: not_started
+started_at: 2026-04-14T12:00:00Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-profiler
 ---
 
 # Progress: Tools Profiler
@@ -15,9 +16,9 @@ Plan file: [profiler.md](../tools/profiler.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
-- [ ] Design and companion test-case docs reviewed
+- [x] Worktree created and branch aligned with plan metadata
+- [x] Draft PR opened and linked in frontmatter
+- [x] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
 - [ ] Red phase complete with failing tests for uncovered scope
 - [ ] Green phase complete with minimal passing implementation
@@ -56,6 +57,10 @@ Plan file: [profiler.md](../tools/profiler.md)
 - Review notes: add previously unmapped issues, waivers, and rationale.
 
 ## Event log
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
+
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
+- 2026-04-14T12:00:00Z — plan-implementer — resumed existing worktree + PR #17; extending crate for
+  remaining `TC-15.5.*` unit tests.
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.

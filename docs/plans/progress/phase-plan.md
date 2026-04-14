@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T14:33:23Z
+last_updated: 2026-04-14T14:37:22Z
 phase: plan
 started_at: null
 ---
@@ -195,3 +195,21 @@ every pass; read by the harmonize master agent to compute the next ready set.
   `eecb8821-2674-4696-9170-ba639caab485` (`parent_task_id`
   `harmonize-cursor-inline-2026-04-14T14-33-23Z`).
 - 2026-04-14T14:33:23Z — §9: released `harmonize-run-lock.md` after dispatch wave (`active: false`).
+- 2026-04-14T14:36:38Z — harmonize `mode: run` (Cursor inline): §0 stash gate passed (`main`,
+  material-clean per exclusions); `in_flight` was `[]` (no flush / restart sweep rows).
+- 2026-04-14T14:36:38Z — §0b: acquired `harmonize-run-lock.md` (`root_task_id`
+  `5293e215-cf53-48c8-84f7-3c84a074e69c`); no prior active chain — no `AskUserQuestion`.
+- 2026-04-14T14:37:22Z — §5 `unblock-workflow-gh` (inline): 38 unique `pr_number` values across
+  `PLAN-*`; `gh pr view` on `cjhowe-us/harmonius` — all **OPEN**, **0** merged; no `PLAN-*` /
+  archive updates.
+- 2026-04-14T14:37:22Z — §3: `TaskList` / `TaskStop` unavailable in Cursor host; `in_flight` stayed
+  `[]` until §7a; `locks.md` unchanged (`locks: []`).
+- 2026-04-14T14:37:22Z — Cron bootstrap: skipped (no `CronList` / `CronCreate` in Cursor host).
+- 2026-04-14T14:37:22Z — §7: dispatched `plan-orchestrator` `dispatch-only` + `specify-orchestrator`
+  - `design-orchestrator` (parallel `Task`); specify/design ready: **none** (`(bootstrap)`
+  `not_started` in `phase-specify.md`).
+- 2026-04-14T14:37:22Z — §7a: registered orchestrators in `in-flight.md` — `plan-orchestrator`
+  `da0d8647-3e75-4c21-9c3d-b4c1c4267396`, `specify-orchestrator`
+  `fc6b6d2f-4796-429d-8f1e-366f4222d577`, `design-orchestrator`
+  `d28dc85b-2742-4af3-9f30-8425b4a2fa9e` (`parent_task_id` `5293e215-cf53-48c8-84f7-3c84a074e69c`).
+- 2026-04-14T14:37:22Z — §9: released `harmonize-run-lock.md` after dispatch wave (`active: false`).

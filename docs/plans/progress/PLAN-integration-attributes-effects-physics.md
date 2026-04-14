@@ -57,5 +57,6 @@ Plan file: [attributes-effects-physics.md](../integration/attributes-effects-phy
 
 ## Event log
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
+- 2026-04-14T12:00:00Z — plan-implementer — blocked: primary workspace has no Rust crate members (`Cargo.toml` `members = []`, zero `.rs` files). Cannot create worktree PR or run red/green `cargo test` for IR-2.6.* integration. Resume after a workspace member exists that implements attributes-effects + physics boundaries, or split a prerequisite plan to bootstrap the engine crate.
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
