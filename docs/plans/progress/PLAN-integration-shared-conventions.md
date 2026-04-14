@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-shared-conventions
-last_updated: 2026-04-14T05:16:00Z
+last_updated: 2026-04-14T17:54:10Z
 plan_id: PLAN-integration-shared-conventions
 pr_number: 16
 pr_review_status: not_started
@@ -71,5 +71,8 @@ Plan file: [shared-conventions.md](../integration/shared-conventions.md)
   (`Cargo.toml` members empty); `cargo test` / `cargo clippy` not applicable for this slice.
 - 2026-04-14T05:16:00Z — plan-implementer — `status: code_complete`,
   `pr_review_status: not_started`; awaiting `pr-reviewer`.
+- 2026-04-14T17:54:10Z — plan-implementer — added `unittest` self-tests
+  (`python3 scripts/lint_integration_mermaid_sc11.py --self-test`); documented `--self-test` under
+  SC-11; pushed to PR 16.
 
 Append ISO-8601 UTC entries with actor, action, and outcome.
