@@ -1,6 +1,6 @@
 ---
 branch: plan/rendering-camera-rendering
-last_updated: 2026-04-14T11:37:05Z
+last_updated: 2026-04-14T18:00:58Z
 plan_id: PLAN-rendering-camera-rendering
 pr_number: 38
 pr_review_status: complete
@@ -70,5 +70,10 @@ Plan file: [camera-rendering.md](../rendering/camera-rendering.md)
 - 2026-04-14T11:37:05Z — pr-reviewer — submitted for human review; 2 findings addressed (README
   broken audit link; repo-wide rumdl noise from `docs/plans/progress` templates). Inline review: 0
   correctness, 0 architecture, 0 standards blockers on `rendering_camera` crate.
+- 2026-04-14T18:00:58Z — pr-reviewer — review-supervisor pass landed: 0 blockers, 4 substantive, 7
+  moderate, 3 minor. Addressed in-tree without redesign (TC doc vs `CineLens` math, PiP/benchmark
+  deferral notes, integration test renames, `ExposureSettings::adapt`, `DofPassError::InvalidRange`,
+  module guidance for spring arm / sequencer / PiP, `.rumdl.toml` exclude rationale). PR 38 already
+  open (not draft); pushed commit `8e932c5`.
 
 Append ISO-8601 UTC entries with actor, action, and outcome.
