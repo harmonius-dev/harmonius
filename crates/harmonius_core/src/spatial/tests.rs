@@ -391,8 +391,8 @@ fn query_all(bvh: &BvhIndex) -> Vec<Entity> {
         .collect()
 }
 
-fn bvh_invariants_hold(_bvh: &BvhIndex) -> bool {
-    true
+fn bvh_invariants_hold(bvh: &BvhIndex) -> bool {
+    bvh.verify_structure_invariants().is_ok()
 }
 
 fn brute_ray_leaves(bvh: &BvhIndex, origin: Vec3, dir: Vec3, max_dist: f32) -> Vec<Entity> {
