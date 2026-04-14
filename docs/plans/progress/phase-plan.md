@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T02:10:38Z
+last_updated: 2026-04-14T02:40:30Z
 phase: plan
 started_at: null
 ---
@@ -111,3 +111,17 @@ every pass; read by the harmonize master agent to compute the next ready set.
 - 2026-04-14T02:10:38Z — Manual **`reset-in-flight`**: cleared `docs/plans/in-flight.md` (killed
   background agent tree / worktree restart); prior row referenced `plan-orchestrator`
   `dispatch-only` task `1b383f99-9a55-48b8-a4f3-487118a31940`.
+- 2026-04-14T02:39:51Z — harmonize `mode: run` (root): §0 stash gate passed (`main`, clean
+  `git status --porcelain`); `in_flight` was `[]` (no TaskStop / restart sweep rows).
+- 2026-04-14T02:39:51Z — Local pre-scan: no `PLAN-*` progress files carry numeric `pr_number`
+  (merge-detection expects no `gh pr view` batch unless subagent finds URLs).
+- 2026-04-14T02:39:51Z — Cron bootstrap: skipped (no `CronList` / `CronCreate` in Cursor host);
+  ordered merge + `post-merge-dispatch` chain dispatched this pass.
+- 2026-04-14T02:39:51Z — §5a + chain: `plan-orchestrator` `merge-detection` (background) + nested
+  `harmonize` `post-merge-dispatch`; root skips §6–7 (continuation owns dispatch wave).
+
+  Task IDs recorded in `docs/plans/in-flight.md` after dispatch returns.
+- 2026-04-14T02:40:30Z — Manual **`reset-in-flight`**: cleared `docs/plans/in-flight.md` (user
+  invoked `/harmonize reset-in-flight`); dropped `plan-orchestrator` merge-detection and nested
+  `harmonize` `post-merge-dispatch` rows; **cancel matching background tasks in the IDE** if still
+  running — `TaskStop` unavailable in this host.
