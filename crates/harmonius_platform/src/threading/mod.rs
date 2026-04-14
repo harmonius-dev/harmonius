@@ -1,35 +1,20 @@
-//! Job system and task graph (bootstrap stubs).
+//! Work-stealing thread pool, task graphs, job-system helpers, and I/O wiring.
+//!
+//! This module mirrors the public API described in `docs/design/platform/threading.md`.
 
-/// Work-stealing thread pool (not yet implemented).
-pub struct ThreadPool;
+mod graph;
+mod io;
+mod job_system;
+mod pool;
+mod topology;
 
-impl ThreadPool {
-    /// Placeholder constructor.
-    #[must_use]
-    pub fn new() -> Self {
-        Self
-    }
-}
+#[cfg(test)]
+mod acceptance_tests;
 
-impl Default for ThreadPool {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+pub mod compio;
 
-/// DAG task graph (not yet implemented).
-pub struct TaskGraph;
-
-impl TaskGraph {
-    /// Placeholder constructor.
-    #[must_use]
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl Default for TaskGraph {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+pub use graph::{TaskGraph, TaskGraphBuilder, TaskGraphError, TaskNodeId, TaskPriority};
+pub use io::{BufferPool, BufferSlot, IoError, IoRequest, IoRequestId, IoResult, PlatformIo};
+pub use job_system::par_iter;
+pub use pool::{JobHandle, JoinHandle, ThreadPool, ThreadPoolConfig, ThreadPriority};
+pub use topology::{CoreId, CoreTopology};
