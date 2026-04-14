@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T02:45:35Z
+last_updated: 2026-04-14T03:44:25Z
 phase: plan
 started_at: null
 ---
@@ -153,3 +153,30 @@ every pass; read by the harmonize master agent to compute the next ready set.
   `in_flight: []` (no registered task IDs).
   **Cancel any running Background Agents in the Cursor UI** — this host cannot invoke `TaskStop` or
   kill agent processes from the repo.
+- 2026-04-14T03:42:41Z — harmonize `mode: run` (root): §0 stash gate passed (`main`, clean
+  `git status --porcelain`); `in_flight` was `[]` (no restart sweep / `TaskStop` rows in this host).
+- 2026-04-14T03:42:41Z — §0b: acquired `harmonize-run-lock.md` (`root_task_id`
+  `88C465A7-A7D5-4E23-A5D8-BDCEDD74D7A2`); no prior active chain — no `AskUserQuestion`.
+- 2026-04-14T03:43:05Z — §5a + chain: `plan-orchestrator` `merge-detection` background task
+  `36ecadf1-7329-4f1e-bbe1-5aa4b5d8c583`; nested `harmonize` `post-merge-dispatch`
+  `e23ab2f6-f760-4403-b727-c305f35ebcfb`; root skips §6–7 (continuation owns parallel orchestrators
+  - nested workers).
+- 2026-04-14T03:43:05Z — Cron bootstrap: skipped (no `CronList` / `CronCreate` in Cursor host);
+  ordered merge + continuation still scheduled this pass.
+- 2026-04-14T03:43:54Z — harmonize `post-merge-dispatch`: `TaskGet` / `TaskOutput` unavailable in
+  this host; reconciled merge task `36ecadf1-7329-4f1e-bbe1-5aa4b5d8c583` via local `rg` over
+  `PLAN-*` — 0 numeric `pr_number`; merges 0; `gh pr view` batch not required.
+- 2026-04-14T03:43:54Z — Removed `in-flight.md` rows for merge-detection
+  (`36ecadf1-7329-4f1e-bbe1-5aa4b5d8c583`) and nested continuation
+  (`e23ab2f6-f760-4403-b727-c305f35ebcfb`); `in_flight` cleared before §7 registrations.
+- 2026-04-14T03:44:25Z — §7: registered `plan-orchestrator` `dispatch-only`
+  (`683ce271-c336-469a-968c-99f0998d4345`), `specify-orchestrator`
+  (`bc490826-a91b-47fa-a887-98bcea5d5665`), `design-orchestrator`
+  (`1da8effe-bf8d-46d0-a654-1da994f88dfb`) in `in-flight.md` (`parent_task_id`
+  `88C465A7-A7D5-4E23-A5D8-BDCEDD74D7A2`).
+- 2026-04-14T03:43:54Z — §3: no further rows after merge reconcile; `TaskStop` unavailable in this
+  host; `locks.md` unchanged (`locks: []`).
+- 2026-04-14T03:43:54Z — §7: dispatching `plan-orchestrator` `dispatch-only` +
+  `specify-orchestrator`
+  - `design-orchestrator` (parallel `Task`); specify/design ready sets empty (`(bootstrap)`
+  `not_started` in `phase-specify.md`).

@@ -1,16 +1,6 @@
 {
-  "enabledPlugins": {
-    "harmonize@cjhowe-us-workflow": true,
-    "rumdl@cjhowe-us-workflow": true
-  },
-  "extraKnownMarketplaces": {
-    "cjhowe-us-workflow": {
-      "source": {
-        "repo": "cjhowe-us/workflow",
-        "source": "github"
-      }
-    }
-  },
+  "enabledPlugins": {},
+  "extraKnownMarketplaces": {},
   "hooks": {
     "Stop": [
       {

@@ -1,5 +1,32 @@
 ---
-in_flight: []
+in_flight:
+  - last_seen: 2026-04-14T03:44:25Z
+    parent_task_id: 88C465A7-A7D5-4E23-A5D8-BDCEDD74D7A2
+    phase: plan
+    pr_number: null
+    started_at: 2026-04-14T03:44:25Z
+    subsystem: all
+    task_id: 683ce271-c336-469a-968c-99f0998d4345
+    topic: dispatch-only
+    worker_agent: plan-orchestrator
+  - last_seen: 2026-04-14T03:44:25Z
+    parent_task_id: 88C465A7-A7D5-4E23-A5D8-BDCEDD74D7A2
+    phase: specify
+    pr_number: null
+    started_at: 2026-04-14T03:44:25Z
+    subsystem: all
+    task_id: bc490826-a91b-47fa-a887-98bcea5d5665
+    topic: ready-pass
+    worker_agent: specify-orchestrator
+  - last_seen: 2026-04-14T03:44:25Z
+    parent_task_id: 88C465A7-A7D5-4E23-A5D8-BDCEDD74D7A2
+    phase: design
+    pr_number: null
+    started_at: 2026-04-14T03:44:25Z
+    subsystem: all
+    task_id: 1da8effe-bf8d-46d0-a654-1da994f88dfb
+    topic: ready-pass
+    worker_agent: design-orchestrator
 ---
 
 # In-Flight Background Tasks
