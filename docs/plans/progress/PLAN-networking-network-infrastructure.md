@@ -1,6 +1,6 @@
 ---
 branch: plan/networking-network-infrastructure
-last_updated: 2026-04-14T12:00:00Z
+last_updated: 2026-04-14T17:49:16Z
 plan_id: PLAN-networking-network-infrastructure
 pr_number: 14
 pr_url: https://github.com/cjhowe-us/harmonius/pull/14
@@ -25,8 +25,8 @@ Plan file: [network-infrastructure.md](../networking/network-infrastructure.md)
 - [ ] Integration validation complete across documented boundaries
 - [ ] Constraint conformance checks complete
 - [ ] Manual validation complete with screenshot and video evidence
-- [ ] `cargo test --workspace` passes
-- [ ] `cargo clippy --workspace -- -D warnings` passes
+- [x] `cargo test --workspace` passes
+- [x] `cargo clippy --workspace -- -D warnings` passes
 - [ ] `rumdl check .` passes for touched docs
 - [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
@@ -61,5 +61,8 @@ Plan file: [network-infrastructure.md](../networking/network-infrastructure.md)
   (orchestrator pass; no PR merge).
 - 2026-04-14T12:00:00Z — plan-implementer — resumed: adopted existing worktree + PR #14; progress
   reconciled after reset-in-flight.
+- 2026-04-14T17:49:16Z — plan-implementer — green slice: wired `mmo::{zone,mesh,migration,overlap}`,
+  instance lockout (`TC-8.7.18.1`), handoff/migration/overlap tests; `cargo test` / `clippy` clean;
+  pushed commit `5e76df9` to PR #14.
 
 Append ISO-8601 UTC entries with actor, action, and outcome.

@@ -1,6 +1,6 @@
 ---
 branch: plan/tools-level-world
-last_updated: 2026-04-14T05:18:07Z
+last_updated: 2026-04-14T17:48:13Z
 plan_id: PLAN-tools-level-world
 pr_number: 11
 pr_url: https://github.com/cjhowe-us/harmonius/pull/11
@@ -44,7 +44,8 @@ Plan file: [level-world.md](../tools/level-world.md)
 
 - [ ] All previously unmapped ID mappings triaged in plan gap-closure section
 - [ ] Red test inventory split by requirement and user story
-- [x] First failing test batch selected for implementation loop (TC-15.2.1.1)
+- [x] First failing test batch selected for implementation loop (through `TC-15.2.3.2`; next slice:
+      `TC-15.2.4.1`)
 - [ ] Evidence capture folders prepared (screenshots/videos/logs)
 
 ## Evidence registry
@@ -62,3 +63,6 @@ Plan file: [level-world.md](../tools/level-world.md)
 - 2026-04-14T05:12:46Z — plan-implementer — started, worktree + draft PR created (PR #11).
 - 2026-04-14T05:18:07Z — plan-implementer — red/green: TC-15.2.1.1 grid snap in `harmonius_editor`;
   commits on `plan/tools-level-world`, branch pushed.
+- 2026-04-14T17:48:13Z — plan-implementer — resume: `TC-15.2.2.1`/`TC-15.2.2.2` template hierarchy +
+  hp propagation; `TC-15.2.3.1`/`TC-15.2.3.2` property override map + apply-to-source; 10 unit
+  tests; pushed to PR #11 (`plan/tools-level-world`).

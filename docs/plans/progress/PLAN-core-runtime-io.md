@@ -1,12 +1,12 @@
 ---
 branch: plan/core-runtime-io
-last_updated: 2026-04-14T12:30:00Z
+last_updated: 2026-04-14T17:58:31Z
 plan_id: PLAN-core-runtime-io
 pr_number: 60
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/60
 started_at: 2026-04-14T12:00:00Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-io
 ---
 
@@ -28,10 +28,10 @@ Plan file: [io.md](../core-runtime/io.md)
 - [ ] Manual validation complete with screenshot and video evidence (deferred: library-only slice)
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [x] `rumdl check .` passes for touched docs (no Markdown edits in this PR)
+- [x] `rumdl check` passes for PR-touched Markdown (`io-test-cases`, this progress file)
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 - [x] Code complete marker set
 
@@ -54,7 +54,7 @@ Plan file: [io.md](../core-runtime/io.md)
 - **Tests:** `cargo test -p core_runtime`, `cargo test -p core_runtime --release` (worktree)
 - **Lint:** `cargo clippy --workspace --all-targets -- -D warnings` (worktree)
 - **Branch:** `plan/core-runtime-io` pushed to `origin`
-- **PR:** <https://github.com/cjhowe-us/harmonius/pull/60> (draft)
+- **PR:** <https://github.com/cjhowe-us/harmonius/pull/60> (ready for review)
 
 ## Event log
 
@@ -63,3 +63,11 @@ Plan file: [io.md](../core-runtime/io.md)
   draft PR opened
 - 2026-04-14T12:30:00Z — plan-implementer — `status: code_complete`; `cargo test` / `cargo clippy`
   green on workspace; awaiting `pr-reviewer`
+- 2026-04-14T17:58:31Z — pr-reviewer — review-supervisor pass: 11 findings (0 blocker, 1
+  substantive, 5 moderate, 5 minor); addressed in follow-up commit (StallReads non-read completions,
+  `IoRequest::id` `Option`, `map_std_io_error`, bring-up docs, SignalFile loopback ack, cancel
+  semantics, `mem://` note)
+- 2026-04-14T17:58:31Z — pr-reviewer — verification: `cargo test --workspace`;
+  `cargo clippy --workspace --all-targets -- -D warnings`; `rumdl check` on PR-touched Markdown — OK
+- 2026-04-14T17:58:31Z — pr-reviewer — PR #60 open and non-draft; `status: submitted` for human
+  review

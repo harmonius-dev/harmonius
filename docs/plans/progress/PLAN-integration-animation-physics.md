@@ -1,12 +1,12 @@
 ---
 branch: plan/integration-animation-physics
-last_updated: 2026-04-14T14:39:58Z
+last_updated: 2026-04-14T17:59:47Z
 plan_id: PLAN-integration-animation-physics
 pr_number: 44
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/44
 started_at: 2026-04-14T05:19:59Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-animation-physics
 ---
 
@@ -31,8 +31,8 @@ Plan file: [animation-physics.md](../integration/animation-physics.md)
 - [x] `rumdl check .` passes for touched docs
 - [x] Code complete marker set (`status: code_complete`, `pr_review_status: not_started`)
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`, undrafted)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -51,15 +51,17 @@ Plan file: [animation-physics.md](../integration/animation-physics.md)
 
 ## Evidence registry
 
-- **Tests:** 26 integration tests in
+- **Tests:** 31 integration tests in
   `crates/harmonius_integration_animation_physics/tests/animation_physics.rs` (names map to
   companion TC table).
 - **Benchmarks:** companion doc lists B1 targets; not implemented in this slice (no `criterion`
   harness yet).
 - **Commands:** `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`, `rumdl check .`
   (worktree).
-- **PR:** <https://github.com/cjhowe-us/harmonius/pull/44> (draft).
+- **PR:** <https://github.com/cjhowe-us/harmonius/pull/44> (ready for review).
 - **Worktree:** `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-animation-physics`
+- **Review:** `pr-reviewer` addressed 15 review-supervisor findings (0 blocker, 6 substantive, 6
+  moderate, 3 minor).
 
 ## Event log
 
@@ -74,3 +76,6 @@ Format: ISO-8601 UTC entries with actor, action, and outcome.
 - 2026-04-14T14:39:58Z — plan-implementer — synced primary checkout progress from worktree state;
   re-ran `cargo test --workspace` (26 tests), `cargo clippy --workspace -- -D warnings`,
   `rumdl check .` in worktree (all pass).
+- 2026-04-14T17:59:47Z — pr-reviewer — submitted for human review, 15 findings addressed;
+  `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`, `rumdl check .` clean;
+  `gh pr ready 44`.

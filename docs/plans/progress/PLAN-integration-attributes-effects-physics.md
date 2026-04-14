@@ -1,6 +1,6 @@
 ---
 branch: null
-last_updated: 2026-04-14T02:02:00Z
+last_updated: 2026-04-14T18:30:00Z
 plan_id: PLAN-integration-attributes-effects-physics
 pr_number: null
 pr_url: null
@@ -56,7 +56,17 @@ Plan file: [attributes-effects-physics.md](../integration/attributes-effects-phy
 - Review notes: add previously unmapped issues, waivers, and rationale.
 
 ## Event log
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
-- 2026-04-14T12:00:00Z — plan-implementer — blocked: primary workspace has no Rust crate members (`Cargo.toml` `members = []`, zero `.rs` files). Cannot create worktree PR or run red/green `cargo test` for IR-2.6.* integration. Resume after a workspace member exists that implements attributes-effects + physics boundaries, or split a prerequisite plan to bootstrap the engine crate.
 
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
+- 2026-04-14T12:00:00Z — plan-implementer — blocked: primary workspace has no Rust crate members
+  (`Cargo.toml` `members = []`, zero `.rs` files). Cannot create worktree PR or run red/green
+  `cargo test` for IR-2.6.* integration. Resume after a workspace member exists that implements
+  attributes-effects + physics boundaries, or split a prerequisite plan to bootstrap the engine
+  crate.
+- 2026-04-14T18:30:00Z — plan-implementer — fresh-start verify: `Cargo.toml` still has
+  `members = []`; repository has no `Cargo.toml` besides the workspace root and no `.rs` files. No
+  worktree or draft PR created; `status` remains `not_started`. Unblocked only after at least one
+  workspace crate lands where IR-2.6.* systems can live.
+
+Append ISO-8601 UTC entries with actor, action, and outcome.

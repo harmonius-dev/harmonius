@@ -1,5 +1,26 @@
 ---
-in_flight: []
+in_flight:
+- last_seen: 2026-04-14T19:50:00Z
+  phase: plan
+  plan_id: null
+  started_at: 2026-04-14T19:50:00Z
+  subsystem: all
+  task_id: 3fc430a1-18ff-463b-83fd-9054c88c67bf
+  worker_agent: plan-orchestrator
+- last_seen: 2026-04-14T19:50:00Z
+  phase: specify
+  plan_id: null
+  started_at: 2026-04-14T19:50:00Z
+  subsystem: all
+  task_id: 29245cf7-cd0e-42f0-96c8-5e648dd384e5
+  worker_agent: specify-orchestrator
+- last_seen: 2026-04-14T19:50:00Z
+  phase: design
+  plan_id: null
+  started_at: 2026-04-14T19:50:00Z
+  subsystem: all
+  task_id: a9b8f36c-d056-4f85-bd15-36f2229c6d45
+  worker_agent: design-orchestrator
 ---
 
 # In-Flight Background Tasks
@@ -37,8 +58,8 @@ in_flight:
 When an interactive sub-skill claims a worktree in **`locks.md`**:
 
 1. Read this file
-2. **`TaskStop`** rows whose **`phase` / `subsystem` / `plan_id`** overlap the new lock (and any
-   row whose plan’s **`branch`** matches the lock’s **`branch`** when known)
+2. **`TaskStop`** rows whose **`phase` / `subsystem` / `plan_id`** overlap the new lock (and any row
+   whose plan’s **`branch`** matches the lock’s **`branch`** when known)
 3. Remove those entries
 4. Append the lock row to **`locks.md`**
 

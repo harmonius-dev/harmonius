@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T14:37:22Z
+last_updated: 2026-04-14T19:50:00Z
 phase: plan
 started_at: null
 ---
@@ -213,3 +213,32 @@ every pass; read by the harmonize master agent to compute the next ready set.
   `fc6b6d2f-4796-429d-8f1e-366f4222d577`, `design-orchestrator`
   `d28dc85b-2742-4af3-9f30-8425b4a2fa9e` (`parent_task_id` `5293e215-cf53-48c8-84f7-3c84a074e69c`).
 - 2026-04-14T14:37:22Z — §9: released `harmonize-run-lock.md` after dispatch wave (`active: false`).
+- 2026-04-14T17:32:51Z — harmonize `mode: run` (root): §0 stash gate passed (`main`, material-clean
+  exclusions); acquired `harmonize-run-lock.md` (`root_task_id`
+  `8CCDADAA-8777-44FE-9632-88ACB0CDAED5`).
+- 2026-04-14T17:33:14Z — §5a + chain: dispatched `plan-orchestrator` `unblock-workflow-gh`
+  `123f8d6b-a82b-4ad7-a60e-41e16a1826d7` and nested `harmonize` `post-merge-dispatch`
+  `fdee49d2-56dc-48ca-b233-8cd9e3e3e262`; root pass skips §6–7 (continuation owns dispatch wave).
+- 2026-04-14T17:33:14Z — Cron bootstrap: skipped (no `CronList` / `CronCreate` in Cursor host).
+- 2026-04-14T17:36:14Z — harmonize `post-merge-dispatch`: awaited
+  `123f8d6b-a82b-4ad7-a60e-41e16a1826d7` (`unblock-workflow-gh`); 141 `PLAN-*`, 66 PRs checked,
+  **0** merged; cleared merge + nested `harmonize` rows from `in-flight.md`; §7 dispatched
+  `plan-orchestrator` `054de621-1544-4271-aa24-918750219dec`, `specify-orchestrator`
+  `28e496dd-d19d-4843-9d36-dfc1f97a4a46`, `design-orchestrator`
+  `f0dd8ed1-22d0-48d2-9008-3994daea44ef`; released `harmonize-run-lock.md`.
+- 2026-04-14T19:50:00Z — harmonize `mode: run` (Cursor inline): §0 stash gate passed (`main`,
+  material-clean per exclusions); §0b acquired `harmonize-run-lock.md` (`root_task_id`
+  `ff1a1cb3-52b0-4b9f-80e6-ec7618eaa686`); auto-reset `in-flight.md` (flush registry — dropped stale
+  rows from prior dispatch wave).
+- 2026-04-14T19:50:00Z — §5 `unblock-workflow-gh` (inline): 108 unique `pr_number` values across
+  `PLAN-*`; `gh pr view` on `cjhowe-us/harmonius` — all **OPEN**, **0** merged; no `PLAN-*` /
+  `index.md` archive moves.
+- 2026-04-14T19:50:00Z — Cron bootstrap: skipped (no `CronList` / `CronCreate` in Cursor host).
+- 2026-04-14T19:50:00Z — §7: dispatched `plan-orchestrator` `dispatch-only` and
+  `specify-orchestrator` and `design-orchestrator` (parallel `Task`); specify/design ready: **none**
+  (`(bootstrap)` `not_started` in `phase-specify.md`).
+- 2026-04-14T19:50:00Z — §7a: registered orchestrators in `in-flight.md` — `plan-orchestrator`
+  `3fc430a1-18ff-463b-83fd-9054c88c67bf`, `specify-orchestrator`
+  `29245cf7-cd0e-42f0-96c8-5e648dd384e5`, `design-orchestrator`
+  `a9b8f36c-d056-4f85-bd15-36f2229c6d45` (`parent_task_id` `ff1a1cb3-52b0-4b9f-80e6-ec7618eaa686`).
+- 2026-04-14T19:50:00Z — §9: released `harmonize-run-lock.md` after dispatch wave (`active: false`).
