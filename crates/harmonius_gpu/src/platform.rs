@@ -1,4 +1,8 @@
 //! OS-specific backend bootstrap stubs (R-2.1.4, R-2.1.5, R-2.1.6).
+//!
+//! `PLAN-rendering-render-pipeline` proves the CPU-side bootstrap surface with `*Stub` types.
+//! Native `objc2-metal`, `windows-rs`, and Vulkan validation wiring lands in a follow-up slice;
+//! see `docs/design/rendering/render-pipeline-test-cases.md` (milestone section).
 
 /// Rounds `value` up to `align` (power of two).
 #[must_use]

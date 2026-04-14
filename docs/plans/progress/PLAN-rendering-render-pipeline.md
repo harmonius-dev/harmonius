@@ -1,6 +1,6 @@
 ---
 branch: plan/rendering-render-pipeline
-last_updated: 2026-04-14T12:15:00Z
+last_updated: 2026-04-14T17:56:28Z
 plan_id: PLAN-rendering-render-pipeline
 pr_number: 85
 pr_review_status: complete
@@ -64,3 +64,7 @@ Plan file: [render-pipeline.md](../rendering/render-pipeline.md)
   tests, `harmonius_rg` 17 lib tests + 1 trybuild).
 - 2026-04-14T12:15:00Z — pr-reviewer — submitted for human review, 0 code findings (consolidated
   review: tests + clippy + standards spot-check); progress synced from `main` with rumdl wrap fix.
+- 2026-04-14T17:56:28Z — pr-reviewer — addressed review-supervisor bundle: `cargo fmt`, TC-2.2.8.1
+  deterministic parallel encode, TC-2.2.10.1 test rename, stub milestone notes in test-case doc +
+  `platform.rs`, `harmonius_gpu` crate docs; 7 findings closed (1 blocker, 2 substantive, 2
+  moderate, 2 minor).

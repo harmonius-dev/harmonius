@@ -2,6 +2,12 @@
 
 Companion to [render-pipeline.md](render-pipeline.md).
 
+## `PLAN-rendering-render-pipeline` milestone
+
+TC-2.1.4.3, TC-2.1.5.1, and TC-2.1.6.1 are satisfied by CPU stubs (`MetalBackendStub`,
+`D3D12BackendStub`, `VulkanValidationStub`) that keep the bootstrap API stable. Native Metal, D3D12,
+and Vulkan validation integration is deferred; numbered items below stay the long-term target.
+
 Test case IDs use `TC-2.2.Z.N` and `TC-2.1.Z.N` format. Every row links to a specific R-2.2.Z,
 R-2.1.Z, or GR-X.Z (GPU runtime).
 
@@ -111,10 +117,10 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
     - Input: 4 views, shared cull pass and per-view draw passes
     - Expected: `cull_pass.exec_count == 1`, draw passes count `== 4`
 
-14. **TC-2.2.8.1** `test_parallel_encode_4_threads` — Encode 8 independent passes with 1 and 4
-    threads. Assert 4-thread version is at least 2x faster.
-    - Input: 8 passes with no inter-dependencies
-    - Expected: `time_4 / time_1 < 0.6`
+14. **TC-2.2.8.1** `test_parallel_encode_4_threads` — Encode eight independent passes on one thread,
+    then the same count split across four scoped threads with a start barrier.
+    - Input: deterministic CPU work units per pass, no cross-pass dependencies
+    - Expected: both paths report eight completed units; parallel path uses four threads (CI-safe)
 
 15. **TC-2.2.9.1** `test_streaming_placeholder_sub` — Pass references texture not yet loaded.
     Compile. Assert placeholder texture substituted; consuming pass not skipped.

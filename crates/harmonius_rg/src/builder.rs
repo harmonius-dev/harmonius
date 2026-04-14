@@ -1,10 +1,10 @@
 //! [`GraphBuilder`] collects passes and resources before [`RenderGraph::compile`].
 
+use crate::compiler::compile;
+use crate::compiler::{CompilationConfig, DeviceCapabilities, ExecutionPlan, RenderGraphError};
 use crate::types::{
     Capability, PassHandle, PassPriority, QueueAffinity, ResourceId, ResourceLifetime,
 };
-use crate::compiler::{CompilationConfig, DeviceCapabilities, ExecutionPlan, RenderGraphError};
-use crate::compiler::compile;
 
 /// Pending streaming resource state for placeholder substitution.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
