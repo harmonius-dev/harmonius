@@ -1,7 +1,16 @@
 # rumdl configuration file
 
 [global]
-exclude = [".git", "target"]
+exclude = [
+  ".git",
+  ".github",
+  "**/CLAUDE.md",
+  "**/templates/*.md",
+  "build",
+  "docs/plans/progress/**/*.md",
+  "node_modules",
+  "vendor",
+]
 flavor = "gfm"
 
 [MD033]
