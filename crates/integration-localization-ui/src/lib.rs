@@ -2,6 +2,9 @@
 //!
 //! Behavioral coverage follows `docs/design/integration/localization-ui.md` and
 //! `docs/design/integration/localization-ui-test-cases.md`.
+//!
+//! ECS wiring, worker-thread scheduling, and production `crossbeam-channel` usage live in
+//! engine layers above this crate; keep integration tests here pure and single-threaded.
 
 #![deny(clippy::all)]
 #![deny(unsafe_code)]

@@ -261,15 +261,17 @@ fn tc_ir_4_4_5_2_locale_change_reselects_font_chain_for_arabic_script() {
 #[test]
 fn tc_ir_4_4_5_3_locale_change_propagates_over_channel() {
     let mut ch = LocaleChangeChannel::new(16);
-    ch.send(LocaleChangeEvent {
+    let event = LocaleChangeEvent {
         previous: en_locale(),
         next: fr_locale(),
-    });
+    };
+    ch.send(event);
     let drained = ch.drain();
-    let ui_copy = drained.clone();
-    let audio_copy = drained.clone();
-    assert_eq!(ui_copy, audio_copy);
-    assert_eq!(ui_copy.len(), 1);
+    assert_eq!(
+        drained,
+        vec![event],
+        "CH-29 delivers LocaleChangeEvent for UI and audio consumers"
+    );
 }
 
 #[test]

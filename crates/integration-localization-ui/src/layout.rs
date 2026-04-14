@@ -43,6 +43,8 @@ pub fn layout_line(text: &str, direction: TextDirection, width: f32) -> LineLayo
 }
 
 /// Splits mixed-direction text into coarse runs for TC-IR-4.4.2.2.
+///
+/// This is a small directional heuristic for tests, not a full UAX#9 implementation.
 #[must_use]
 pub fn split_mixed_runs(text: &str) -> Vec<(TextDirection, String)> {
     let mut runs: Vec<(TextDirection, String)> = Vec::new();

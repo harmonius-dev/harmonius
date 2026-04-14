@@ -1,4 +1,7 @@
 //! Minimal ICU-ish formatting for integration tests (plural, gender, number, missing keys).
+//!
+//! Only the patterns exercised in `localization-ui-test-cases.md` are supported: routing uses
+//! lightweight substring checks (`plural`, `gender`, `number`) rather than a full ICU parser.
 
 use crate::types::{ArgValue, FallbackCounters, Gender};
 

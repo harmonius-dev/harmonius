@@ -1,4 +1,7 @@
 //! In-memory localization table with resolve + fallback counters.
+//!
+//! The integration design diagram shows sorted maps and a table-owned current locale; this crate
+//! keeps a locale argument on `resolve` and uses `BTreeMap` for deterministic test ordering.
 
 use std::collections::BTreeMap;
 

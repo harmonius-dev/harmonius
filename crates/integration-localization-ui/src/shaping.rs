@@ -36,7 +36,7 @@ pub fn shape_line(text: &str, chain: &FontChain, support: &[(char, AssetId)]) ->
         fm3 += 1;
         glyphs.push(ShapedGlyph {
             ch,
-            font: AssetId(0),
+            font: AssetId::NOTDEF,
         });
     }
     (GlyphRun { glyphs }, fm3)

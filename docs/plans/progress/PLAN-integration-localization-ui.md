@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-localization-ui
-last_updated: 2026-04-14T12:30:00Z
+last_updated: 2026-04-14T17:55:18Z
 plan_id: PLAN-integration-localization-ui
 pr_number: 37
 pr_review_status: complete
@@ -53,8 +53,8 @@ Plan file: [localization-ui.md](../integration/localization-ui.md)
 - Test reports: `cargo test -p integration-localization-ui` (22 integration tests) in worktree CI
   local run; see PR
   [https://github.com/cjhowe-us/harmonius/pull/37](https://github.com/cjhowe-us/harmonius/pull/37).
-- Benchmarks: TC-IR-4.4.*.B1 harness not added in this pass; defer to follow-up if CI bench
-  required.
+- Benchmarks: `cargo bench -p integration-localization-ui --bench tc_ir_benchmarks` enforces
+  TC-IR-4.4.*.B1 wall-time caps from `localization-ui-test-cases.md` (std-only harness).
 - Screenshots: deferred (library-only contract tests; no interactive UI host in this repo state).
 - Videos: deferred (same rationale as screenshots).
 - Review notes: `pr-reviewer` should confirm manual media evidence if product UI becomes available.
@@ -74,3 +74,11 @@ Plan file: [localization-ui.md](../integration/localization-ui.md)
   blockers; 1 minor finding (README linked to missing `test-case-coverage-audit.md`, fixed for
   `rumdl`); `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`, and `rumdl check .`
   re-verified; PR #37 marked ready for human review.
+- 2026-04-14T14:44:40Z — pr-reviewer — follow-up: strengthened TC-IR-4.4.5.3 to assert drained
+  `LocaleChangeEvent` matches the sent payload (replaces tautological clone equality); 1 finding
+  addressed; tests and lints re-verified.
+- 2026-04-14T17:55:18Z — pr-reviewer — consolidated second-pass review: added `tc_ir_benchmarks` for
+  TC-IR-4.4.*.B1 caps; documented test-double scope (channel, bidi splitter, formatter subset, table
+  vs diagram, IME selection fields, `AssetId::NOTDEF`, ECS boundary); 9 findings closed;
+  `cargo test`, `cargo clippy -D warnings`, `cargo bench`, `rumdl check` re-verified; PR remains
+  ready for human review.

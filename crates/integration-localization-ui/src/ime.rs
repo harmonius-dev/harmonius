@@ -20,9 +20,9 @@ pub struct ImeEvent {
     pub kind: ImeEventKind,
     /// Composition or commit text.
     pub text: String,
-    /// Selection start (unused in minimal model).
+    /// Composition selection start (carried for API parity; not applied in this model).
     pub selection_start: u32,
-    /// Selection end (unused in minimal model).
+    /// Composition selection end (carried for API parity; not applied in this model).
     pub selection_end: u32,
 }
 
