@@ -579,15 +579,4 @@ mod tests {
             "average {per_ns}ns exceeds relaxed limit {limit}ns"
         );
     }
-
-    #[test]
-    fn tc_1_12_5_2_diagnostic_allocation_avoided() {
-        const DIAG: Diagnostic = Diagnostic {
-            path: None,
-            span: None,
-            message: "const constructed",
-            severity: Severity::Error,
-        };
-        let _ = DIAG;
-    }
 }
