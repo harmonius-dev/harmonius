@@ -115,6 +115,31 @@ mod tests {
             let tip = *out.last().unwrap();
             assert!((tip - Vec3::new(tx, ty, 0.0)).length() < 0.08);
         }
+
+        let root = Vec3::ZERO;
+        for leg in 0..4_usize {
+            let angle = leg as f32 * std::f32::consts::FRAC_PI_2;
+            let c = angle.cos();
+            let s = angle.sin();
+            let pts = vec![
+                root,
+                Vec3::new(c * 0.12, s * 0.12, 0.0),
+                Vec3::new(c * 0.22, s * 0.22, 0.0),
+                Vec3::new(c * 0.32, s * 0.32, 0.0),
+            ];
+            let reach = (0..pts.len() - 1)
+                .map(|i| (pts[i + 1] - pts[i]).length())
+                .sum::<f32>()
+                * 0.92;
+            let tgt = Vec3::new(c * reach, s * reach, 0.0);
+            let out = solve_fabrik(pts, tgt, 96);
+            assert!(
+                (out[0] - root).length() < 1e-3,
+                "shared root stays fixed (leg {leg})"
+            );
+            let tip = *out.last().unwrap();
+            assert!((tip - tgt).length() < 0.09, "leg {leg}");
+        }
     }
 
     #[test]

@@ -1,4 +1,8 @@
 //! Critically damped spring-damper for scalar channels used by first-person rigs.
+//!
+//! **Stand-in:** The procedural design references `SpringDamper` from `harmonius_core::primitives`.
+//! This workspace member is standalone, so [`ScalarSpring`] is a **temporary** scalar integrator.
+//! Replace with shared core types before shipping engine wiring.
 
 /// Second-order spring toward a moving target.
 #[derive(Clone, Debug)]

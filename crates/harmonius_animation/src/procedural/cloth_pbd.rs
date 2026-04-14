@@ -92,9 +92,8 @@ impl ClothGrid {
     }
 
     fn solve_distance(&mut self, iters: u32) {
-        let constraints = self.dist.clone();
         for _ in 0..iters {
-            for c in &constraints {
+            for c in &self.dist {
                 let pa = self.pos[c.a];
                 let pb = self.pos[c.b];
                 let w_a = self.inv_mass[c.a];

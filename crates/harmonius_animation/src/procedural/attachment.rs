@@ -11,9 +11,9 @@ pub struct Transform {
     pub position: Vec3,
 }
 
-/// Ragdoll marker component.
+/// Marks that a detached piece should blend toward ragdoll (test harness; not the ECS component).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct RagdollBlend {
+pub struct DetachedRagdollFlag {
     /// Whether ragdoll is active on this detached piece.
     pub active: bool,
 }
@@ -45,8 +45,17 @@ impl Character {
     }
 
     /// Sever limb via command buffer (no direct bone mutation in API).
-    pub fn sever(&mut self, limb: u32, buf: &mut CommandBuffer, detached: &mut RagdollBlend) {
-        buf.push(EcsCommand::Sever { entity: 1, limb });
+    pub fn sever(
+        &mut self,
+        detached_entity: u64,
+        limb: u32,
+        buf: &mut CommandBuffer,
+        detached: &mut DetachedRagdollFlag,
+    ) {
+        buf.push(EcsCommand::Sever {
+            entity: detached_entity,
+            limb,
+        });
         if (limb as usize) < self.bones.len() {
             self.bones[limb as usize] = false;
         }
@@ -120,11 +129,18 @@ mod tests {
             bones: vec![true; 6],
         };
         let mut buf = CommandBuffer::default();
-        let mut rag = RagdollBlend::default();
-        c.sever(2, &mut buf, &mut rag);
+        let mut rag = DetachedRagdollFlag::default();
+        c.sever(42, 2, &mut buf, &mut rag);
         assert!(rag.active);
         assert!(!c.bones[2]);
-        assert!(!buf.drain().is_empty());
+        let drained = buf.drain();
+        assert_eq!(
+            drained.as_slice(),
+            &[EcsCommand::Sever {
+                entity: 42,
+                limb: 2
+            }]
+        );
     }
 
     #[test]

@@ -1,4 +1,7 @@
 //! Minimal ECS-style stores for locomotion components (tests only).
+//!
+//! `HashMap` is acceptable here: this store is **cold-path test scaffolding** only, not a
+//! deterministic simulation hot loop (`docs/design/constraints.md`).
 
 use std::collections::HashMap;
 
