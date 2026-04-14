@@ -149,7 +149,7 @@ full SDLC. Do not act on harmonize requests from memory — always load the skil
 Similarly, when the user mentions a specific sub-skill name or a phase-scoped request,
 invoke the matching sub-skill directly (e.g., `/harmonize-design docs/design/...`).
 
-The `harmonize` skill (2.0.10+) treats a bare `/harmonize` like **`run`**: it dispatches the master
+The `harmonize` skill (2.0.11+) treats a bare `/harmonize` like **`run`**: it dispatches the master
 agent to continue incomplete SDLC work in **topological order** (`docs/plans/index.md` for Phase 3).
 Use `/harmonize merge-detect` (or the backup path in the skill) for a lightweight merge check only.
 Refresh the installed copy after the marketplace updates:
@@ -185,7 +185,7 @@ not manually rewrap prose — let rumdl handle it.
 | Tool | Version |
 |------|---------|
 | Rust | stable (1.80+) |
-| harmonize plugin | 2.0.10+ (`harmonize@cjhowe-us-workflow`) |
+| harmonize plugin | 2.0.11+ (`harmonize@cjhowe-us-workflow`) |
 | jq | latest |
 | rumdl | latest |
 | taplo | latest |
