@@ -9,6 +9,7 @@ members = [
   "crates/harmonius_containers",
   "crates/harmonius_containers_slots_ui",
   "crates/harmonius_core",
+  "crates/harmonius_data_systems",
   "crates/harmonius_data_tables",
   "crates/harmonius_directed_graphs",
   "crates/harmonius_editor",
