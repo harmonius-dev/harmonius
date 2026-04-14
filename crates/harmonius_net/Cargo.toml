@@ -2,7 +2,7 @@
 name = "harmonius_net"
 version = "0.1.0"
 edition = "2021"
-description = "Harmonius network transport, replication, prediction, and RPC (sans-io building blocks)."
+description = "Harmonius networking: transport, replication, prediction, RPC, session services, replay, and communication."
 license = "Apache-2.0"
 
 [dependencies]
