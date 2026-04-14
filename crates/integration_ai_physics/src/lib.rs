@@ -5,7 +5,8 @@
 
 #![deny(clippy::all)]
 #![deny(unsafe_code)]
-// Public structs intentionally mirror `docs/design/integration/ai-physics.md` field-for-field.
+// Field-level docs intentionally mirror `docs/design/integration/ai-physics.md` tables; rustdoc
+// uses module `//!` headers plus this allow to avoid duplicate prose drift.
 #![allow(missing_docs)]
 
 pub mod avoidance;
@@ -63,6 +64,7 @@ mod tests {
                 foot_position: Vec3::new(0.0, 0.01, 0.0),
                 max_slope_deg: 45.0,
                 agent_mask: AgentMask::default().with_material(MaterialId(0)),
+                excluded_entity: None,
             },
             &mut fm,
         );
@@ -97,6 +99,7 @@ mod tests {
                 foot_position: foot,
                 max_slope_deg: 45.0,
                 agent_mask: AgentMask::default().with_material(MaterialId(0)),
+                excluded_entity: None,
             },
             &mut fm,
         );
@@ -114,6 +117,7 @@ mod tests {
                 foot_position: Vec3::new(100.0, 50.0, 100.0),
                 max_slope_deg: 45.0,
                 agent_mask: AgentMask::default().with_material(MaterialId(0)),
+                excluded_entity: None,
             },
             &mut fm,
         );
@@ -140,11 +144,30 @@ mod tests {
                 foot_position: Vec3::new(0.0, 0.01, 0.0),
                 max_slope_deg: 45.0,
                 agent_mask: AgentMask::default().with_material(MaterialId(0)),
+                excluded_entity: None,
             },
             &mut fm,
         );
         assert!(!res.walkable);
         assert_eq!(res.reason, UnwalkableReason::MaterialExcluded);
+    }
+
+    #[test]
+    fn tc_ir_2_5_1_6_entity_excluded() {
+        let scene = flat_ground_scene();
+        let mut fm = FallbackMetrics::default();
+        let res = scene.resolve(
+            WalkabilityQuery {
+                request_id: 40,
+                foot_position: Vec3::new(0.0, 0.01, 0.0),
+                max_slope_deg: 45.0,
+                agent_mask: AgentMask::default().with_material(MaterialId(0)),
+                excluded_entity: Some(Entity(1)),
+            },
+            &mut fm,
+        );
+        assert!(!res.walkable);
+        assert_eq!(res.reason, UnwalkableReason::EntityExcluded);
     }
 
     #[test]
@@ -159,6 +182,7 @@ mod tests {
                     foot_position: Vec3::new(0.0, 0.01, 0.0),
                     max_slope_deg: 45.0,
                     agent_mask: AgentMask::default().with_material(MaterialId(0)),
+                    excluded_entity: None,
                 }),
                 &mut fm,
             );
@@ -183,6 +207,7 @@ mod tests {
                 foot_position: Vec3::new(0.0, 0.01, 0.0),
                 max_slope_deg: 45.0,
                 agent_mask: AgentMask::default().with_material(MaterialId(0)),
+                excluded_entity: None,
             },
             &mut fm,
         );
@@ -202,6 +227,7 @@ mod tests {
                     foot_position: Vec3::new(0.0, 0.01, 0.0),
                     max_slope_deg: 45.0,
                     agent_mask: AgentMask::default().with_material(MaterialId(0)),
+                    excluded_entity: None,
                 }),
                 &mut fm,
             );
@@ -210,6 +236,53 @@ mod tests {
         assert_eq!(fm.fm3_channel_drop_oldest, 144);
         let replies = drain_walkability(&mut channel, &scene, &mut fm);
         assert_eq!(replies.len(), 256);
+    }
+
+    #[test]
+    fn ch26_mixed_queue_walk_drain_preserves_jump_requests() {
+        let walk_scene = flat_ground_scene();
+        let jump_scene = JumpArcScene {
+            blockers: vec![],
+            ground_y: Some(0.0),
+        };
+        let mut channel = AiNavQueryChannel::new();
+        let mut fm = FallbackMetrics::default();
+        channel.send(
+            NavRequest::Walkability(WalkabilityQuery {
+                request_id: 1,
+                foot_position: Vec3::new(0.0, 0.01, 0.0),
+                max_slope_deg: 45.0,
+                agent_mask: AgentMask::default().with_material(MaterialId(0)),
+                excluded_entity: None,
+            }),
+            &mut fm,
+        );
+        channel.send(
+            NavRequest::JumpArc(JumpArcQuery {
+                start: Vec3::ZERO,
+                initial_velocity: Vec3::new(1.0, 2.0, 0.0),
+                gravity: Vec3::new(0.0, -9.81, 0.0),
+                segment_count: 4,
+                segment_dt: 0.05,
+            }),
+            &mut fm,
+        );
+        channel.send(
+            NavRequest::Walkability(WalkabilityQuery {
+                request_id: 2,
+                foot_position: Vec3::new(0.0, 0.01, 0.0),
+                max_slope_deg: 45.0,
+                agent_mask: AgentMask::default().with_material(MaterialId(0)),
+                excluded_entity: None,
+            }),
+            &mut fm,
+        );
+        let walk_replies = drain_walkability(&mut channel, &walk_scene, &mut fm);
+        assert_eq!(walk_replies.len(), 2);
+        assert_eq!(channel.len(), 1);
+        let jump_replies = drain_jump_arcs(&mut channel, &jump_scene);
+        assert_eq!(jump_replies.len(), 1);
+        assert!(channel.is_empty());
     }
 
     #[test]
@@ -248,7 +321,7 @@ mod tests {
         };
         let res = scene.trace(query);
         assert!(res.landing.is_none());
-        assert!(res.blocked_segment > 0);
+        assert_eq!(res.blocked_segment, 19);
         assert_eq!(res.blocker, Entity(42));
     }
 
@@ -291,6 +364,7 @@ mod tests {
     fn tc_ir_2_5_2_n1_zero_segments_no_raycasts() {
         let scene = JumpArcScene::default();
         let mut stats = JumpArcTraceStats::default();
+        let mut fm = FallbackMetrics::default();
         let res = scene.trace_instrumented(
             JumpArcQuery {
                 start: Vec3::ZERO,
@@ -300,6 +374,7 @@ mod tests {
                 segment_dt: 0.01,
             },
             &mut stats,
+            &mut fm,
         );
         assert!(res.landing.is_none());
         assert_eq!(stats.segment_raycasts, 0);
@@ -358,6 +433,44 @@ mod tests {
         let scale = fixture.radius / expected_len;
         let expected = Vec3::new(agent_xz.x * scale, fixture.ledge_height, agent_xz.z * scale);
         assert!((top - expected).length() < 1e-4);
+    }
+
+    #[test]
+    fn tc_ir_2_5_3_3_n1_cylinder_tangent_zero_xz_is_deterministic() {
+        let fixture = CylinderClimbFixture {
+            radius: 2.0,
+            ledge_height: 0.9,
+        };
+        let top = fixture.tangent_ledge_top(Vec3::ZERO);
+        assert!((top - Vec3::new(2.0, 0.9, 0.0)).length() < 1e-5);
+    }
+
+    #[test]
+    fn tc_ir_2_5_3_4_curved_wall_sweep_aligns_with_tangent_fixture() {
+        let fixture = CylinderClimbFixture {
+            radius: 1.0,
+            ledge_height: 1.1,
+        };
+        let agent_xz = Vec3::new(2.0, 0.0, 0.5);
+        let top = fixture.tangent_ledge_top(agent_xz);
+        let half = 0.25_f32;
+        let ledge = AxisAlignedBox::new(
+            Vec3::new(top.x - half, top.y - 0.05, top.z - half),
+            Vec3::new(top.x + half, top.y + 0.05, top.z + half),
+        );
+        let scene = ClimbScene {
+            wall_x: top.x,
+            ledge,
+        };
+        let origin = Vec3::new(top.x - 0.12, 0.02, top.z);
+        let res = scene.sweep(ClimbSweepQuery {
+            origin,
+            direction: Vec3::Y,
+            capsule_radius: 0.2,
+            max_height: 2.0,
+        });
+        let out = res.ledge_top.expect("ledge from sweep");
+        assert!((out.y - fixture.ledge_height).abs() < 0.1);
     }
 
     #[test]
@@ -514,6 +627,25 @@ mod tests {
         let mut fm = FallbackMetrics::default();
         let state = read_ai_grounded_state(Some(&contacts), airborne_state(), &mut fm);
         assert!((state.ground_normal - n).length() < 1e-4);
+    }
+
+    #[test]
+    fn tc_ir_2_5_5_4_prefers_most_upright_contact() {
+        let steep = Vec3::new(0.0, 0.5, 0.5).normalize();
+        let contacts = [
+            FootContact {
+                ground_normal: steep,
+                ground_entity: Entity(1),
+            },
+            FootContact {
+                ground_normal: Vec3::Y,
+                ground_entity: Entity(2),
+            },
+        ];
+        let mut fm = FallbackMetrics::default();
+        let state = read_ai_grounded_state(Some(&contacts), airborne_state(), &mut fm);
+        assert!(state.grounded);
+        assert_eq!(state.ground_entity, Entity(2));
     }
 
     #[test]

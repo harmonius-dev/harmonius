@@ -102,4 +102,5 @@ worlds, staircases, procedural slopes) constructed in each test.
 | TC-IR-2.5.4.B1 | 500 avoidance enumerations radius 5 m | < 0.5 ms | IR-2.5.4 |
 | TC-IR-2.5.5.B1 | 500 grounded state reads from contact list | < 0.05 ms | IR-2.5.5 |
 
-All benchmarks run under `cargo bench` in CI; thresholds enforced via the benchmark harness.
+Criterion benches run locally via `cargo bench`; targets above are **advisory** until a checked
+baseline lands in CI.

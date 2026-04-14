@@ -1,8 +1,10 @@
-//! IR-2.5.2 jump-arc prediction via segmented raycasts (physics-private BVH surrogate).
+//! IR-2.5.2 jump-arc prediction via segmented raycasts against a **linear AABB list** (stand-in
+//! for the physics-private BVH used at runtime).
 
 use glam::Vec3;
 
 use crate::geometry::AxisAlignedBox;
+use crate::metrics::FallbackMetrics;
 use crate::types::Entity;
 
 /// Jump arc query issued before committing to an airborne motion.
@@ -19,8 +21,9 @@ pub struct JumpArcQuery {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct JumpArcResult {
     pub landing: Option<Vec3>,
-    /// `0` means no segment intersection blocked the arc when `landing` is present.
-    /// When blocked, reports `blocked_segment_index + 1` using zero-based segment indexing.
+    /// `0` when the trace completes without a blocker hit (including successful ground landings).
+    /// When a segment hits geometry, holds **`segment_index + 1`** where `segment_index` is the
+    /// zero-based segment counter in the trace loop (first segment is `1` when blocked on seg 0).
     pub blocked_segment: u32,
     pub blocker: Entity,
 }
@@ -44,7 +47,8 @@ impl JumpArcScene {
     #[must_use]
     pub fn trace(&self, query: JumpArcQuery) -> JumpArcResult {
         let mut stats = JumpArcTraceStats::default();
-        self.trace_instrumented(query, &mut stats)
+        let mut metrics = FallbackMetrics::default();
+        self.trace_instrumented(query, &mut stats, &mut metrics)
     }
 
     /// Like [`Self::trace`], but increments `stats.segment_raycasts` once per segment evaluated.
@@ -53,6 +57,7 @@ impl JumpArcScene {
         &self,
         query: JumpArcQuery,
         stats: &mut JumpArcTraceStats,
+        metrics: &mut FallbackMetrics,
     ) -> JumpArcResult {
         if query.segment_count == 0 {
             return JumpArcResult {
@@ -70,11 +75,12 @@ impl JumpArcScene {
             let p1 = parabola_point(query.start, query.initial_velocity, query.gravity, t);
             let delta = p1 - p0;
 
-            stats.segment_raycasts += 1;
-
             if delta.length_squared() <= f32::EPSILON {
+                metrics.fm2_physics_private_raycast_failed += 1;
                 continue;
             }
+
+            stats.segment_raycasts += 1;
 
             for (entity, aabb) in &self.blockers {
                 if let Some(hit_t) = aabb.ray_segment_hit_t(p0, delta) {

@@ -93,6 +93,9 @@ pub fn enumerate_avoidance(
         candidates.truncate(16);
     }
 
+    // SC-2: exported neighbors use stable entity-id order (FM-6 still keeps nearest 16 first).
+    candidates.sort_by(|a, b| a.0.cmp(&b.0));
+
     AvoidanceResult {
         neighbors: candidates.iter().map(|(_, _, n)| *n).collect(),
     }

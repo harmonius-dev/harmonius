@@ -64,6 +64,7 @@ classDiagram
         +Vec3 foot_position
         +f32 max_slope_deg
         +AgentMask agent_mask
+        +Option excluded_entity
     }
     class WalkabilityResult {
         +u64 request_id

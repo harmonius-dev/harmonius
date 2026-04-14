@@ -1,4 +1,7 @@
 //! CH-26 nav query channel (`cap = 256`, `DropOldest`).
+//!
+//! This module is a **single-threaded surrogate** for the runtime crossbeam MPSC channel described
+//! in the integration design.
 
 use std::collections::VecDeque;
 
@@ -24,7 +27,7 @@ pub enum NavReply {
     JumpArc(JumpArcResult),
 }
 
-/// Bounded MPSC surrogate with `DropOldest` overflow policy (`FM-3`).
+/// Bounded channel surrogate with `DropOldest` overflow policy (`FM-3`).
 #[derive(Clone, Debug)]
 pub struct AiNavQueryChannel {
     cap: usize,
@@ -70,6 +73,12 @@ impl AiNavQueryChannel {
     pub fn is_empty(&self) -> bool {
         self.queue.is_empty()
     }
+
+    fn prepend_requests(&mut self, mut requests: Vec<NavRequest>) {
+        while let Some(req) = requests.pop() {
+            self.queue.push_front(req);
+        }
+    }
 }
 
 impl Default for AiNavQueryChannel {
@@ -85,12 +94,19 @@ pub fn drain_walkability(
     scene: &WalkabilityScene,
     metrics: &mut FallbackMetrics,
 ) -> Vec<WalkabilityResult> {
-    let mut out = Vec::new();
+    let mut pending = Vec::new();
     while let Some(req) = channel.recv() {
-        if let NavRequest::Walkability(q) = req {
-            out.push(scene.resolve(q, metrics));
+        pending.push(req);
+    }
+    let mut out = Vec::new();
+    let mut restore = Vec::new();
+    for req in pending {
+        match req {
+            NavRequest::Walkability(q) => out.push(scene.resolve(q, metrics)),
+            other => restore.push(other),
         }
     }
+    channel.prepend_requests(restore);
     out
 }
 
@@ -100,11 +116,18 @@ pub fn drain_jump_arcs(
     channel: &mut AiNavQueryChannel,
     scene: &JumpArcScene,
 ) -> Vec<JumpArcResult> {
-    let mut out = Vec::new();
+    let mut pending = Vec::new();
     while let Some(req) = channel.recv() {
-        if let NavRequest::JumpArc(q) = req {
-            out.push(scene.trace(q));
+        pending.push(req);
+    }
+    let mut out = Vec::new();
+    let mut restore = Vec::new();
+    for req in pending {
+        match req {
+            NavRequest::JumpArc(q) => out.push(scene.trace(q)),
+            other => restore.push(other),
         }
     }
+    channel.prepend_requests(restore);
     out
 }
