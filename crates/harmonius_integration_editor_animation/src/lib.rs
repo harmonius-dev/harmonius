@@ -110,6 +110,31 @@ mod tests {
     }
 
     #[test]
+    fn walk_always_true_transitions_max_steps_includes_terminal_state() {
+        let a = StateId(0);
+        let b = StateId(1);
+        let c = StateId(2);
+        let graph = StateGraphDef {
+            transitions: vec![
+                Transition {
+                    from: a,
+                    to: b,
+                    always_true: true,
+                },
+                Transition {
+                    from: b,
+                    to: c,
+                    always_true: true,
+                },
+            ],
+        };
+        let out = walk_always_true_transitions(&graph, a, 2);
+        assert_eq!(out.final_state, Some(c));
+        assert_eq!(out.visited, vec![a, b, c]);
+        assert!(out.warnings.is_empty());
+    }
+
+    #[test]
     fn tc_ir_5_3_f5_skinning_dispatch_failure_bind_pose() {
         let bind = Mat4::from_translation(Vec3::new(1.0, 0.0, 0.0));
         let animated = Mat4::from_translation(Vec3::new(9.0, 0.0, 0.0));

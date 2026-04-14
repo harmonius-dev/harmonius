@@ -76,6 +76,10 @@ pub fn walk_always_true_transitions(
         current = next_state;
     }
 
+    if visited.last().copied() != Some(current) {
+        visited.push(current);
+    }
+
     TransitionWalkOutcome {
         final_state: Some(current),
         visited,
