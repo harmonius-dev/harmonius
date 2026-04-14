@@ -1,12 +1,12 @@
+use std::cell::Cell;
 use std::marker::PhantomData;
-use std::sync::Mutex;
 
 use crate::collector::FrameCollector;
 use crate::hash::fnv1a;
 
 thread_local! {
-    static ACTIVE: Mutex<Option<*mut FrameCollector>> = const { Mutex::new(None) };
-    static LOCAL_THREAD_ID: Mutex<Option<u64>> = const { Mutex::new(None) };
+    static ACTIVE: Cell<Option<*mut FrameCollector>> = const { Cell::new(None) };
+    static LOCAL_THREAD_ID: Cell<Option<u64>> = const { Cell::new(None) };
 }
 
 /// Binds the active [`FrameCollector`] for [`CpuScopeGuard`] on this thread.
@@ -19,7 +19,7 @@ impl<'a> ProfileBindGuard<'a> {
     pub fn enter(collector: &'a mut FrameCollector) -> Self {
         let ptr = collector as *mut FrameCollector;
         ACTIVE.with(|slot| {
-            *slot.lock().expect("profiler bind lock") = Some(ptr);
+            slot.set(Some(ptr));
         });
         Self {
             _marker: PhantomData,
@@ -30,7 +30,7 @@ impl<'a> ProfileBindGuard<'a> {
 impl Drop for ProfileBindGuard<'_> {
     fn drop(&mut self) {
         ACTIVE.with(|slot| {
-            *slot.lock().expect("profiler bind lock") = None;
+            slot.set(None);
         });
     }
 }
@@ -49,7 +49,7 @@ impl CpuScopeGuard {
     pub fn new(name: &'static str) -> Self {
         let zone = fnv1a(name);
         let begin = crate::monotonic_stamp();
-        let thread_id = LOCAL_THREAD_ID.with(|slot| *slot.lock().expect("tid lock"));
+        let thread_id = LOCAL_THREAD_ID.with(|slot| slot.get());
         let Some(thread_id) = thread_id else {
             return Self {
                 zone,
@@ -60,14 +60,11 @@ impl CpuScopeGuard {
         };
         let mut noop = true;
         ACTIVE.with(|cell| {
-            let guard = cell.lock().expect("active collector lock");
-            if let Some(ptr) = *guard {
-                noop = false;
+            if let Some(ptr) = cell.get() {
                 // SAFETY: `ptr` originates from [`ProfileBindGuard::enter`] and remains valid for
                 // the lifetime of nested guards.
-                unsafe {
-                    (*ptr).begin_scope(zone, begin, thread_id);
-                }
+                let opened = unsafe { (*ptr).begin_scope(zone, begin, thread_id) };
+                noop = !opened;
             }
         });
         Self {
@@ -86,8 +83,8 @@ impl Drop for CpuScopeGuard {
         }
         let end = crate::monotonic_stamp();
         ACTIVE.with(|cell| {
-            let guard = cell.lock().expect("active collector lock");
-            if let Some(ptr) = *guard {
+            if let Some(ptr) = cell.get() {
+                // SAFETY: same invariants as [`CpuScopeGuard::new`].
                 unsafe {
                     (*ptr).end_scope(self.zone, end, self.thread_id);
                 }
@@ -99,6 +96,6 @@ impl Drop for CpuScopeGuard {
 /// Records the active thread id used by [`CpuScopeGuard::new`].
 pub(crate) fn set_local_thread_id(thread_id: u64) {
     LOCAL_THREAD_ID.with(|slot| {
-        *slot.lock().expect("tid lock") = Some(thread_id);
+        slot.set(Some(thread_id));
     });
 }

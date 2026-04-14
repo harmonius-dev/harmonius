@@ -87,6 +87,11 @@ impl ProfileRingBuffer {
         self.completed.clear();
     }
 
+    /// Clears the latched overflow flag after it was folded into [`crate::FrameStats`].
+    pub fn clear_dropped_flag(&mut self) {
+        self.dropped = false;
+    }
+
     /// Drains completed events into the arena without growing the arena backing store.
     pub fn drain_into<'a>(&mut self, arena: &'a mut FrameArena) -> Option<&'a mut [CpuEvent]> {
         let n = self.completed.len();

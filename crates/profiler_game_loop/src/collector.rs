@@ -2,12 +2,15 @@ use std::collections::HashMap;
 
 use crate::arena::FrameArena;
 use crate::cpu_event::CpuEvent;
-use crate::hash::fnv1a;
+use crate::hash::{fnv1a, fnv1a_continue};
 use crate::phase::Phase;
 use crate::ring_buffer::ProfileRingBuffer;
 use crate::scope::set_local_thread_id;
 use crate::spike::{SpikeEntry, SpikeRing};
 use crate::PhaseBudgetTable;
+
+/// Upper bound for registered profiler threads (startup policy: `max_workers + 4`).
+pub const MAX_REGISTERED_PROFILER_THREADS: usize = 68;
 
 /// Aggregated frame statistics derived from CPU events.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -30,6 +33,8 @@ pub struct FrameStats {
     pub net_bandwidth_bps: f64,
     /// Set when the arena could not hold the full event stream.
     pub profiler_truncated: bool,
+    /// Set when any per-thread ring dropped completed events this frame.
+    pub profiler_ring_overflow: bool,
 }
 
 impl FrameStats {
@@ -44,10 +49,16 @@ impl FrameStats {
             entity_count: 0,
             net_bandwidth_bps: 0.0,
             profiler_truncated: false,
+            profiler_ring_overflow: false,
         }
     }
 
-    fn from_events(frame_number: u64, events: &[CpuEvent], truncated: bool) -> Self {
+    fn from_events(
+        frame_number: u64,
+        events: &[CpuEvent],
+        truncated: bool,
+        profiler_ring_overflow: bool,
+    ) -> Self {
         let mut cpu_frame_ms = 0.0;
         if let (Some(first), Some(last)) = (events.first(), events.last()) {
             cpu_frame_ms = (last.end_tsc.saturating_sub(first.begin_tsc)) as f64 / 1_000_000.0;
@@ -62,6 +73,7 @@ impl FrameStats {
             entity_count: 0,
             net_bandwidth_bps: 0.0,
             profiler_truncated: truncated,
+            profiler_ring_overflow,
         }
     }
 }
@@ -112,10 +124,12 @@ pub struct FrameCollector {
     thread_index: HashMap<u64, usize>,
     thread_depths: Vec<u16>,
     latest: Option<LatestFrameCapture>,
+    /// Exponential moving average of longest phase durations (milliseconds) per budget slot.
+    spike_ema_ms: [f64; 9],
 }
 
 impl FrameCollector {
-    /// Builds a collector with a 1 MiB arena and disabled collection until enabled.
+    /// Builds a collector with a 1 MiB arena and collection enabled by default.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -128,21 +142,27 @@ impl FrameCollector {
             thread_index: HashMap::new(),
             thread_depths: Vec::new(),
             latest: None,
+            spike_ema_ms: [0.0; 9],
         }
     }
 
     /// Registers the calling thread's ring buffer slot.
-    pub fn register_thread(&mut self, thread_id: u64) -> usize {
+    ///
+    /// Returns `None` when [`MAX_REGISTERED_PROFILER_THREADS`] slots are already in use.
+    pub fn register_thread(&mut self, thread_id: u64) -> Option<usize> {
         if let Some(idx) = self.thread_index.get(&thread_id).copied() {
             set_local_thread_id(thread_id);
-            return idx;
+            return Some(idx);
+        }
+        if self.buffers.len() >= MAX_REGISTERED_PROFILER_THREADS {
+            return None;
         }
         let idx = self.buffers.len();
         self.buffers.push(ProfileRingBuffer::with_capacity(16_384));
         self.thread_depths.push(0);
         self.thread_index.insert(thread_id, idx);
         set_local_thread_id(thread_id);
-        idx
+        Some(idx)
     }
 
     /// Sets a per-phase budget in milliseconds.
@@ -156,30 +176,31 @@ impl FrameCollector {
     }
 
     /// Begins a CPU scope for the active thread (used by [`crate::CpuScopeGuard`]).
-    pub fn begin_scope(&mut self, zone: u32, begin: u64, thread_id: u64) {
+    ///
+    /// Returns `true` when a pending event was recorded (so the matching `end_scope` must run).
+    pub fn begin_scope(&mut self, zone: u32, begin: u64, thread_id: u64) -> bool {
         if !self.enabled {
-            return;
+            return false;
         }
         let Some(&idx) = self.thread_index.get(&thread_id) else {
-            return;
+            return false;
         };
         let depth = self.thread_depths[idx];
         let event = CpuEvent::pending(begin, thread_id, zone, depth);
         self.buffers[idx].push_pending(event);
         self.thread_depths[idx] = depth.saturating_add(1);
+        true
     }
 
     /// Ends the innermost CPU scope for the active thread.
     pub fn end_scope(&mut self, zone: u32, end: u64, thread_id: u64) {
-        if !self.enabled {
-            return;
-        }
         let Some(&idx) = self.thread_index.get(&thread_id) else {
             return;
         };
         let _ = zone;
-        let _ = self.buffers[idx].complete_pending(end);
-        self.thread_depths[idx] = self.thread_depths[idx].saturating_sub(1);
+        if self.buffers[idx].complete_pending(end) {
+            self.thread_depths[idx] = self.thread_depths[idx].saturating_sub(1);
+        }
     }
 
     /// Drains buffers, sorts events, runs spike detection, and publishes [`LatestFrameCapture`].
@@ -198,6 +219,8 @@ impl FrameCollector {
             Vec::new()
         } else {
             let Some(merged) = self.arena.alloc_slice::<CpuEvent>(total) else {
+                let profiler_ring_overflow = snapshot_ring_overflow(&self.buffers);
+                clear_ring_drop_flags(&mut self.buffers);
                 let capture = FrameCapture {
                     frame_number: self.frame_number,
                     cpu_events: Vec::new(),
@@ -211,6 +234,7 @@ impl FrameCollector {
                         entity_count: 0,
                         net_bandwidth_bps: 0.0,
                         profiler_truncated: true,
+                        profiler_ring_overflow,
                     },
                     spikes: Vec::new(),
                 };
@@ -233,9 +257,17 @@ impl FrameCollector {
             merged.to_vec()
         };
 
-        let stats = FrameStats::from_events(self.frame_number, &cpu_events, false);
+        let profiler_ring_overflow = snapshot_ring_overflow(&self.buffers);
+        clear_ring_drop_flags(&mut self.buffers);
+        let stats = FrameStats::from_events(
+            self.frame_number,
+            &cpu_events,
+            false,
+            profiler_ring_overflow,
+        );
         detect_spikes(
             &mut self.spike_ring,
+            &mut self.spike_ema_ms,
             &self.phase_budgets,
             &cpu_events,
             self.frame_number,
@@ -259,14 +291,37 @@ impl FrameCollector {
     }
 
     fn publish_latest(&mut self, capture: &FrameCapture) {
-        self.latest = Some(LatestFrameCapture {
-            capture: capture.clone(),
-        });
+        match &mut self.latest {
+            None => {
+                self.latest = Some(LatestFrameCapture {
+                    capture: capture.clone(),
+                });
+            }
+            Some(prev) => {
+                prev.capture.frame_number = capture.frame_number;
+                prev.capture.stats = capture.stats;
+                prev.capture.cpu_events.clone_from(&capture.cpu_events);
+                prev.capture.spikes.clone_from(&capture.spikes);
+            }
+        }
+    }
+}
+
+const SPIKE_EMA_ALPHA: f64 = 0.125;
+
+fn snapshot_ring_overflow(buffers: &[ProfileRingBuffer]) -> bool {
+    buffers.iter().any(ProfileRingBuffer::events_dropped)
+}
+
+fn clear_ring_drop_flags(buffers: &mut [ProfileRingBuffer]) {
+    for buffer in buffers {
+        buffer.clear_dropped_flag();
     }
 }
 
 fn detect_spikes(
     spike_ring: &mut SpikeRing,
+    ema_ms: &mut [f64; 9],
     budgets: &PhaseBudgetTable,
     events: &[CpuEvent],
     frame_number: u64,
@@ -281,7 +336,8 @@ fn detect_spikes(
         Phase::FrameSnapshot,
         Phase::FrameEnd,
     ] {
-        let budget_ms = budgets.budgets[phase.budget_slot()];
+        let slot = phase.budget_slot();
+        let budget_ms = budgets.budgets[slot];
         if budget_ms <= 0.0 {
             continue;
         }
@@ -297,10 +353,20 @@ fn detect_spikes(
                 longest_ms = dur_ms;
             }
         }
-        if longest_ms > budget_ms {
+        if longest_ms <= 0.0 {
+            continue;
+        }
+        let prev = ema_ms[slot];
+        let blended = if prev == 0.0 {
+            longest_ms
+        } else {
+            prev.mul_add(1.0 - SPIKE_EMA_ALPHA, longest_ms * SPIKE_EMA_ALPHA)
+        };
+        ema_ms[slot] = blended;
+        if blended > budget_ms {
             spike_ring.push(SpikeEntry {
                 phase,
-                duration_ms: longest_ms,
+                duration_ms: blended,
                 budget_ms,
                 frame_number,
             });
@@ -326,7 +392,7 @@ pub fn zone_hash_for_phase(phase: Phase) -> u32 {
         Phase::AnimationUpdate => fnv1a("Phase6_AnimationUpdate"),
         Phase::FrameSnapshot => fnv1a("Phase7_FrameSnapshot"),
         Phase::FrameEnd => fnv1a("Phase8_FrameEnd"),
-        Phase::Custom(id) => fnv1a("Phase_Custom").wrapping_add(id),
+        Phase::Custom(id) => fnv1a_continue(fnv1a("Phase_Custom"), &id.to_le_bytes()),
     }
 }
 
@@ -336,10 +402,40 @@ mod tests {
     use crate::scope::{CpuScopeGuard, ProfileBindGuard};
 
     #[test]
+    fn tc_ir_5_6_1_n1_disable_mid_scope_still_balances() {
+        let mut collector = FrameCollector::new();
+        let tid = 9u64;
+        collector.register_thread(tid).expect("register");
+        let zone = crate::hash::fnv1a("Phase1_Input");
+        assert!(collector.begin_scope(zone, 0, tid));
+        collector.set_enabled(false);
+        collector.end_scope(zone, 1, tid);
+        collector.set_enabled(true);
+        assert!(collector.begin_scope(zone, 2, tid));
+        collector.end_scope(zone, 3, tid);
+        let capture = collector.collect_frame();
+        assert_eq!(capture.cpu_events.len(), 2);
+    }
+
+    #[test]
+    fn register_thread_returns_none_at_cap() {
+        let mut collector = FrameCollector::new();
+        for i in 0..MAX_REGISTERED_PROFILER_THREADS {
+            assert!(
+                collector.register_thread(i as u64).is_some(),
+                "slot {i}"
+            );
+        }
+        assert!(collector
+            .register_thread(MAX_REGISTERED_PROFILER_THREADS as u64)
+            .is_none());
+    }
+
+    #[test]
     fn tc_ir_5_6_7_u1_latest_frame_capture_replaced() {
         let mut collector = FrameCollector::new();
         let tid = 1u64;
-        collector.register_thread(tid);
+        collector.register_thread(tid).expect("register");
         {
             let _bind = ProfileBindGuard::enter(&mut collector);
             let _scope = CpuScopeGuard::new("Phase1_Input");
@@ -368,7 +464,7 @@ mod tests {
     fn tc_ir_5_6_3_1_spike_on_slow_phase() {
         let mut collector = FrameCollector::new();
         let tid = 2u64;
-        collector.register_thread(tid);
+        collector.register_thread(tid).expect("register");
         collector.set_phase_budget(Phase::PhysicsStep, 4.0);
         {
             let _bind = ProfileBindGuard::enter(&mut collector);
