@@ -1,12 +1,12 @@
 ---
 branch: plan/integration-grids-volumes-physics
-last_updated: 2026-04-14T05:20:00Z
+last_updated: 2026-04-14T11:34:44Z
 plan_id: PLAN-integration-grids-volumes-physics
 pr_number: 20
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/20
 started_at: 2026-04-14T05:14:33Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-grids-volumes-physics
 ---
 
@@ -41,8 +41,8 @@ for follow-up PRs.
 - [x] `rumdl check .` passes for touched docs (`rumdl check` on this progress file; repo-wide
       `rumdl check .` may still report unrelated paths)
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -79,3 +79,7 @@ for follow-up PRs.
 - 2026-04-14T05:20:00Z — plan-implementer — `status: code_complete`,
   `pr_review_status: not_started`; follow-up work: remaining companion integration / negative /
   benchmark tests.
+
+- 2026-04-14T11:34:44Z — pr-reviewer — submitted for human review; 1 minor finding addressed (README
+  broken relative link for `rumdl check .`); inline review pass on IR-3.10 seam types vs
+  `docs/design/integration/grids-volumes-physics.md` (no blockers). Progress file added on branch.
