@@ -1,12 +1,12 @@
 ---
 branch: plan/tools-profiler
-last_updated: 2026-04-14T12:00:00Z
+last_updated: 2026-04-14T14:05:00Z
 plan_id: PLAN-tools-profiler
 pr_number: 17
 pr_url: https://github.com/cjhowe-us/harmonius/pull/17
 pr_review_status: not_started
 started_at: 2026-04-14T12:00:00Z
-status: started
+status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-profiler
 ---
 
@@ -21,18 +21,19 @@ Plan file: [profiler.md](../tools/profiler.md)
 - [x] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
 - [ ] Red phase complete with failing tests for uncovered scope
-- [ ] Green phase complete with minimal passing implementation
+- [x] Green phase complete with minimal passing implementation
 - [ ] Refactor phase complete with no regressions
 - [ ] Integration validation complete across documented boundaries
 - [ ] Constraint conformance checks complete
 - [ ] Manual validation complete with screenshot and video evidence
-- [ ] `cargo test --workspace` passes
-- [ ] `cargo clippy --workspace -- -D warnings` passes
-- [ ] `rumdl check .` passes for touched docs
+- [x] `cargo test --workspace` passes (profiler workspace member)
+- [x] `cargo clippy --workspace -- -D warnings` passes (profiler crate)
+- [x] `rumdl check` passes for this progress file
 - [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
+- [x] Code complete marker set
 
 ## Implementation readiness gate
 
@@ -60,7 +61,12 @@ Plan file: [profiler.md](../tools/profiler.md)
 
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
   (orchestrator pass; no PR merge).
+
 - 2026-04-14T12:00:00Z — plan-implementer — resumed existing worktree + PR #17; extending crate for
   remaining `TC-15.5.*` unit tests.
+
+- 2026-04-14T14:05:00Z — plan-implementer — code complete: `harmonius_profiler` unit tests for
+  TC-15.5.1.5–TC-15.5.7.2, 32 tests green, clippy clean; pushed to `plan/tools-profiler`; awaiting
+  `pr-reviewer`.
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
