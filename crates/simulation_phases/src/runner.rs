@@ -26,6 +26,9 @@ pub struct ScheduledSystem {
     /// Owning phase.
     pub phase: Phase,
     /// Simulation subset when [`Self::phase`] is [`Phase::Simulation`].
+    ///
+    /// For [`Phase::Simulation`], this must be [`Some`] with the correct [`SimSet`]. Systems with
+    /// [`None`] here are not invoked during simulation by [`run_scheduled_systems`].
     pub sim_set: Option<SimSet>,
     /// Stable label for traces.
     pub name: &'static str,
