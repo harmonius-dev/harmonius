@@ -57,6 +57,8 @@ Plan file: [editor-rendering.md](../integration/editor-rendering.md)
 
 ## Event log
 
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
 - 2026-04-14T05:19:45Z — plan-implementer — started; worktree at
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-editor-rendering`; draft PR
   <https://github.com/cjhowe-us/harmonius/pull/41>; added `editor_rendering` crate with snapshot
