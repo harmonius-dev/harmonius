@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-editor-animation
-last_updated: 2026-04-14T14:42:22Z
+last_updated: 2026-04-14T17:52:02Z
 plan_id: PLAN-integration-editor-animation
 pr_number: 35
 pr_review_status: complete
@@ -59,8 +59,9 @@ Plan file: [editor-animation.md](../integration/editor-animation.md)
 - Videos: deferred for the same reason as screenshots.
 - Review notes: pr-reviewer pass complete; README MD057 audits link fixed to
   `docs/design/integration/PROMPT-test-cases.md`. Follow-up correctness fix: transition walk records
-  the terminal state when stopping on `max_steps` (`state_graph.rs` + regression test). Design
-  contracts in `harmonius_integration_editor_animation` match
+  the terminal state when stopping on `max_steps` (`state_graph.rs` + regression test). Second pass:
+  `BoneOverlayOutcome` + TC-IR-5.3.2.1 / 2.2 / 2.3 / 7.1 contract tests; crate root calls out
+  deferred timing/MPSC slice. Design contracts in `harmonius_integration_editor_animation` match
   `docs/design/integration/editor-animation.md` for the implemented slice.
 
 ## Event log
@@ -82,5 +83,9 @@ Plan file: [editor-animation.md](../integration/editor-animation.md)
 - 2026-04-14T14:42:22Z — pr-reviewer — 1 moderate finding addressed: `walk_always_true_transitions`
   omitted the terminal state from `visited` when the step budget exhausted; fixed + regression test;
   re-ran `cargo test --workspace`, `cargo clippy -D warnings`, `rumdl check .`; pushed to PR #35.
+- 2026-04-14T17:52:02Z — pr-reviewer — review-supervisor follow-up: five findings (0 blocker, 1
+  substantive, 2 moderate, 2 minor) closed via `BoneOverlayOutcome`, added contract tests, crate
+  slice documentation; `cargo test --workspace`, `cargo clippy -D warnings`, `rumdl check .` green;
+  pushed to PR #35 (already undrafted).
 
 Append ISO-8601 UTC entries with actor, action, and outcome.
