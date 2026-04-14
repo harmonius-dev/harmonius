@@ -1,0 +1,9 @@
+[package]
+name = "harmonius_editor"
+version = "0.1.0"
+edition = "2021"
+description = "Level editor and world-building authoring primitives for Harmonius."
+
+[lib]
+
+[dependencies]
