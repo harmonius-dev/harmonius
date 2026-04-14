@@ -15,6 +15,7 @@ members = [
   "crates/harmonius-build-deploy",
   "crates/harmonius-core",
   "crates/harmonius-integration-ai-data-tables",
+  "crates/harmonius-integration-audio-sa",
   "crates/harmonius-integration-benches",
   "crates/harmonius-integration-tests",
   "crates/harmonius-localization",
