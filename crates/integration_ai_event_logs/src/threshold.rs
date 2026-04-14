@@ -36,12 +36,18 @@ pub fn evaluate_threshold_trigger<T>(
 where
     T: Clone + std::fmt::Debug + PartialEq,
 {
-    let mut q = trigger.query.clone();
     let start = ctx.read_tick.saturating_sub(trigger.window_ticks);
-    q.time_range = Some(crate::event_log::TimeRange {
-        start,
-        end: ctx.read_tick,
-    });
+    let q = EventLogQuery {
+        time_range: Some(crate::event_log::TimeRange {
+            start,
+            end: ctx.read_tick,
+        }),
+        min_accuracy: trigger.query.min_accuracy,
+        source: trigger.query.source,
+        predicate: trigger.query.predicate,
+        event_type: trigger.query.event_type,
+        max_results: trigger.query.max_results,
+    };
     let matched = log.query(&q, ctx);
     let count = matched.len() as u32;
     if count >= trigger.min_count {

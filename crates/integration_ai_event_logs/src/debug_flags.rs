@@ -11,4 +11,7 @@ pub struct EventLogDebugFlags {
     pub trace_propagation: bool,
     /// When true, trace AI decision write-back.
     pub trace_decisions: bool,
+    /// Count of [`crate::channels::ThresholdChannel::drain_all_traced`] calls that returned
+    /// events while [`Self::trace_thresholds`] was enabled (FM-5 visibility hook).
+    pub threshold_nonempty_drains: u32,
 }

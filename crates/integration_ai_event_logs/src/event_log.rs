@@ -1,12 +1,25 @@
 //! Bounded FIFO event log with deterministic queries.
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::fmt::Debug;
 
 use smallvec::SmallVec;
 
+use crate::ids::EventTypeId;
+
 /// Predicate index into a [`PredicateTable`].
 pub type PredicateId = u32;
+
+/// Three-component position (`z = 0` in 2D per integration design).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Vec3 {
+    /// X component.
+    pub x: f32,
+    /// Y component.
+    pub y: f32,
+    /// Z component (use `0.0` when the scene is 2D).
+    pub z: f32,
+}
 
 /// Inclusive tick range filter.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -28,6 +41,8 @@ pub struct EventLogQuery {
     pub source: Option<crate::ids::Entity>,
     /// Optional predicate id resolved through [`PredicateTable`].
     pub predicate: Option<PredicateId>,
+    /// Optional event-type filter (middleman / codegen discriminator).
+    pub event_type: Option<EventTypeId>,
     /// Maximum matches (`0` = unlimited).
     pub max_results: u32,
 }
@@ -38,14 +53,18 @@ pub struct DecayingEntry<T>
 where
     T: Clone + Debug + PartialEq,
 {
-    /// Payload stored in the log.
+    /// Payload stored in the log (design alias: `payload`).
     pub data: T,
-    /// Tick when the entry was recorded.
+    /// Tick when the entry was recorded (design alias: `spawn_tick` on spawn paths).
     pub timestamp: u64,
     /// Confidence in \[0, 1\].
     pub accuracy: f32,
     /// Optional originating entity.
     pub source: Option<crate::ids::Entity>,
+    /// Optional spatial tag for queries that filter by region.
+    pub position: Option<Vec3>,
+    /// Optional event kind for type-filtered queries.
+    pub event_type: Option<EventTypeId>,
 }
 
 impl<T> DecayingEntry<T>
@@ -59,11 +78,32 @@ where
             timestamp,
             accuracy: 1.0,
             source,
+            position: None,
+            event_type: None,
+        }
+    }
+
+    /// Same as [`Self::new`], with spatial and type metadata populated.
+    pub fn with_spatial(
+        data: T,
+        timestamp: u64,
+        source: Option<crate::ids::Entity>,
+        position: Option<Vec3>,
+        event_type: Option<EventTypeId>,
+    ) -> Self {
+        Self {
+            data,
+            timestamp,
+            accuracy: 1.0,
+            source,
+            position,
+            event_type,
         }
     }
 }
 
-/// Predicate function pointer type (middleman codegen uses the same contract).
+/// Predicate over live entries (reference stand-in for
+/// `fn(&ArchivedDecayingEntry<T>) -> bool` in the middleman; see TC-IR-2.2.R3).
 pub type EventPredicate<T> = fn(&T) -> bool;
 
 /// Predicate dispatch table (stand-in for the middleman `.dylib` table).
@@ -72,7 +112,7 @@ pub struct PredicateTable<T>
 where
     T: Clone + Debug + PartialEq,
 {
-    slots: Vec<Option<EventPredicate<T>>>,
+    slots: HashMap<PredicateId, EventPredicate<T>>,
 }
 
 impl<T> Default for PredicateTable<T>
@@ -80,7 +120,9 @@ where
     T: Clone + Debug + PartialEq,
 {
     fn default() -> Self {
-        Self { slots: Vec::new() }
+        Self {
+            slots: HashMap::new(),
+        }
     }
 }
 
@@ -93,18 +135,14 @@ where
         Self::default()
     }
 
-    /// Registers `predicate` at `id` (sparse indices allocate up to `id`).
+    /// Registers `predicate` at `id`.
     pub fn register(&mut self, id: PredicateId, predicate: EventPredicate<T>) {
-        let idx = id as usize;
-        if self.slots.len() <= idx {
-            self.slots.resize(idx + 1, None);
-        }
-        self.slots[idx] = Some(predicate);
+        self.slots.insert(id, predicate);
     }
 
     /// Looks up a predicate slot.
     pub fn get(&self, id: PredicateId) -> Option<EventPredicate<T>> {
-        self.slots.get(id as usize).copied().flatten()
+        self.slots.get(&id).copied()
     }
 }
 
@@ -113,9 +151,12 @@ where
 pub struct QueryWarnings {
     /// Set when a [`PredicateId`] has no registered function (FM-7).
     pub missing_predicate: bool,
+    /// Incremented once per [`EventLog::query`] when tracing is enabled.
+    pub query_trace_invocations: u32,
 }
 
 /// Shared inputs for [`EventLog::query`] and higher-level callers.
+#[derive(Debug)]
 pub struct QueryContext<'a, T>
 where
     T: Clone + Debug + PartialEq,
@@ -165,14 +206,19 @@ where
     }
 
     /// Pushes a new entry, evicting the oldest on overflow (FIFO).
-    pub fn push(&mut self, entry: DecayingEntry<T>) {
+    ///
+    /// Returns the evicted entry when the ring discards one (FM-3 hook for callers that emit
+    /// `LogEntryDecayed` to an ECS channel).
+    pub fn push(&mut self, entry: DecayingEntry<T>) -> Option<DecayingEntry<T>> {
         if self.capacity == 0 {
-            return;
+            return None;
         }
+        let mut evicted = None;
         while self.entries.len() >= self.capacity as usize {
-            self.entries.pop_front();
+            evicted = self.entries.pop_front();
         }
         self.entries.push_back(entry);
+        evicted
     }
 
     /// Linear decay step: subtract `delta` from accuracy, clamped to \[0, 1\].
@@ -198,7 +244,8 @@ where
         ctx: &mut QueryContext<'_, T>,
     ) -> SmallVec<[DecayingEntry<T>; 16]> {
         if ctx.flags.trace_queries {
-            let _ = ctx.read_tick;
+            ctx.warnings.query_trace_invocations =
+                ctx.warnings.query_trace_invocations.saturating_add(1);
         }
         let mut out = SmallVec::new();
         let max = if q.max_results == 0 {
@@ -225,6 +272,11 @@ where
                     continue;
                 }
             }
+            if let Some(et) = q.event_type {
+                if e.event_type != Some(et) {
+                    continue;
+                }
+            }
             if let Some(pid) = q.predicate {
                 match ctx.predicates.get(pid) {
                     Some(pred) => {
@@ -244,5 +296,43 @@ where
             }
         }
         out
+    }
+
+    /// Entries whose retained accuracy is at least `min_accuracy` (IR-2.2.1 helper).
+    pub fn entries_above_accuracy(
+        &self,
+        min_accuracy: f32,
+        ctx: &mut QueryContext<'_, T>,
+    ) -> SmallVec<[DecayingEntry<T>; 16]> {
+        self.query(
+            &EventLogQuery {
+                time_range: None,
+                min_accuracy: Some(min_accuracy),
+                source: None,
+                predicate: None,
+                event_type: None,
+                max_results: 0,
+            },
+            ctx,
+        )
+    }
+
+    /// Entries whose tick lies in `window` (IR-2.2.1 helper).
+    pub fn entries_in_window(
+        &self,
+        window: TimeRange,
+        ctx: &mut QueryContext<'_, T>,
+    ) -> SmallVec<[DecayingEntry<T>; 16]> {
+        self.query(
+            &EventLogQuery {
+                time_range: Some(window),
+                min_accuracy: None,
+                source: None,
+                predicate: None,
+                event_type: None,
+                max_results: 0,
+            },
+            ctx,
+        )
     }
 }
