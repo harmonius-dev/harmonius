@@ -20,6 +20,10 @@ pub enum Phase {
     /// Save hooks, stats, bookkeeping.
     FrameEnd,
     /// User-defined phase with explicit ordering relative to built-ins.
+    ///
+    /// [`crate::runner::run_scheduled_systems`] follows [`Self::default_pipeline`] only, so systems
+    /// registered for [`Phase::Custom`] are not invoked by that test helper until scheduling APIs
+    /// accept a custom phase list.
     Custom(u32),
 }
 

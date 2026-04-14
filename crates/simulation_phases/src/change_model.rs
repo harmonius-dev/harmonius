@@ -2,8 +2,8 @@
 
 use crate::SimSet;
 
-/// Whether a reader in `reader` should observe primitive writes performed in `writer` during the same
-/// simulation tick.
+/// Whether a reader in `reader` should observe primitive writes performed in `writer` during the
+/// same simulation tick.
 #[must_use]
 pub fn change_visible_across_sets(writer: SimSet, reader: SimSet) -> bool {
     writer.ordinal() < reader.ordinal()

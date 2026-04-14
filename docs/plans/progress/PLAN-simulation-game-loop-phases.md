@@ -1,6 +1,6 @@
 ---
 branch: plan/simulation-game-loop-phases
-last_updated: 2026-04-14T11:36:12Z
+last_updated: 2026-04-14T17:53:30Z
 plan_id: PLAN-simulation-game-loop-phases
 pr_number: 27
 pr_review_status: complete
@@ -17,10 +17,11 @@ Plan file: [game-loop-phases.md](../simulation/game-loop-phases.md)
 ## Implementation scope (this PR)
 
 Bootstrap workspace member `crates/simulation_phases` with `Phase`, `SimSet`, `FixedTimestep`,
-`configure_simulation_order`, change-visibility helpers, and a deterministic `run_scheduled_systems`
-runner. Unit tests map to TC-1.1.2.1–1.1.2.6, TC-1.1.22.1–1.1.22.2, and TC-17.1.1.1, TC-17.2.1.1,
-TC-17.3.1.1, TC-17.4.1.1 from the companion test-case doc. Integration benchmark rows (TC-1.1.2.I*,
-TC-1.1.2.B*) remain for follow-up once a harness exists.
+`configure_simulation_order`, change-visibility helpers, `PrimitiveId` / `PrimitiveTickCompleted`,
+and a deterministic `run_scheduled_systems` runner. Unit tests map to TC-1.1.2.1–1.1.2.6,
+TC-1.1.22.1–1.1.22.2, and TC-17.1.1.1, TC-17.2.1.1, TC-17.3.1.1, TC-17.4.1.1 from the companion
+test-case doc. Integration and benchmark rows (TC-1.1.2.I*, TC-1.1.22.I*, TC-1.1.2.B*) register as
+`#[ignore]` placeholders until harnesses exist.
 
 ## Status checklist
 
@@ -84,3 +85,9 @@ TC-1.1.2.B*) remain for follow-up once a harness exists.
   clarification on `ScheduledSystem::sim_set` for [`Phase::Simulation`]; `cargo test --workspace`
   and `cargo clippy --workspace -- -D warnings` pass in plan worktree; `rumdl check` clean on this
   progress file; PR #27 undrafted for human review.
+
+- 2026-04-14T17:53:30Z — pr-reviewer — follow-up pass: addressed seven consolidated findings (design
+  change markers, AppBuilder scope note, deferred companion TC stubs with `#[ignore]`, hardened
+  TC-1.1.22.2 assertions, `SimSet` ordinal vs `Ord` test, `Phase::Custom` / runner docs,
+  thread-local grid harness); `cargo test --workspace` and `cargo clippy --workspace -- -D warnings`
+  pass; `rumdl check` clean on touched paths.

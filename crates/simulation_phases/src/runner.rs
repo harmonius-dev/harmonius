@@ -1,4 +1,7 @@
 //! Deterministic single-threaded frame runner for ordering tests.
+//!
+//! Only phases in [`Phase::default_pipeline`] are visited. [`crate::Phase::Custom`] is omitted from
+//! that list by design; extend this module when custom phases need coverage.
 
 use crate::{Phase, SimSet};
 
