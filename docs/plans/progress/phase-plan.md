@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T01:53:07Z
+last_updated: 2026-04-14T02:00:04Z
 phase: plan
 started_at: null
 ---
@@ -53,3 +53,5 @@ every pass; read by the harmonize master agent to compute the next ready set.
   removed stale `in-flight` rows for merge-detection + nested harmonize continuation; dispatched
   `plan-orchestrator` `dispatch-only` (task `d2eb3969-f61b-4f73-8541-5bfddb7664fc`, background, no
   batch cap prompt); 26 prior `plan-implementer` rows refreshed `last_seen`.
+- 2026-04-14T02:00:04Z — `in-flight.md`: reparented all `parent_task_id` values to
+  `harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15` (this Cursor session root).

@@ -1,7 +1,7 @@
 ---
 in_flight:
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-post-merge-dispatch-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:53:07Z
@@ -10,7 +10,7 @@ in_flight:
     topic: dispatch-only
     worker_agent: plan-orchestrator
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -19,7 +19,7 @@ in_flight:
     topic: PLAN-core-runtime-error
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -28,7 +28,7 @@ in_flight:
     topic: PLAN-cross-cutting-design-review-resolution
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -37,7 +37,7 @@ in_flight:
     topic: PLAN-core-runtime-ids
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -46,7 +46,7 @@ in_flight:
     topic: PLAN-core-runtime-primitives
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -55,7 +55,7 @@ in_flight:
     topic: PLAN-core-runtime-algorithms
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -64,7 +64,7 @@ in_flight:
     topic: PLAN-core-runtime-graph-runtime
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -73,7 +73,7 @@ in_flight:
     topic: PLAN-core-runtime-ecs
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -82,7 +82,7 @@ in_flight:
     topic: PLAN-core-runtime-game-loop
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -91,7 +91,7 @@ in_flight:
     topic: PLAN-physics-foundation
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -100,7 +100,7 @@ in_flight:
     topic: PLAN-cross-cutting-design-constraints
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -109,7 +109,7 @@ in_flight:
     topic: PLAN-ai-behavior
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -118,7 +118,7 @@ in_flight:
     topic: PLAN-ai-navigation
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -127,7 +127,7 @@ in_flight:
     topic: PLAN-ai-steering-crowds
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -136,7 +136,7 @@ in_flight:
     topic: PLAN-animation-procedural
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -145,7 +145,7 @@ in_flight:
     topic: PLAN-animation-skeletal
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -154,7 +154,7 @@ in_flight:
     topic: PLAN-animation-state-machine
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -163,7 +163,7 @@ in_flight:
     topic: PLAN-audio-audio
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -172,7 +172,7 @@ in_flight:
     topic: PLAN-content-pipeline-asset-pipeline
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -181,7 +181,7 @@ in_flight:
     topic: PLAN-content-pipeline-asset-processing
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -190,7 +190,7 @@ in_flight:
     topic: PLAN-core-runtime-change-detection
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -199,7 +199,7 @@ in_flight:
     topic: PLAN-core-runtime-console-variables
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -208,7 +208,7 @@ in_flight:
     topic: PLAN-core-runtime-events-plugins
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -217,7 +217,7 @@ in_flight:
     topic: PLAN-core-runtime-hot-reload-protocol
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -226,7 +226,7 @@ in_flight:
     topic: PLAN-core-runtime-io
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
@@ -235,7 +235,7 @@ in_flight:
     topic: PLAN-core-runtime-memory-async-io
     worker_agent: plan-implementer
   - last_seen: 2026-04-14T01:53:07Z
-    parent_task_id: harmonize-dispatch-only-20260414
+    parent_task_id: harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15
     phase: plan
     pr_number: null
     started_at: 2026-04-14T01:46:36Z
