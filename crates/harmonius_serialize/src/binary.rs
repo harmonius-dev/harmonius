@@ -163,10 +163,14 @@ where
 }
 
 /// Zero-copy access to an archived `T` inside an HSER blob.
+///
+/// When [`MigrationRegistry::current_version`] is set for `type_name`, the header schema must match
+/// that version. Automatic migration of rkyv payloads is not supported; use the text or
+/// [`MigrationValue`](crate::migration::MigrationValue) migration path for upgrades.
 pub fn deserialize_binary<'a, T>(
     data: &'a [u8],
     type_name: &str,
-    _migration: &MigrationRegistry,
+    migration: &MigrationRegistry,
 ) -> Result<&'a T::Archived, DeserializeError>
 where
     T: Archive,
@@ -186,7 +190,24 @@ where
             ),
         });
     }
-    let _sv = header.schema_version();
+    let stored = header.schema_version();
+    if let Some(current) = migration.current_version(type_name) {
+        if stored != current {
+            if stored > current {
+                return Err(DeserializeError::UnsupportedSchemaVersion {
+                    found: stored,
+                    max: current,
+                });
+            }
+            return Err(DeserializeError::InvalidLayout {
+                offset: 16,
+                message: format!(
+                    "stored schema {stored:?} is behind declared current {current:?}; \
+                     rkyv binary payloads cannot be auto-migrated in this crate"
+                ),
+            });
+        }
+    }
     let start = BinaryHeader::SIZE;
     let len = usize::try_from(header.payload_len).map_err(|_| DeserializeError::InvalidLayout {
         offset: 24,

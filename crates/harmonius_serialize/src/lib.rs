@@ -360,4 +360,43 @@ mod tests {
         let hdr = BinaryHeader::read_bytes(&bytes).unwrap();
         assert_eq!(hdr.type_id_hash, h);
     }
+
+    #[test]
+    fn binary_schema_behind_registry_current_errors() {
+        let v = Sample {
+            a: 1,
+            b: 1.0,
+            c: "x".into(),
+            n: Inner { z: 0 },
+        };
+        let bytes = serialize_binary(&v, "Sample", SchemaVersion::new(1, 0, 0)).unwrap();
+        let mut reg = MigrationRegistry::new();
+        reg.set_current_version("Sample", SchemaVersion::new(2, 0, 0));
+        let err = deserialize_binary_owned::<Sample>(&bytes, "Sample", &reg).unwrap_err();
+        match err {
+            super::DeserializeError::InvalidLayout { offset, .. } => assert_eq!(offset, 16),
+            other => panic!("unexpected {other:?}"),
+        }
+    }
+
+    #[test]
+    fn binary_schema_ahead_of_registry_current_errors() {
+        let v = Sample {
+            a: 1,
+            b: 1.0,
+            c: "x".into(),
+            n: Inner { z: 0 },
+        };
+        let bytes = serialize_binary(&v, "Sample", SchemaVersion::new(2, 0, 0)).unwrap();
+        let mut reg = MigrationRegistry::new();
+        reg.set_current_version("Sample", SchemaVersion::new(1, 0, 0));
+        let err = deserialize_binary_owned::<Sample>(&bytes, "Sample", &reg).unwrap_err();
+        match err {
+            super::DeserializeError::UnsupportedSchemaVersion { found, max } => {
+                assert_eq!(found, SchemaVersion::new(2, 0, 0));
+                assert_eq!(max, SchemaVersion::new(1, 0, 0));
+            }
+            other => panic!("unexpected {other:?}"),
+        }
+    }
 }
