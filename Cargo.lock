@@ -641,6 +641,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_containers"
+version = "0.1.0"
+dependencies = [
+ "fixedbitset",
+ "glam",
+]
+
+[[package]]
 name = "harmonius_containers_slots_ui"
 version = "0.1.0"
 dependencies = [

@@ -5,6 +5,7 @@ members = [
   "crates/harmonius-build-deploy",
   "crates/harmonius-integration-tests",
   "crates/harmonius_app",
+  "crates/harmonius_containers",
   "crates/harmonius_containers_slots_ui",
   "crates/harmonius_core",
   "crates/harmonius_data_tables",
