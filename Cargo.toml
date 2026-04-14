@@ -57,6 +57,7 @@ members = [
   "crates/render-effects",
   "crates/rendering_ui",
   "crates/save_system_profiler",
+  "crates/scene_versioning",
   "crates/timelines_audio_integration",
   "crates/visual_editors",
 ]
