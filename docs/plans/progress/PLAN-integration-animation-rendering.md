@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-animation-rendering
-last_updated: 2026-04-14T05:17:30Z
+last_updated: 2026-04-14T12:00:00Z
 plan_id: PLAN-integration-animation-rendering
 pr_number: 25
 pr_review_status: not_started
@@ -65,3 +65,4 @@ Plan file: [animation-rendering.md](../integration/animation-rendering.md)
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-animation-rendering`, draft PR #25.
 - 2026-04-14T05:17:30Z — plan-implementer — code complete: integration crate + TC-IR-1.4.* unit
   tests; awaiting pr-reviewer.
+- 2026-04-14T12:00:00Z — plan-implementer — README audit link fixed (MD057); `rumdl check .` clean.
