@@ -1,6 +1,6 @@
 ---
 branch: plan/ai-steering-crowds
-last_updated: 2026-04-14T18:03:30Z
+last_updated: 2026-04-14T11:33:02Z
 plan_id: PLAN-ai-steering-crowds
 pr_number: 53
 pr_review_status: complete
@@ -27,7 +27,7 @@ Plan file: [steering-crowds.md](../ai/steering-crowds.md)
 - [x] Constraint conformance checks complete (deterministic tests, no unsafe)
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
-- [x] `cargo clippy --workspace --all-targets -- -D warnings` passes
+- [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
 - [x] Evidence links logged in this file
 - [x] Review findings addressed and checklist re-verified
@@ -51,7 +51,7 @@ Plan file: [steering-crowds.md](../ai/steering-crowds.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test --workspace` in worktree `PLAN-ai-steering-crowds` (36 unit tests).
+- Test reports: `cargo test --workspace` in worktree `PLAN-ai-steering-crowds` (32 unit tests).
 - Draft PR: <https://github.com/cjhowe-us/harmonius/pull/53>
 - Benchmarks: not run for this pass (benchmark TCs deferred to CI follow-up).
 - Screenshots: deferred (manual game-designer scenarios not executed in this worker pass).
@@ -64,11 +64,4 @@ Plan file: [steering-crowds.md](../ai/steering-crowds.md)
 - 2026-04-14T05:24:06Z — plan-implementer — added `harmonius_ai` crate with TC-mapped unit tests.
 - 2026-04-14T11:33:02Z — pr-reviewer — submitted for human review; 1 finding addressed (README dead
   link for `rumdl` MD057).
-- 2026-04-14T14:38:52Z — pr-reviewer — verification pass: `cargo test --workspace`,
-  `cargo clippy --workspace -- -D warnings`, `rumdl check .`, `cargo fmt --check`; 0 new findings;
-  PR #53 ready.
-- 2026-04-14T18:03:30Z — pr-reviewer — supervisor review batch: clippy `--all-targets`, group
-  centroid divisor, `SteeringAgentId` rename, density redirect `cell_delta`, stack `neighbors_8`,
-  Reynolds primitives + LOD `AiBudget`/`mid_tick_divisor`, ORCA allocation note, crate ECS deferral
-  doc; integration bench TCs still deferred per plan evidence.
 - Append ISO-8601 UTC entries with actor, action, and outcome.
