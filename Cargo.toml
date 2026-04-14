@@ -92,6 +92,7 @@ members = [
   "crates/networking_audio_integration",
   "crates/networking_ecs",
   "crates/platform-telemetry",
+  "crates/plugin_marketplace",
   "crates/profiler_game_loop",
   "crates/render-effects",
   "crates/render-styles",
