@@ -15,7 +15,7 @@ mod resolve;
 mod trust;
 mod types;
 
-pub use catalog::{CatalogQuery, Listing, Page, paginate_catalog};
+pub use catalog::{CatalogError, CatalogQuery, Listing, Page, paginate_catalog};
 pub use install::{
     BlobSource, CodegenPort, InstallError, InstallPipeline, InstallReport, UpdateCandidate,
     blake3_hex, blob_path, bulk_update_targets, check_updates, installed_current_path,
@@ -35,7 +35,7 @@ mod tests {
     use super::*;
     use crate::install::{BlobSource, CodegenPort, InstallPipeline};
     use crate::resolve::{ManifestSource, ResolvedSet, Resolver};
-    use crate::trust::{TrustLevel, TrustStore, sign_manifest};
+    use crate::trust::{Signature, TrustLevel, TrustStore, sign_manifest};
     use ed25519_dalek::SigningKey;
     use rand::RngCore;
     use semver::Version;
@@ -72,7 +72,8 @@ mod tests {
                 limit: 10,
                 cursor: None,
             },
-        );
+        )
+        .expect("page");
         assert_eq!(p1.items.len(), 10);
         let c1 = p1.next_cursor.expect("next");
         let p2 = paginate_catalog(
@@ -82,11 +83,31 @@ mod tests {
                 limit: 10,
                 cursor: Some(c1.clone()),
             },
-        );
+        )
+        .expect("page2");
         assert_eq!(p2.items.len(), 10);
         let ids1: Vec<_> = p1.items.iter().map(|l| l.id.as_str()).collect();
         let ids2: Vec<_> = p2.items.iter().map(|l| l.id.as_str()).collect();
         assert!(ids1.iter().all(|i| !ids2.contains(i)));
+    }
+
+    #[test]
+    fn test_catalog_invalid_cursor_rejected() {
+        let listings: Vec<Listing> = vec![Listing {
+            id: "a".into(),
+            version: "1.0.0".into(),
+            summary: "s".into(),
+        }];
+        let err = paginate_catalog(
+            &listings,
+            &CatalogQuery {
+                query: String::new(),
+                limit: 10,
+                cursor: Some("not-a-cursor".into()),
+            },
+        )
+        .expect_err("bad cursor");
+        assert!(matches!(err, CatalogError::InvalidCursor));
     }
 
     struct CountingFetcher<'a> {
@@ -102,6 +123,17 @@ mod tests {
                 .cloned()
                 .ok_or_else(|| InstallError::CodegenFailed("missing fixture blob".into()))
         }
+    }
+
+    fn signing_key() -> SigningKey {
+        let mut seed = [0u8; 32];
+        rand::thread_rng().fill_bytes(&mut seed);
+        SigningKey::from_bytes(&seed)
+    }
+
+    fn detached_sig(m: &PluginManifest, key: &SigningKey) -> Signature {
+        let bytes = manifest_to_bytes(m).expect("manifest bytes");
+        sign_manifest(&bytes, key)
     }
 
     struct OkCodegen;
@@ -155,14 +187,22 @@ mod tests {
             inner: map,
             fetches: &fetches,
         };
+        let key = signing_key();
         let m = sample_manifest_with_blob(data);
+        let sig = detached_sig(&m, &key);
+        let trust = TrustStore::new();
         let set = ResolvedSet {
             plugins: vec![("demo".into(), Version::new(1, 0, 0))],
             order: vec!["demo".into()],
         };
         let mut pipe = InstallPipeline::new(dir.path().to_path_buf(), fetcher, OkCodegen);
-        pipe.install(&set, &[("demo".into(), Version::new(1, 0, 0), m.clone())])
-            .expect("install");
+        pipe.install(
+            &set,
+            &[("demo".into(), Version::new(1, 0, 0), m.clone())],
+            &trust,
+            &[("demo".into(), Version::new(1, 0, 0), sig)],
+        )
+        .expect("install");
         assert!(fetches.load(Ordering::SeqCst) >= 1);
         let bp = blob_path(dir.path(), &hash);
         assert!(bp.exists());
@@ -183,14 +223,22 @@ mod tests {
             inner: map,
             fetches: &fetches,
         };
+        let key = signing_key();
         let m = sample_manifest_with_blob(data);
+        let sig = detached_sig(&m, &key);
+        let trust = TrustStore::new();
         let set = ResolvedSet {
             plugins: vec![("demo".into(), Version::new(1, 0, 0))],
             order: vec!["demo".into()],
         };
         let mut pipe = InstallPipeline::new(dir.path().to_path_buf(), fetcher, OkCodegen);
-        pipe.install(&set, &[("demo".into(), Version::new(1, 0, 0), m)])
-            .expect("install");
+        pipe.install(
+            &set,
+            &[("demo".into(), Version::new(1, 0, 0), m)],
+            &trust,
+            &[("demo".into(), Version::new(1, 0, 0), sig)],
+        )
+        .expect("install");
         assert_eq!(fetches.load(Ordering::SeqCst), 0);
     }
 
@@ -206,14 +254,23 @@ mod tests {
             inner: map,
             fetches: &fetches,
         };
+        let key = signing_key();
         let m = sample_manifest_with_blob(data);
+        let sig = detached_sig(&m, &key);
+        let trust = TrustStore::new();
         let set = ResolvedSet {
             plugins: vec![("demo".into(), Version::new(1, 0, 0))],
             order: vec!["demo".into()],
         };
         let mut pipe = InstallPipeline::new(dir.path().to_path_buf(), fetcher, FailCodegen);
         assert!(
-            pipe.install(&set, &[("demo".into(), Version::new(1, 0, 0), m)],)
+            pipe
+                .install(
+                    &set,
+                    &[("demo".into(), Version::new(1, 0, 0), m)],
+                    &trust,
+                    &[("demo".into(), Version::new(1, 0, 0), sig)],
+                )
                 .is_err()
         );
         let cur = installed_current_path(dir.path(), "demo");
@@ -231,14 +288,22 @@ mod tests {
             inner: map,
             fetches: &fetches,
         };
+        let key = signing_key();
         let m = sample_manifest_with_blob(data);
+        let sig = detached_sig(&m, &key);
+        let trust = TrustStore::new();
         let set = ResolvedSet {
             plugins: vec![("demo".into(), Version::new(1, 0, 0))],
             order: vec!["demo".into()],
         };
         let mut pipe = InstallPipeline::new(dir.path().to_path_buf(), fetcher, OkCodegen);
-        pipe.install(&set, &[("demo".into(), Version::new(1, 0, 0), m)])
-            .expect("install");
+        pipe.install(
+            &set,
+            &[("demo".into(), Version::new(1, 0, 0), m)],
+            &trust,
+            &[("demo".into(), Version::new(1, 0, 0), sig)],
+        )
+        .expect("install");
         let cur = installed_current_path(dir.path(), "demo");
         assert!(cur.exists());
         pipe.uninstall("demo").expect("uninstall");
@@ -264,14 +329,22 @@ mod tests {
             inner: map,
             fetches: &fetches,
         };
+        let key = signing_key();
         let m = sample_manifest_with_blob(data);
+        let sig = detached_sig(&m, &key);
+        let trust = TrustStore::new();
         let set = ResolvedSet {
             plugins: vec![("demo".into(), Version::new(1, 0, 0))],
             order: vec!["demo".into()],
         };
         let mut pipe = InstallPipeline::new(dir.path().to_path_buf(), fetcher, OkCodegen);
         let err = pipe
-            .install(&set, &[("demo".into(), Version::new(1, 0, 0), m)])
+            .install(
+                &set,
+                &[("demo".into(), Version::new(1, 0, 0), m)],
+                &trust,
+                &[("demo".into(), Version::new(1, 0, 0), sig)],
+            )
             .expect_err("integrity");
         assert!(matches!(err, InstallError::IntegrityFailure));
     }
@@ -355,11 +428,36 @@ mod tests {
         let key = SigningKey::from_bytes(&seed);
         let sig = sign_manifest(bytes, &key);
         let mut store = TrustStore::new();
-        store.register_publisher("pub".into(), TrustLevel::Verified);
+        store.register_publisher(
+            "pub".into(),
+            key.verifying_key().to_bytes(),
+            TrustLevel::Verified,
+        );
         let level = store
             .verify_with_author(bytes, &"pub".into(), &sig)
             .expect("verify");
         assert_eq!(level, TrustLevel::Verified);
+    }
+
+    #[test]
+    fn test_wrong_publisher_key_stays_unsigned() {
+        let bytes = b"manifest-bytes";
+        let key_good = signing_key();
+        let mut key_bad = signing_key();
+        while key_bad.verifying_key() == key_good.verifying_key() {
+            key_bad = signing_key();
+        }
+        let sig_bad = sign_manifest(bytes, &key_bad);
+        let mut store = TrustStore::new();
+        store.register_publisher(
+            "pub".into(),
+            key_good.verifying_key().to_bytes(),
+            TrustLevel::Verified,
+        );
+        let level = store
+            .verify_with_author(bytes, &"pub".into(), &sig_bad)
+            .expect("crypto ok");
+        assert_eq!(level, TrustLevel::Unsigned);
     }
 
     #[test]

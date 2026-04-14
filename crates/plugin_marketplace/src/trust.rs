@@ -36,11 +36,18 @@ pub enum TrustError {
     InvalidSignature,
 }
 
+/// Registered publisher identity and expected signing key.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct PublisherEntry {
+    verifying_key: [u8; 32],
+    level: TrustLevel,
+}
+
 /// Publisher registry used to classify keys after successful verification.
 #[derive(Clone, Debug, Default)]
 pub struct TrustStore {
-    /// Known non-official publishers -> coarse level.
-    publishers: HashMap<PublisherId, TrustLevel>,
+    /// Known publishers and their registered ed25519 verifying keys.
+    publishers: HashMap<PublisherId, PublisherEntry>,
     /// Baked-in official verifying keys (first-party builds).
     official_keys: Vec<[u8; 32]>,
 }
@@ -52,9 +59,23 @@ impl TrustStore {
         Self::default()
     }
 
-    /// Register a publisher id with a non-official trust level.
-    pub fn register_publisher(&mut self, id: PublisherId, level: TrustLevel) {
-        self.publishers.insert(id, level);
+    /// Register a publisher id, its expected ed25519 verifying key, and trust level.
+    ///
+    /// After [`Self::verify_with_author`], a manifest is promoted to `level` only when the
+    /// detached signature was made with `verifying_key` and `author` matches `id`.
+    pub fn register_publisher(
+        &mut self,
+        id: PublisherId,
+        verifying_key: [u8; 32],
+        level: TrustLevel,
+    ) {
+        self.publishers.insert(
+            id,
+            PublisherEntry {
+                verifying_key,
+                level,
+            },
+        );
     }
 
     /// Mark a raw public key as official (Harmonius team).
@@ -87,7 +108,8 @@ impl TrustStore {
         Ok(TrustLevel::Unsigned)
     }
 
-    /// Like [`Self::verify`], but if `author` matches a registered publisher, upgrade from Unsigned.
+    /// Like [`Self::verify`], but if `author` matches a registered publisher **and**
+    /// `sig.publisher_key` equals that publisher's registered key, return the registered level.
     pub fn verify_with_author(
         &self,
         manifest_bytes: &[u8],
@@ -98,10 +120,10 @@ impl TrustStore {
         if matches!(base, TrustLevel::Official) {
             return Ok(TrustLevel::Official);
         }
-        if let Some(level) = self.publishers.get(author).copied()
-            && matches!(level, TrustLevel::Verified | TrustLevel::Community)
+        if let Some(entry) = self.publishers.get(author)
+            && sig.publisher_key == entry.verifying_key
         {
-            return Ok(level);
+            return Ok(entry.level);
         }
         Ok(base)
     }
