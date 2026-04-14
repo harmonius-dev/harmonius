@@ -78,6 +78,7 @@ members = [
   "crates/net-physics",
   "crates/networking_ecs",
   "crates/platform-telemetry",
+  "crates/profiler_game_loop",
   "crates/render-effects",
   "crates/rendering_camera",
   "crates/rendering_ui",
