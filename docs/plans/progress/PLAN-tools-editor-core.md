@@ -1,12 +1,13 @@
 ---
-branch: null
-last_updated: 2026-04-14T02:02:00Z
+branch: plan/tools-editor-core
+last_updated: 2026-04-14T05:11:58Z
 plan_id: PLAN-tools-editor-core
-pr_number: null
-pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+pr_number: 8
+pr_review_status: not_started
+pr_url: https://github.com/cjhowe-us/harmonius/pull/8
+started_at: 2026-04-14T05:11:58Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-editor-core
 ---
 
 # Progress: Tools Editor Core
@@ -15,8 +16,8 @@ Plan file: [editor-core.md](../tools/editor-core.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
+- [x] Worktree created and branch aligned with plan metadata
+- [x] Draft PR opened and linked in frontmatter
 - [ ] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
 - [ ] Red phase complete with failing tests for uncovered scope
@@ -59,5 +60,12 @@ Plan file: [editor-core.md](../tools/editor-core.md)
 
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
   (orchestrator pass; no PR merge).
+- 2026-04-14T05:11:58Z — plan-implementer — started: worktree
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-editor-core`, draft PR
+  <https://github.com/cjhowe-us/harmonius/pull/8> (bootstrap empty commit; branch tracks `main`).
 
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+## Blockers
+
+- Root `Cargo.toml` is a virtual workspace with `members = []`, so `cargo test --workspace` and
+  `cargo clippy --workspace` cannot run until at least one crate is added to the workspace. Next
+  slice should add a minimal `tools`/`editor` crate scaffold, then begin red tests for `TC-*` rows.
