@@ -1,4 +1,4 @@
-//! Reflected-field → widget mapping for editor UI.
+//! Static field-descriptor → widget mapping for editor UI (no runtime reflection).
 
 /// Widget kinds matching primitive editor controls.
 #[derive(Clone, Debug, PartialEq, Eq)]

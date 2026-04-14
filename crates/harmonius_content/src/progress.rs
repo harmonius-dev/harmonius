@@ -26,7 +26,8 @@ impl ProgressTracker {
     /// Record one completion.
     pub fn on_item_completed(&mut self, index: usize) {
         self.completed += 1;
-        self.events.push(ImportProgressEvent::ItemCompleted { index });
+        self.events
+            .push(ImportProgressEvent::ItemCompleted { index });
     }
 
     /// Number finished.

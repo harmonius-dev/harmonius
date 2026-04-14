@@ -19,17 +19,15 @@ pub enum ValidationWarning {
 /// Validate unsupported native version (TC-12.1.4.1).
 pub fn validate_native_version(bytes: &[u8], path: &Path) -> Result<(), ImportError> {
     if bytes.len() < 8 {
-        return Err(ImportError::ValidationFailed {
+        return Err(ImportError::InvalidNativeContainer {
             path: path.to_path_buf(),
-            offset: 0,
-            suggestion: Some("File too small for native header.".into()),
+            reason: "native asset too small for HAST magic and version",
         });
     }
     if &bytes[0..4] != NATIVE_MAGIC {
-        return Err(ImportError::ValidationFailed {
+        return Err(ImportError::InvalidNativeContainer {
             path: path.to_path_buf(),
-            offset: 0,
-            suggestion: Some("Expected HAST magic.".into()),
+            reason: "expected HAST magic",
         });
     }
     let version = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
@@ -48,7 +46,13 @@ pub fn import_with_optional_tags_validation(
     bytes: &[u8],
     path: &Path,
     tags_present: bool,
-) -> Result<(crate::native_format::NativeImportOutput, Vec<ValidationWarning>), ImportError> {
+) -> Result<
+    (
+        crate::native_format::NativeImportOutput,
+        Vec<ValidationWarning>,
+    ),
+    ImportError,
+> {
     let out = import_native_asset(bytes, path)?;
     let mut w = Vec::new();
     if !tags_present {

@@ -6,7 +6,9 @@ use std::path::Path;
 use crate::ContentHash;
 
 /// Walk a fake tree of `n` assets with deterministic bytes; return id→hash map.
-pub fn run_headless_batch_twice(n: usize) -> (BTreeMap<u32, ContentHash>, BTreeMap<u32, ContentHash>) {
+pub fn run_headless_batch_twice(
+    n: usize,
+) -> (BTreeMap<u32, ContentHash>, BTreeMap<u32, ContentHash>) {
     fn once(n: usize) -> BTreeMap<u32, ContentHash> {
         let mut m = BTreeMap::new();
         for i in 0..n as u32 {

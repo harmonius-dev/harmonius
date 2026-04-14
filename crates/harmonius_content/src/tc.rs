@@ -18,7 +18,9 @@ use crate::editor_sync::{EditorMessage, EditorSync, MaterialRuntime};
 use crate::file_watch::{AssetChange, DebouncedWatcher, FileEvent};
 use crate::handle_table::{HandleTable, PendingSwap, SwapScheduler};
 use crate::headless_batch::run_headless_batch_twice;
-use crate::logic_graph::{hot_reload_logic_graph, LogicGraphInstance, LogicGraphSpec, LogicReloadEvent};
+use crate::logic_graph::{
+    hot_reload_logic_graph, LogicGraphInstance, LogicGraphSpec, LogicReloadEvent,
+};
 use crate::material_mapper::{translate_gltf_pbr_material, ImportedMaterial};
 use crate::metadata::{AssetMetadata, AssetType, MetadataStore, SearchFilter};
 use crate::native_format::{build_native_v1, build_native_v1_wrong_hash, import_native_asset};
@@ -27,10 +29,14 @@ use crate::progress::ProgressTracker;
 use crate::shader_reload::ShaderReloader;
 use crate::structural_diff::{diff_mesh_assets, DiffResult, MeshAssetSummary};
 use crate::subasset::{partial_subasset_reimport, CompositeAsset, SubassetEdit};
-use crate::texture_decode::{decode_exr_linear, decode_png_srgb, write_exr_linear_fixture, ColorSpace};
+use crate::texture_decode::{
+    decode_exr_linear, decode_png_srgb, write_exr_linear_fixture, ColorSpace,
+};
 use crate::three_way_merge::{three_way_merge_disjoint_graphs, MergeResult};
 use crate::ui_reload::{reload_ui_panel_style, UiDocument};
-use crate::validation::{import_with_optional_tags_validation, validate_native_version, ValidationWarning};
+use crate::validation::{
+    import_with_optional_tags_validation, validate_native_version, ValidationWarning,
+};
 use crate::version_store::VersionStore;
 use crate::visual_inspector::{visual_inspector_fields, WidgetKind};
 use crate::{
@@ -45,7 +51,12 @@ fn png_4x4_red() -> Vec<u8> {
         enc.set_color(ColorType::Rgba);
         enc.set_depth(BitDepth::Eight);
         let mut w = enc.write_header().unwrap();
-        let data: Vec<u8> = [255u8, 0, 0, 255].iter().cycle().take(64).copied().collect();
+        let data: Vec<u8> = [255u8, 0, 0, 255]
+            .iter()
+            .cycle()
+            .take(64)
+            .copied()
+            .collect();
         w.write_image_data(&data).unwrap();
     }
     buf
@@ -168,8 +179,7 @@ fn test_validation_error_offset() {
 #[test]
 fn test_validation_warning_optional() {
     let bytes = build_native_v1(&[7u8; 12]);
-    let (out, w) =
-        import_with_optional_tags_validation(&bytes, Path::new("a.har"), false).unwrap();
+    let (out, w) = import_with_optional_tags_validation(&bytes, Path::new("a.har"), false).unwrap();
     assert_eq!(out.content_hash, ContentHash::from_data(&bytes[40..]));
     assert!(w.contains(&ValidationWarning::MissingOptional { field: "tags" }));
 }
@@ -180,7 +190,7 @@ fn test_batch_progress_reporting() {
     for i in 0..10 {
         p.on_item_completed(i);
     }
-    let ev: Vec<_> = p.poll().into_iter().map(|e| e).collect();
+    let ev: Vec<_> = p.poll().into_iter().collect();
     assert_eq!(ev.len(), 10);
     assert_eq!(p.completed(), 10);
 }
@@ -615,7 +625,10 @@ fn test_three_way_merge_disjoint() {
     let o = b"nodes:N1";
     let t = b"nodes:N2";
     let m = three_way_merge_disjoint_graphs(a, o, t);
-    let MergeResult::Success { merged } = m;
+    let merged = match m {
+        MergeResult::Success { merged } => merged,
+        other => panic!("expected success merge, got {other:?}"),
+    };
     let s = String::from_utf8(merged).unwrap();
     assert!(s.contains("N1") && s.contains("N2"));
 }

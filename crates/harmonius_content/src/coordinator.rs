@@ -42,17 +42,18 @@ impl ImportCoordinator {
     ) -> Result<ImportResult, ImportError> {
         let key = CacheKey::from_source_and_settings(source, &settings);
         if let Some(artifact) = self.cache.lookup(&key) {
-            return Ok(ImportResult::CacheHit { artifact_key: artifact });
+            return Ok(ImportResult::CacheHit {
+                artifact_key: artifact,
+            });
         }
         let out = import_native_asset(source, path)?;
         self.processor_invocations += 1;
         let NativeImportOutput { content_hash, .. } = out;
         self.cas
             .store(content_hash, &source[40..])
-            .map_err(|e| ImportError::ValidationFailed {
+            .map_err(|e| ImportError::Io {
                 path: path.to_path_buf(),
-                offset: 0,
-                suggestion: Some(e.to_string()),
+                message: e.to_string(),
             })?;
         let id = AssetId(self.next_id);
         self.next_id += 1;
