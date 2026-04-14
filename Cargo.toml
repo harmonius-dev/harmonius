@@ -28,6 +28,7 @@ members = [
   "crates/rendering_ui",
   "crates/save_system_profiler",
   "crates/timelines_audio_integration",
+  "crates/visual_editors",
 ]
 
 [workspace.package]
