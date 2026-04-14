@@ -67,10 +67,11 @@ Plan file: [editor-animation.md](../integration/editor-animation.md)
 - 2026-04-14T05:19:06Z — plan-implementer — started; worktree at
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-editor-animation`; draft PR
   <https://github.com/cjhowe-us/harmonius/pull/35>.
-- 2026-04-14T05:19:06Z — plan-implementer — added `harmonius_integration_editor_animation` crate with
-  design-aligned preview, undo commands, and policy tests TC-IR-5.3.F1–F5 plus TC-IR-5.3.2.4;
-  `cargo test` / `clippy -D warnings` green in worktree.
-- 2026-04-14T05:19:06Z — plan-implementer — `status: code_complete`, `pr_review_status: not_started`;
-  manual screenshot/video evidence deferred until editor viewport wiring exists for this plan.
+- 2026-04-14T05:19:06Z — plan-implementer — added `harmonius_integration_editor_animation` crate
+  (design-aligned preview, undo commands, policy tests TC-IR-5.3.F1–F5 and TC-IR-5.3.2.4).
+  `cargo test` and `clippy -D warnings` green in worktree.
+- 2026-04-14T05:19:06Z — plan-implementer — `status: code_complete`,
+  `pr_review_status: not_started`; manual screenshot/video evidence deferred until editor viewport
+  wiring exists for this plan.
 
 Append ISO-8601 UTC entries with actor, action, and outcome.
