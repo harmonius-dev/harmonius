@@ -11,6 +11,7 @@ members = [
   "crates/harmonius_editor_core",
   "crates/harmonius_event_logs",
   "crates/harmonius_event_logs_ui",
+  "crates/harmonius_game",
   "crates/harmonius_gpu",
   "crates/harmonius_gpu_runtime",
   "crates/harmonius_integration",

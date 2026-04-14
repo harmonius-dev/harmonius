@@ -716,6 +716,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_game"
+version = "0.1.0"
+dependencies = [
+ "glam",
+]
+
+[[package]]
 name = "harmonius_gpu"
 version = "0.1.0"
 dependencies = [
