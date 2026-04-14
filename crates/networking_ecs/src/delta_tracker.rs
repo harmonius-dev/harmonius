@@ -66,6 +66,8 @@ impl DeltaTracker {
 
         let baseline = &mut self.baselines[idx];
         if baseline.state.len() != live.len() {
+            // Stale staged bytes must not survive a layout change; ACKs could otherwise commit them.
+            baseline.staged_live.clear();
             return Err(DeltaError::LayoutMismatch);
         }
 
@@ -87,8 +89,10 @@ impl DeltaTracker {
         }
         if baseline.state.len() == baseline.staged_live.len() {
             baseline.state.copy_from_slice(&baseline.staged_live);
+            baseline.tick = tick;
+        } else {
+            baseline.staged_live.clear();
         }
-        baseline.tick = tick;
     }
 
     /// Returns the stored baseline tick for `client`, if present.
@@ -237,5 +241,27 @@ mod tests {
         assert_eq!(delta.runs.len(), 1);
         assert_eq!(delta.runs[0].offset, 0);
         assert_eq!(delta.runs[0].bytes, vec![0xFF]);
+    }
+
+    #[test]
+    fn layout_mismatch_clears_staging_and_ack_does_not_advance_tick() {
+        let mut tracker = DeltaTracker::new();
+        let client = ConnectionId(3);
+        let entity = Entity(1);
+        tracker
+            .compute_delta(client, entity, SequenceTick(1), &[1, 2])
+            .expect("delta");
+        tracker.advance_baseline(client, SequenceTick(10));
+        assert_eq!(tracker.baseline_tick(client), Some(SequenceTick(10)));
+        assert_eq!(
+            tracker.compute_delta(client, entity, SequenceTick(2), &[1, 2, 3]),
+            Err(DeltaError::LayoutMismatch)
+        );
+        tracker.advance_baseline(client, SequenceTick(99));
+        assert_eq!(
+            tracker.baseline_tick(client),
+            Some(SequenceTick(10)),
+            "tick must not advance when staging cannot commit"
+        );
     }
 }
