@@ -14,6 +14,8 @@ pub enum ExposureMode {
     Manual,
     /// Histogram mean chases a mid-gray target.
     AutomaticHistogram,
+    /// Histogram mean is biased toward the frame center before adaptation.
+    AutomaticCenterWeighted,
 }
 
 /// Exposure configuration carried by a render camera.
@@ -40,13 +42,53 @@ impl ExposureSettings {
         (self.manual_ev100 + self.ev_bias).clamp(self.min_ev, self.max_ev)
     }
 
+    /// Advances exposure for one frame according to [`ExposureSettings::mode`].
+    ///
+    /// Manual mode ignores `sample` and returns [`ExposureSettings::manual_output`].
+    #[must_use]
+    pub fn adapt(self, current_ev: f32, sample: HistogramSample, dt_seconds: f32) -> f32 {
+        match self.mode {
+            ExposureMode::Manual => self.manual_output(),
+            ExposureMode::AutomaticHistogram => {
+                self.adapt_histogram(current_ev, sample, dt_seconds)
+            }
+            ExposureMode::AutomaticCenterWeighted => {
+                self.adapt_center_weighted(current_ev, sample, dt_seconds)
+            }
+        }
+    }
+
     /// Advances automatic histogram exposure by `dt_seconds`.
+    ///
+    /// Callers that want [`ExposureSettings::mode`] honored automatically should use
+    /// [`ExposureSettings::adapt`].
     #[must_use]
     pub fn adapt_histogram(self, current_ev: f32, sample: HistogramSample, dt_seconds: f32) -> f32 {
         const MID_GRAY: f32 = 0.18;
         let target_ev = sample.mean_linear.max(1.0e-6).log2() - MID_GRAY.max(1.0e-6).log2();
         let delta = (target_ev - current_ev) * (self.adaptation_speed * dt_seconds).min(1.0);
         (current_ev + delta + self.ev_bias).clamp(self.min_ev, self.max_ev)
+    }
+
+    /// Advances center-weighted automatic exposure by `dt_seconds`.
+    ///
+    /// Callers supply a **center-weighted** mean linear luminance (for example from a vignette
+    /// kernel). This helper still applies a small deterministic pull toward mid-gray so edge
+    /// blow-outs do not dominate adaptation.
+    #[must_use]
+    pub fn adapt_center_weighted(
+        self,
+        current_ev: f32,
+        sample: HistogramSample,
+        dt_seconds: f32,
+    ) -> f32 {
+        const MID_GRAY: f32 = 0.18;
+        const EDGE_PULL: f32 = 0.25;
+        let biased = sample.mean_linear * (1.0 - EDGE_PULL) + MID_GRAY * EDGE_PULL;
+        let adjusted = HistogramSample {
+            mean_linear: biased,
+        };
+        self.adapt_histogram(current_ev, adjusted, dt_seconds)
     }
 }
 
@@ -120,5 +162,39 @@ mod tests {
         let target = sample.mean_linear.log2() - 0.18_f32.log2();
         let expected_delta = (target - start) * (s.adaptation_speed * (1.0 / 60.0)).min(1.0);
         assert!((next - (start + expected_delta)).abs() < 0.05);
+    }
+
+    /// Center-weighted path moves EV less aggressively than raw histogram for hot highlights.
+    #[test]
+    fn test_exposure_center_weighted_vs_histogram() {
+        let s = ExposureSettings {
+            mode: ExposureMode::AutomaticCenterWeighted,
+            manual_ev100: 0.0,
+            ev_bias: 0.0,
+            adaptation_speed: 4.0,
+            min_ev: -10.0,
+            max_ev: 10.0,
+        };
+        let hot = HistogramSample { mean_linear: 0.9 };
+        let hist = s.adapt_histogram(0.0, hot, 1.0 / 60.0);
+        let center = s.adapt_center_weighted(0.0, hot, 1.0 / 60.0);
+        assert!(center.abs() <= hist.abs() + 1.0e-3);
+        let routed = s.adapt(0.0, hot, 1.0 / 60.0);
+        assert!((routed - center).abs() < 1.0e-4);
+    }
+
+    /// [`ExposureSettings::adapt`] routes manual mode to a constant output.
+    #[test]
+    fn test_exposure_adapt_manual_ignores_sample() {
+        let s = ExposureSettings {
+            mode: ExposureMode::Manual,
+            manual_ev100: 2.0,
+            ev_bias: 0.5,
+            adaptation_speed: 1.0,
+            min_ev: -10.0,
+            max_ev: 10.0,
+        };
+        let noisy = HistogramSample { mean_linear: 50.0 };
+        assert!((s.adapt(0.0, noisy, 1.0) - s.manual_output()).abs() < 1.0e-4);
     }
 }

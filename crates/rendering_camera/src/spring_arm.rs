@@ -1,4 +1,8 @@
 //! Spring-arm boom retraction without pulling in a full physics engine (`R-2.7.1`).
+//!
+//! `SpringArmWorld` uses a trait so real physics and deterministic narrow fakes share one call
+//! site; this matches the engine constraint to avoid mock frameworks while keeping casts
+//! swappable.
 
 /// Result of a sphere cast along the boom direction.
 #[derive(Clone, Copy, Debug, PartialEq)]

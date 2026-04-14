@@ -25,6 +25,9 @@ pub struct PipCamera {
 }
 
 /// Returns camera indices sorted for composite: low priority first, high priority last (on top).
+///
+/// This allocates a scratch `Vec` each call; the design mentions `SmallVec` for hot paths once
+/// PiP lists are wired into the render thread.
 #[must_use]
 pub fn composite_order(cameras: &[PipCamera]) -> Vec<u32> {
     let mut ordered: Vec<PipCamera> = cameras.to_vec();

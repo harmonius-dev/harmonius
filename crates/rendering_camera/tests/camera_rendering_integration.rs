@@ -1,8 +1,8 @@
 use std::cell::Cell;
 
 use rendering_camera::{
-    boom_tip, DofSettings, ExposureMode, ExposureSettings, HistogramSample, SphereCastQuery,
-    SphereCastResult, SpringArm, SpringArmWorld,
+    boom_tip, BokehShape, DofSettings, ExposureMode, ExposureSettings, HistogramSample,
+    SphereCastQuery, SphereCastResult, SpringArm, SpringArmWorld,
 };
 
 struct ToggleObstructionWorld {
@@ -21,9 +21,9 @@ impl SpringArmWorld for ToggleObstructionWorld {
     }
 }
 
-/// TC-2.7.1.5 — scripted obstruction clears and the boom never collapses onto the pivot.
+/// TC-2.7.1.5 — deterministic scripted sphere cast; no physics engine in this crate yet.
 #[test]
-fn test_spring_arm_with_real_physics_scene() {
+fn test_spring_arm_with_scripted_obstruction_world() {
     let world = ToggleObstructionWorld {
         frames: Cell::new(0),
     };
@@ -54,14 +54,15 @@ fn test_spring_arm_with_real_physics_scene() {
     assert!((arm.current_length - arm.desired_length).abs() < 0.15);
 }
 
-/// TC-2.7.6.4 — DoF pass validation succeeds for sane settings.
+/// TC-2.7.6.4 — pass gating: sane DoF settings validate before a GPU DoF pass exists.
 #[test]
-fn test_dof_pass_renders_without_error() {
+fn test_dof_pass_settings_validate_for_pass() {
     let settings = DofSettings {
         enabled: true,
         focus_distance_m: 2.5,
         focal_length_mm: 50.0,
         aperture_fstop: 2.0,
+        bokeh_shape: BokehShape::Circle,
     };
     assert!(settings.validate_for_pass().is_ok());
 }
