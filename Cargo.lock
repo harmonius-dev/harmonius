@@ -809,6 +809,16 @@ name = "harmonius_shared_messaging_capacities"
 version = "0.1.0"
 
 [[package]]
+name = "harmonius_sim"
+version = "0.1.0"
+dependencies = [
+ "glam",
+ "rkyv 0.8.16",
+ "rkyv_derive 0.8.16",
+ "smallvec",
+]
+
+[[package]]
 name = "harmonius_timelines_scripting"
 version = "0.1.0"
 dependencies = [

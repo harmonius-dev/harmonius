@@ -25,6 +25,7 @@ members = [
   "crates/harmonius_scripting",
   "crates/harmonius_scripting_data_tables_integration",
   "crates/harmonius_shared_messaging_capacities",
+  "crates/harmonius_sim",
   "crates/harmonius_timelines_scripting",
   "crates/harmonius_undo",
   "crates/integration-scripting-ui",

@@ -1,0 +1,12 @@
+[package]
+description = "Typed grids and voxel volumes for Harmonius simulation."
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_sim"
+version = "0.1.0"
+
+[dependencies]
+glam = "0.29.2"
+rkyv = { version = "0.8.15", features = ["std", "pointer_width_64"] }
+rkyv_derive = "0.8.15"
+smallvec = { version = "1.15.0", features = ["const_generics"] }
