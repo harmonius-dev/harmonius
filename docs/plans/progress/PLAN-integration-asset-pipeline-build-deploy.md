@@ -1,9 +1,9 @@
 ---
 branch: plan/integration-asset-pipeline-build-deploy
-last_updated: 2026-04-14T05:23:39Z
+last_updated: 2026-04-14T05:28:00Z
 plan_id: PLAN-integration-asset-pipeline-build-deploy
-pr_number: null
-pr_url: null
+pr_number: 63
+pr_url: https://github.com/cjhowe-us/harmonius/pull/63
 pr_review_status: not_started
 started_at: 2026-04-14T05:23:39Z
 status: code_complete
@@ -17,7 +17,7 @@ Plan file: [asset-pipeline-build-deploy.md](../integration/asset-pipeline-build-
 ## Status checklist
 
 - [x] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
+- [x] Draft PR opened and linked in frontmatter
 - [x] Design and companion test-case docs reviewed
 - [x] Requirement and user-story trace matrix completed
 - [x] Red phase complete with failing tests for uncovered scope
@@ -33,6 +33,7 @@ Plan file: [asset-pipeline-build-deploy.md](../integration/asset-pipeline-build-
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
+- [x] Code complete marker set
 
 ## Implementation readiness gate
 
@@ -63,5 +64,7 @@ Plan file: [asset-pipeline-build-deploy.md](../integration/asset-pipeline-build-
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-asset-pipeline-build-deploy`.
 - 2026-04-14T05:23:39Z — plan-implementer — code complete: `harmonius_asset_build` +
   `harmonius-integration-tests` + `harmonius-integration-benches`; awaiting `pr-reviewer`.
+- 2026-04-14T05:28:00Z — plan-implementer — draft PR opened:
+  https://github.com/cjhowe-us/harmonius/pull/63
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
