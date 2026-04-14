@@ -1,0 +1,15 @@
+error[E0308]: mismatched types
+ --> tests/compile_fail/handle_type_mismatch.rs:9:21
+  |
+9 |     let _ = map.get(h);
+  |                 --- ^ expected `Handle<Texture>`, found `Handle<Mesh>`
+  |                 |
+  |                 arguments to this method are incorrect
+  |
+  = note: expected struct `Handle<Texture>`
+             found struct `Handle<Mesh>`
+note: method defined here
+ --> src/handle_map.rs
+  |
+  |     pub fn get(&self, handle: Handle<T>) -> Option<&T> {
+  |            ^^^
