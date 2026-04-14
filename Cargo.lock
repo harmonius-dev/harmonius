@@ -893,7 +893,11 @@ dependencies = [
 name = "harmonius_platform"
 version = "0.1.0"
 dependencies = [
- "raw-window-handle",
+ "crossbeam-channel",
+ "crossbeam-deque",
+ "crossbeam-utils",
+ "smallvec",
+ "tempfile",
 ]
 
 [[package]]
