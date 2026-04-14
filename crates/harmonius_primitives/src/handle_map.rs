@@ -1,7 +1,8 @@
 //! Dense map keyed by [`crate::Handle`].
 
+use alloc::vec::Vec;
+
 use crate::handle::Handle;
-use std::vec::Vec;
 
 struct Slot<T> {
     generation: u32,
@@ -12,8 +13,8 @@ struct Slot<T> {
 pub struct HandleMap<T> {
     entries: Vec<Slot<T>>,
     free: Vec<u32>,
-    /// Monotonic insert counter retained for diagnostics and forward-compat with the design doc.
-    generation_counter: u32,
+    /// Monotonic insert sequence for diagnostics only (not used for handle validity).
+    diagnostic_insert_seq: u32,
 }
 
 impl<T: 'static> Default for HandleMap<T> {
@@ -46,13 +47,13 @@ impl<T: 'static> HandleMap<T> {
         Self {
             entries: Vec::with_capacity(n),
             free: Vec::new(),
-            generation_counter: 0,
+            diagnostic_insert_seq: 0,
         }
     }
 
     /// Inserts `value` and returns a fresh [`Handle`].
     pub fn insert(&mut self, value: T) -> Handle<T> {
-        self.generation_counter = self.generation_counter.wrapping_add(1);
+        self.diagnostic_insert_seq = self.diagnostic_insert_seq.wrapping_add(1);
         if let Some(i) = self.free.pop() {
             let slot = &mut self.entries[i as usize];
             debug_assert!(slot.value.is_none());

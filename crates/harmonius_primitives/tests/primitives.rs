@@ -59,7 +59,7 @@ fn tc_1_7_5_1_slot_map_dense_iteration() {
     let sum: i32 = map.as_slice().iter().sum();
     let expected: i32 = (0..1000).filter(|i| i % 3 != 0).sum();
     assert_eq!(sum, expected);
-    let removed = (handles.len() + 2) / 3;
+    let removed = handles.len().div_ceil(3);
     assert_eq!(map.as_slice().len(), handles.len() - removed);
 }
 
@@ -96,10 +96,16 @@ fn tc_1_9_2_1_sorted_vec_map_ordering_and_replace() {
     assert_eq!(map.get(&3), Some(&99));
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct CountingKey(i32);
 
 static CMP_COUNT: AtomicUsize = AtomicUsize::new(0);
+
+impl PartialOrd for CountingKey {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 impl Ord for CountingKey {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -214,9 +220,24 @@ fn tc_1_7_6_2_budget_allocator_over_budget() {
 
 #[test]
 fn tc_1_9_6_1_deterministic_rng_reproducible_sequence() {
+    const GOLDEN: [u64; 8] = [
+        14219364052333592195,
+        7332719151195188792,
+        6122488799882574371,
+        4799409443904522999,
+        18090429560773761838,
+        11343726250536552999,
+        17589260921017250467,
+        6105855439640220682,
+    ];
     let mut a = DeterministicRng::seed(0xDEADBEEF);
     let mut b = DeterministicRng::seed(0xDEADBEEF);
-    for _ in 0..1000 {
+    for (i, expected) in GOLDEN.iter().enumerate() {
+        let v = a.next_u64();
+        assert_eq!(v, *expected, "golden mismatch at index {i}");
+        assert_eq!(b.next_u64(), v);
+    }
+    for _ in GOLDEN.len()..1000 {
         assert_eq!(a.next_u64(), b.next_u64());
     }
 }

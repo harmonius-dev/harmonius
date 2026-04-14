@@ -43,6 +43,8 @@ impl DirtyRegionSet {
     }
 
     /// Merges overlapping or face-adjacent regions (inclusive integer bounds).
+    ///
+    /// Worst-case work is **O(n²)** in the number of regions; intended for small dirty sets.
     pub fn coalesce(&mut self) {
         if self.regions.is_empty() {
             return;
