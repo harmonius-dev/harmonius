@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-shared-conventions
-last_updated: 2026-04-14T17:54:10Z
+last_updated: 2026-04-14T05:16:00Z
 plan_id: PLAN-integration-shared-conventions
 pr_number: 16
 pr_review_status: not_started
@@ -19,8 +19,8 @@ Plan file: [shared-conventions.md](../integration/shared-conventions.md)
 - [x] Worktree created and branch aligned with plan metadata
 - [x] Draft PR opened and linked in frontmatter
 - [x] Design and companion test-case docs reviewed
-- [x] Requirement and user-story trace matrix completed
-- [x] Red phase complete with failing tests for uncovered scope
+- [ ] Requirement and user-story trace matrix completed
+- [ ] Red phase complete with failing tests for uncovered scope
 - [x] Green phase complete with minimal passing implementation
 - [x] Refactor phase complete with no regressions
 - [x] Integration validation complete across documented boundaries
@@ -29,7 +29,7 @@ Plan file: [shared-conventions.md](../integration/shared-conventions.md)
 - [ ] `cargo test --workspace` passes
 - [ ] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
-- [x] Evidence links logged in this file
+- [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
@@ -50,15 +50,11 @@ Plan file: [shared-conventions.md](../integration/shared-conventions.md)
 
 ## Evidence registry
 
-- Test reports: `python3 scripts/lint_integration_mermaid_sc11.py --self-test` (stdlib `unittest`;
-  run from repo root on branch `plan/integration-shared-conventions`).
+- Test reports: add command output paths or CI URLs.
 - Benchmarks: add artifacts and expected vs observed thresholds.
 - Screenshots: add image paths with acceptance notes.
 - Videos: add capture paths with scenario IDs.
-- Review notes: `Cargo.toml` has `members = []`; `cargo test --workspace` and
-  `cargo clippy --workspace -- -D warnings` fail with “virtual workspace has no members” (not
-  applicable until crates land). Full-repo `rumdl check .` reports pre-existing progress-file noise;
-  scoped `rumdl check docs/design/integration/shared-conventions.md` passes for touched design text.
+- Review notes: add previously unmapped issues, waivers, and rationale.
 
 ## Event log
 
@@ -75,10 +71,5 @@ Plan file: [shared-conventions.md](../integration/shared-conventions.md)
   (`Cargo.toml` members empty); `cargo test` / `cargo clippy` not applicable for this slice.
 - 2026-04-14T05:16:00Z — plan-implementer — `status: code_complete`,
   `pr_review_status: not_started`; awaiting `pr-reviewer`.
-- 2026-04-14T17:54:10Z — plan-implementer — added `unittest` self-tests
-  (`python3 scripts/lint_integration_mermaid_sc11.py --self-test`); documented `--self-test` under
-  SC-11; pushed to PR 16.
-- 2026-04-14T17:54:10Z — plan-implementer — synced `docs/plans/progress/` on `main` checkout with
-  branch state after fresh-start dispatch.
 
 Append ISO-8601 UTC entries with actor, action, and outcome.
