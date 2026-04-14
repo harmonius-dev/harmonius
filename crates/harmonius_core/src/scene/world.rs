@@ -635,6 +635,8 @@ impl Default for World {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Mutex;
+
     use glam::{Vec2, Vec3};
 
     use super::super::propagation::propagate_transforms;
@@ -646,6 +648,10 @@ mod tests {
         BreadthFirstIterator, DepthFirstIterator,
     };
     use super::*;
+
+    /// Serializes tests that read/write global traversal diagnostics (`DEPTH_WARNINGS`,
+    /// `HEAP_SPILLS`) so parallel `cargo test` runs stay deterministic.
+    static TRAVERSAL_DIAG_TESTS_MUTEX: Mutex<()> = Mutex::new(());
 
     #[test]
     fn tc_1_2_4_4_propagation_root_only() {
@@ -1031,6 +1037,9 @@ mod tests {
 
     #[test]
     fn tc_1_2_2_7_depth_warning() {
+        let _guard = TRAVERSAL_DIAG_TESTS_MUTEX
+            .lock()
+            .expect("traversal diagnostic test mutex poisoned");
         reset_depth_warning_count();
         let mut world = World::new();
         let mut parent = world.spawn_transform(Transform::IDENTITY);
@@ -1053,6 +1062,9 @@ mod tests {
 
     #[test]
     fn tc_1_2_2_5_traversal_256_wide_no_heap_spill() {
+        let _guard = TRAVERSAL_DIAG_TESTS_MUTEX
+            .lock()
+            .expect("traversal diagnostic test mutex poisoned");
         reset_heap_spill_count();
         let mut world = World::new();
         let root = world.spawn_transform(Transform::IDENTITY);
@@ -1068,6 +1080,9 @@ mod tests {
 
     #[test]
     fn tc_1_2_2_6_traversal_257_wide_heap_fallback() {
+        let _guard = TRAVERSAL_DIAG_TESTS_MUTEX
+            .lock()
+            .expect("traversal diagnostic test mutex poisoned");
         reset_heap_spill_count();
         let mut world = World::new();
         let root = world.spawn_transform(Transform::IDENTITY);
