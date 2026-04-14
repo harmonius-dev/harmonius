@@ -67,8 +67,27 @@ impl DecalLifecycle {
     ///
     /// Matches **TC-11.2.4.1**: 1s fade-in, 2s sustain, 1s dissolve.
     pub fn opacity(&self) -> f32 {
-        // Red-phase stub (TC-11.2.4.1): implementation lands in the follow-up green commit.
-        let _ = self.elapsed;
+        let t = self.elapsed;
+        let fi = self.fade_in_secs.max(f32::EPSILON);
+        let sus = self.sustain_secs.max(0.0);
+        let dis = self.dissolve_secs.max(f32::EPSILON);
+        let t_fi = fi;
+        let t_sus = t_fi + sus;
+        let t_dis = t_sus + dis;
+
+        if t <= 0.0 {
+            return 0.0;
+        }
+        if t < t_fi {
+            return (t / fi).clamp(0.0, 1.0);
+        }
+        if t < t_sus {
+            return 1.0;
+        }
+        if t < t_dis {
+            let u = (t - t_sus) / dis;
+            return (1.0 - u).clamp(0.0, 1.0);
+        }
         0.0
     }
 }
