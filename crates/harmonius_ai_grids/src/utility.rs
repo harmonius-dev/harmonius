@@ -40,7 +40,8 @@ pub fn score_grid_cell_2d(
     consideration: GridCellConsideration,
     curve: ResponseCurve,
 ) -> f32 {
-    let Some((wx, wy)) = blackboard.world_position_xy(consideration.position_x, consideration.position_y)
+    let Some((wx, wy)) =
+        blackboard.world_position_xy(consideration.position_x, consideration.position_y)
     else {
         return 0.0;
     };

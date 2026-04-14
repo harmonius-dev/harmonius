@@ -2,12 +2,14 @@
 //!
 //! Implements integration requirements IR-2.3.1–IR-2.3.6 from
 //! `docs/design/integration/ai-grids-volumes.md`.
+//!
+//! Double-buffering uses in-crate paired `Vec` buffers with explicit
+//! [`UniformGrid::swap_buffers`] / [`VoxelVolume::swap_buffers`], rather than shared
+//! `Arc` snapshots, until a host snapshot type is wired at the engine boundary.
 
 #![deny(clippy::all)]
 #![deny(missing_docs)]
 #![deny(unsafe_code)]
-
-pub use crossbeam_channel::Receiver;
 
 mod blackboard;
 mod coord;
@@ -29,10 +31,13 @@ pub use drain::{
     apply_pending_writes, apply_pending_writes_voxel, drain_influence_writes, max_writes_per_grid,
     DrainStats, InfluenceWriteCommand,
 };
+
+/// Bounded receiver for [`open_influence_channel`] (per-grid MPSC queue).
+pub type InfluenceWriteReceiver = crossbeam_channel::Receiver<InfluenceWriteCommand>;
 pub use entity::Entity;
 pub use flow::{
-    sample_flow_field_2d, sample_flow_field_2d_cell, sample_flow_field_3d, sample_flow_field_3d_voxel,
-    FlowFieldSample,
+    sample_flow_field_2d, sample_flow_field_2d_cell, sample_flow_field_3d,
+    sample_flow_field_3d_voxel, FlowFieldSample,
 };
 pub use goap::{
     influence_at_cell, influence_at_voxel, refresh_goap_safe_zone_2d, refresh_goap_safe_zone_3d,
@@ -40,8 +45,8 @@ pub use goap::{
 pub use hierarchical::HierarchicalGrid;
 pub use influence::{
     enqueue_influence_write, open_influence_channel, run_bt_influence_sample, BtInfluenceSample,
-    BtInfluenceWrite, EnqueueResult, InfluenceSource, InfluenceWriteMode, InfluenceWriteMsg,
-    InfluenceWriterState, MAX_WRITES_PER_GRID,
+    BtInfluenceWrite, EnqueueResult, InfluenceSource, InfluenceWriteGrids, InfluenceWriteMode,
+    InfluenceWriteMsg, InfluenceWriterState, MAX_WRITES_PER_GRID,
 };
 pub use math::{Vec2, Vec3};
 pub use propagation::{propagate_influence_2d_four_way, PropagationStats};

@@ -1,4 +1,4 @@
-use crossbeam_channel::{Receiver, Sender, TrySendError};
+use crossbeam_channel::{Sender, TrySendError};
 
 use crate::blackboard::{Blackboard, BlackboardKey, BlackboardValue};
 use crate::coord::{CellCoord, CellOrVoxel, VoxelCoord};
@@ -9,6 +9,18 @@ use crate::voxel::VoxelVolume;
 
 /// Maximum queued influence writes per grid (shared messaging capacities CH-12).
 pub const MAX_WRITES_PER_GRID: usize = 4096;
+
+/// Optional grid handles for [`enqueue_influence_write`] (only the handle matching `write.source`
+/// must be present).
+#[derive(Clone, Copy, Default)]
+pub struct InfluenceWriteGrids<'a> {
+    /// 2D uniform influence grid.
+    pub uniform: Option<&'a UniformGrid<f32>>,
+    /// 3D voxel influence volume.
+    pub voxel: Option<&'a VoxelVolume<f32>>,
+    /// Multi-LOD 2D hierarchy (finest LOD is used for world quantization).
+    pub hierarchical: Option<&'a HierarchicalGrid<f32>>,
+}
 
 /// Selects which backing store an influence sample reads from.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -91,6 +103,8 @@ pub enum EnqueueResult {
     Accepted,
     /// Channel was full; message dropped.
     DroppedChannelFull,
+    /// Receiver was dropped; message could not be delivered.
+    DroppedChannelDisconnected,
     /// Missing blackboard keys.
     DroppedMissingKey,
     /// Grid entity generation mismatch.
@@ -114,7 +128,9 @@ impl InfluenceWriterState {
 
 /// Opens a bounded channel pair for influence writes.
 #[must_use]
-pub fn open_influence_channel(grid_entity: Entity) -> (InfluenceWriterState, Receiver<crate::drain::InfluenceWriteCommand>) {
+pub fn open_influence_channel(
+    grid_entity: Entity,
+) -> (InfluenceWriterState, crate::InfluenceWriteReceiver) {
     let (sender, receiver) = crossbeam_channel::bounded(MAX_WRITES_PER_GRID);
     (
         InfluenceWriterState {
@@ -146,8 +162,7 @@ pub fn run_bt_influence_sample(
                 blackboard.insert(sample.target_key, BlackboardValue::Unknown);
                 return false;
             };
-            let Some((wx, wy)) =
-                blackboard.world_position_xy(sample.position_x, sample.position_y)
+            let Some((wx, wy)) = blackboard.world_position_xy(sample.position_x, sample.position_y)
             else {
                 blackboard.insert(sample.target_key, BlackboardValue::Unknown);
                 return false;
@@ -200,8 +215,7 @@ pub fn run_bt_influence_sample(
                 blackboard.insert(sample.target_key, BlackboardValue::Unknown);
                 return false;
             };
-            let Some((wx, wy)) =
-                blackboard.world_position_xy(sample.position_x, sample.position_y)
+            let Some((wx, wy)) = blackboard.world_position_xy(sample.position_x, sample.position_y)
             else {
                 blackboard.insert(sample.target_key, BlackboardValue::Unknown);
                 return false;
@@ -246,27 +260,43 @@ pub fn enqueue_influence_write(
     blackboard: &Blackboard,
     sender_entity_index: u32,
     seq: u64,
-    uniform: Option<&UniformGrid<f32>>,
-    voxel: Option<&VoxelVolume<f32>>,
+    grids: InfluenceWriteGrids<'_>,
 ) -> EnqueueResult {
     if write.grid_entity != writer.grid_entity {
+        tracing::warn!(
+            target: "harmonius_ai_grids::influence",
+            reason = "stale_entity",
+            "influence write dropped"
+        );
         return EnqueueResult::DroppedStaleEntity;
     }
 
     let value = match blackboard.get(write.value_key) {
         Some(BlackboardValue::F32(v)) => *v,
-        _ => return EnqueueResult::DroppedMissingKey,
+        _ => {
+            tracing::warn!(
+                target: "harmonius_ai_grids::influence",
+                reason = "missing_value_key",
+                "influence write dropped"
+            );
+            return EnqueueResult::DroppedMissingKey;
+        }
     };
 
     let cell = match write.source {
         InfluenceSource::Uniform2D => {
-            let Some((wx, wy)) =
-                blackboard.world_position_xy(write.position_x, write.position_y)
+            let Some((wx, wy)) = blackboard.world_position_xy(write.position_x, write.position_y)
             else {
+                tracing::warn!(
+                    target: "harmonius_ai_grids::influence",
+                    reason = "missing_position",
+                    "influence write dropped"
+                );
                 return EnqueueResult::DroppedMissingKey;
             };
-            let coord = if let Some(g) = uniform {
-                g.world_to_cell(wx, wy).unwrap_or(CellCoord { x: -1, y: -1 })
+            let coord = if let Some(g) = grids.uniform {
+                g.world_to_cell(wx, wy)
+                    .unwrap_or(CellCoord { x: -1, y: -1 })
             } else {
                 CellCoord {
                     x: wx.floor() as i32,
@@ -277,15 +307,29 @@ pub fn enqueue_influence_write(
         }
         InfluenceSource::Voxel3D => {
             let Some(pz) = write.position_z else {
+                tracing::warn!(
+                    target: "harmonius_ai_grids::influence",
+                    reason = "missing_position_z_key",
+                    "influence write dropped"
+                );
                 return EnqueueResult::DroppedMissingKey;
             };
             let Some((wx, wy, wz)) =
                 blackboard.world_position_xyz(write.position_x, write.position_y, pz)
             else {
+                tracing::warn!(
+                    target: "harmonius_ai_grids::influence",
+                    reason = "missing_position",
+                    "influence write dropped"
+                );
                 return EnqueueResult::DroppedMissingKey;
             };
-            let coord = if let Some(v) = voxel {
-                v.world_to_voxel(wx, wy, wz).unwrap_or(VoxelCoord { x: -1, y: -1, z: -1 })
+            let coord = if let Some(v) = grids.voxel {
+                v.world_to_voxel(wx, wy, wz).unwrap_or(VoxelCoord {
+                    x: -1,
+                    y: -1,
+                    z: -1,
+                })
             } else {
                 VoxelCoord {
                     x: wx.floor() as i32,
@@ -295,16 +339,46 @@ pub fn enqueue_influence_write(
             };
             CellOrVoxel::Voxel(coord)
         }
-        InfluenceSource::Hierarchical2D { .. } => {
-            let Some((wx, wy)) =
-                blackboard.world_position_xy(write.position_x, write.position_y)
+        InfluenceSource::Hierarchical2D { lod } => {
+            let Some((wx, wy)) = blackboard.world_position_xy(write.position_x, write.position_y)
             else {
+                tracing::warn!(
+                    target: "harmonius_ai_grids::influence",
+                    reason = "missing_position",
+                    "influence write dropped"
+                );
                 return EnqueueResult::DroppedMissingKey;
             };
-            CellOrVoxel::Cell(CellCoord {
-                x: wx.floor() as i32,
-                y: wy.floor() as i32,
-            })
+            let Some(h) = grids.hierarchical else {
+                tracing::warn!(
+                    target: "harmonius_ai_grids::influence",
+                    reason = "missing_hierarchical_grid",
+                    "influence write dropped"
+                );
+                return EnqueueResult::DroppedMissingKey;
+            };
+            let Some(fine_grid) = h.lods().first() else {
+                tracing::warn!(
+                    target: "harmonius_ai_grids::influence",
+                    reason = "empty_hierarchical_grid",
+                    "influence write dropped"
+                );
+                return EnqueueResult::DroppedMissingKey;
+            };
+            let coord = match fine_grid.world_to_cell(wx, wy) {
+                Some(mut cell) => {
+                    let shift = i32::from(lod);
+                    if shift > 0 {
+                        cell = CellCoord {
+                            x: cell.x >> shift,
+                            y: cell.y >> shift,
+                        };
+                    }
+                    cell
+                }
+                None => CellCoord { x: -1, y: -1 },
+            };
+            CellOrVoxel::Cell(coord)
         }
     };
 
@@ -318,7 +392,21 @@ pub fn enqueue_influence_write(
 
     match writer.sender.try_send(command) {
         Ok(()) => EnqueueResult::Accepted,
-        Err(TrySendError::Full(_)) => EnqueueResult::DroppedChannelFull,
-        Err(TrySendError::Disconnected(_)) => EnqueueResult::DroppedChannelFull,
+        Err(TrySendError::Full(_)) => {
+            tracing::warn!(
+                target: "harmonius_ai_grids::influence",
+                reason = "channel_full",
+                "influence write dropped"
+            );
+            EnqueueResult::DroppedChannelFull
+        }
+        Err(TrySendError::Disconnected(_)) => {
+            tracing::warn!(
+                target: "harmonius_ai_grids::influence",
+                reason = "channel_disconnected",
+                "influence write dropped"
+            );
+            EnqueueResult::DroppedChannelDisconnected
+        }
     }
 }

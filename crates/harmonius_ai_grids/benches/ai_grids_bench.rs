@@ -1,10 +1,13 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use harmonius_ai_grids::{
-    enqueue_influence_write, open_influence_channel, run_bt_influence_sample, sample_flow_field_2d,
-    sample_flow_field_3d, Blackboard, BlackboardKey, BlackboardValue, BtInfluenceSample,
-    BtInfluenceWrite, CellCoord, Entity, FlowFieldSample, GridCellConsideration, HierarchicalGrid,
-    InfluenceSource, InfluenceWriteMode, ResponseCurve, UniformGrid, Vec2, Vec3, VoxelCoord,
-    VoxelVolume,
+    apply_pending_writes, apply_pending_writes_voxel, enqueue_influence_write,
+    fog_condition_at_world_2d, open_influence_channel, propagate_influence_2d_four_way,
+    refresh_goap_safe_zone_2d, refresh_goap_safe_zone_3d, run_bt_influence_sample,
+    sample_flow_field_2d, sample_flow_field_3d, score_grid_cell_3d, Blackboard, BlackboardKey,
+    BlackboardValue, BtInfluenceSample, BtInfluenceWrite, CellCoord, CellOrVoxel, Entity,
+    FlowFieldSample, FogState, GridCellConsideration, HierarchicalGrid, InfluenceSource,
+    InfluenceWriteCommand, InfluenceWriteGrids, InfluenceWriteMode, ResponseCurve, UniformGrid,
+    Vec2, Vec3, VoxelCoord, VoxelVolume,
 };
 
 fn bench_influence_samples_2d(c: &mut Criterion) {
@@ -27,14 +30,7 @@ fn bench_influence_samples_2d(c: &mut Criterion) {
             for i in 0..1000 {
                 let x = black_box(i % 255) as f32;
                 bb.insert(BlackboardKey(1), BlackboardValue::F32(x));
-                let _ = run_bt_influence_sample(
-                    sample,
-                    entity,
-                    Some(&grid),
-                    None,
-                    None,
-                    &mut bb,
-                );
+                let _ = run_bt_influence_sample(sample, entity, Some(&grid), None, None, &mut bb);
             }
         });
     });
@@ -60,14 +56,7 @@ fn bench_voxel_samples(c: &mut Criterion) {
                 bb.insert(BlackboardKey(1), BlackboardValue::F32(v));
                 bb.insert(BlackboardKey(2), BlackboardValue::F32(v));
                 bb.insert(BlackboardKey(3), BlackboardValue::F32(v));
-                let _ = run_bt_influence_sample(
-                    sample,
-                    entity,
-                    None,
-                    Some(&vol),
-                    None,
-                    &mut bb,
-                );
+                let _ = run_bt_influence_sample(sample, entity, None, Some(&vol), None, &mut bb);
             }
         });
     });
@@ -95,21 +84,22 @@ fn bench_hierarchical_samples(c: &mut Criterion) {
                 let v = black_box(i % 127) as f32;
                 bb.insert(BlackboardKey(1), BlackboardValue::F32(v));
                 bb.insert(BlackboardKey(2), BlackboardValue::F32(v));
-                let _ = run_bt_influence_sample(
-                    sample,
-                    entity,
-                    None,
-                    None,
-                    Some(&hier),
-                    &mut bb,
-                );
+                let _ = run_bt_influence_sample(sample, entity, None, None, Some(&hier), &mut bb);
             }
         });
     });
 }
 
 fn bench_flow_reads(c: &mut Criterion) {
-    let mut grid = UniformGrid::new(128, 128, 1.0, 0.0, 0.0, Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0));
+    let mut grid = UniformGrid::new(
+        128,
+        128,
+        1.0,
+        0.0,
+        0.0,
+        Vec2::new(0.0, 0.0),
+        Vec2::new(1.0, 0.0),
+    );
     grid.sync_back_from_front();
     grid.swap_buffers();
 
@@ -180,8 +170,113 @@ fn bench_goap_refreshes(c: &mut Criterion) {
         b.iter(|| {
             for i in 0..500 {
                 let v = black_box(i % 63) as f32;
-                let _ = harmonius_ai_grids::refresh_goap_safe_zone_2d(&grid, v, 1.0, 0.7);
+                let _ = refresh_goap_safe_zone_2d(&grid, v, 1.0, 0.7);
             }
+        });
+    });
+}
+
+fn bench_goap_refreshes_3d(c: &mut Criterion) {
+    let vol = VoxelVolume::new(32, 32, 32, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+
+    c.bench_function("tc_ir_2_3_5_b2_500_goap_3d_refreshes", |b| {
+        b.iter(|| {
+            for i in 0..500 {
+                let v = black_box(i % 31) as f32;
+                let _ = refresh_goap_safe_zone_3d(&vol, v, 1.0, 1.0, 0.7);
+            }
+        });
+    });
+}
+
+fn bench_fog_checks(c: &mut Criterion) {
+    let grid = UniformGrid::new(64, 64, 1.0, 0.0, 0.0, FogState::Visible, FogState::Visible);
+
+    c.bench_function("tc_ir_2_3_3_b1_500_fog_checks", |b| {
+        b.iter(|| {
+            for i in 0..500 {
+                let v = black_box(i % 63) as f32;
+                let _ = fog_condition_at_world_2d(&grid, v, 1.0, FogState::Visible);
+            }
+        });
+    });
+}
+
+fn bench_utility_scores_3d(c: &mut Criterion) {
+    let vol = VoxelVolume::new(32, 32, 32, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+
+    c.bench_function("tc_ir_2_3_4_b2_500_utility_scores_3d", |b| {
+        b.iter(|| {
+            let mut bb = Blackboard::new();
+            for i in 0..500 {
+                let v = black_box(i % 31) as f32;
+                bb.insert(BlackboardKey(1), BlackboardValue::F32(v));
+                bb.insert(BlackboardKey(2), BlackboardValue::F32(v));
+                bb.insert(BlackboardKey(3), BlackboardValue::F32(v));
+                let _ = score_grid_cell_3d(
+                    &vol,
+                    &bb,
+                    BlackboardKey(1),
+                    BlackboardKey(2),
+                    BlackboardKey(3),
+                    ResponseCurve::Linear,
+                );
+            }
+        });
+    });
+}
+
+fn bench_drain_and_propagate_2d(c: &mut Criterion) {
+    let entity = Entity::new(1, 1);
+    let batch: Vec<InfluenceWriteCommand> = (0..1024)
+        .map(|i| InfluenceWriteCommand {
+            cell: CellOrVoxel::Cell(CellCoord {
+                x: (i % 255) as i32,
+                y: ((i / 255) % 255) as i32,
+            }),
+            value: 0.01,
+            mode: InfluenceWriteMode::Additive,
+            sender_entity_index: 1,
+            seq: u64::from(i),
+        })
+        .collect();
+
+    c.bench_function("tc_ir_2_3_6_b1_256_drain_and_propagate", |b| {
+        let mut g = UniformGrid::new(256, 256, 1.0, 0.0, 0.0, 0.0, 0.0);
+        g.sync_back_from_front();
+        b.iter(|| {
+            g.sync_back_from_front();
+            let work = batch.clone();
+            let _ = apply_pending_writes(entity, entity, &mut g, work);
+            let _ = propagate_influence_2d_four_way(&mut g);
+            black_box(g.get_back(CellCoord { x: 0, y: 0 }));
+        });
+    });
+}
+
+fn bench_drain_voxel_volume(c: &mut Criterion) {
+    let entity = Entity::new(1, 1);
+    let batch: Vec<InfluenceWriteCommand> = (0..512)
+        .map(|i| InfluenceWriteCommand {
+            cell: CellOrVoxel::Voxel(VoxelCoord {
+                x: (i % 63) as i32,
+                y: ((i / 63) % 63) as i32,
+                z: ((i / (63 * 63)) % 63) as i32,
+            }),
+            value: 0.01,
+            mode: InfluenceWriteMode::Additive,
+            sender_entity_index: 1,
+            seq: u64::from(i),
+        })
+        .collect();
+
+    c.bench_function("tc_ir_2_3_6_b2_64_voxel_drain", |b| {
+        b.iter(|| {
+            let mut vol = VoxelVolume::new(64, 64, 64, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            vol.sync_back_from_front();
+            let mut work = batch.clone();
+            let _ = apply_pending_writes_voxel(entity, entity, &mut vol, std::mem::take(&mut work));
+            black_box(vol.get_back(VoxelCoord { x: 0, y: 0, z: 0 }));
         });
     });
 }
@@ -212,8 +307,10 @@ fn bench_mpsc_enqueues(c: &mut Criterion) {
                     &bb,
                     1,
                     seq,
-                    Some(&grid),
-                    None,
+                    InfluenceWriteGrids {
+                        uniform: Some(&grid),
+                        ..Default::default()
+                    },
                 );
             }
         });
@@ -227,8 +324,13 @@ criterion_group!(
     bench_hierarchical_samples,
     bench_flow_reads,
     bench_flow_reads_3d,
+    bench_fog_checks,
     bench_utility_scores,
+    bench_utility_scores_3d,
     bench_goap_refreshes,
+    bench_goap_refreshes_3d,
+    bench_drain_and_propagate_2d,
+    bench_drain_voxel_volume,
     bench_mpsc_enqueues,
 );
 criterion_main!(benches);
