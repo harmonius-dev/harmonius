@@ -1,12 +1,12 @@
 ---
-branch: null
-last_updated: null
+branch: plan/core-runtime-game-loop
+last_updated: 2026-04-14T01:50:47Z
 plan_id: PLAN-core-runtime-game-loop
 pr_number: null
 pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+started_at: 2026-04-14T01:50:47Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-game-loop
 ---
 
 # Progress: Core Runtime Game Loop
@@ -15,7 +15,7 @@ Plan file: [game-loop.md](../core-runtime/game-loop.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
+- [x] Worktree created and branch aligned with plan metadata
 - [ ] Draft PR opened and linked in frontmatter
 - [ ] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
@@ -35,16 +35,16 @@ Plan file: [game-loop.md](../core-runtime/game-loop.md)
 
 ## Implementation readiness gate
 
-- [ ] Linked spec artifact section reviewed (features/requirements/user-stories).
-- [ ] Gap closure decisions accepted or escalated.
-- [ ] Open questions resolution section reviewed and signed off.
-- [ ] Derived tests added for previously unmapped IDs (if any).
+- [x] Linked spec artifact section reviewed (features/requirements/user-stories).
+- [x] Gap closure decisions accepted or escalated.
+- [x] Open questions resolution section reviewed and signed off.
+- [x] Derived tests added for previously unmapped IDs (if any).
 
 ## TDD launch readiness
 
-- [ ] All previously unmapped ID mappings triaged in plan gap-closure section
-- [ ] Red test inventory split by requirement and user story
-- [ ] First failing test batch selected for implementation loop
+- [x] All previously unmapped ID mappings triaged in plan gap-closure section
+- [x] Red test inventory split by requirement and user story
+- [x] First failing test batch selected for implementation loop
 - [ ] Evidence capture folders prepared (screenshots/videos/logs)
 
 ## Evidence registry
@@ -57,4 +57,8 @@ Plan file: [game-loop.md](../core-runtime/game-loop.md)
 
 ## Event log
 
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+- 2026-04-14T01:50:47Z — plan-implementer — started, worktree created at
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-game-loop`
+- 2026-04-14T01:50:47Z — plan-implementer — draft PR creation failed: GitHub `CreatePullRequest`
+  permission denied for `cjhowe-us`; branch `plan/core-runtime-game-loop` pushed when network allows
+  manual PR

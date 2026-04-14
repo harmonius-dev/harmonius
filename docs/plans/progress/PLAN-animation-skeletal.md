@@ -1,12 +1,12 @@
 ---
-branch: null
-last_updated: null
+branch: plan/animation-skeletal
+last_updated: 2026-04-14T01:49:08Z
 plan_id: PLAN-animation-skeletal
 pr_number: null
 pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+started_at: 2026-04-14T01:49:08Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-animation-skeletal
 ---
 
 # Progress: Animation Skeletal
@@ -15,7 +15,7 @@ Plan file: [skeletal.md](../animation/skeletal.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
+- [x] Worktree created and branch aligned with plan metadata
 - [ ] Draft PR opened and linked in frontmatter
 - [ ] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
@@ -58,3 +58,7 @@ Plan file: [skeletal.md](../animation/skeletal.md)
 ## Event log
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
+- 2026-04-14T01:49:08Z — plan-implementer: started, worktree created at
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-animation-skeletal`; `gh pr create` failed
+  (`CreatePullRequest` permission). Continue implementation; open PR manually from branch
+  `plan/animation-skeletal`.

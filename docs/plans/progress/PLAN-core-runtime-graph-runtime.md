@@ -1,12 +1,12 @@
 ---
-branch: null
-last_updated: null
+branch: plan/core-runtime-graph-runtime
+last_updated: 2026-04-14T01:49:14Z
 plan_id: PLAN-core-runtime-graph-runtime
 pr_number: null
 pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+started_at: 2026-04-14T01:49:14Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-graph-runtime
 ---
 
 # Progress: Core Runtime Graph Runtime
@@ -15,8 +15,8 @@ Plan file: [graph-runtime.md](../core-runtime/graph-runtime.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
+- [x] Worktree created and branch aligned with plan metadata
+- [ ] Draft PR opened and linked in frontmatter (blocked: `gh pr create` lacks repo permission)
 - [ ] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
 - [ ] Red phase complete with failing tests for uncovered scope
@@ -58,3 +58,6 @@ Plan file: [graph-runtime.md](../core-runtime/graph-runtime.md)
 ## Event log
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
+- `2026-04-14T01:49:14Z` — plan-implementer: started; worktree at
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-graph-runtime`; draft PR creation failed
+  (`CreatePullRequest` permission denied on origin).

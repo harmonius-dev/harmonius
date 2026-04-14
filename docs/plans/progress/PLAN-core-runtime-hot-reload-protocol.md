@@ -1,12 +1,12 @@
 ---
-branch: null
-last_updated: null
+branch: plan/core-runtime-hot-reload-protocol
+last_updated: 2026-04-13T12:00:00Z
 plan_id: PLAN-core-runtime-hot-reload-protocol
 pr_number: null
-pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+pr_url: https://github.com/cjhowe-us/harmonius/compare/main...plan/core-runtime-hot-reload-protocol?expand=1
+started_at: 2026-04-13T12:00:00Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-hot-reload-protocol
 ---
 
 # Progress: Core Runtime Hot Reload Protocol
@@ -15,7 +15,7 @@ Plan file: [hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
+- [x] Worktree created and branch aligned with plan metadata
 - [ ] Draft PR opened and linked in frontmatter
 - [ ] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
@@ -58,3 +58,5 @@ Plan file: [hot-reload-protocol.md](../core-runtime/hot-reload-protocol.md)
 ## Event log
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
+- 2026-04-13T12:00:00Z — plan-implementer — started; worktree created; branch pushed; `gh pr create`
+  failed (CreatePullRequest permission); compare URL recorded for manual PR.

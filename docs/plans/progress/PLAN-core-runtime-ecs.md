@@ -1,12 +1,12 @@
 ---
-branch: null
-last_updated: null
+branch: plan/core-runtime-ecs
+last_updated: 2026-04-14T01:49:18Z
 plan_id: PLAN-core-runtime-ecs
 pr_number: null
 pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+started_at: 2026-04-14T01:49:18Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-ecs
 ---
 
 # Progress: Core Runtime Ecs
@@ -15,7 +15,7 @@ Plan file: [ecs.md](../core-runtime/ecs.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
+- [x] Worktree created and branch aligned with plan metadata
 - [ ] Draft PR opened and linked in frontmatter
 - [ ] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
@@ -57,4 +57,7 @@ Plan file: [ecs.md](../core-runtime/ecs.md)
 
 ## Event log
 
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+- 2026-04-14T01:49:18Z — started, worktree created at
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-ecs`
+- 2026-04-14T01:49:18Z — draft PR creation blocked: `gh` reports missing `CreatePullRequest`
+  permission for this token; continuing implementation locally

@@ -1,12 +1,12 @@
 ---
-branch: null
-last_updated: null
+branch: plan/core-runtime-change-detection
+last_updated: 2026-04-13T12:00:00Z
 plan_id: PLAN-core-runtime-change-detection
 pr_number: null
 pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+started_at: 2026-04-13T12:00:00Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-change-detection
 ---
 
 # Progress: Core Runtime Change Detection
@@ -15,8 +15,8 @@ Plan file: [change-detection.md](../core-runtime/change-detection.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
+- [x] Worktree created and branch aligned with plan metadata
+- [ ] Draft PR opened and linked in frontmatter (`gh createPullRequest` denied for token)
 - [ ] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
 - [ ] Red phase complete with failing tests for uncovered scope
@@ -58,3 +58,5 @@ Plan file: [change-detection.md](../core-runtime/change-detection.md)
 ## Event log
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
+- 2026-04-13T12:00:00Z — plan-implementer — started, worktree created; draft PR blocked (GraphQL:
+  CreatePullRequest permission denied).
