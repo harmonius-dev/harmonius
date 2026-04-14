@@ -1,0 +1,22 @@
+[package]
+description = "Rendering ↔ scripting integration contracts (IR-3.5.x)"
+edition = "2021"
+license = "Apache-2.0"
+name = "harmonius_integration_rendering_scripting"
+repository = "https://github.com/cjhowe-us/harmonius"
+version = "0.1.0"
+
+[dependencies]
+rkyv = { version = "0.8.15", default-features = false, features = [
+  "bytecheck",
+  "std",
+] }
+rkyv_derive = { version = "0.8.15", features = ["bytecheck"] }
+smol_str = "0.3"
+
+[lints.rust]
+missing_docs = "deny"
+unsafe_code = "deny"
+
+[lints.clippy]
+all = "deny"
