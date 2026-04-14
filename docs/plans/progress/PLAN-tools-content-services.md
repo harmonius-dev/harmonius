@@ -49,6 +49,8 @@ Plan file: [content-services.md](../tools/content-services.md)
 
 ## Evidence registry
 
+- `rumdl check docs/plans/progress/PLAN-tools-content-services.md` — OK (2026-04-14); workspace-wide
+  `rumdl check .` still reports pre-existing issues in other docs.
 - Test reports: add command output paths or CI URLs.
 - Benchmarks: add artifacts and expected vs observed thresholds.
 - Screenshots: add image paths with acceptance notes.
