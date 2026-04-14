@@ -1,0 +1,12 @@
+[package]
+authors = ["Harmonius"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_physics"
+version = "0.1.0"
+
+[dependencies]
+glam = { version = "0.29", features = ["std"] }
+
+[lints.rust]
+unsafe_code = "forbid"

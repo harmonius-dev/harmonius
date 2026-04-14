@@ -745,6 +745,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_physics"
+version = "0.1.0"
+dependencies = [
+ "glam",
+]
+
+[[package]]
 name = "harmonius_platform"
 version = "0.1.0"
 dependencies = [
