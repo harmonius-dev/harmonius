@@ -194,6 +194,24 @@ impl MappingContext {
     }
 }
 
+/// UI mapping bundle for menus and overlays (design `UiInputContext`).
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct UiInputContext {
+    /// Stable mapping context identifier.
+    pub context_id: ContextId,
+    /// Higher priority sorts above gameplay contexts.
+    pub priority: i32,
+    /// Per-category consumption flags.
+    pub consumption: InputConsumption,
+}
+
+impl UiInputContext {
+    /// Converts into [`MappingContext`] with explicit consumption semantics.
+    pub const fn into_mapping_context(self) -> MappingContext {
+        MappingContext::ui(self.context_id, self.priority, self.consumption)
+    }
+}
+
 /// VR controller tracking quality.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TrackingStatus {
@@ -203,12 +221,15 @@ pub enum TrackingStatus {
     Lost,
 }
 
-/// World-space controller pose used for laser tests.
+/// Controller pose for **panel-local 2D** laser tests in this crate.
+///
+/// Full six-DoF poses (`Vec3` + `Quat`) live in engine input layers; [`crate::vr::ray_panel_hit`]
+/// consumes this projected form for deterministic IR-4.2.6 math tests.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ControllerPose {
-    /// Hand position in world units.
+    /// Hand position in the shared 2D test plane.
     pub position: Vec2,
-    /// Forward direction in the XY plane (normalized).
+    /// Forward direction in that plane (normalized).
     pub forward: Vec2,
     /// Tracking state.
     pub tracking: TrackingStatus,

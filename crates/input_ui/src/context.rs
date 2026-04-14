@@ -21,8 +21,12 @@ impl ContextStack {
 
     /// Pushes a context and keeps the stack sorted by descending `priority`.
     pub fn push(&mut self, ctx: MappingContext) {
-        self.entries.push(ctx);
-        self.entries.sort_by(|a, b| b.priority.cmp(&a.priority));
+        let insert_at = self
+            .entries
+            .iter()
+            .position(|existing| existing.priority < ctx.priority)
+            .unwrap_or(self.entries.len());
+        self.entries.insert(insert_at, ctx);
     }
 
     /// Pops the highest-priority context if present.
@@ -64,6 +68,8 @@ pub struct GameplayObservation {
     pub pointer_move: bool,
     /// Gameplay saw a key press.
     pub key_press: bool,
+    /// Gameplay saw a gamepad action.
+    pub gamepad_action: bool,
 }
 
 /// Applies consumption rules for a single frame of mixed inputs.
@@ -71,12 +77,15 @@ pub fn observe_gameplay_inputs(
     stack: &ContextStack,
     pointer_moved: bool,
     key_pressed: bool,
+    gamepad_action: bool,
 ) -> GameplayObservation {
     let pointer_blocked = stack.pointer_consumed();
     let keyboard_blocked = stack.keyboard_consumed();
+    let gamepad_blocked = stack.gamepad_consumed();
     GameplayObservation {
         pointer_move: pointer_moved && !pointer_blocked,
         key_press: key_pressed && !keyboard_blocked,
+        gamepad_action: gamepad_action && !gamepad_blocked,
     }
 }
 

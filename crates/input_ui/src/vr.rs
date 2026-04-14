@@ -1,4 +1,7 @@
-//! VR laser hit testing against world-space UI panels.
+//! Panel-local **2D** ray vs axis-aligned box tests (projection stub for IR-4.2.6).
+//!
+//! World-space panel transforms and 3D rays are owned by engine input; this module keeps the
+//! deterministic math used by integration tests.
 
 use crate::types::{Rect, Vec2};
 
