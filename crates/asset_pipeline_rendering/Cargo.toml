@@ -1,0 +1,9 @@
+[package]
+description = "Asset pipeline to rendering integration contracts (IR-5.2.x)"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "asset_pipeline_rendering"
+version = "0.0.1"
+
+[dependencies]
+rkyv = { version = "0.8", features = ["bytecheck", "std"] }

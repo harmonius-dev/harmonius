@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+  "crates/asset_pipeline_rendering",
   "crates/console_sdk",
   "crates/console_stub",
   "crates/console_target",
