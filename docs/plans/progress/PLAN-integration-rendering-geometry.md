@@ -1,10 +1,10 @@
 ---
 branch: plan/integration-rendering-geometry
-last_updated: 2026-04-14T17:54:45Z
+last_updated: 2026-04-14T17:57:36Z
 plan_id: PLAN-integration-rendering-geometry
-pr_number: null
+pr_number: 101
 pr_review_status: not_started
-pr_url: null
+pr_url: https://github.com/cjhowe-us/harmonius/pull/101
 started_at: 2026-04-14T17:54:45Z
 status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-rendering-geometry
@@ -17,7 +17,7 @@ Plan file: [rendering-geometry.md](../integration/rendering-geometry.md)
 ## Status checklist
 
 - [x] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
+- [x] Draft PR opened and linked in frontmatter
 - [x] Design and companion test-case docs reviewed
 - [x] Requirement and user-story trace matrix completed
 - [x] Red phase complete with failing tests for uncovered scope
@@ -62,6 +62,8 @@ Plan file: [rendering-geometry.md](../integration/rendering-geometry.md)
   merge).
 
 - 2026-04-14T17:54:45Z — plan-implementer — code complete for CPU slice
-  (`harmonius_integration_rendering_geometry`); awaiting draft PR + pr-reviewer.
+  (`harmonius_integration_rendering_geometry`).
+
+- 2026-04-14T17:57:36Z — plan-implementer — draft PR opened (GitHub PR 101).
 
 Append ISO-8601 UTC entries with actor, action, and outcome.
