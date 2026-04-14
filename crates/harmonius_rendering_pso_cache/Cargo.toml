@@ -1,0 +1,14 @@
+[package]
+description = "Pipeline state object (PSO) cache structures for Harmonius rendering plans."
+edition = "2021"
+name = "harmonius_rendering_pso_cache"
+version = "0.1.0"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+crc32fast = "1.4"
+
+[dev-dependencies]
+tempfile = "3"
