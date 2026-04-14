@@ -108,6 +108,47 @@ mod tests {
     }
 
     #[test]
+    fn tc_ir_5_5_1_3_gameplay_layers_exclude_editor_grid() {
+        use crate::types::RenderLayers;
+
+        assert_eq!(
+            RenderLayers::GAMEPLAY.mask & RenderLayers::EDITOR_GRID.mask,
+            0
+        );
+        assert_eq!(
+            RenderLayers::GAMEPLAY.mask & RenderLayers::EDITOR_GIZMOS.mask,
+            0
+        );
+    }
+
+    #[test]
+    fn tc_ir_alloc_n2_no_shared_pointers_in_crate_sources() {
+        const SOURCES: &[&str] = &[
+            include_str!("lib.rs"),
+            include_str!("policy.rs"),
+            include_str!("types.rs"),
+        ];
+        let needles = [
+            concat!("Arc", "<"),
+            concat!("Rc", "<"),
+            concat!("Cell", "<"),
+            concat!("RefCell", "<"),
+        ];
+        for needle in needles {
+            for (path, src) in [
+                ("lib.rs", SOURCES[0]),
+                ("policy.rs", SOURCES[1]),
+                ("types.rs", SOURCES[2]),
+            ] {
+                assert!(
+                    !src.contains(needle),
+                    "{path} must not contain forbidden substring per TC-IR-Alloc.N2"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn tc_ir_5_5_5_n1_zero_area_skips_render() {
         assert!(should_skip_render(0, 0));
         assert!(should_skip_render(10, 0));
