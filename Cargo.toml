@@ -81,6 +81,7 @@ members = [
   "crates/integration_timelines_camera",
   "crates/integration_ui_physics",
   "crates/net-physics",
+  "crates/networking_audio_integration",
   "crates/networking_ecs",
   "crates/platform-telemetry",
   "crates/profiler_game_loop",
