@@ -1,4 +1,7 @@
-//! Runtime rebinding with conflict and reserved-input policies.
+//! In-memory rebinding and collision policy (conflict / reserved keys).
+//!
+//! Design-time `save_bindings` / `load_bindings` and `PlatformIoBridge` live in a later
+//! integration milestone; this module covers deterministic resolution only.
 
 use crate::actions::{ActionId, ContextId, InputSource, MappingContext};
 use crate::device::GamepadButton;

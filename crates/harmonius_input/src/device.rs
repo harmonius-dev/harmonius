@@ -368,7 +368,10 @@ impl DeviceManager {
             .collect()
     }
 
-    /// Drain platform events into `out` (polling path).
+    /// Placeholder for the gamepad polling exception path.
+    ///
+    /// OS-wide input follows RF-1: a future `InputChannel` and drain on the main thread will
+    /// replace ad-hoc polling here; this method stays until that wiring lands.
     pub fn poll_events(&mut self, _out: &mut Vec<RawInputEvent>) {
         // Platform backends push into `out`; the stub manager only tracks hot-plug side effects.
     }

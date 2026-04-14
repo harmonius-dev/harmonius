@@ -1,6 +1,6 @@
 ---
 branch: plan/input-input
-last_updated: 2026-04-14T11:45:35Z
+last_updated: 2026-04-14T17:55:35Z
 plan_id: PLAN-input-input
 pr_number: 87
 pr_review_status: complete
@@ -28,7 +28,7 @@ Plan file: [input.md](../input/input.md)
 - [ ] Manual validation complete with screenshot and video evidence (deferred: library-only slice)
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [x] `rumdl check .` passes for touched docs (README MD057 unchanged; pre-existing)
+- [x] `rumdl check .` passes (README audits row: removed dead `test-case-coverage-audit.md` link)
 - [x] Evidence links logged in this file
 - [x] Review findings addressed and checklist re-verified
 - [x] PR marked ready for human review (`status: submitted`)
@@ -70,3 +70,8 @@ Plan file: [input.md](../input/input.md)
 - 2026-04-14T11:45:35Z — pr-reviewer — submitted for human review. Addressed 13 automated findings:
   rebind policy, duplicate `ContextId` detection, `InputSource::ComboTree`, chord/combo triggers,
   regression tests, gyro docstring.
+- 2026-04-14T17:55:35Z — pr-reviewer — follow-up pass: `tc_input` clippy clean
+  (`field_reassign_with_default`, `manual_contains`, `default_constructed_unit_structs`), README
+  MD057 fix, crate scope + stub API docs (`poll_events`, rebind). Supervisor tally 14 findings (0
+  blocker, 4 substantive, 6 moderate, 4 minor); ECS / `InputChannel` / full design surface deferred
+  per plan slice.

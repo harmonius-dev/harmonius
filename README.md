@@ -151,6 +151,6 @@ For a complete picture, read in this order:
    [tools/](docs/design/tools/), [content-pipeline/](docs/design/content-pipeline/)
 8. **Integration** — [high-level.md](docs/design/integration/high-level.md), then pair-wise specs
    between subsystem pairs
-9. **Audits** — [design-review.md](docs/design/design-review.md); test-case coverage is tracked in
-   each subsystem `*-test-cases.md` under `docs/design/`.
+9. **Audits** — [design-review.md](docs/design/design-review.md); each subsystem’s companion
+   `*-test-cases.md` files hold traceable coverage matrices.
 10. **Business** — [business/](docs/business/): domain decomposition, go-to-market, monetization

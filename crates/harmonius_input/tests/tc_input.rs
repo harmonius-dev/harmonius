@@ -275,8 +275,10 @@ fn test_move_action_three_sources() {
         keycode: Keycode(1),
     });
     let v1 = InputMapper::axis2d_from_wasd(&kb);
-    let mut gp = GamepadState::default();
-    gp.left_stick = Vec2::new(0.0, -1.0);
+    let gp = GamepadState {
+        left_stick: Vec2::new(0.0, -1.0),
+        ..Default::default()
+    };
     let v2 = InputMapper::axis2d_from_stick(&gp, GamepadStickSource::Left);
     let v3 = InputMapper::axis2d_from_touch_region(TouchRegionId(0), Vec2::new(0.0, -2.0));
     for v in [v1, v2, v3] {
@@ -604,7 +606,7 @@ fn test_long_press_threshold() {
     for _ in 0..59 {
         out.extend(r.tick(Vec2::ZERO, 0.01, false, 0.5, 5.0));
     }
-    assert!(out.iter().any(|g| *g == GestureType::LongPress));
+    assert!(out.contains(&GestureType::LongPress));
     r.reset();
     let mut r2 = LongPressRecognizer::default();
     let mut o2 = Vec::new();
@@ -612,7 +614,7 @@ fn test_long_press_threshold() {
         let released = i == 39;
         o2.extend(r2.tick(Vec2::ZERO, 0.01, released, 0.5, 5.0));
     }
-    assert!(!o2.iter().any(|g| *g == GestureType::LongPress));
+    assert!(!o2.contains(&GestureType::LongPress));
     r2.reset();
     let mut r3 = LongPressRecognizer::default();
     let mut o3 = Vec::new();
@@ -620,7 +622,7 @@ fn test_long_press_threshold() {
         let drift = if i > 30 { 100.0 } else { 0.0 };
         o3.extend(r3.tick(Vec2::new(drift, 0.0), 0.01, false, 0.5, 5.0));
     }
-    assert!(!o3.iter().any(|g| *g == GestureType::LongPress));
+    assert!(!o3.contains(&GestureType::LongPress));
 }
 
 /// TC-6.3.4.1 — eight swipe directions.
@@ -697,7 +699,7 @@ fn test_adaptive_trigger_xbox_noop() {
         has_adaptive_triggers: false,
         ..DeviceCapabilities::default()
     };
-    let d = AdaptiveTriggerDriver::default();
+    let d = AdaptiveTriggerDriver;
     let mut hid = vec![1_u8, 2, 3];
     d.apply(
         &caps,
