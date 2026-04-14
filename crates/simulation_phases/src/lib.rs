@@ -7,20 +7,30 @@
 //! This crate encodes the canonical ordering of simulation primitives inside
 //! [`Phase::Simulation`] and the placement of spatial awareness in [`Phase::AiUpdate`], matching
 //! `docs/design/simulation/game-loop-phases.md`.
+//!
+//! ## Scheduler integration scope
+//!
+//! Design pseudocode registers systems on an `AppBuilder`. That type is not part of this
+//! bootstrap crate; [`configure_simulation_order`] returns the canonical [`SimSet`] chain so hosts
+//! can wire the real scheduler when it exists.
 
 mod change_model;
 mod fixed_timestep;
 mod phase;
+mod primitive_change;
 mod runner;
 mod sim_set;
 
 pub use change_model::{change_visible_across_sets, change_visible_same_set_followup};
 pub use fixed_timestep::FixedTimestep;
 pub use phase::Phase;
+pub use primitive_change::{PrimitiveId, PrimitiveTickCompleted};
 pub use runner::{run_scheduled_systems, ScheduledSystem, Trace, TraceEvent};
 pub use sim_set::{simulation_set_chain, spatial_awareness_phase, SimSet};
 
 /// Returns the canonical [`SimSet`] chain for [`Phase::Simulation`].
+///
+/// Prefer this over ad-hoc literals so ordering stays aligned with the design doc.
 #[must_use]
 pub const fn configure_simulation_order() -> [SimSet; 5] {
     simulation_set_chain()
@@ -68,6 +78,24 @@ mod tests {
         let chain = configure_simulation_order();
         assert!(SimSet::SpatialIndexRebuild.ordinal() < SimSet::ThresholdTriggers.ordinal());
         assert_eq!(chain[4], SimSet::ThresholdTriggers);
+    }
+
+    #[test]
+    fn test_sim_set_derived_ord_matches_ordinal() {
+        let sets = [
+            SimSet::TimelinesAdvance,
+            SimSet::GridsPropagate,
+            SimSet::EventLogsUpdate,
+            SimSet::SpatialIndexRebuild,
+            SimSet::ThresholdTriggers,
+        ];
+        for a in sets {
+            for b in sets {
+                let by_ord = a.cmp(&b);
+                let by_u8 = a.ordinal().cmp(&b.ordinal());
+                assert_eq!(by_ord, by_u8, "SimSet {a:?} vs {b:?}");
+            }
+        }
     }
 
     #[test]
@@ -221,35 +249,50 @@ mod tests {
 
     #[test]
     fn test_half_updated_state_not_visible() {
-        use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+        use std::cell::RefCell;
 
-        static GRID_A: AtomicU32 = AtomicU32::new(0);
-        static GRID_B: AtomicU32 = AtomicU32::new(0);
-        static GRID_READY: AtomicBool = AtomicBool::new(false);
+        #[derive(Default)]
+        struct GridHarness {
+            cell_a: u32,
+            cell_b: u32,
+            ready: bool,
+        }
+
+        thread_local! {
+            static GRID: RefCell<GridHarness> = RefCell::new(GridHarness::default());
+        }
 
         fn reset_grid() {
-            GRID_A.store(0, Ordering::Relaxed);
-            GRID_B.store(0, Ordering::Relaxed);
-            GRID_READY.store(false, Ordering::Relaxed);
+            GRID.with(|g| {
+                *g.borrow_mut() = GridHarness::default();
+            });
         }
 
         fn producer_a(t: &mut Trace) {
             let _ = t;
-            GRID_A.store(1, Ordering::Relaxed);
+            GRID.with(|g| g.borrow_mut().cell_a = 1);
         }
 
         fn producer_b(t: &mut Trace) {
             let _ = t;
-            GRID_B.store(2, Ordering::Relaxed);
-            GRID_READY.store(true, Ordering::Relaxed);
+            GRID.with(|g| {
+                let mut s = g.borrow_mut();
+                s.cell_b = 2;
+                s.ready = true;
+            });
         }
 
         fn consumer(t: &mut Trace) {
             let _ = t;
-            if GRID_READY.load(Ordering::Relaxed) {
-                assert_eq!(GRID_A.load(Ordering::Relaxed), 1);
-                assert_eq!(GRID_B.load(Ordering::Relaxed), 2);
-            }
+            GRID.with(|g| {
+                let s = g.borrow();
+                assert!(
+                    s.ready,
+                    "consumer runs after both producers in the prior set"
+                );
+                assert_eq!(s.cell_a, 1);
+                assert_eq!(s.cell_b, 2);
+            });
         }
 
         reset_grid();
@@ -278,5 +321,12 @@ mod tests {
         let mut trace = Trace::default();
         run_scheduled_systems(&systems, &mut trace);
         let _ = trace;
+
+        GRID.with(|g| {
+            let s = g.borrow();
+            assert!(s.ready);
+            assert_eq!(s.cell_a, 1);
+            assert_eq!(s.cell_b, 2);
+        });
     }
 }
