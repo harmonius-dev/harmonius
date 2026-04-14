@@ -58,9 +58,9 @@ impl LocalizationService {
         }
     }
 
-    /// Loads or replaces `locale` from an rkyv archive.
-    pub fn load(&mut self, locale: LocaleId, bytes: &[u8]) -> Result<(), LocError> {
-        self.registry.load_bytes(locale, bytes)
+    /// Loads or replaces `locale` from an rkyv archive (`&[u8]`, `Vec`, etc.).
+    pub fn load(&mut self, locale: LocaleId, bytes: impl AsRef<[u8]>) -> Result<(), LocError> {
+        self.registry.load_bytes(locale, bytes.as_ref())
     }
 
     /// Removes `locale` from the registry.
@@ -84,6 +84,8 @@ impl LocalizationService {
     }
 
     /// Applies a locale switch; returns `LocaleChanged` when the active locale updates.
+    ///
+    /// Alias: [`Self::handle_locale_switch`].
     pub fn apply_locale_switch(
         &mut self,
         switch: LocaleSwitch,
@@ -102,16 +104,39 @@ impl LocalizationService {
         }
     }
 
+    /// Same as [`Self::apply_locale_switch`] (name aligned with design pseudocode).
+    pub fn handle_locale_switch(
+        &mut self,
+        switch: LocaleSwitch,
+    ) -> Result<Option<LocaleChanged>, LocError> {
+        self.apply_locale_switch(switch)
+    }
+
     /// Resolves `id` for the active locale with source fallback.
+    ///
+    /// For [`PluralForm::Plural`] rows, `n` defaults to `1` when you call [`Self::lookup`]
+    /// instead of [`Self::lookup_plural`].
     #[must_use]
     pub fn lookup(&self, id: LocalizedStringId) -> Cow<'_, str> {
         self.lookup_inner(id, None)
     }
 
-    /// Resolves plural-sensitive text for count `n` (English plural rules).
+    /// Resolves plural-sensitive text for count `n` using **English** CLDR-style
+    /// categories (`one` vs `other` only).
     #[must_use]
     pub fn lookup_plural(&self, id: LocalizedStringId, n: u64) -> Cow<'_, str> {
         self.lookup_inner(id, Some(n))
+    }
+
+    /// Resolves `id`, or if nothing matches returns the stable id as decimal text.
+    #[must_use]
+    pub fn lookup_or_key(&self, id: LocalizedStringId) -> Cow<'_, str> {
+        let cow = self.lookup(id);
+        if matches!(cow, Cow::Borrowed(s) if s == crate::MISSING_TRANSLATION) {
+            Cow::Owned(format!("{}", id.0))
+        } else {
+            cow
+        }
     }
 
     fn lookup_inner(&self, id: LocalizedStringId, n: Option<u64>) -> Cow<'_, str> {
@@ -132,7 +157,8 @@ impl LocalizationService {
             }
         }
 
-        Cow::Owned(format!("[missing:{}]", id.0))
+        self.missing_log.borrow_mut().note(self.active, id);
+        Cow::Borrowed(crate::MISSING_TRANSLATION)
     }
 
     fn resolve_in_table(

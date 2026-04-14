@@ -1,4 +1,8 @@
 //! In-memory registry of loaded localization tables.
+//!
+//! Loads validate archives then deserialize into owned tables. A future mmap /
+//! zero-copy path can retain `Archived<LocalizationTable>` once buffer alignment
+//! and editor pipeline integration are wired.
 
 use rkyv::Deserialize;
 
@@ -6,7 +10,7 @@ use crate::{LocError, LocaleId, LocalizationTable};
 
 /// Holds loaded `LocalizationTable` values keyed by `LocaleId`.
 #[derive(Clone, Debug, Default)]
-pub struct LocaleRegistry {
+pub(crate) struct LocaleRegistry {
     loaded: Vec<(LocaleId, LocalizationTable)>,
 }
 
@@ -52,7 +56,18 @@ impl LocaleRegistry {
 fn decode_table(bytes: &[u8]) -> Result<LocalizationTable, LocError> {
     let archived = rkyv::check_archived_root::<LocalizationTable>(bytes)
         .map_err(|_| LocError::InvalidArchive)?;
-    archived
+    let table: LocalizationTable = archived
         .deserialize(&mut rkyv::Infallible)
-        .map_err(|_| LocError::InvalidArchive)
+        .map_err(|_| LocError::InvalidArchive)?;
+    validate_key_order(&table)?;
+    Ok(table)
+}
+
+fn validate_key_order(table: &LocalizationTable) -> Result<(), LocError> {
+    for w in table.keys.windows(2) {
+        if w[0].id.0 >= w[1].id.0 {
+            return Err(LocError::InvalidArchive);
+        }
+    }
+    Ok(())
 }
