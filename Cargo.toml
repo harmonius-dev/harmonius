@@ -26,6 +26,7 @@ members = [
   "crates/harmonius_game",
   "crates/harmonius_gpu",
   "crates/harmonius_gpu_runtime",
+  "crates/harmonius_gpu_runtime_test",
   "crates/harmonius_integration",
   "crates/harmonius_integration_animation_rendering",
   "crates/harmonius_integration_editor_animation",

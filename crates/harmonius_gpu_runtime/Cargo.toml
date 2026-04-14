@@ -1,9 +1,10 @@
 [package]
+description = "GPU profiler integration types shared by rendering and tools"
+edition = "2021"
+license = "MIT OR Apache-2.0"
 name = "harmonius_gpu_runtime"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-rust-version.workspace = true
+publish = false
+version = "0.1.0"
 
 [dependencies]
-harmonius_core.workspace = true
+crossbeam-queue = "0.3"

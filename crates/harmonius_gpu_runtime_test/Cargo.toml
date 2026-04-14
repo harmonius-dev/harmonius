@@ -1,0 +1,12 @@
+[package]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_gpu_runtime_test"
+publish = false
+version = "0.1.0"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+harmonius_gpu_runtime = { path = "../harmonius_gpu_runtime" }
