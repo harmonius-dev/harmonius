@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-04-14T02:00:04Z
+last_updated: 2026-04-14T02:05:00Z
 phase: plan
 started_at: null
 ---
@@ -55,3 +55,21 @@ every pass; read by the harmonize master agent to compute the next ready set.
   batch cap prompt); 26 prior `plan-implementer` rows refreshed `last_seen`.
 - 2026-04-14T02:00:04Z — `in-flight.md`: reparented all `parent_task_id` values to
   `harmonize-conversation-df5d59af-c5d3-460a-97a9-9a0b9332af15` (this Cursor session root).
+- 2026-04-14T02:00:50Z — harmonize `mode: stop`: removed 27 `in-flight.md` rows (1
+  `plan-orchestrator`, 26 `plan-implementer`); `TaskStop` not invocable in this Cursor host — stop
+  background task IDs in the parent session if still running; `locks.md` unchanged.
+- 2026-04-14T02:01:13Z — harmonize `mode: run` (Cursor host): §0 `main` dirty — unstaged edits in
+  `docs/plans/progress/PLAN-game-framework-scripting.md` and
+  `PLAN-integration-animation-timelines.md`; continuing per playbook (no stash halt).
+- 2026-04-14T02:01:13Z — §5 merge-detection: `rg` over `PLAN-*` — no `pr_number` digits; 0 merges;
+  no `gh pr view` batch required.
+- 2026-04-14T02:01:13Z — §3 note: after stop, `in_flight: []`; `TaskList` / `TaskOutput` still
+  unavailable in Cursor host; locks still 0.
+- 2026-04-14T02:01:13Z — §7 dispatch: `plan-orchestrator` merge-detection subagent dispatch aborted;
+  first attempt; `in_flight` was empty after `mode: stop`.
+- 2026-04-14T02:01:35Z — Dispatched `plan-orchestrator` `dispatch-only` (Cursor subagent
+  `66a06851-cb97-44dd-a9cd-7e9144a19d87`, background); registered in `docs/plans/in-flight.md`.
+- 2026-04-14T02:05:00Z — User requested kill all background agents: cleared `in-flight.md`
+  (`plan-orchestrator` `66a06851-cb97-44dd-a9cd-7e9144a19d87` removed).
+  **Cancel that subagent in Cursor UI** if it is still running — `TaskStop` is not available in this
+  host.
