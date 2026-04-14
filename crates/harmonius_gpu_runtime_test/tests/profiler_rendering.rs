@@ -1,6 +1,7 @@
 use harmonius_gpu_runtime::{
     assemble_gpu_frame_stats, CommandBuffer, DrawListStats, FrameCollector, GpuAllocatorStats,
-    GpuFrameStats, GpuProfilerState, GpuScope, ProfilingQueries, RenderPhase, ResolvedTimestamps,
+    GpuFrameStats, GpuProfilerState, GpuPassTiming, GpuScope, ProfilingQueries, RenderPhase,
+    ResolvedTimestamps,
 };
 
 #[test]
@@ -55,4 +56,47 @@ fn tc_ir_5_7_7_1_runtime_toggle_off_allocates_no_queries() {
     }
     assert!(cmd.ops.is_empty());
     assert_eq!(pool.allocated_pair_count(), 0);
+}
+
+#[test]
+fn tc_ir_5_7_4_2_two_frame_readback_fake_pool() {
+    let state = GpuProfilerState::new(8);
+    state.enabled.store(true, std::sync::atomic::Ordering::Relaxed);
+    let mut cmd = CommandBuffer::default();
+    let mut pool = ProfilingQueries::new(8, 1.0);
+    pool.set_readback_latency_frames(2);
+
+    pool.reset();
+    {
+        let _scope = GpuScope::new(&mut cmd, &mut pool, &state, "PassA");
+    }
+    assert!(
+        pool.read_resolved().is_empty(),
+        "readback should not be ready on the capture frame"
+    );
+
+    pool.reset();
+    {
+        let _scope = GpuScope::new(&mut cmd, &mut pool, &state, "PassB");
+    }
+    assert!(
+        pool.read_resolved().is_empty(),
+        "one frame of latency is still not enough"
+    );
+
+    pool.reset();
+    {
+        let _scope = GpuScope::new(&mut cmd, &mut pool, &state, "PassC");
+    }
+    let timings = pool.read_resolved();
+    assert_eq!(
+        timings,
+        vec![GpuPassTiming {
+            pass_id: 0,
+            pass_name: "PassA",
+            begin_ms: 1.0,
+            end_ms: 5.0,
+            duration_ms: 4.0,
+        }]
+    );
 }

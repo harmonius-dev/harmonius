@@ -4,6 +4,7 @@ use crate::drop_queue::{GpuTimestampQueue, GpuTimestampSender};
 use crate::gpu_profiler::{GpuFrameCapture, ResolvedTimestamps};
 
 /// Worker-side consumer that drains GPU timestamp messages once per frame.
+#[derive(Debug)]
 pub struct FrameCollector {
     /// Monotonic frame counter owned by the worker assembling captures.
     pub frame_number: u64,
@@ -11,7 +12,9 @@ pub struct FrameCollector {
 }
 
 impl FrameCollector {
-    /// Creates a collector with a bounded queue matching the render-thread contract (capacity 4).
+    /// Creates a collector with a bounded `crossbeam_channel` queue of `capacity` slots.
+    ///
+    /// The integration design uses `capacity == 4` for the profiler ↔ rendering handoff.
     #[must_use]
     pub fn new(frame_number: u64, capacity: usize) -> Self {
         Self {

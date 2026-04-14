@@ -1,6 +1,6 @@
 # Profiler ↔ Rendering Integration Test Cases
 
-All tests run on the headless `FakeGpuBackend` in `harmonius_gpu_runtime_test` so CI has no GPU
+All tests run on the headless `FakeQueryPool` in `harmonius_gpu_runtime_test` so CI has no GPU
 vendor dependency. Tests that assert vendor-specific behaviour are gated behind a skip on missing
 capability, not a compile flag.
 

@@ -1,11 +1,19 @@
 //! Render-thread-owned profiling queries and RAII GPU scopes.
 
+use std::collections::VecDeque;
+use std::fmt;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+
+use tracing::warn;
 
 use crate::draw_list::DrawListStats;
 use crate::timebase::gpu_ticks_to_ms;
 
 /// Runtime toggle state. Never `cfg`-gated in shipping builds.
+///
+/// **Threading:** `enabled` and `pool_capacity` are intended to be written from debug tooling on
+/// the same thread that records GPU commands (the render thread). Other threads should treat these
+/// fields as read-only to preserve the channel-first handoff model used elsewhere in the engine.
 #[derive(Debug)]
 pub struct GpuProfilerState {
     /// Master switch read on the render thread hot path.
@@ -120,20 +128,36 @@ pub enum TimestampOp {
     End(u32),
 }
 
+/// One completed frame of GPU ticks plus the pass labels that were allocated that frame.
+#[derive(Debug)]
+struct GpuFrameSnapshot {
+    pass_names: Vec<Option<&'static str>>,
+    ticks: Vec<Option<u64>>,
+}
+
 /// Backend-agnostic timestamp pool (headless fake for CI).
 #[derive(Debug)]
 pub struct QueryPool {
-    ticks: Vec<Option<u64>>,
     clock: u64,
+    history: VecDeque<GpuFrameSnapshot>,
+    readback_latency_frames: u32,
+    ticks: Vec<Option<u64>>,
 }
 
 impl QueryPool {
     fn new_pair_capacity(pair_capacity: u32) -> Self {
         let slots = (pair_capacity as usize).saturating_mul(2);
         Self {
-            ticks: vec![None; slots],
             clock: 0,
+            history: VecDeque::new(),
+            readback_latency_frames: 0,
+            ticks: vec![None; slots],
         }
+    }
+
+    /// Overrides the simulated GPU readback latency (0 resolves immediately for unit tests).
+    pub fn set_readback_latency_frames(&mut self, frames: u32) {
+        self.readback_latency_frames = frames;
     }
 
     fn clear(&mut self) {
@@ -143,9 +167,35 @@ impl QueryPool {
         self.clock = 0;
     }
 
+    fn begin_new_frame(&mut self, finished_pairs: u32, pass_names: &[Option<&'static str>]) {
+        if self.readback_latency_frames == 0 {
+            self.clear();
+            return;
+        }
+        let has_ticks = finished_pairs > 0 || self.ticks.iter().any(|slot| slot.is_some());
+        if has_ticks {
+            let labels = pass_names
+                .iter()
+                .take(finished_pairs as usize)
+                .copied()
+                .collect::<Vec<_>>();
+            self.history.push_back(GpuFrameSnapshot {
+                pass_names: labels,
+                ticks: self.ticks.clone(),
+            });
+        }
+        while self.history.len() > 32 {
+            self.history.pop_front();
+        }
+        self.clear();
+    }
+
     fn resize_pair_capacity(&mut self, pair_capacity: u32) {
         let slots = (pair_capacity as usize).saturating_mul(2);
         self.ticks.resize(slots, None);
+        for frame in &mut self.history {
+            frame.ticks.resize(slots, None);
+        }
     }
 
     fn write_begin(&mut self, slot: u32) {
@@ -160,6 +210,50 @@ impl QueryPool {
 
     fn tick(&self, slot: u32) -> Option<u64> {
         self.ticks.get(slot as usize).copied().flatten()
+    }
+
+    fn tick_for_read(&self, slot: u32) -> Option<u64> {
+        if self.readback_latency_frames == 0 {
+            return self.tick(slot);
+        }
+        let latency = self.readback_latency_frames as usize;
+        if self.history.len() < latency {
+            return None;
+        }
+        let idx = self.history.len() - latency;
+        self.history[idx]
+            .ticks
+            .get(slot as usize)
+            .copied()
+            .flatten()
+    }
+
+    fn pass_name_for_read(&self, pair: u32) -> Option<&'static str> {
+        if self.readback_latency_frames == 0 {
+            return None;
+        }
+        let latency = self.readback_latency_frames as usize;
+        if self.history.len() < latency {
+            return None;
+        }
+        let idx = self.history.len() - latency;
+        self.history[idx]
+            .pass_names
+            .get(pair as usize)
+            .copied()
+            .flatten()
+    }
+
+    fn delayed_readback_pair_count(&self) -> usize {
+        if self.readback_latency_frames == 0 {
+            return 0;
+        }
+        let latency = self.readback_latency_frames as usize;
+        if self.history.len() < latency {
+            return 0;
+        }
+        let idx = self.history.len() - latency;
+        self.history[idx].pass_names.len()
     }
 }
 
@@ -189,6 +283,12 @@ impl ProfilingQueries {
             cursor: 0,
             gpu_ticks_per_ms,
         }
+    }
+
+    /// Sets how many completed frames elapse before [`read_resolved`](Self::read_resolved) can see
+    /// GPU ticks (matches the integration design’s two-frame readback when set to `2`).
+    pub fn set_readback_latency_frames(&mut self, frames: u32) {
+        self.pool.set_readback_latency_frames(frames);
     }
 
     /// Returns how many begin/end pairs have been allocated since the last [`reset`](Self::reset).
@@ -230,15 +330,33 @@ impl ProfilingQueries {
     #[must_use]
     pub fn read_resolved(&mut self) -> Vec<GpuPassTiming> {
         let mut out = Vec::new();
-        for pair in 0..self.cursor {
+        let delayed = self.pool.readback_latency_frames > 0;
+        let pair_limit = if delayed {
+            u32::try_from(self.pool.delayed_readback_pair_count()).unwrap_or(u32::MAX)
+        } else {
+            self.cursor
+        };
+        for pair in 0..pair_limit {
             let begin_slot = pair.saturating_mul(2);
             let end_slot = begin_slot.saturating_add(1);
-            let Some(name) = self.pass_names[pair as usize] else {
+            let name = if delayed {
+                self.pool.pass_name_for_read(pair)
+            } else {
+                self.pass_names[pair as usize]
+            };
+            let Some(name) = name else {
                 continue;
             };
-            let begin_ticks = self.pool.tick(begin_slot);
-            let end_ticks = self.pool.tick(end_slot);
+            let begin_ticks = self.pool.tick_for_read(begin_slot);
+            let end_ticks = self.pool.tick_for_read(end_slot);
             let (Some(begin_ticks), Some(end_ticks)) = (begin_ticks, end_ticks) else {
+                if begin_ticks.is_none() || end_ticks.is_none() {
+                    warn!(
+                        target: "harmonius_gpu_runtime::gpu_profiler",
+                        pass_name = name,
+                        "skipping unpaired GPU timestamp query during read_resolved"
+                    );
+                }
                 continue;
             };
             let begin_ms = gpu_ticks_to_ms(begin_ticks, self.gpu_ticks_per_ms);
@@ -265,8 +383,10 @@ impl ProfilingQueries {
 
     /// Resets allocation state at frame start.
     pub fn reset(&mut self) {
+        let finished_pairs = self.cursor;
+        self.pool
+            .begin_new_frame(finished_pairs, &self.pass_names);
         self.cursor = 0;
-        self.pool.clear();
     }
 }
 
@@ -278,6 +398,8 @@ pub struct GpuScope<'a> {
     begin_query: u32,
     end_query: u32,
     enabled: bool,
+    /// `true` when profiling was enabled but the backing pool could not allocate a slot pair.
+    pool_exhausted: bool,
 }
 
 impl<'a> GpuScope<'a> {
@@ -297,17 +419,26 @@ impl<'a> GpuScope<'a> {
                 begin_query: 0,
                 end_query: 0,
                 enabled: false,
+                pool_exhausted: false,
             };
         }
         match pool.begin_scope(cmd, name) {
-            None => Self {
-                cmd,
-                pool,
-                pass_name: name,
-                begin_query: 0,
-                end_query: 0,
-                enabled: false,
-            },
+            None => {
+                warn!(
+                    target: "harmonius_gpu_runtime::gpu_profiler",
+                    pass_name = name,
+                    "GPU profiling query pool exhausted; GpuScope is a no-op for this pass"
+                );
+                Self {
+                    cmd,
+                    pool,
+                    pass_name: name,
+                    begin_query: 0,
+                    end_query: 0,
+                    enabled: false,
+                    pool_exhausted: true,
+                }
+            }
             Some((begin, end)) => Self {
                 cmd,
                 pool,
@@ -315,6 +446,7 @@ impl<'a> GpuScope<'a> {
                 begin_query: begin,
                 end_query: end,
                 enabled: true,
+                pool_exhausted: false,
             },
         }
     }
@@ -329,6 +461,22 @@ impl<'a> GpuScope<'a> {
     #[must_use]
     pub fn is_enabled(&self) -> bool {
         self.enabled
+    }
+
+    /// Returns `true` when profiling was enabled but no query pair could be allocated.
+    #[must_use]
+    pub fn pool_exhausted(&self) -> bool {
+        self.pool_exhausted
+    }
+}
+
+impl fmt::Debug for GpuScope<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("GpuScope")
+            .field("pass_name", &self.pass_name)
+            .field("enabled", &self.enabled)
+            .field("pool_exhausted", &self.pool_exhausted)
+            .finish_non_exhaustive()
     }
 }
 
@@ -425,6 +573,7 @@ mod tests {
         }
         let c = GpuScope::new(&mut cmd, &mut pool, &state, "P2");
         assert!(!c.is_enabled());
+        assert!(c.pool_exhausted());
         drop(c);
         assert_eq!(pool.allocated_pair_count(), 2);
     }
