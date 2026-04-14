@@ -1,5 +1,5 @@
 [package]
-description = "Harmonius platform layer: windowing, filesystem, services"
+description = "Harmonius platform windowing types and utilities"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 name = "harmonius_platform"
@@ -7,11 +7,6 @@ repository = "https://github.com/cjhowe-us/harmonius"
 version = "0.1.0"
 
 [dependencies]
-blake3 = "1.5"
-toml = "0.8"
-
-[dev-dependencies]
-tempfile = "3"
 
 [lints.rust]
 unsafe_code = "forbid"
