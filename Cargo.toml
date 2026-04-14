@@ -1,8 +1,8 @@
 [workspace]
-resolver = "3"
 members = [
   "crates/content_services",
   "crates/editor_rendering",
+  "crates/grids_volumes_physics",
   "crates/harmonius-build-deploy",
   "crates/harmonius-integration-benches",
   "crates/harmonius-integration-tests",
@@ -61,35 +61,4 @@ members = [
   "crates/timelines_audio_integration",
   "crates/visual_editors",
 ]
-
-[workspace.package]
-version = "0.1.0"
-edition = "2021"
-license = "Apache-2.0"
-rust-version = "1.80"
-
-[workspace.dependencies]
-ash = "0.38"
-bitflags = "2.9"
-crossbeam-channel = "0.5"
-crossbeam-utils = "0.8"
-glam = "0.29"
-harmonius_core = { path = "crates/harmonius_core" }
-harmonius_gpu = { path = "crates/harmonius_gpu" }
-harmonius_gpu_runtime = { path = "crates/harmonius_gpu_runtime" }
-harmonius_platform = { path = "crates/harmonius_platform" }
-naga = { version = "24", features = ["glsl-in", "spv-out"] }
-objc2 = "0.6"
-objc2-app-kit = { version = "0.3", features = [
-  "NSApplication",
-  "NSWindow",
-  "NSView",
-] }
-objc2-foundation = { version = "0.3", features = ["NSString", "NSGeometry"] }
-objc2-quartz-core = { version = "0.3", features = ["CAMetalLayer"] }
-raw-window-handle = "0.6"
-thiserror = "2.0"
-x11rb = { version = "0.13", features = ["allow-unsafe-code", "libc"] }
-
-[profile.release]
-lto = "thin"
+resolver = "3"

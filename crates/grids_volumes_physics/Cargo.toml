@@ -1,0 +1,12 @@
+[package]
+authors = ["Harmonius Contributors"]
+description = "Grids and volumes integration with physics (IR-3.10.x seam types and helpers)."
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "grids_volumes_physics"
+version = "0.1.0"
+
+[dependencies]
+glam = { default-features = false, features = ["std"], version = "0.29" }
+rkyv = { features = ["bytecheck", "std"], version = "0.8.15" }
+smallvec = "1.14"
