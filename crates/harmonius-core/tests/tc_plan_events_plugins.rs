@@ -8,7 +8,8 @@ use std::time::Instant;
 
 use harmonius_core::events::{
     CommandBuffer, EventBridge, EventBridgeConfig, EventChannel, EventObserverRegistry,
-    ObserverCallback, ObserverDescriptor, PersistentStream, ReactiveQuery, StreamCursor,
+    EventReader, EventWriter, ObserverCallback, ObserverDescriptor, PersistentStream,
+    ReactiveQuery, StreamCursor,
 };
 use harmonius_core::plugins::{
     verify_plugin_abi, App, Capability, HotReloadError, HotReloadManager, HotReloadMarker, Plugin,
@@ -24,11 +25,16 @@ struct E1(u32);
 #[test]
 fn tc_1_5_1_1_double_buffer_swap() {
     let mut ch = EventChannel::<E1>::new();
-    ch.send(E1(1));
-    ch.send(E1(2));
-    ch.send(E1(3));
+    {
+        let mut w = EventWriter::new(&mut ch);
+        w.send(E1(1));
+        w.send(E1(2));
+        w.send(E1(3));
+    }
     assert_eq!(ch.back_len(), 3);
     ch.swap();
+    let r = EventReader::new(&ch);
+    assert_eq!(r.read_front().len(), 3);
     assert_eq!(ch.read_front().count(), 3);
     ch.swap();
     assert_eq!(ch.read_front().count(), 0);
@@ -168,7 +174,8 @@ fn tc_1_5_3_1_observer_fires_on_add() {
         CountingObserver {
             hits: Arc::clone(&hits),
         },
-    );
+    )
+    .unwrap();
     let mut world = World::new(WorldId(0));
     for i in 0u64..100 {
         reg.notify(
@@ -194,7 +201,8 @@ fn tc_1_5_3_2_observer_fires_on_remove() {
         CountingObserver {
             hits: Arc::clone(&hits),
         },
-    );
+    )
+    .unwrap();
     let mut world = World::new(WorldId(0));
     for i in 0u64..50 {
         reg.notify(
@@ -220,7 +228,8 @@ fn tc_1_5_3_3_observer_fires_on_mutate() {
         CountingObserver {
             hits: Arc::clone(&hits),
         },
-    );
+    )
+    .unwrap();
     let mut world = World::new(WorldId(0));
     for i in 0u64..25 {
         reg.notify(
@@ -248,7 +257,8 @@ fn tc_1_5_3_4_observer_deterministic_order() {
             CountingObserver {
                 hits: Arc::clone(&hits),
             },
-        );
+        )
+        .unwrap();
         let mut world = World::new(WorldId(0));
         reg.notify(
             ComponentEvent::Added,
@@ -865,7 +875,8 @@ fn tc_1_5_1_i1_full_frame_lifecycle() {
         CountingObserver {
             hits: Arc::new(AtomicU32::new(0)),
         },
-    );
+    )
+    .unwrap();
     let mut world = World::new(WorldId(0));
     reg.notify(
         ComponentEvent::Added,

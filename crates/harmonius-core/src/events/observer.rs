@@ -10,6 +10,13 @@ use crate::world::{ComponentEvent, Entity, World};
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ObserverId(pub u64);
 
+/// Registration rejected by [`EventObserverRegistry::register`].
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ObserverRegisterError {
+    /// `watched_components` must list at least one component type.
+    EmptyWatchedComponents,
+}
+
 /// Describes which components and triggers an observer cares about.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ObserverDescriptor {
@@ -51,29 +58,24 @@ impl EventObserverRegistry {
         &mut self,
         descriptor: ObserverDescriptor,
         callback: impl ObserverCallback + 'static,
-    ) -> ObserverId {
+    ) -> Result<ObserverId, ObserverRegisterError> {
+        let Some(&key) = descriptor.watched_components.first() else {
+            return Err(ObserverRegisterError::EmptyWatchedComponents);
+        };
         let id = ObserverId(self.next_id);
         self.next_id = self.next_id.saturating_add(1);
-        let key = descriptor
-            .watched_components
-            .first()
-            .copied()
-            .unwrap_or(TypeId::of::<()>());
         let entry = ObserverEntry {
             id,
             descriptor,
             callback: Box::new(callback),
         };
-        self.observers.entry(key).or_default().push(entry);
-        for vec in self.observers.values_mut() {
-            vec.sort_by(
-                |a, b| match a.descriptor.priority.cmp(&b.descriptor.priority) {
-                    Ordering::Equal => a.id.0.cmp(&b.id.0),
-                    other => other,
-                },
-            );
-        }
-        id
+        let bucket = self.observers.entry(key).or_default();
+        bucket.push(entry);
+        bucket.sort_by(|a, b| match a.descriptor.priority.cmp(&b.descriptor.priority) {
+            Ordering::Equal => a.id.0.cmp(&b.id.0),
+            other => other,
+        });
+        Ok(id)
     }
 
     /// Removes an observer by id (linear scan).

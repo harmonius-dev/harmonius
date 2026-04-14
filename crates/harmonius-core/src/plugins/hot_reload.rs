@@ -71,7 +71,10 @@ impl HotReloadManager {
 
     /// Simulates a full reload cycle for the named plugin.
     pub fn reload(&mut self, name: &str, world: &mut World) -> Result<(), HotReloadError> {
-        std::thread::sleep(std::time::Duration::from_millis(self.reload_latency_ms));
+        #[cfg(test)]
+        if self.reload_latency_ms > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(self.reload_latency_ms));
+        }
         if self.migration_should_fail {
             return Err(HotReloadError::StateMigrationFailed {
                 type_name: name.to_string(),
