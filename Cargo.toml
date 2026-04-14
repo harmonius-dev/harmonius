@@ -81,6 +81,7 @@ members = [
   "crates/save_system_profiler",
   "crates/scene_versioning",
   "crates/selection_model",
+  "crates/shader_variants",
   "crates/simulation_phases",
   "crates/timelines_audio_integration",
   "crates/visual_editors",
