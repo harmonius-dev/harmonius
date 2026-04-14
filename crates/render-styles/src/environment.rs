@@ -31,8 +31,11 @@ impl FroxelGrid {
         }
     }
 
-    /// Samples density at integer coordinates.
+    /// Samples density at integer coordinates; out-of-range indices read as `0.0`.
     pub fn sample(&self, x: usize, y: usize, z: usize) -> f32 {
+        if x >= self.width || y >= self.height || z >= self.depth {
+            return 0.0;
+        }
         self.density[x + y * self.width + z * self.width * self.height]
     }
 }
@@ -61,6 +64,9 @@ pub fn height_fog_integral(density: f32, z0: f32, z1: f32, scale_height: f32) ->
     let dz = (z1 - z0).abs();
     if dz < 1e-6 {
         return 0.0;
+    }
+    if scale_height.abs() < 1e-6 {
+        return density * dz;
     }
     let coeff = density / scale_height;
     coeff * ((z1 / scale_height).exp() - (z0 / scale_height).exp()).abs()
@@ -108,19 +114,21 @@ pub fn cloud_ray_steps(fixed_stride: usize, sdf_stride: usize) -> (usize, usize)
     (fixed_stride, sdf_stride)
 }
 
-/// Bilinear Coons patch height (`TC-2.7.9.1`).
-pub fn coons_patch_height(u: f32, v: f32) -> f32 {
+/// Bilinear height blend used as a deterministic stand-in for breaking-wave height (`TC-2.7.9.1`).
+///
+/// This is **not** a full Coons patch; it matches the companion doc’s scalar acceptance shape.
+pub fn bilinear_height_blend(u: f32, v: f32) -> f32 {
     let u = u.clamp(0.0, 1.0);
     let v = v.clamp(0.0, 1.0);
     (1.0 - u) * v + u * (1.0 - v)
 }
 
-/// Coons patch normal length (`TC-2.7.9.1`).
-pub fn coons_patch_normal_length(u: f32, v: f32) -> f32 {
+/// Finite-difference slope magnitude for [`bilinear_height_blend`] (`TC-2.7.9.1`).
+pub fn bilinear_height_blend_slope_length(u: f32, v: f32) -> f32 {
     let du = 0.001;
     let dv = 0.001;
-    let hx = coons_patch_height(u + du, v) - coons_patch_height(u - du, v);
-    let hy = coons_patch_height(u, v + dv) - coons_patch_height(u, v - dv);
+    let hx = bilinear_height_blend(u + du, v) - bilinear_height_blend(u - du, v);
+    let hy = bilinear_height_blend(u, v + dv) - bilinear_height_blend(u, v - dv);
     (hx * hx + hy * hy + 1.0).sqrt()
 }
 
@@ -192,7 +200,7 @@ mod tests {
     #[test]
     fn tc_2_7_1_1_procedural_sky_atmosphere_lut() {
         let zenith = atmosphere_transmittance(1.0);
-        assert!(zenith >= 0.7 && zenith <= 1.0);
+        assert!((0.7..=1.0).contains(&zenith));
         let graze = atmosphere_transmittance(0.05);
         assert!(graze < zenith);
     }
@@ -201,6 +209,7 @@ mod tests {
     fn tc_2_7_2_1_volumetric_fog_froxel_density() {
         let g = FroxelGrid::constant(160, 90, 64, 1.0);
         assert_eq!(g.sample(0, 0, 0), 1.0);
+        assert_eq!(g.sample(200, 0, 0), 0.0);
         let ext = froxel_ray_extinction(&g, 10, 0.1);
         assert!(ext > 0.0 && ext < 1.0);
     }
@@ -224,6 +233,8 @@ mod tests {
         assert!((v - alt).abs() < 1e-4);
         let flat = height_fog_horizontal_integral(0.2, 15.0);
         assert!((flat - 3.0).abs() < 1e-3);
+        let degenerate_scale = height_fog_integral(0.1, 0.0, 10.0, 0.0);
+        assert!((degenerate_scale - 1.0).abs() < 1e-4);
     }
 
     #[test]
@@ -266,10 +277,10 @@ mod tests {
 
     #[test]
     fn tc_2_7_9_1_breaking_waves_coons_surface() {
-        let h00 = coons_patch_height(0.0, 0.0);
-        let h11 = coons_patch_height(1.0, 1.0);
+        let h00 = bilinear_height_blend(0.0, 0.0);
+        let h11 = bilinear_height_blend(1.0, 1.0);
         assert!(h00 >= 0.0 && h11 >= 0.0);
-        let nlen = coons_patch_normal_length(0.5, 0.5);
+        let nlen = bilinear_height_blend_slope_length(0.5, 0.5);
         assert!((nlen - 1.0).abs() < 0.5);
     }
 
