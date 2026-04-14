@@ -1,0 +1,14 @@
+[package]
+description = "Save system and rkyv serialization integration (IR-5.10.x)."
+edition = "2021"
+name = "harmonius_save_integration"
+version = "0.1.0"
+
+[dependencies]
+aes-gcm = "0.10"
+crc = "3"
+lz4_flex = { version = "0.11", default-features = false, features = ["std"] }
+rkyv = { version = "0.8.15", default-features = false, features = ["alloc", "bytecheck", "std"] }
+rkyv_derive = "0.8.15"
+thiserror = "2"
+zstd = "0.13"
