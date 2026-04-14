@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T01:58:50Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-game-framework-scripting
+worktree_path: null
 ---
 
 # Progress: Game Framework Scripting

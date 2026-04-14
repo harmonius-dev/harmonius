@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T01:50:47Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-game-loop
+worktree_path: null
 ---
 
 # Progress: Core Runtime Game Loop

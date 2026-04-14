@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T01:48:40Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-animation-state-machine
+worktree_path: null
 ---
 
 # Progress: Animation State Machine

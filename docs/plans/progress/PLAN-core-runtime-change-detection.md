@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-13T12:00:00Z
 status: code_complete
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-change-detection
+worktree_path: null
 ---
 
 # Progress: Core Runtime Change Detection

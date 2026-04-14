@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-13T22:15:00Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-geometry-world-geometry
+worktree_path: null
 ---
 
 # Progress: Geometry World Geometry

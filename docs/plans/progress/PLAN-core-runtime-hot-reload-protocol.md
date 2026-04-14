@@ -6,7 +6,7 @@ pr_number: null
 pr_url: https://github.com/cjhowe-us/harmonius/compare/main...plan/core-runtime-hot-reload-protocol?expand=1
 started_at: 2026-04-13T12:00:00Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-hot-reload-protocol
+worktree_path: null
 ---
 
 # Progress: Core Runtime Hot Reload Protocol

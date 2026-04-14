@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T02:00:19Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-animation-audio
+worktree_path: null
 ---
 
 # Progress: Integration Animation Audio

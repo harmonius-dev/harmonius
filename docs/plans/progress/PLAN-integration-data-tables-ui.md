@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T01:59:26Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-data-tables-ui
+worktree_path: null
 ---
 
 # Progress: Integration Data Tables Ui

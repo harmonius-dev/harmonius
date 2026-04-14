@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T01:49:14Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-graph-runtime
+worktree_path: null
 ---
 
 # Progress: Core Runtime Graph Runtime

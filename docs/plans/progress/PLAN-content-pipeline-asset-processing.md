@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T01:49:17Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-content-pipeline-asset-processing
+worktree_path: null
 ---
 
 # Progress: Content Pipeline Asset Processing

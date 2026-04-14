@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T01:49:19Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-audio-audio
+worktree_path: null
 ---
 
 # Progress: Audio Audio

@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T01:51:40Z
 status: code_complete
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-cross-cutting-design-review-resolution
+worktree_path: null
 ---
 
 # Progress: Cross Cutting Design Review Resolution

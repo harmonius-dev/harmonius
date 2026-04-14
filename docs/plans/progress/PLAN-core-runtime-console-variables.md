@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T01:55:44Z
 status: code_complete
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-core-runtime-console-variables
+worktree_path: null
 ---
 
 # Progress: Core Runtime Console Variables

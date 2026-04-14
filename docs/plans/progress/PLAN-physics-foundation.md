@@ -6,7 +6,7 @@ pr_number: null
 pr_url: null
 started_at: 2026-04-14T01:48:38Z
 status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-physics-foundation
+worktree_path: null
 ---
 
 # Progress: Physics Foundation
