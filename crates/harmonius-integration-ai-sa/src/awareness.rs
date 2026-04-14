@@ -79,6 +79,9 @@ pub struct AwarenessState {
 
 impl AwarenessState {
     /// Highest [`AwarenessLevel`] across all entries, or [`AwarenessLevel::Unaware`] if empty.
+    ///
+    /// Uses [`AwarenessLevel`]'s `Ord` derive (variant declaration order). When multiple rows
+    /// exist, treat this as a coarse aggregate for BT conditions, not a full dominance lattice.
     pub fn highest_level(&self) -> AwarenessLevel {
         self.entries
             .iter()
@@ -87,10 +90,13 @@ impl AwarenessState {
             .unwrap_or(AwarenessLevel::Unaware)
     }
 
-    /// Entry with maximum [`AwarenessEntry::score`].
+    /// Entry with maximum [`AwarenessEntry::score`] among rows not in [`AwarenessLevel::Lost`].
+    ///
+    /// Lost targets do not export to the blackboard threat keys (IR-1.10.3.2).
     pub fn highest_scored_target(&self) -> Option<ScoredTarget> {
         self.entries
             .iter()
+            .filter(|e| e.level != AwarenessLevel::Lost)
             .max_by(|a, b| a.score.total_cmp(&b.score))
             .map(|e| ScoredTarget {
                 entity: e.target,

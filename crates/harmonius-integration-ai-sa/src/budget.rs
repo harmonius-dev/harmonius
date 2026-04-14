@@ -97,13 +97,52 @@ impl PerceptionFrameState {
     }
 }
 
+/// Cursor for FM-3 round-robin: deferred agents are tried first on the next slice.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct PerceptionBudgetCursor {
+    /// Index of the next agent to prioritize at a fresh budget.
+    pub next_agent: usize,
+}
+
 /// Runs perception for `agent_costs` in order; agents that do not fit in the budget are skipped.
 pub fn run_perception_budget_slice(
     budget: &mut AiPerceptionBudget,
     agent_costs: &[u32],
 ) -> Vec<bool> {
-    agent_costs
-        .iter()
-        .map(|&cost| budget.try_consume(cost))
-        .collect()
+    let mut cursor = PerceptionBudgetCursor::default();
+    run_perception_budget_slice_with_cursor(budget, agent_costs, &mut cursor)
+}
+
+/// Like [`run_perception_budget_slice`], but rotates start using `cursor` across calls (FM-3).
+pub fn run_perception_budget_slice_with_cursor(
+    budget: &mut AiPerceptionBudget,
+    agent_costs: &[u32],
+    cursor: &mut PerceptionBudgetCursor,
+) -> Vec<bool> {
+    let n = agent_costs.len();
+    let mut out = vec![false; n];
+    if n == 0 {
+        return out;
+    }
+    let start = cursor.next_agent % n;
+    for k in 0..n {
+        let i = (start + k) % n;
+        out[i] = budget.try_consume(agent_costs[i]);
+    }
+    let mut next = start;
+    let mut found_deferred = false;
+    for k in 0..n {
+        let i = (start + k) % n;
+        if !out[i] {
+            next = i;
+            found_deferred = true;
+            break;
+        }
+    }
+    cursor.next_agent = if found_deferred {
+        next
+    } else {
+        (start + 1) % n
+    };
+    out
 }
