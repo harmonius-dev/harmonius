@@ -1,0 +1,8 @@
+[package]
+description = "AI behavior ↔ scripting integration surface (IR-2.4.x)."
+edition = "2021"
+name = "integration_ai_scripting"
+version = "0.1.0"
+
+[dependencies]
+smallvec = "1.13"
