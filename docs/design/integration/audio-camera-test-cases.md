@@ -46,7 +46,7 @@ production.
 | TC-IR-1.7.3.N2 | Negative dt | dt == -0.001 | Vec3::ZERO (guard) | IR-1.7.3 |
 | TC-IR-1.7.3.N3 | NaN position input | Position == NaN | Cmd dropped, warn log | IR-1.7.3 |
 | TC-IR-1.7.4.N1 | Idx > MAX_LOCAL_PLAYERS | listener.idx = 9 | `set` no-op, no crash | IR-1.7.4 |
-| TC-IR-1.7.4.N2 | MPSC queue full | Send until Err | Warn log, update dropped | IR-1.7.4 |
+| TC-IR-1.7.4.N2 | MPSC queue full | Send until Err | Warn; cmd dropped; `prev` advances | IR-1.7.4 |
 | TC-IR-1.7.5.N1 | Cine + gameplay both | Two active brains | First in query wins | IR-1.7.5 |
 
 ## Benchmarks
@@ -56,3 +56,11 @@ production.
 | TC-IR-1.7.1.B1 | 4-player listener sync | < 0.01 ms | IR-1.7.1 |
 | TC-IR-1.7.1.B2 | MPSC send (4 cmds) | < 0.002 ms | IR-1.7.1 |
 | TC-IR-1.7.3.B1 | Velocity derivation x4 | < 0.005 ms | IR-1.7.3 |
+
+## Crate-slice notes (`harmonius_integration_audio_camera`)
+
+1. **TC-IR-1.7.2.2** — In-tree tests assert orientation on `AudioCommand::UpdateListener`. Ear-level
+   HRTF balance stays with the audio mixer once device-backed tests exist.
+2. **TC-IR-1.7.1.B1 / B2 / TC-IR-1.7.3.B1** — No Criterion harness in this repo slice yet; treat
+   benchmark rows as deferred.
+3. Plan progress records the benchmark waiver until `benches/` land here or in the audio crate.

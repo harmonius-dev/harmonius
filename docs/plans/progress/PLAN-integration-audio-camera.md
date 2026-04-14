@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-audio-camera
-last_updated: 2026-04-14T11:34:29Z
+last_updated: 2026-04-14T17:53:57Z
 plan_id: PLAN-integration-audio-camera
 pr_number: 15
 pr_review_status: complete
@@ -77,3 +77,7 @@ Plan file: [audio-camera.md](../integration/audio-camera.md)
   wiring in engine).
 - 2026-04-14T11:34:29Z — pr-reviewer — submitted for human review; 1 finding addressed (minor: rumdl
   MD057 dead README link to missing `docs/design/test-case-coverage-audit.md`).
+- 2026-04-14T17:53:57Z — pr-reviewer — follow-up: queue-full `prev.set` (AC-01); `ListenerDebug` API
+  (AC-03); companion doc waivers for TC-IR-1.7.2.2 / benchmarks (AC-04/05); N2 test rename (AC-06);
+  `AudioCommand` crate note (AC-07). ECS `camera_listener_sync_system` wiring still deferred
+  (AC-02).
