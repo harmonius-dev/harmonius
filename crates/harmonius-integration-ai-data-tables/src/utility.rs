@@ -52,12 +52,13 @@ impl TableColumnConsideration {
 
         if cache.bound_table != db_row.table {
             cache.bound_table = db_row.table;
+            cache.entries.clear();
+            cache.version = 0;
         }
 
         if cache.version != table.version() {
             cache.version = table.version();
             cache.entries.clear();
-            cache.cleared = true;
         }
 
         if let Ok(idx) = cache.find_entry(self.column) {
@@ -66,6 +67,10 @@ impl TableColumnConsideration {
                     return Ok(self.curve.apply(f));
                 }
             }
+        }
+
+        if cache.cleared {
+            return Err(ColumnError::SnapshotInvalidated(db_row.table));
         }
 
         if table.column_index(self.column).is_none() {
@@ -87,12 +92,13 @@ impl TableColumnConsideration {
             None | Some(Value::Null) => 0.0,
             Some(Value::Float(f)) => f,
             Some(Value::Int(i)) => i as f32,
-            Some(Value::Bool(b)) => {
-                if b {
-                    1.0
-                } else {
-                    0.0
-                }
+            Some(Value::Bool(_)) => {
+                return Err(ColumnError::ColumnTypeMismatch {
+                    table: db_row.table,
+                    column: self.column,
+                    expected: CachedValueKind::Float,
+                    actual: CachedValueKind::Bool,
+                });
             }
             Some(Value::String(_)) => {
                 return Err(ColumnError::ColumnTypeMismatch {

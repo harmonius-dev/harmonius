@@ -28,7 +28,6 @@ impl BtTableLookup {
         if cache.bound_table != db_row.table {
             cache.bound_table = db_row.table;
             cache.entries.clear();
-            cache.cleared = true;
             cache.version = 0;
         }
 
@@ -43,13 +42,16 @@ impl BtTableLookup {
         if cache.version != table.version() {
             cache.version = table.version();
             cache.entries.clear();
-            cache.cleared = true;
         }
 
         if let Ok(idx) = cache.find_entry(self.column) {
             if !cache.cleared {
                 return Ok(cache.entries[idx].1.clone());
             }
+        }
+
+        if cache.cleared {
+            return Err(ColumnError::SnapshotInvalidated(db_row.table));
         }
 
         let row_exists = table.get(db_row.row).is_some();

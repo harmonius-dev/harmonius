@@ -81,11 +81,14 @@ pub struct AiTableCache {
 
 impl AiTableCache {
     /// Creates an empty cache pinned to `bound_table`.
+    ///
+    /// `cleared` starts `false`; [`Self::invalidate`] sets `cleared` after a reload drain per
+    /// IR-2.1.6 / failure mode 7 in the integration design.
     pub fn new(bound_table: TableId) -> Self {
         Self {
             entries: Vec::new(),
             version: 0,
-            cleared: true,
+            cleared: false,
             bound_table,
         }
     }

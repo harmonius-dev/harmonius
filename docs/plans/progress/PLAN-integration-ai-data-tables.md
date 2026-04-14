@@ -1,12 +1,12 @@
 ---
 branch: plan/integration-ai-data-tables
-last_updated: 2026-04-14T18:30:00Z
+last_updated: 2026-04-14T17:59:38Z
 plan_id: PLAN-integration-ai-data-tables
 pr_number: 69
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/69
-started_at: 2026-04-14T05:25:00Z
-status: code_complete
+started_at: 2026-04-14T05:24:36Z
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-ai-data-tables
 ---
 
@@ -25,13 +25,14 @@ Plan file: [ai-data-tables.md](../integration/ai-data-tables.md)
 - [x] Refactor phase complete with no regressions
 - [x] Integration validation complete across documented boundaries
 - [x] Constraint conformance checks complete
+- [x] Code complete marker set
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
-- [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [ ] Evidence links logged in this file
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -50,21 +51,19 @@ Plan file: [ai-data-tables.md](../integration/ai-data-tables.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius-integration-ai-data-tables` — 22 integration tests on
-  branch `plan/integration-ai-data-tables` (commit ac30076); PR
-  <https://github.com/cjhowe-us/harmonius/pull/69>
-- Benchmarks: Criterion targets in companion doc remain for `harmonius-integration-perf` (not in
-  this crate).
-- Screenshots: deferred (no viewport in this plan slice).
-- Videos: deferred.
-- Review notes: none yet; `pr_review_status: not_started` for pr-reviewer.
+- Test reports: `cargo test -p harmonius-integration-ai-data-tables` (25 integration tests).
+- Benchmarks: deferred (Criterion benches live under `harmonius-integration-perf` per test-case
+  doc).
 
 ## Event log
 
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
-  (orchestrator pass; no PR merge).
-
-- 2026-04-14T18:30:00Z — plan-implementer — code complete: BT default-on-missing-row, GOAP bake
-  helpers, added TC-IR-2.1.1.2 / 2.1.3.2 / 2.1.3.3 / 2.1.4.2 / 2.1.6.N1; pushed to PR 69.
-
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+- 2026-04-14T05:24:36Z — plan-implementer — code complete: added
+  `harmonius-integration-ai-data-tables` crate, workspace wiring, IR-2.1.x tests from companion
+  test-case doc; awaiting review.
+- 2026-04-14T05:25:48Z — plan-implementer — draft PR
+  <https://github.com/cjhowe-us/harmonius/pull/69> opened; progress frontmatter linked.
+- 2026-04-14T14:41:55Z — plan-implementer — verified worktree `cargo test` / `cargo clippy`; primary
+  checkout progress reconciled from stale `not_started` to match branch `code_complete`.
+- 2026-04-14T17:59:38Z — pr-reviewer — submitted for human review; addressed 10 consolidated
+  findings (FM7 `SnapshotInvalidated`, utility/BT bool parity, `World`/`EntityEventQueue` coverage,
+  README rumdl link); Criterion bench parity remains follow-up per companion perf section.
