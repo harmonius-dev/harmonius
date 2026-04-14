@@ -8,6 +8,7 @@ members = [
   "crates/harmonius_gpu_runtime",
   "crates/harmonius_integration",
   "crates/harmonius_platform",
+  "crates/harmonius_save",
   "crates/harmonius_undo",
 ]
 
