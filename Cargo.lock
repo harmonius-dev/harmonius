@@ -645,6 +645,10 @@ name = "harmonius_directed_graphs"
 version = "0.1.0"
 
 [[package]]
+name = "harmonius_editor"
+version = "0.1.0"
+
+[[package]]
 name = "harmonius_editor_core"
 version = "0.1.0"
 dependencies = [

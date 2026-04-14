@@ -6,6 +6,7 @@ members = [
   "crates/harmonius_core",
   "crates/harmonius_data_tables",
   "crates/harmonius_directed_graphs",
+  "crates/harmonius_editor",
   "crates/harmonius_editor_core",
   "crates/harmonius_event_logs",
   "crates/harmonius_event_logs_ui",
