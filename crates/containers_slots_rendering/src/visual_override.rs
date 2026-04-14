@@ -28,9 +28,7 @@ impl<T> Copy for AssetHandle<T> {}
 
 impl<T> std::fmt::Debug for AssetHandle<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("AssetHandle")
-            .field("id", &self.id)
-            .finish()
+        f.debug_struct("AssetHandle").field("id", &self.id).finish()
     }
 }
 

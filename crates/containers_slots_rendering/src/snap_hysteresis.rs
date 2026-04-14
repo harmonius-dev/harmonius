@@ -4,6 +4,11 @@
 ///
 /// Uses Schmitt-style hysteresis: activation when `distance <= snap_radius`, deactivation once active
 /// only when `distance > snap_radius * 1.1`.
+///
+/// # Preconditions
+///
+/// Callers should pass finite `distance` and a **positive, finite** `snap_radius`. This helper
+/// does not validate inputs; non-finite or non-positive radii propagate without panicking.
 #[must_use]
 pub fn snap_preview_is_active(was_active: bool, distance: f32, snap_radius: f32) -> bool {
     if was_active {
