@@ -8,7 +8,7 @@ use std::time::SystemTime;
 pub struct AssetId(pub u64);
 
 /// Groups folder-drop imports for rollup progress (IR-9.2.6).
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ImportBatchId(pub u32);
 
 /// High-level asset category for routing importers.
@@ -73,6 +73,7 @@ pub enum ImportOutcome {
 #[derive(Clone, Debug, PartialEq)]
 pub struct AssetImportResult {
     pub asset_id: AssetId,
+    pub batch_id: ImportBatchId,
     pub duration_s: f64,
     pub outcome: ImportOutcome,
     pub request_id: u64,
@@ -93,6 +94,7 @@ pub enum ImportStage {
 /// Progress tick emitted while an import runs.
 #[derive(Clone, Debug, PartialEq)]
 pub struct AssetImportProgress {
+    pub batch_id: ImportBatchId,
     pub eta_s: f64,
     pub percent: u8,
     pub request_id: u64,
