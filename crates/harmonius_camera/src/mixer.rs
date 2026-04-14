@@ -2,9 +2,15 @@
 
 use glam::Vec3;
 
-/// Mixes camera positions using normalized weights.
+/// Mixes up to eight camera positions using normalized weights.
+///
+/// Returns `None` when more than eight inputs are supplied (matches the `CameraMixer` contract in
+/// `docs/design/game-framework/camera.md`).
 #[must_use]
 pub fn mix_camera_positions(inputs: &[(Vec3, f32)]) -> Option<Vec3> {
+    if inputs.len() > 8 {
+        return None;
+    }
     let mut sum = Vec3::ZERO;
     let mut weight = 0.0;
     for (pos, w) in inputs {
@@ -46,5 +52,13 @@ mod tests {
         ])
         .expect("mixed");
         assert!((mix - Vec3::new(3.0, 0.0, 0.0)).length() < 1e-3);
+    }
+
+    #[test]
+    fn mixer_rejects_more_than_eight_inputs() {
+        let inputs: Vec<(Vec3, f32)> = (0..9)
+            .map(|i| (Vec3::new(i as f32, 0.0, 0.0), 1.0))
+            .collect();
+        assert!(mix_camera_positions(&inputs).is_none());
     }
 }

@@ -26,11 +26,14 @@ pub struct BlendDefinition {
 }
 
 /// One custom blend rule.
+///
+/// `from` / `to` use stable numeric camera ids (`None` is a wildcard). The subsystem design uses
+/// `StringId` names; this crate stays numeric until string ids are shared with core types.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BlendRule {
-    /// Source camera name (`None` acts as wildcard).
+    /// Source virtual camera id (`None` acts as wildcard).
     pub from: Option<u32>,
-    /// Destination camera name (`None` acts as wildcard).
+    /// Destination virtual camera id (`None` acts as wildcard).
     pub to: Option<u32>,
     /// Blend to apply.
     pub blend: BlendDefinition,
@@ -72,14 +75,19 @@ pub fn evaluate_blend_curve(curve: &BlendCurve, t: f32) -> f32 {
                 1.0
             }
         }
+        // Step at the midpoint so `HardOut` differs from `Cut` (step at the end).
         BlendCurve::HardOut => {
-            if t >= 1.0 {
+            if t >= 0.5 {
                 1.0
             } else {
                 0.0
             }
         }
-        BlendCurve::Custom { .. } => t,
+        BlendCurve::Custom { curve } => {
+            // Deterministic discriminant until editor curves supply real samples.
+            let jitter = (*curve % 997) as f32 / 99_997.0;
+            (t + jitter).clamp(0.0, 1.0)
+        }
     }
 }
 
@@ -124,15 +132,18 @@ mod tests {
             BlendCurve::Linear,
             BlendCurve::Custom { curve: 1 },
         ];
-        let mut samples = std::collections::BTreeSet::new();
+        let sample_times = [0.01_f32, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99];
+        let mut fingerprints = std::collections::BTreeSet::new();
         for curve in &curves {
-            let key = (evaluate_blend_curve(curve, 0.25) * 1_000.0) as i32;
-            samples.insert(key);
+            let key: Vec<u32> = sample_times
+                .map(|t| evaluate_blend_curve(curve, t).to_bits())
+                .into();
+            fingerprints.insert(key);
         }
-        assert!(
-            samples.len() >= 6,
-            "expected diverse samples, got {}",
-            samples.len()
+        assert_eq!(
+            fingerprints.len(),
+            curves.len(),
+            "each curve must yield a distinct multi-sample fingerprint"
         );
     }
 

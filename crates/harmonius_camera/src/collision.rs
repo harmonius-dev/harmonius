@@ -26,10 +26,14 @@ pub struct CameraDeoccluder {
     pub obstacle_layers: LayerMask,
 }
 
-/// Deocclusion strategy (subset for tests).
+/// Deocclusion strategy (engine parity; only pull-forward is evaluated today).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DeocclusionStrategy {
     PullForward,
+    /// Climb vertically before advancing (reserved).
+    PreserveHeight,
+    /// Maintain arm length while clearing hits (reserved).
+    PreserveDistance,
 }
 
 /// Geometry penetration prevention.
@@ -68,6 +72,7 @@ pub fn apply_deoccluder_pull_forward(
                 0.0
             }
         }
+        DeocclusionStrategy::PreserveHeight | DeocclusionStrategy::PreserveDistance => 0.0,
     }
 }
 

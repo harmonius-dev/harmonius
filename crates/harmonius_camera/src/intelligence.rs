@@ -1,4 +1,7 @@
 //! State-driven cameras, clear shot, and simple sequencing.
+//!
+//! Phase-1 data uses numeric state tokens and compact playlist rows; expand toward full
+//! `wait_time` / `min_duration` / per-entry blends once shared types exist (see subsystem design).
 
 use crate::ids::Entity;
 
@@ -54,11 +57,15 @@ pub fn evaluate_state_driven_camera(brain: &StateDrivenCamera, state: u32) -> Op
 }
 
 /// Picks the child camera with the highest quality score.
+///
+/// Non-finite scores are ignored. Equal scores break ties using the higher [`Entity`] id (field
+/// `0`), matching [`crate::brain::select_highest_priority_camera`].
 #[must_use]
 pub fn evaluate_clear_shot_child(scores: &[(Entity, f32)]) -> Option<Entity> {
     scores
         .iter()
-        .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+        .filter(|(_, score)| score.is_finite())
+        .max_by(|(ea, a), (eb, b)| a.total_cmp(b).then_with(|| ea.0.cmp(&eb.0)))
         .map(|(entity, _)| *entity)
 }
 
@@ -124,6 +131,18 @@ mod tests {
             children: scores.iter().map(|(e, _)| *e).collect(),
         };
         assert_eq!(clear.children.len(), 3);
+    }
+
+    #[test]
+    fn clear_shot_ignores_nan_and_prefers_finite() {
+        let scores = [(Entity(1), f32::NAN), (Entity(2), 0.5)];
+        assert_eq!(evaluate_clear_shot_child(&scores), Some(Entity(2)));
+    }
+
+    #[test]
+    fn clear_shot_tie_breaks_on_entity_id() {
+        let scores = [(Entity(1), 0.5), (Entity(3), 0.5), (Entity(2), 0.5)];
+        assert_eq!(evaluate_clear_shot_child(&scores), Some(Entity(3)));
     }
 
     /// TC-13.25.26.1 — sequencer advances through hold durations in order.

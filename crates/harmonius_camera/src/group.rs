@@ -11,6 +11,8 @@ pub struct TargetGroupMember {
     pub entity: Entity,
     /// Member position sample.
     pub position: Vec3,
+    /// Relative influence when forming a weighted centroid (`<= 0` skips this member).
+    pub weight: f32,
 }
 
 /// Aggregates multiple targets into one framing problem.
@@ -44,6 +46,27 @@ pub fn group_bounding_box_center(group: &TargetGroup) -> Option<Vec3> {
         max = max.max(member.position);
     }
     Some((min + max) * 0.5)
+}
+
+/// Weighted centroid of member positions (ignores non-positive weights).
+#[must_use]
+pub fn group_weighted_center(group: &TargetGroup) -> Option<Vec3> {
+    if group.members.is_empty() {
+        return None;
+    }
+    let mut sum = Vec3::ZERO;
+    let mut weight_sum = 0.0_f32;
+    for member in &group.members {
+        if member.weight <= 0.0 {
+            continue;
+        }
+        sum += member.position * member.weight;
+        weight_sum += member.weight;
+    }
+    if weight_sum <= 0.0 {
+        return None;
+    }
+    Some(sum / weight_sum)
 }
 
 /// Estimates a vertical FOV (degrees) that frames the group's horizontal spread.
@@ -83,19 +106,42 @@ mod tests {
                 TargetGroupMember {
                     entity: Entity(1),
                     position: Vec3::ZERO,
+                    weight: 1.0,
                 },
                 TargetGroupMember {
                     entity: Entity(2),
                     position: Vec3::new(10.0, 0.0, 0.0),
+                    weight: 1.0,
                 },
                 TargetGroupMember {
                     entity: Entity(3),
                     position: Vec3::new(0.0, 10.0, 0.0),
+                    weight: 1.0,
                 },
             ],
         };
         let center = group_bounding_box_center(&group).expect("center");
         assert!((center - Vec3::new(5.0, 5.0, 0.0)).length() < 1e-3);
+    }
+
+    #[test]
+    fn tc_13_25_27_2_target_group_weighted_center() {
+        let group = TargetGroup {
+            members: vec![
+                TargetGroupMember {
+                    entity: Entity(1),
+                    position: Vec3::ZERO,
+                    weight: 1.0,
+                },
+                TargetGroupMember {
+                    entity: Entity(2),
+                    position: Vec3::new(10.0, 0.0, 0.0),
+                    weight: 3.0,
+                },
+            ],
+        };
+        let center = group_weighted_center(&group).expect("weighted");
+        assert!((center - Vec3::new(7.5, 0.0, 0.0)).length() < 1e-3);
     }
 
     /// TC-13.25.28.1 — larger spreads request wider FOV within clamps.
