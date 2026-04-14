@@ -2,9 +2,8 @@
 //! switching primitives. See `docs/design/game-framework/localization.md`.
 
 #![deny(clippy::all)]
+#![deny(missing_docs)]
 #![deny(unsafe_code)]
-// Public API is documented on re-exports; inner `types` mirrors the design doc.
-#![allow(missing_docs)]
 
 mod error;
 mod missing_log;
@@ -12,9 +11,11 @@ mod registry;
 mod search;
 mod service;
 
+/// Returned by [`LocalizationService::lookup`] when no table row resolves the id.
+pub const MISSING_TRANSLATION: &str = "[missing]";
+
 pub use error::LocError;
 pub use missing_log::{MissingEntry, MissingLog};
-pub use registry::LocaleRegistry;
 pub use service::{LocaleChanged, LocaleSwitch, LocalizationService, SwitchReason};
 
 pub use crate::types::{
@@ -62,7 +63,7 @@ mod types {
     pub struct LocaleId(pub [u8; 16]);
 
     impl LocaleId {
-        /// Packs a BCP-47 tag into 16 bytes (truncates if longer than 16).
+        /// Packs a BCP-47 tag into 16 UTF-8 bytes (silently truncates when longer).
         #[must_use]
         pub fn from_bcp47(s: &str) -> Self {
             let mut buf = [0u8; 16];
@@ -73,6 +74,8 @@ mod types {
         }
 
         /// Returns the tag as UTF-8 (trimmed at the first zero byte).
+        ///
+        /// Invalid UTF-8 in the stored bytes becomes `""`.
         #[must_use]
         pub fn as_str(&self) -> &str {
             let end = self.0.iter().position(|&x| x == 0).unwrap_or(16);
@@ -171,6 +174,7 @@ mod types {
 #[cfg(test)]
 mod tests {
     use rkyv::Deserialize as RkyvDeserializeTrait;
+    use tracing_test::traced_test;
 
     use super::*;
     use crate::search::{binary_search_call_count, reset_binary_search_call_count};
@@ -213,8 +217,8 @@ mod tests {
         let en_t = simple_table(en(), en(), 1, "hello");
         let ja_t = simple_table(ja(), en(), 1, "konnichiwa");
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
-        svc.load(ja(), &archive(&ja_t)).unwrap();
+        svc.load(en(), archive(&en_t)).unwrap();
+        svc.load(ja(), archive(&ja_t)).unwrap();
         svc.set_active(ja()).unwrap();
         assert_eq!(svc.lookup(LocalizedStringId(1)), "konnichiwa");
     }
@@ -230,13 +234,14 @@ mod tests {
             t
         };
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
-        svc.load(ja(), &archive(&ja_t)).unwrap();
+        svc.load(en(), archive(&en_t)).unwrap();
+        svc.load(ja(), archive(&ja_t)).unwrap();
         svc.set_active(ja()).unwrap();
         assert_eq!(svc.lookup(LocalizedStringId(1)), "only-en");
     }
 
     /// **TC-10.1.9.3** `test_lookup_missing_in_source_returns_placeholder`
+    #[traced_test]
     #[test]
     fn test_lookup_missing_in_source_returns_placeholder() {
         let en_t = {
@@ -246,8 +251,10 @@ mod tests {
             t
         };
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
-        assert_eq!(svc.lookup(LocalizedStringId(42)).as_ref(), "[missing:42]");
+        svc.load(en(), archive(&en_t)).unwrap();
+        assert_eq!(svc.lookup(LocalizedStringId(42)).as_ref(), MISSING_TRANSLATION);
+        assert_eq!(svc.lookup_or_key(LocalizedStringId(42)).as_ref(), "42");
+        assert!(logs_contain("missing translation"));
     }
 
     /// **TC-10.1.9.4** `test_active_locale_reported`
@@ -256,8 +263,8 @@ mod tests {
         let en_t = simple_table(en(), en(), 1, "a");
         let ja_t = simple_table(ja(), en(), 1, "b");
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
-        svc.load(ja(), &archive(&ja_t)).unwrap();
+        svc.load(en(), archive(&en_t)).unwrap();
+        svc.load(ja(), archive(&ja_t)).unwrap();
         svc.set_active(ja()).unwrap();
         assert_eq!(svc.active_locale(), ja());
     }
@@ -288,7 +295,7 @@ mod tests {
             version: 1,
         };
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&table)).unwrap();
+        svc.load(en(), archive(&table)).unwrap();
         reset_binary_search_call_count();
         let _ = svc.lookup(LocalizedStringId(n));
         let calls = binary_search_call_count();
@@ -331,7 +338,7 @@ mod tests {
             version: 1,
         };
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&table)).unwrap();
+        svc.load(en(), archive(&table)).unwrap();
         assert_eq!(svc.lookup_plural(LocalizedStringId(1), 1), "one person");
     }
 
@@ -370,7 +377,7 @@ mod tests {
             version: 1,
         };
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&table)).unwrap();
+        svc.load(en(), archive(&table)).unwrap();
         assert_eq!(svc.lookup_plural(LocalizedStringId(1), 5), "many people");
     }
 
@@ -385,8 +392,8 @@ mod tests {
             t
         };
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
-        svc.load(ja(), &archive(&ja_t)).unwrap();
+        svc.load(en(), archive(&en_t)).unwrap();
+        svc.load(ja(), archive(&ja_t)).unwrap();
         svc.set_active(ja()).unwrap();
         let _ = svc.lookup(LocalizedStringId(1));
         let _ = svc.lookup(LocalizedStringId(1));
@@ -405,8 +412,8 @@ mod tests {
             t
         };
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
-        svc.load(ja(), &archive(&ja_t)).unwrap();
+        svc.load(en(), archive(&en_t)).unwrap();
+        svc.load(ja(), archive(&ja_t)).unwrap();
         svc.set_active(ja()).unwrap();
         let _ = svc.lookup(LocalizedStringId(1));
         let mut first = svc.drain_missing();
@@ -482,8 +489,8 @@ mod tests {
         let en_t = simple_table(en(), en(), 1, "a");
         let ja_t = simple_table(ja(), en(), 1, "b");
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
-        svc.load(ja(), &archive(&ja_t)).unwrap();
+        svc.load(en(), archive(&en_t)).unwrap();
+        svc.load(ja(), archive(&ja_t)).unwrap();
         let sw = LocaleSwitch {
             target: ja(),
             reason: SwitchReason::PlayerSetting,
@@ -498,8 +505,8 @@ mod tests {
         let en_t = simple_table(en(), en(), 1, "a");
         let ja_t = simple_table(ja(), en(), 1, "b");
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
-        svc.load(ja(), &archive(&ja_t)).unwrap();
+        svc.load(en(), archive(&en_t)).unwrap();
+        svc.load(ja(), archive(&ja_t)).unwrap();
         let note = svc
             .apply_locale_switch(LocaleSwitch {
                 target: ja(),
@@ -514,7 +521,7 @@ mod tests {
     fn test_locale_switch_unknown_locale_errors() {
         let en_t = simple_table(en(), en(), 1, "a");
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
+        svc.load(en(), archive(&en_t)).unwrap();
         let err = svc
             .apply_locale_switch(LocaleSwitch {
                 target: fr(),
@@ -525,6 +532,7 @@ mod tests {
     }
 
     /// **TC-15.13.3.1** `test_fallback_to_source_logs_warning_once`
+    #[traced_test]
     #[test]
     fn test_fallback_to_source_logs_warning_once() {
         let en_t = simple_table(en(), en(), 1, "src");
@@ -535,12 +543,13 @@ mod tests {
             t
         };
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
-        svc.load(ja(), &archive(&ja_t)).unwrap();
+        svc.load(en(), archive(&en_t)).unwrap();
+        svc.load(ja(), archive(&ja_t)).unwrap();
         svc.set_active(ja()).unwrap();
         let _ = svc.lookup(LocalizedStringId(1));
         let _ = svc.lookup(LocalizedStringId(1));
         assert_eq!(svc.drain_missing().len(), 1);
+        assert!(logs_contain("missing translation"));
     }
 
     /// **TC-15.13.3.2** `test_fallback_returns_correct_source_text`
@@ -554,13 +563,14 @@ mod tests {
             t
         };
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&en_t)).unwrap();
-        svc.load(ja(), &archive(&ja_t)).unwrap();
+        svc.load(en(), archive(&en_t)).unwrap();
+        svc.load(ja(), archive(&ja_t)).unwrap();
         svc.set_active(ja()).unwrap();
         assert_eq!(svc.lookup(LocalizedStringId(1)), "source-text");
     }
 
     /// **TC-15.13.3.3** `test_placeholder_when_neither_has_key`
+    #[traced_test]
     #[test]
     fn test_placeholder_when_neither_has_key() {
         let empty = LocalizationTable {
@@ -571,8 +581,98 @@ mod tests {
             version: 1,
         };
         let mut svc = LocalizationService::new(en());
-        svc.load(en(), &archive(&empty)).unwrap();
+        svc.load(en(), archive(&empty)).unwrap();
         svc.set_active(en()).unwrap();
-        assert_eq!(svc.lookup(LocalizedStringId(9)).as_ref(), "[missing:9]");
+        assert_eq!(svc.lookup(LocalizedStringId(9)).as_ref(), MISSING_TRANSLATION);
+        assert_eq!(svc.lookup_or_key(LocalizedStringId(9)).as_ref(), "9");
+        assert!(logs_contain("missing translation"));
+    }
+
+    #[test]
+    fn test_load_rejects_unsorted_key_ids() {
+        let strings = "ab".to_string();
+        let t = LocalizationTable {
+            locale: en(),
+            source_locale: en(),
+            keys: vec![
+                KeyEntry {
+                    id: LocalizedStringId(2),
+                    offset: 0,
+                    length: 1,
+                    plural_form: PluralForm::Singular,
+                },
+                KeyEntry {
+                    id: LocalizedStringId(1),
+                    offset: 1,
+                    length: 1,
+                    plural_form: PluralForm::Singular,
+                },
+            ],
+            strings,
+            version: 1,
+        };
+        let mut svc = LocalizationService::new(en());
+        assert_eq!(
+            svc.load(en(), archive(&t)).unwrap_err(),
+            LocError::InvalidArchive
+        );
+    }
+
+    #[test]
+    fn test_load_rejects_duplicate_key_ids() {
+        let strings = "aa".to_string();
+        let t = LocalizationTable {
+            locale: en(),
+            source_locale: en(),
+            keys: vec![
+                KeyEntry {
+                    id: LocalizedStringId(1),
+                    offset: 0,
+                    length: 1,
+                    plural_form: PluralForm::Singular,
+                },
+                KeyEntry {
+                    id: LocalizedStringId(1),
+                    offset: 1,
+                    length: 1,
+                    plural_form: PluralForm::Singular,
+                },
+            ],
+            strings,
+            version: 1,
+        };
+        let mut svc = LocalizationService::new(en());
+        assert_eq!(
+            svc.load(en(), archive(&t)).unwrap_err(),
+            LocError::InvalidArchive
+        );
+    }
+
+    #[test]
+    fn test_handle_locale_switch_alias_matches_apply() {
+        let en_t = simple_table(en(), en(), 1, "a");
+        let ja_t = simple_table(ja(), en(), 1, "b");
+        let mut svc = LocalizationService::new(en());
+        svc.load(en(), archive(&en_t)).unwrap();
+        svc.load(ja(), archive(&ja_t)).unwrap();
+        let a = svc
+            .apply_locale_switch(LocaleSwitch {
+                target: ja(),
+                reason: SwitchReason::PlayerSetting,
+            })
+            .unwrap();
+        let _ = svc
+            .apply_locale_switch(LocaleSwitch {
+                target: en(),
+                reason: SwitchReason::PlayerSetting,
+            })
+            .unwrap();
+        let b = svc
+            .handle_locale_switch(LocaleSwitch {
+                target: ja(),
+                reason: SwitchReason::PlayerSetting,
+            })
+            .unwrap();
+        assert_eq!(a, b);
     }
 }

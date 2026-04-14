@@ -29,6 +29,8 @@ fn record_call() {
 fn record_call() {}
 
 /// Returns the index of `id` in `keys`, which must be sorted by `id` ascending.
+///
+/// Table loads reject archives whose ids are not strictly ascending.
 #[must_use]
 pub fn binary_search_entry(keys: &[KeyEntry], id: LocalizedStringId) -> Option<usize> {
     let mut lo = 0usize;
@@ -45,6 +47,7 @@ pub fn binary_search_entry(keys: &[KeyEntry], id: LocalizedStringId) -> Option<u
     None
 }
 
+/// Returns the UTF-8 substring of `blob` at `[offset, offset + length)` when in range.
 #[must_use]
 pub fn slice_str(blob: &str, offset: u32, length: u32) -> Option<&str> {
     let o = offset as usize;
