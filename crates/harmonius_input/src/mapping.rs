@@ -1,11 +1,13 @@
 //! Stack-aware binding resolution for keyboard and analog sources.
 
 use crate::actions::{
-    ActionBinding, ActionId, ContextId, ContextStack, GamepadStickSource, InputSource, MappingContext,
+    ActionBinding, ActionId, ContextId, ContextStack, GamepadStickSource, InputSource,
+    MappingContext,
 };
 use crate::device::{GamepadAxis, GamepadState, KeyboardState, Scancode};
 use crate::ids::TouchRegionId;
 use glam::Vec2;
+use std::collections::HashSet;
 
 /// Errors when loading authored mapping graphs (editor files).
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -20,9 +22,13 @@ pub struct InputMapper;
 
 impl InputMapper {
     /// Load contexts into a fresh stack (editor export path).
-    pub fn load_contexts(
-        contexts: Vec<MappingContext>,
-    ) -> Result<ContextStack, MappingLoadError> {
+    pub fn load_contexts(contexts: Vec<MappingContext>) -> Result<ContextStack, MappingLoadError> {
+        let mut seen = HashSet::new();
+        for c in &contexts {
+            if !seen.insert(c.id) {
+                return Err(MappingLoadError::DuplicateContext);
+            }
+        }
         let mut stack = ContextStack::default();
         for c in contexts {
             stack.push(c);
@@ -31,10 +37,7 @@ impl InputMapper {
     }
 
     /// Resolve a keyboard press through the stack (highest priority first).
-    pub fn resolve_key_press(
-        stack: &ContextStack,
-        key: Scancode,
-    ) -> Vec<(ContextId, ActionId)> {
+    pub fn resolve_key_press(stack: &ContextStack, key: Scancode) -> Vec<(ContextId, ActionId)> {
         let mut out = Vec::new();
         for ctx in stack.iter_high_to_low() {
             let mut matched_here = false;

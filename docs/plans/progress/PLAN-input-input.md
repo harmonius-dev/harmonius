@@ -1,12 +1,12 @@
 ---
 branch: plan/input-input
-last_updated: 2026-04-14T05:35:00Z
+last_updated: 2026-04-14T11:45:35Z
 plan_id: PLAN-input-input
 pr_number: 87
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/87
 started_at: 2026-04-14T05:20:00Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-input-input
 ---
 
@@ -28,10 +28,10 @@ Plan file: [input.md](../input/input.md)
 - [ ] Manual validation complete with screenshot and video evidence (deferred: library-only slice)
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [x] `rumdl check .` passes for touched docs (no Markdown edits in this PR; repo README link issue pre-existing)
+- [x] `rumdl check .` passes for touched docs (README MD057 unchanged; pre-existing)
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -50,17 +50,23 @@ Plan file: [input.md](../input/input.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius_input` — 48 integration tests in `crates/harmonius_input/tests/tc_input.rs` (2026-04-14, local).
+- Test reports: `cargo test -p harmonius_input` — 53 integration tests in
+  `crates/harmonius_input/tests/tc_input.rs` (2026-04-14, local).
 - Benchmarks: not run for this slice (no `TC-6.*.B.*` targets in plan frontmatter list).
 - Screenshots: deferred (library-only).
 - Videos: deferred (library-only).
-- Review notes: draft PR https://github.com/cjhowe-us/harmonius/pull/87
+- Review notes: PR <https://github.com/cjhowe-us/harmonius/pull/87> (undrafted after review).
 
 ## Event log
 
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
-- 2026-04-14T05:20:00Z — plan-implementer — started, worktree at `/Users/cjhowe/Code/harmonius-worktrees/PLAN-input-input`, branch `plan/input-input`.
-- 2026-04-14T05:33:00Z — plan-implementer — draft PR opened: https://github.com/cjhowe-us/harmonius/pull/87
-- 2026-04-14T05:35:00Z — plan-implementer — code complete, awaiting review (`harmonius_input` crate + 48 TC-mapped tests).
-
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
+- 2026-04-14T05:20:00Z — plan-implementer — started, worktree at
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-input-input`, branch `plan/input-input`.
+- 2026-04-14T05:33:00Z — plan-implementer — draft PR opened:
+  <https://github.com/cjhowe-us/harmonius/pull/87>
+- 2026-04-14T05:35:00Z — plan-implementer — code complete, awaiting review (48 TC-mapped tests in
+  `harmonius_input` crate).
+- 2026-04-14T11:45:35Z — pr-reviewer — submitted for human review. Addressed 13 automated findings:
+  rebind policy, duplicate `ContextId` detection, `InputSource::ComboTree`, chord/combo triggers,
+  regression tests, gyro docstring.

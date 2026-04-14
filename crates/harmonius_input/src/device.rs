@@ -737,7 +737,10 @@ pub fn normalize_native_w_key(native: u32) -> Scancode {
     }
 }
 
-/// Deterministic gyro integration about +X (pitch) for fusion unit tests.
+/// Deterministic gyro-only quaternion integration about +X (pitch) for unit tests.
+///
+/// This is **not** a Madgwick fusion filter; companion TC-6.1.7.1 exercises bounded drift against a
+/// pure gyro closed-form target.
 pub fn gyro_integrate_pitch(mut q: Quat, gyro_x: f32, dt: f32, frames: usize) -> Quat {
     for _ in 0..frames {
         q = (Quat::from_rotation_x(gyro_x * dt) * q).normalize();
