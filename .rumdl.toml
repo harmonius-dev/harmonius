@@ -1,6 +1,7 @@
 # rumdl configuration file
 
 [global]
+# Progress stubs are high-churn automation output; excluding avoids rumdl noise on in-flight rows.
 exclude = [
   ".git",
   ".github",

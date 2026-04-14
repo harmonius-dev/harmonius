@@ -29,15 +29,16 @@ Test case IDs use `TC-2.7.Z.N` format.
 | TC-2.7.8.1 | `test_layer_mask_excludes_entity`        | R-2.7.8 |
 | TC-2.7.8.2 | `test_layer_mask_intersection_logic`     | R-2.7.8 |
 | TC-2.7.4.1 | `test_sequencer_blend_ab`                | R-2.7.4 |
+| TC-2.7.4.2 | `test_sequencer_cutscene_end_to_end`     | R-2.7.4 |
 
-1. **TC-2.7.2.1** `test_cine_lens_vfov_50mm_35mm_sensor` -- 50 mm lens, 35 mm sensor.
-   - Expected: vFOV ~= 39.6 degrees.
-2. **TC-2.7.2.2** `test_cine_lens_vfov_24mm_35mm_sensor` -- 24 mm lens, 35 mm sensor.
-   - Expected: vFOV ~= 73.7 degrees.
+1. **TC-2.7.2.1** `test_cine_lens_vfov_50mm_35mm_sensor` -- 50 mm lens, 35 mm sensor width.
+   - Expected: vFOV ~= 38.58 degrees (`2 * atan(sensor / (2 * focal))` in degrees).
+2. **TC-2.7.2.2** `test_cine_lens_vfov_24mm_35mm_sensor` -- 24 mm lens, 35 mm sensor width.
+   - Expected: vFOV ~= 72.20 degrees (same formula).
 3. **TC-2.7.2.3** `test_cine_lens_ev100_sunny_16` -- f/16, 1/100s, ISO 100.
-   - Expected: EV100 ~= 8.0 (+/- 0.1).
+   - Expected: EV100 ~= 14.64 (`log2(N^2 / t * (100 / ISO))`).
 4. **TC-2.7.2.4** `test_cine_lens_ev100_indoor` -- f/2.8, 1/60s, ISO 400.
-   - Expected: EV100 ~= 3.2.
+   - Expected: EV100 ~= 6.88 (same formula).
 5. **TC-2.7.1.1** `test_spring_arm_no_contact_full_length` -- No physics contact.
    - Expected: `current_length` converges to `desired_length`.
 6. **TC-2.7.1.2** `test_spring_arm_contact_retract_rate` -- Sweep reports hit at 2 m, desired is 3
@@ -65,31 +66,36 @@ Test case IDs use `TC-2.7.Z.N` format.
 20. **TC-2.7.8.2** `test_layer_mask_intersection_logic` -- Non-zero intersection renders.
 21. **TC-2.7.4.1** `test_sequencer_blend_ab` -- Two-camera blend at t=0.5.
     - Expected: camera pose midway between A and B.
+22. **TC-2.7.4.2** `test_sequencer_cutscene_end_to_end` -- Multi-slot `CameraSequencerState` returns
+    expected blended positions for staged `(index_a, index_b, blend_t)` samples.
 
 ## Integration Tests
 
-| ID         | Name                                        | Req     |
-|------------|---------------------------------------------|---------|
-| TC-2.7.3.1 | `test_pip_two_viewports_composite`          | R-2.7.3 |
-| TC-2.7.3.2 | `test_pip_four_viewports_composite`         | R-2.7.3 |
-| TC-2.7.3.3 | `test_pip_priority_order_respected`         | R-2.7.3 |
-| TC-2.7.4.2 | `test_sequencer_cutscene_end_to_end`        | R-2.7.4 |
-| TC-2.7.1.5 | `test_spring_arm_with_real_physics_scene`   | R-2.7.1 |
-| TC-2.7.6.4 | `test_dof_pass_renders_without_error`       | R-2.7.6 |
-| TC-2.7.7.5 | `test_auto_exposure_adapts_over_sequence`   | R-2.7.7 |
+| ID         | Name                                           | Req     |
+|------------|------------------------------------------------|---------|
+| TC-2.7.3.1 | `test_pip_two_viewports_composite`             | R-2.7.3 |
+| TC-2.7.3.2 | `test_pip_four_viewports_composite`            | R-2.7.3 |
+| TC-2.7.3.3 | `test_pip_priority_order_respected`            | R-2.7.3 |
+| TC-2.7.1.5 | `test_spring_arm_with_scripted_obstruction_world` | R-2.7.1 |
+| TC-2.7.6.4 | `test_dof_pass_settings_validate_for_pass`     | R-2.7.6 |
+| TC-2.7.7.5 | `test_auto_exposure_adapts_over_sequence`      | R-2.7.7 |
 
-1. **TC-2.7.3.1** `test_pip_two_viewports_composite` -- Two cameras, one full, one small. Assert
-   both render; pixel samples match expectations.
-2. **TC-2.7.3.2** `test_pip_four_viewports_composite` -- Four cameras. Assert all composed.
-3. **TC-2.7.3.3** `test_pip_priority_order_respected` -- Higher priority overlays lower.
-4. **TC-2.7.4.2** `test_sequencer_cutscene_end_to_end` -- Timeline-driven three-camera cutscene.
-   Frames at each keyframe match reference.
-5. **TC-2.7.1.5** `test_spring_arm_with_real_physics_scene` -- Camera orbits a character in a scene
-   with walls. No clipping, smooth recovery.
-6. **TC-2.7.6.4** `test_dof_pass_renders_without_error` -- DoF enabled on a scene, one frame, assert
-   no device errors.
-7. **TC-2.7.7.5** `test_auto_exposure_adapts_over_sequence` -- Scene bright->dark->bright.
-   Auto-exposure adapts smoothly.
+1. **TC-2.7.3.1** `test_pip_two_viewports_composite` -- Assert deterministic `composite_order` for
+   two PiP cameras (ordering slice of R-2.7.3).
+2. **TC-2.7.3.2** `test_pip_four_viewports_composite` -- Same for four cameras.
+3. **TC-2.7.3.3** `test_pip_priority_order_respected` -- Higher `priority` is composited after lower
+   priority (drawn on top).
+4. **TC-2.7.1.5** `test_spring_arm_with_scripted_obstruction_world` -- Scripted `SpringArmWorld`
+   toggles obstruction; boom stays off the pivot and returns near desired length.
+5. **TC-2.7.6.4** `test_dof_pass_settings_validate_for_pass`
+   - `DofSettings::validate_for_pass` accepts finite positive inputs; GPU smoke stays deferred.
+6. **TC-2.7.7.5** `test_auto_exposure_adapts_over_sequence`
+   - Histogram swings bright to dark to bright; EV ordering stays consistent with the swings.
+
+### Deferred GPU coverage (same requirement IDs, render harness)
+
+Pixel compositing, swap-chain frames, and timeline frame grabs for PiP / DoF / sequencer remain
+tracked here but require GPU-backed tests once the headless render fixture exists.
 
 ## Benchmarks
 
@@ -100,6 +106,9 @@ Test case IDs use `TC-2.7.Z.N` format.
 | TC-2.7.6.B1  | `bench_dof_pass_1080p`                | < 1.5 ms          |
 | TC-2.7.7.B1  | `bench_histogram_exposure_1080p`      | < 0.3 ms          |
 | TC-2.7.5.B1  | `bench_distortion_pass_1080p`         | < 0.2 ms          |
+
+Criterion benches for these IDs are **not** in the `rendering_camera` crate yet; keep the targets as
+the performance contract and add benches when the subsystem shares a stable frame harness with CI.
 
 1. **TC-2.7.3.B1** -- Four cameras compositing onto one swapchain. < 8 ms/frame at 1080p.
 2. **TC-2.7.1.B1** -- 256 spring-arm cameras updating each frame. < 0.2 ms.

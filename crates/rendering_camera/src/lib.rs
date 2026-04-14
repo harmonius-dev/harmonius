@@ -19,7 +19,7 @@ pub mod spring_arm;
 
 pub use cine_lens::CineLens;
 pub use distortion::DistortionSettings;
-pub use dof::{circle_of_confusion_m, DofSettings};
+pub use dof::{circle_of_confusion_m, BokehShape, DofSettings};
 pub use exposure::{ExposureMode, ExposureSettings, HistogramSample};
 pub use layer_mask::RenderLayerMask;
 pub use pip::{composite_order, PipCamera, PipRect};

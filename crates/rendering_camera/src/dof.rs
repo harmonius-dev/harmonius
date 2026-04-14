@@ -1,5 +1,19 @@
 //! Depth-of-field circle-of-confusion helpers (`R-2.7.6`).
 
+/// Bokeh kernel shape for depth-of-field passes (design `BokehShape`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum BokehShape {
+    /// Isotropic circular kernel.
+    #[default]
+    Circle,
+    /// Six-sided aperture highlight.
+    Hexagon,
+    /// Eight-sided aperture highlight.
+    Octagon,
+    /// Custom kernel supplied by the render graph.
+    Custom,
+}
+
 /// Physical depth-of-field parameters carried by a render camera.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct DofSettings {
@@ -11,6 +25,8 @@ pub struct DofSettings {
     pub focal_length_mm: f32,
     /// Aperture as an f-number.
     pub aperture_fstop: f32,
+    /// Highlight convolution shape for the DoF pass.
+    pub bokeh_shape: BokehShape,
 }
 
 /// Computes the circle-of-confusion diameter in **meters** for a thin lens model.
@@ -42,8 +58,10 @@ pub fn circle_of_confusion_m(
 pub enum DofPassError {
     /// DoF is disabled; callers should skip the pass.
     Disabled,
-    /// One or more parameters were non-finite or out of range.
+    /// One or more parameters were not finite (`NaN` / `inf`).
     NonFinite,
+    /// Focus distance, focal length, or f-stop was non-positive.
+    InvalidRange,
 }
 
 impl DofSettings {
@@ -60,7 +78,7 @@ impl DofSettings {
         }
         if self.focus_distance_m <= 0.0 || self.focal_length_mm <= 0.0 || self.aperture_fstop <= 0.0
         {
-            return Err(DofPassError::NonFinite);
+            return Err(DofPassError::InvalidRange);
         }
         Ok(())
     }

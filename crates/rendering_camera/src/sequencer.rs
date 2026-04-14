@@ -1,4 +1,7 @@
 //! Camera sequencer blending for cutscenes (`R-2.7.4`).
+//!
+//! Phase 1 interpolates **positions only**. Orientation, lens, and exposure hand-off stay on the
+//! roadmap for timeline-driven cuts once those parameters live on [`CameraPose`].
 
 /// Minimal camera pose used by the sequencer tests.
 #[derive(Clone, Copy, Debug, PartialEq)]
