@@ -8,6 +8,7 @@ members = [
   "crates/harmonius_gpu_runtime",
   "crates/harmonius_integration",
   "crates/harmonius_integration_editor_physics",
+  "crates/harmonius_integration_rendering_camera",
   "crates/harmonius_integration_rendering_geometry",
   "crates/harmonius_integration_rendering_grids_volumes",
   "crates/harmonius_integration_rendering_physics",
