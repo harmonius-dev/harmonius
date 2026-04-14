@@ -46,6 +46,7 @@ members = [
   "crates/harmonius_net",
   "crates/harmonius_physics",
   "crates/harmonius_platform",
+  "crates/harmonius_primitives",
   "crates/harmonius_profiler",
   "crates/harmonius_rendering_core",
   "crates/harmonius_save",
