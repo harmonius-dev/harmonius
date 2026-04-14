@@ -1,12 +1,13 @@
 [package]
 edition = "2021"
 license = "MIT OR Apache-2.0"
-name = "harmonius-integration-tests"
+name = "harmonius-integration-benches"
 version = "0.0.1"
 
 [dependencies]
 blake3 = "1.8"
 harmonius_asset_build = { path = "../harmonius_asset_build" }
-rkyv = { version = "0.8.9", features = ["std"] }
 
-[dev-dependencies]
+[[bench]]
+harness = false
+name = "asset_pipeline_build_deploy"

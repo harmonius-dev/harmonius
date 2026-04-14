@@ -1,10 +1,10 @@
 ---
 branch: plan/integration-asset-pipeline-build-deploy
-last_updated: 2026-04-14T17:48:50Z
+last_updated: 2026-04-14T05:23:39Z
 plan_id: PLAN-integration-asset-pipeline-build-deploy
-pr_number: 63
+pr_number: null
+pr_url: null
 pr_review_status: not_started
-pr_url: https://github.com/cjhowe-us/harmonius/pull/63
 started_at: 2026-04-14T05:23:39Z
 status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-asset-pipeline-build-deploy
@@ -17,7 +17,7 @@ Plan file: [asset-pipeline-build-deploy.md](../integration/asset-pipeline-build-
 ## Status checklist
 
 - [x] Worktree created and branch aligned with plan metadata
-- [x] Draft PR opened and linked in frontmatter
+- [ ] Draft PR opened and linked in frontmatter
 - [x] Design and companion test-case docs reviewed
 - [x] Requirement and user-story trace matrix completed
 - [x] Red phase complete with failing tests for uncovered scope
@@ -28,12 +28,11 @@ Plan file: [asset-pipeline-build-deploy.md](../integration/asset-pipeline-build-
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace --all-targets -- -D warnings` passes
-- [x] `rumdl check .` passes for touched docs
+- [ ] `rumdl check .` passes for touched docs
 - [x] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
-- [x] Code complete marker set
 
 ## Implementation readiness gate
 
@@ -64,11 +63,5 @@ Plan file: [asset-pipeline-build-deploy.md](../integration/asset-pipeline-build-
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-asset-pipeline-build-deploy`.
 - 2026-04-14T05:23:39Z — plan-implementer — code complete: `harmonius_asset_build` +
   `harmonius-integration-tests` + `harmonius-integration-benches`; awaiting `pr-reviewer`.
-- 2026-04-14T05:28:00Z — plan-implementer — draft PR opened:
-  [pull/63](https://github.com/cjhowe-us/harmonius/pull/63).
-- 2026-04-14T16:05:00Z — plan-implementer — `rumdl check` clean on touched progress doc; PR link
-  uses markdown formatting in the event log.
-- 2026-04-14T17:48:50Z — plan-implementer — main checkout progress synced with branch
-  `plan/integration-asset-pipeline-build-deploy` (post `rumdl fmt` on this file).
 
-Append ISO-8601 UTC entries with actor, action, and outcome.
+- Append ISO-8601 UTC entries with actor, action, and outcome.

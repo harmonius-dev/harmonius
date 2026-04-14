@@ -670,12 +670,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius-integration-benches"
+version = "0.0.1"
+dependencies = [
+ "blake3",
+ "harmonius_asset_build",
+]
+
+[[package]]
 name = "harmonius-integration-tests"
 version = "0.0.1"
 dependencies = [
+ "blake3",
+ "harmonius_asset_build",
  "rkyv 0.8.16",
- "rkyv_derive 0.8.16",
- "smallvec",
 ]
 
 [[package]]
@@ -687,6 +695,16 @@ dependencies = [
  "harmonius_gpu",
  "harmonius_platform",
  "naga",
+]
+
+[[package]]
+name = "harmonius_asset_build"
+version = "0.0.1"
+dependencies = [
+ "blake3",
+ "crossbeam-channel",
+ "parking_lot",
+ "rkyv 0.8.16",
 ]
 
 [[package]]
@@ -1459,6 +1477,16 @@ name = "opaque-debug"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
+
+[[package]]
+name = "parking_lot"
+version = "0.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93857453250e3077bd71ff98b6a65ea6621a19bb0f559a85248955ac12c45a1a"
+dependencies = [
+ "lock_api",
+ "parking_lot_core",
+]
 
 [[package]]
 name = "parking_lot_core"
