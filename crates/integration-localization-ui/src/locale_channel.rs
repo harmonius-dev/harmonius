@@ -1,4 +1,7 @@
-//! Bounded MPSC-style channel used to model `CH-29` locale fan-out in tests.
+//! Single-threaded queue used to model `CH-29` locale fan-out in tests.
+//!
+//! Production code should use a bounded MPSC channel (see project constraints). This type keeps
+//! tests deterministic without spawning threads.
 
 use crate::types::LocaleId;
 
@@ -11,7 +14,8 @@ pub struct LocaleChangeEvent {
     pub next: LocaleId,
 }
 
-/// Fixed-capacity queue with explicit backpressure (FM-5).
+/// Fixed-capacity queue; when full, `send` drops the newest event and increments `dropped`
+/// (FM-5 saturation).
 #[derive(Clone, Debug)]
 pub struct LocaleChangeChannel {
     cap: usize,

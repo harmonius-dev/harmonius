@@ -50,6 +50,11 @@ impl ScriptTag {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct AssetId(pub u32);
 
+impl AssetId {
+    /// Placeholder font for missing coverage (maps to `.notdef` in the fake shaper).
+    pub const NOTDEF: Self = Self(0);
+}
+
 /// Ordered font fallback list (short, bounded).
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FontChain {
