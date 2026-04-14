@@ -1,12 +1,12 @@
 ---
 branch: plan/integration-audio-physics
-last_updated: 2026-04-14T05:25:00Z
+last_updated: 2026-04-14T18:02:31Z
 plan_id: PLAN-integration-audio-physics
 pr_number: 43
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/43
 started_at: 2026-04-14T05:19:00Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-audio-physics
 ---
 
@@ -30,8 +30,8 @@ Plan file: [audio-physics.md](../integration/audio-physics.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -61,3 +61,7 @@ Plan file: [audio-physics.md](../integration/audio-physics.md)
   bridge + queue + tests mapped to TC-IR-1.8.*.
 - 2026-04-14T05:25:00Z — plan-implementer — draft PR
   <https://github.com/cjhowe-us/harmonius/pull/43> opened; `code_complete`, awaiting `pr-reviewer`.
+- 2026-04-14T18:02:31Z — pr-reviewer — submitted for human review; 13 findings triaged (MPSC-safe
+  mutex queue, fixed-256 FIFO cooldown, friction FIFO at cap, atomic `VoiceIdAllocator`, friction
+  self-collision guard, stronger TC-IR-1.8.N7); rkyv on baked assets + `ArrayQueue` lock-free path
+  deferred to follow-up with design note in crate docs.

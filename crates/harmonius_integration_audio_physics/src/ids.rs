@@ -1,6 +1,7 @@
 //! Stable identifiers for entities, assets, and voices.
 
 use core::marker::PhantomData;
+use core::sync::atomic::{AtomicU32, Ordering};
 
 /// Opaque entity id from the ECS.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, Ord, PartialOrd)]
@@ -33,16 +34,22 @@ pub struct AudioClip;
 pub struct VoiceId(pub u32);
 
 /// Allocates monotonic transient [`VoiceId`] values for the bridge hot path.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct VoiceIdAllocator {
-    next: u32,
+    next: AtomicU32,
+}
+
+impl Default for VoiceIdAllocator {
+    fn default() -> Self {
+        Self {
+            next: AtomicU32::new(0),
+        }
+    }
 }
 
 impl VoiceIdAllocator {
     /// Returns the next transient voice id.
-    pub fn transient(&mut self) -> VoiceId {
-        let id = self.next;
-        self.next = self.next.wrapping_add(1);
-        VoiceId(id)
+    pub fn transient(&self) -> VoiceId {
+        VoiceId(self.next.fetch_add(1, Ordering::Relaxed))
     }
 }

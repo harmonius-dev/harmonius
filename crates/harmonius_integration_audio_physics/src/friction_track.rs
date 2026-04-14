@@ -62,6 +62,8 @@ impl ActiveFrictionSounds {
     }
 
     /// Inserts a new friction voice, replacing on duplicate pair.
+    ///
+    /// When full, evicts the oldest entry (index `0`, FIFO) then appends the new pair.
     pub fn insert(&mut self, a: Entity, b: Entity, voice: VoiceId) {
         let (ea, eb) = Self::norm(a, b);
         if let Some(i) = (0..self.len)
@@ -71,7 +73,10 @@ impl ActiveFrictionSounds {
             return;
         }
         if self.len >= 128 {
-            return;
+            for i in 1..self.len {
+                self.entries[i - 1] = self.entries[i];
+            }
+            self.len -= 1;
         }
         self.entries[self.len] = FrictionSlot {
             entity_a: ea,

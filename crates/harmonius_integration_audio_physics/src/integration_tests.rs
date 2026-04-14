@@ -308,7 +308,7 @@ fn tc_ir_1_8_2_3_pair_order_symmetric() {
     mats.insert(Entity(2), SurfaceType::Metal);
     let mut q1 = BoundedAudioCommandQueue::new(1024);
     let mut cd1 = ImpactCooldownTracker::new();
-    let mut v1 = VoiceIdAllocator::default();
+    let v1 = VoiceIdAllocator::default();
     let event1 = CollisionStarted {
         entity_a: Entity(1),
         entity_b: Entity(2),
@@ -324,7 +324,7 @@ fn tc_ir_1_8_2_3_pair_order_symmetric() {
         &table,
         &mut q1,
         &mut cd1,
-        &mut v1,
+        &v1,
         0,
     );
     let c1 = q1.drain_all().into_iter().find_map(|c| match c {
@@ -333,7 +333,7 @@ fn tc_ir_1_8_2_3_pair_order_symmetric() {
     });
     let mut q2 = BoundedAudioCommandQueue::new(1024);
     let mut cd2 = ImpactCooldownTracker::new();
-    let mut v2 = VoiceIdAllocator::default();
+    let v2 = VoiceIdAllocator::default();
     let event2 = CollisionStarted {
         entity_a: Entity(2),
         entity_b: Entity(1),
@@ -349,7 +349,7 @@ fn tc_ir_1_8_2_3_pair_order_symmetric() {
         &table,
         &mut q2,
         &mut cd2,
-        &mut v2,
+        &v2,
         0,
     );
     let c2 = q2.drain_all().into_iter().find_map(|c| match c {
@@ -855,7 +855,7 @@ fn tc_ir_1_8_n2_empty_pair_uses_default_clip() {
 
 #[test]
 fn tc_ir_1_8_n3_queue_overflow_keeps_high_priority() {
-    let mut q = BoundedAudioCommandQueue::new(1024);
+    let q = BoundedAudioCommandQueue::new(1024);
     for i in 0..1024 {
         let _ = q.send(AudioCommand::Play {
             voice_id: crate::ids::VoiceId(i),
@@ -898,7 +898,7 @@ fn tc_ir_1_8_n3_queue_overflow_keeps_high_priority() {
 
 #[test]
 fn tc_ir_1_8_n4_burst_underrun_counter() {
-    let mut q = BoundedAudioCommandQueue::new(1024);
+    let q = BoundedAudioCommandQueue::new(1024);
     for i in 0..1000 {
         let _ = q.send(AudioCommand::Play {
             voice_id: crate::ids::VoiceId(i),
@@ -981,6 +981,14 @@ fn tc_ir_1_8_n7_cooldown_capacity_fifo() {
         cd.start(a, b, 1.0);
     }
     assert_eq!(cd.len(), 256);
+    assert!(
+        !cd.is_cooling(Entity(0), Entity(1)),
+        "oldest pair should FIFO-evict when capacity is reached"
+    );
+    assert!(
+        cd.is_cooling(Entity(88), Entity(89)),
+        "pair from first surviving window should remain tracked"
+    );
 }
 
 #[test]

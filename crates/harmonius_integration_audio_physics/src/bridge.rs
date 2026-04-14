@@ -42,9 +42,9 @@ pub fn handle_collision_impact<M>(
     event: &CollisionStarted,
     mut material: M,
     table: &ImpactSoundTable,
-    queue: &mut BoundedAudioCommandQueue,
+    queue: &BoundedAudioCommandQueue,
     cooldowns: &mut ImpactCooldownTracker,
-    voices: &mut VoiceIdAllocator,
+    voices: &VoiceIdAllocator,
     clip_salt: u32,
 ) where
     M: FnMut(Entity) -> Option<SurfaceType>,
@@ -92,13 +92,16 @@ pub fn handle_sliding_friction<M>(
     ended: &[CollisionEnded],
     mut material: M,
     table: &FrictionSoundTable,
-    queue: &mut BoundedAudioCommandQueue,
+    queue: &BoundedAudioCommandQueue,
     active: &mut ActiveFrictionSounds,
-    voices: &mut VoiceIdAllocator,
+    voices: &VoiceIdAllocator,
 ) where
     M: FnMut(Entity) -> Option<SurfaceType>,
 {
     for event in persisted {
+        if event.entity_a == event.entity_b {
+            continue;
+        }
         let tang_speed = event.tangential_velocity().length();
         if tang_speed < 0.01 {
             if let Some(voice) = active.remove(event.entity_a, event.entity_b) {
@@ -156,8 +159,8 @@ pub fn handle_trigger_zone<Z>(
     exit: &[TriggerExit],
     mut zone_for: Z,
     ambient_voices: &mut AmbientVoiceMap,
-    queue: &mut BoundedAudioCommandQueue,
-    voices: &mut VoiceIdAllocator,
+    queue: &BoundedAudioCommandQueue,
+    voices: &VoiceIdAllocator,
 ) where
     Z: FnMut(Entity) -> TriggerZoneSnapshot,
 {
