@@ -1,20 +1,42 @@
 //! Level-of-detail tier selection from camera distance (integration test thresholds).
 
 use crate::types::AnimationLodTier;
+
+#[cfg(test)]
 use core::sync::atomic::AtomicU64;
+#[cfg(test)]
 use core::sync::atomic::Ordering;
 
+#[cfg(test)]
 static INVALID_LOD_WARNINGS: AtomicU64 = AtomicU64::new(0);
 
 /// Returns how many times [`sanitize_lod_tier`] fell back due to invalid input.
+///
+/// Outside unit tests this always returns `0` (no process-global counter in release builds).
 #[must_use]
 pub fn invalid_lod_warning_count() -> u64 {
-    INVALID_LOD_WARNINGS.load(Ordering::Relaxed)
+    #[cfg(test)]
+    {
+        INVALID_LOD_WARNINGS.load(Ordering::Relaxed)
+    }
+    #[cfg(not(test))]
+    {
+        0
+    }
 }
 
 /// Resets the invalid-LOD warning counter (test hook).
 pub fn reset_invalid_lod_warning_count() {
-    INVALID_LOD_WARNINGS.store(0, Ordering::Relaxed);
+    #[cfg(test)]
+    {
+        INVALID_LOD_WARNINGS.store(0, Ordering::Relaxed);
+    }
+}
+
+/// Returns `true` when the tier evaluates the full skeleton bone set (design “all bones”).
+#[must_use]
+pub fn lod_tier_evaluates_full_skeleton(tier: AnimationLodTier) -> bool {
+    matches!(tier, AnimationLodTier::Full)
 }
 
 /// Maps authored distance in meters to an evaluation tier using design test thresholds.
@@ -45,7 +67,10 @@ pub fn sanitize_lod_tier(raw: u8) -> AnimationLodTier {
         2 => AnimationLodTier::HalfRate,
         3 => AnimationLodTier::Vat,
         _ => {
-            INVALID_LOD_WARNINGS.fetch_add(1, Ordering::Relaxed);
+            #[cfg(test)]
+            {
+                INVALID_LOD_WARNINGS.fetch_add(1, Ordering::Relaxed);
+            }
             AnimationLodTier::Full
         }
     }

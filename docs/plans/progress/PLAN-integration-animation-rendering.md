@@ -1,12 +1,12 @@
 ---
 branch: plan/integration-animation-rendering
-last_updated: 2026-04-14T12:00:00Z
+last_updated: 2026-04-14T18:02:02Z
 plan_id: PLAN-integration-animation-rendering
 pr_number: 25
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/25
 started_at: 2026-04-14T05:17:00Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-animation-rendering
 ---
 
@@ -29,8 +29,8 @@ Plan file: [animation-rendering.md](../integration/animation-rendering.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
 - [x] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
@@ -49,14 +49,14 @@ Plan file: [animation-rendering.md](../integration/animation-rendering.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test --workspace` — 22 unit tests in
+- Test reports: `cargo test --workspace` — 25 unit tests in
   `harmonius_integration_animation_rendering` (local, 2026-04-14).
-- Benchmarks: GPU benchmarks from test-case matrix (TC-IR-1.4.*.B*) not run; CPU smoke for 10k
-  grouping sort covered by `tc_ir_1_4_5_b2_grouping_sort_10k_smoke`.
+- Benchmarks: Criterion bench `grouping_sort` (TC-IR-1.4.5.B2); CPU smoke
+  `tc_ir_1_4_5_b2_grouping_sort_10k_smoke`.
 - Screenshots: deferred (no runtime engine viewport in this PR).
 - Videos: deferred.
-- Review notes: `rumdl check .` reports pre-existing README.md MD057; this PR does not modify
-  Markdown under `docs/`.
+- Review notes: pr-reviewer addressed 18 consolidated findings (0 blockers); `RenderFrame` remains a
+  documented interim contract until the rendering crate owns the canonical snapshot type.
 
 ## Event log
 
@@ -66,3 +66,5 @@ Plan file: [animation-rendering.md](../integration/animation-rendering.md)
 - 2026-04-14T05:17:30Z — plan-implementer — code complete: integration crate + TC-IR-1.4.* unit
   tests; awaiting pr-reviewer.
 - 2026-04-14T12:00:00Z — plan-implementer — README audit link fixed (MD057); `rumdl check .` clean.
+- 2026-04-14T18:02:02Z — pr-reviewer — submitted for human review, 18 findings addressed (review
+  supervisor pass: correctness, standards, architecture).
