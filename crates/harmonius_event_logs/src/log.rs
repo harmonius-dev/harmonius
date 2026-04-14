@@ -1,5 +1,7 @@
 //! Bounded ring-buffer event log.
 
+use std::collections::VecDeque;
+
 use rkyv::{Archive, Deserialize, Serialize};
 use smallvec::SmallVec;
 
@@ -22,8 +24,8 @@ where
     pub decay_curve: DecayCurve,
     /// Tick cadence metadata for consumers.
     pub tick_rate: u32,
-    /// Stored entries in oldest-first order.
-    pub(crate) entries: Vec<DecayingEntry<T>>,
+    /// Stored entries in oldest-first order (FIFO eviction at capacity).
+    pub(crate) entries: VecDeque<DecayingEntry<T>>,
     pub(crate) next_entry_id: u32,
 }
 
@@ -35,7 +37,7 @@ impl<T: Clone + rkyv::Archive> EventLog<T> {
             capacity,
             decay_curve,
             tick_rate,
-            entries: Vec::new(),
+            entries: VecDeque::new(),
             next_entry_id: 0,
         }
     }
@@ -77,14 +79,14 @@ impl<T: Clone + rkyv::Archive> EventLog<T> {
             tags,
         };
         if self.entries.len() == cap {
-            self.entries.remove(0);
+            self.entries.pop_front();
         }
-        self.entries.push(entry);
+        self.entries.push_back(entry);
     }
 
     /// Borrows all valid entries in oldest-first order.
-    pub fn entries(&self) -> &[DecayingEntry<T>] {
-        &self.entries
+    pub fn entries(&self) -> std::collections::vec_deque::Iter<'_, DecayingEntry<T>> {
+        self.entries.iter()
     }
 
     /// Entries whose accuracy is strictly above `threshold`.
@@ -96,11 +98,7 @@ impl<T: Clone + rkyv::Archive> EventLog<T> {
     }
 
     /// Entries whose timestamps fall in `from_tick..=to_tick` inclusive.
-    pub fn entries_in_window(
-        &self,
-        from_tick: u64,
-        to_tick: u64,
-    ) -> SmallVec<[&DecayingEntry<T>; 8]> {
+    pub fn entries_in_window(&self, from_tick: u64, to_tick: u64) -> SmallVec<[&DecayingEntry<T>; 8]> {
         self.entries
             .iter()
             .filter(|e| e.timestamp >= from_tick && e.timestamp <= to_tick)
@@ -109,11 +107,18 @@ impl<T: Clone + rkyv::Archive> EventLog<T> {
 
     /// Most recently added entry, if any.
     pub fn most_recent(&self) -> Option<&DecayingEntry<T>> {
-        self.entries.last()
+        self.entries.back()
     }
 
     /// Applies decay based on elapsed ticks since each entry's timestamp.
+    ///
+    /// When `tick_rate` is greater than `1`, decay is only recomputed on ticks where
+    /// `current_tick % tick_rate == 0`, so accuracy changes at the configured cadence.
     pub fn decay_tick(&mut self, current_tick: u64) {
+        let rate = self.tick_rate.max(1) as u64;
+        if !current_tick.is_multiple_of(rate) {
+            return;
+        }
         for entry in &mut self.entries {
             let elapsed = current_tick.saturating_sub(entry.timestamp);
             entry.accuracy = accuracy_at_tick(&self.decay_curve, elapsed);
