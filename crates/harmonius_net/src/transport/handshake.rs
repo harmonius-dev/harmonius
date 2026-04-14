@@ -1,8 +1,14 @@
 //! Application-layer authentication after QUIC (Phase 2 in the design).
+//!
+//! Anti-replay keeps the last [`MAX_NONCES`] successful nonces. Older nonces can be reused once
+//! evicted; production code should pair this with TLS 1.3 inside QUIC and short session lifetimes.
 
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 
 use super::NetworkError;
+
+/// Upper bound on stored nonces after successful auth (memory cap).
+pub const MAX_NONCES: usize = 8192;
 
 /// Session credential presented by the client.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -19,9 +25,10 @@ pub struct Handshake {
     pub version: u32,
 }
 
-/// Server-side handshake processing with a fixed replay window.
+/// Server-side handshake processing with a bounded replay window.
 #[derive(Debug, Default)]
 pub struct HandshakeServer {
+    nonce_order: VecDeque<u64>,
     seen_nonces: HashSet<u64>,
 }
 
@@ -49,6 +56,12 @@ impl HandshakeServer {
                 reason: "unsupported version".into(),
             });
         }
+        while self.nonce_order.len() >= MAX_NONCES {
+            if let Some(old) = self.nonce_order.pop_front() {
+                self.seen_nonces.remove(&old);
+            }
+        }
+        self.nonce_order.push_back(msg.client_nonce);
         self.seen_nonces.insert(msg.client_nonce);
         Ok(1)
     }

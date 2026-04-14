@@ -6,6 +6,8 @@ description = "Harmonius network transport, replication, prediction, and RPC (sa
 license = "Apache-2.0"
 
 [dependencies]
+
+[dev-dependencies]
 aes-gcm = "0.10"
 
 [lints.rust]

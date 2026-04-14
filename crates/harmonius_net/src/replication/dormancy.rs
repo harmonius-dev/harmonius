@@ -23,11 +23,14 @@ impl DormancyTracker {
 
     /// Entities dormant since at least `dormancy_ticks`.
     pub fn dormant_at(&self, now: u64, dormancy_ticks: u64) -> Vec<EntityId> {
-        self.last_change
+        let mut out: Vec<EntityId> = self
+            .last_change
             .iter()
             .filter(|(_, &t)| now.saturating_sub(t) >= dormancy_ticks)
             .map(|(&e, _)| e)
-            .collect()
+            .collect();
+        out.sort_by_key(|e| e.0);
+        out
     }
 }
 

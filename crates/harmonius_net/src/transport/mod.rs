@@ -1,4 +1,8 @@
 //! Sans-io transport primitives (handshake, channels, fragmentation, congestion views).
+//!
+//! This crate ships algorithm stubs and types for deterministic tests. QUIC drivers,
+//! `TransportSocket`, `ConnectionManager`, and main-thread I/O drains from the design land in
+//! follow-up plans that wire these primitives to platform stacks.
 
 pub mod congestion;
 pub mod connection_state;
@@ -11,9 +15,9 @@ pub mod types;
 pub mod unreliable;
 
 pub use connection_state::{ConnEvent, ConnectionStateMachine};
-pub use crypto_envelope::{
-    epoch_for_message_index, transport_decrypt, transport_encrypt, KeyEpoch,
-};
+pub use crypto_envelope::{epoch_for_message_index, KeyEpoch};
+#[cfg(test)]
+pub use crypto_envelope::{test_transport_decrypt, test_transport_encrypt};
 pub use diagnostics::Diagnostics;
 pub use fragment::{effective_mtu, fragment_payload, reassemble_fragments};
 pub use handshake::{Handshake, HandshakeError, HandshakeServer, SessionToken};

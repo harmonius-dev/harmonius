@@ -1,4 +1,7 @@
 //! Fragmentation and MTU helpers.
+//!
+//! Ordered split + concat only. Full `ReassemblyBuffer` (group ids, expiry, duplicate detection,
+//! `FragmentTimeout` events) matches the design doc and stays for a follow-up transport slice.
 
 /// Split `payload` into chunks of at most `chunk_payload` bytes (excludes any header the caller adds).
 pub fn fragment_payload(payload: &[u8], chunk_payload: usize) -> Vec<Vec<u8>> {
