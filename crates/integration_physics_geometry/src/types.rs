@@ -19,6 +19,9 @@ pub struct ChunkCoord {
 }
 
 /// Indirection to a baked physics material asset.
+///
+/// Stand-in for the future `AssetId` newtype from the asset pipeline; keep `id` opaque to
+/// callers outside tests.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct PhysicsMaterialHandle {
     /// Stable asset identifier; `0` is reserved as invalid / unresolved in tests.
@@ -40,6 +43,8 @@ impl TerrainHole {
     /// Bit selection follows the integration design: linear index `row * resolution + col`
     /// indexes a single bit stream laid out in little-endian bit order within each byte (bit 0 of
     /// `mask[0]` is cell `(0, 0)`, bit 1 is `(0, 1)` when it fits in the same byte, etc.).
+    /// Geometry `TerrainHole` producers must match this layout (FM-4) before any mmap or shared
+    /// buffer handoff.
     #[must_use]
     pub fn cell_is_hole(&self, row: u32, col: u32) -> bool {
         if self.resolution == 0 {
