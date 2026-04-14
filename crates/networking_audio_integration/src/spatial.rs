@@ -55,6 +55,10 @@ pub enum VoiceSpatialCommand {
 }
 
 /// Bounded queue (512) with oldest-drop overflow policy for spatial updates.
+///
+/// Intended for single-threaded staging on the audio thread (or behind a mutex). Multiple
+/// concurrent producers require external synchronization or a bounded MPSC queue with the same
+/// overflow policy when the transport stack wires game threads to audio.
 #[derive(Debug)]
 pub struct VoiceSpatialQueue {
     inner: VecDeque<VoiceSpatialCommand>,

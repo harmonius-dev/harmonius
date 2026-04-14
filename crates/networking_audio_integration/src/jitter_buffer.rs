@@ -24,6 +24,10 @@ impl JitterBuffer {
     const PAUSE_MS: f32 = 500.0;
 
     /// Builds a buffer with the given adaptive depth range in milliseconds.
+    ///
+    /// `next_sequence` starts at `1`, matching the design’s first expected datagram sequence after
+    /// bootstrap; call [`JitterBuffer::push`](Self::push) after starvation reset to realign if the
+    /// wire path begins at `0`.
     #[must_use]
     pub fn new(min_depth_ms: f32, max_depth_ms: f32) -> Self {
         Self {

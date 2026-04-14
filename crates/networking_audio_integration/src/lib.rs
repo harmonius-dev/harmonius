@@ -1,6 +1,17 @@
 //! Networking ↔ audio voice integration types and algorithms.
 //!
 //! Implements the contracts in `docs/design/integration/networking-audio.md`.
+//!
+//! # Implementation notes (review / integration slice)
+//!
+//! - Opus encode and decode use the pure-Rust [`opus_rs`](https://docs.rs/opus-rs) crate with a
+//!   last-good-frame PLC stand-in on loss; libopus-specific PLC is a follow-up if bit-exact RFC
+//!   6716 behavior is required.
+//! - [`spatial::VoiceSpatialQueue`] is a single-threaded staging queue with the same capacity and
+//!   oldest-drop policy as the design’s bounded bridge; a `crossbeam_channel` MPSC façade for
+//!   cross-thread producers is deferred to the transport integration plan.
+//! - QUIC loopback, `dhat` allocation proofs, and CI benchmark gates called out in the companion
+//!   test-case document remain explicitly out of scope for this crate until those harnesses land.
 
 #![deny(clippy::all)]
 #![deny(missing_docs)]
