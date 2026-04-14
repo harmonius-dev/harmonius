@@ -1,0 +1,14 @@
+[package]
+edition = "2021"
+name = "harmonius_event_logs"
+version = "0.0.0"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+rkyv = { version = "0.7", features = ["validation"] }
+smallvec = { version = "1.14", default-features = false, features = ["const_generics"] }
+
+[dev-dependencies]
+smol_str = "0.2"

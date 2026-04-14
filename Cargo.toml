@@ -4,6 +4,7 @@ members = [
   "crates/harmonius_app",
   "crates/harmonius_core",
   "crates/harmonius_data_tables",
+  "crates/harmonius_event_logs",
   "crates/harmonius_gpu",
   "crates/harmonius_gpu_runtime",
   "crates/harmonius_integration",
