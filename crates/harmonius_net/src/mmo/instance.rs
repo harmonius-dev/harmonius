@@ -1,5 +1,7 @@
 //! Dungeon / raid instancing (`R-8.7.1`).
 
+use std::collections::HashMap;
+
 /// Logical group running an instance together.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct GroupId(pub u64);
@@ -12,7 +14,7 @@ pub enum InstanceTemplate {
 }
 
 /// Tuning band for encounters.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum Difficulty {
     /// Standard tuning.
     Normal,
@@ -66,11 +68,55 @@ impl Instance {
     }
 }
 
-/// Factory for [`Instance`] values.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct InstanceManager;
+/// Factory and heroic lockout tracker (`TC-8.7.1.3`, `TC-8.7.18.1`).
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InstanceManager {
+    now_ticks: u64,
+    lockout_duration_ticks: u64,
+    active_until: HashMap<(GroupId, Difficulty), u64>,
+}
+
+impl Default for InstanceManager {
+    fn default() -> Self {
+        Self {
+            now_ticks: 0,
+            lockout_duration_ticks: 7 * 24 * 3600,
+            active_until: HashMap::new(),
+        }
+    }
+}
 
 impl InstanceManager {
+    /// Short lockout window for deterministic unit tests.
+    pub fn with_lockout_duration_ticks(duration: u64) -> Self {
+        Self {
+            now_ticks: 0,
+            lockout_duration_ticks: duration,
+            active_until: HashMap::new(),
+        }
+    }
+
+    /// Advances the logical clock used for lockouts.
+    pub fn advance_time(&mut self, dt: u64) {
+        self.now_ticks = self.now_ticks.saturating_add(dt);
+    }
+
+    /// Records completion and starts the configured lockout window.
+    pub fn complete(&mut self, group_id: GroupId, difficulty: Difficulty) {
+        let until = self
+            .now_ticks
+            .saturating_add(self.lockout_duration_ticks);
+        self.active_until.insert((group_id, difficulty), until);
+    }
+
+    /// Returns `true` when the group may start this difficulty again.
+    pub fn can_enter(&self, group_id: GroupId, difficulty: Difficulty) -> bool {
+        match self.active_until.get(&(group_id, difficulty)) {
+            Some(until) => self.now_ticks >= *until,
+            None => true,
+        }
+    }
+
     /// Creates a new instance with deterministic placeholder encounters (`TC-8.7.1.3`).
     pub fn create(
         template: InstanceTemplate,
@@ -82,7 +128,10 @@ impl InstanceManager {
             Difficulty::Heroic => Scaling::Heroic,
             Difficulty::Mythic => Scaling::Mythic,
         };
-        let encounters = vec![Encounter { scaling }, Encounter { scaling }];
+        let encounters = vec![
+            Encounter { scaling },
+            Encounter { scaling },
+        ];
         Instance {
             template,
             difficulty,
@@ -99,12 +148,27 @@ mod tests {
     /// `TC-8.7.1.3` `test_instance_difficulty_param`
     #[test]
     fn test_instance_difficulty_param() {
-        let instance =
-            InstanceManager::create(InstanceTemplate::Dungeon, Difficulty::Heroic, GroupId(7));
+        let instance = InstanceManager::create(
+            InstanceTemplate::Dungeon,
+            Difficulty::Heroic,
+            GroupId(7),
+        );
         assert_eq!(instance.difficulty(), Difficulty::Heroic);
         assert!(instance
             .encounters()
             .iter()
             .all(|e| e.scaling == Scaling::Heroic));
+    }
+
+    /// `TC-8.7.18.1` `test_instance_lockout_timer`
+    #[test]
+    fn test_instance_lockout_timer() {
+        let mut manager = InstanceManager::with_lockout_duration_ticks(100);
+        let group = GroupId(99);
+        assert!(manager.can_enter(group, Difficulty::Heroic));
+        manager.complete(group, Difficulty::Heroic);
+        assert!(!manager.can_enter(group, Difficulty::Heroic));
+        manager.advance_time(100);
+        assert!(manager.can_enter(group, Difficulty::Heroic));
     }
 }
