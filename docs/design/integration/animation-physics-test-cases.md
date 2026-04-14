@@ -8,7 +8,7 @@ All test cases are CI-runnable under `cargo test` with no external services or G
 |----|------|-------|----------|-----|
 | TC-IR-1.3.1.U1 | RagdollDef rkyv round-trip | Serialize/deserialize | Equal struct | IR-1.3.1 |
 | TC-IR-1.3.1.U2 | RagdollBone handle lookup | Handle into store | Returns bone def | IR-1.3.1 |
-| TC-IR-1.3.3.U1 | RootMotionDelta compose | Two deltas, SLERP | Combined delta | IR-1.3.3 |
+| TC-IR-1.3.3.U1 | RootMotionDelta compose | Two rigid deltas | Combined delta | IR-1.3.3 |
 | TC-IR-1.3.3.U2 | Delta consumed + cleared | Apply once | Delta reset to identity | IR-1.3.3 |
 | TC-IR-1.3.4.U1 | SLERP blend weight ramp | t=0 to t=1 linear | Monotonic weight | IR-1.3.4 |
 | TC-IR-1.3.4.U2 | Per-bone velocity clamp | lin 200, ang 100 | Clamp to 100, 50 | IR-1.3.4 |
@@ -26,7 +26,7 @@ All test cases are CI-runnable under `cargo test` with no external services or G
 | TC-IR-1.3.3.1 | Root motion moves char | Walk clip with root | CC moves forward | IR-1.3.3 |
 | TC-IR-1.3.3.2 | Root rotation turns char | Turn clip | CC rotates matching | IR-1.3.3 |
 | TC-IR-1.3.4.1 | Recovery blends to anim | Recovery start | Blend 0->1 over duration | IR-1.3.4 |
-| TC-IR-1.3.4.2 | Recovery plays get-up | Recovery complete | Get-up clip finishes | IR-1.3.4 |
+| TC-IR-1.3.4.2 | Recovery plays get-up | Recovery timer active | Animation eval runs | IR-1.3.4 |
 | TC-IR-1.3.5.1 | Weapon collider on/off | HitWindow active | Layers enabled in window | IR-1.3.5 |
 | TC-IR-1.3.5.2 | Weapon tracks hand bone | Swing anim | Collider at bone pos | IR-1.3.5 |
 | TC-IR-1.3.3.3 | Zero-frame root latency | Delta written frame N | Applied Phase 5 N+1 | IR-1.3.3 |
@@ -46,6 +46,8 @@ All test cases are CI-runnable under `cargo test` with no external services or G
 | TC-IR-1.3.4.N3 | Swing beyond cone limit | Rot exceeds limit | Clamped, no explode | IR-1.3.4 |
 
 ## Benchmarks
+
+Criterion harness for the rows below is deferred until the workspace adds a shared bench policy.
 
 | ID | Benchmark | Target | Req |
 |----|-----------|--------|-----|

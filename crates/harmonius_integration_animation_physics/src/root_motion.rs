@@ -2,6 +2,28 @@
 
 use glam::{Quat, Vec3};
 
+/// Physics-side impulse stub matching design `ExternalForce` (linear + angular).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ExternalForce {
+    /// Linear impulse (or delta-velocity scale for tests).
+    pub linear: Vec3,
+    /// Angular impulse as axis-angle vector (rad, one-tick stub).
+    pub angular: Vec3,
+    /// When true, reapplies each tick (reserved for ECS wiring).
+    pub persistent: bool,
+}
+
+impl ExternalForce {
+    /// One-shot impulse with `persistent` false.
+    pub const fn impulse(linear: Vec3, angular: Vec3) -> Self {
+        Self {
+            linear,
+            angular,
+            persistent: false,
+        }
+    }
+}
+
 /// Translation + rotation delta extracted from animation (Phase 6).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RootMotionDelta {
@@ -56,6 +78,8 @@ pub struct RootMotionApplyOutcome {
     pub desired_speed: f32,
     /// External linear impulse for dynamic bodies (when not using CC).
     pub external_linear: Vec3,
+    /// External angular impulse (axis-angle vector) from root rotation delta.
+    pub external_angular: Vec3,
     /// Whether a sleeping body was explicitly woken before apply.
     pub woke_body: bool,
     /// Whether the delta was discarded (static / invalid body).
@@ -95,17 +119,19 @@ impl RootMotionApplyOutcome {
             desired_direction: direction,
             desired_speed: speed,
             external_linear: Vec3::ZERO,
+            external_angular: Vec3::ZERO,
             woke_body: false,
             discarded: false,
         }
     }
 
-    /// Dynamic body path using external impulse.
-    pub fn dynamic_force(linear: Vec3, woke_body: bool) -> Self {
+    /// Dynamic body path using external linear + angular impulse.
+    pub fn dynamic_force(linear: Vec3, angular: Vec3, woke_body: bool) -> Self {
         Self {
             desired_direction: Vec3::ZERO,
             desired_speed: 0.0,
             external_linear: linear,
+            external_angular: angular,
             woke_body,
             discarded: false,
         }
@@ -117,8 +143,29 @@ impl RootMotionApplyOutcome {
             desired_direction: Vec3::ZERO,
             desired_speed: 0.0,
             external_linear: Vec3::ZERO,
+            external_angular: Vec3::ZERO,
             woke_body: false,
             discarded: true,
         }
+    }
+
+    /// Bundles linear + angular fields into the design `ExternalForce` shape.
+    pub fn external_force(self) -> ExternalForce {
+        ExternalForce {
+            linear: self.external_linear,
+            angular: self.external_angular,
+            persistent: false,
+        }
+    }
+}
+
+/// Converts a root rotation delta to an angular impulse vector (axis * angle, radians).
+#[must_use]
+pub fn root_rotation_delta_to_angular_impulse(rotation: Quat) -> Vec3 {
+    let (axis, angle) = rotation.to_axis_angle();
+    if angle.abs() < 1e-6 || axis.length_squared() < 1e-12 {
+        Vec3::ZERO
+    } else {
+        axis * angle
     }
 }
