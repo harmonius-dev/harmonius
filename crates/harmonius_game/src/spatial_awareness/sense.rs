@@ -185,10 +185,12 @@ pub struct SenseResult {
     pub angle: f32,
     /// Occlusion factor where `0` is fully visible and `1` is fully occluded.
     pub occlusion: f32,
-    /// Score after falloff, before composing weights.
+    /// Weighted combination before clamping to `[0, 1]`.
     pub raw_score: f32,
     /// Weighted, clamped score in `[0, 1]`.
     pub final_score: f32,
+    /// World-space sample position used for awareness bookkeeping.
+    pub target_position: Vec3,
 }
 
 /// Awareness levels used by higher-level state machines (exported for future modules).
