@@ -1,0 +1,10 @@
+[package]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius-integration-tests"
+version = "0.0.1"
+
+[dependencies]
+rkyv = { version = "0.8.15", features = ["bytecheck", "std"] }
+rkyv_derive = "0.8.15"
+smallvec = "1.15"

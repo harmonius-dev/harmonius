@@ -598,6 +598,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius-integration-tests"
+version = "0.0.1"
+dependencies = [
+ "rkyv 0.8.16",
+ "rkyv_derive 0.8.16",
+ "smallvec",
+]
+
+[[package]]
 name = "harmonius_app"
 version = "0.1.0"
 dependencies = [
