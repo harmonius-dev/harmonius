@@ -1,16 +1,18 @@
 [package]
-description = "Harmonius core crate root: console backend selection and shared cfg"
+description = "Core engine primitives including spatial indexing for Harmonius"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 name = "harmonius_core"
+repository = "https://github.com/cjhowe/harmonius"
 version = "0.1.0"
 
-[lib]
-path = "src/lib.rs"
-
 [dependencies]
-console_sdk = { path = "../console_sdk" }
-console_stub = { path = "../console_stub" }
+glam = { version = "0.29", default-features = false, features = ["std"] }
+smallvec = { version = "1.13", default-features = false, features = ["union"] }
 
-[build-dependencies]
-console_target = { path = "../console_target" }
+[lints.rust]
+missing_docs = "warn"
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
