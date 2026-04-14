@@ -85,6 +85,7 @@ members = [
   "crates/platform-telemetry",
   "crates/profiler_game_loop",
   "crates/render-effects",
+  "crates/render-styles",
   "crates/rendering_camera",
   "crates/rendering_ui",
   "crates/save_system_profiler",
