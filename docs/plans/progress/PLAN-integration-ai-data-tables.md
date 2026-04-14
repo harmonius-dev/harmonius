@@ -1,10 +1,10 @@
 ---
 branch: plan/integration-ai-data-tables
-last_updated: 2026-04-14T05:24:36Z
+last_updated: 2026-04-14T05:25:48Z
 plan_id: PLAN-integration-ai-data-tables
-pr_number: null
+pr_number: 69
 pr_review_status: not_started
-pr_url: null
+pr_url: https://github.com/cjhowe-us/harmonius/pull/69
 started_at: 2026-04-14T05:24:36Z
 status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-ai-data-tables
@@ -25,6 +25,7 @@ Plan file: [ai-data-tables.md](../integration/ai-data-tables.md)
 - [x] Refactor phase complete with no regressions
 - [x] Integration validation complete across documented boundaries
 - [x] Constraint conformance checks complete
+- [x] Code complete marker set
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
@@ -58,4 +59,6 @@ Plan file: [ai-data-tables.md](../integration/ai-data-tables.md)
 
 - 2026-04-14T05:24:36Z — plan-implementer — code complete: added
   `harmonius-integration-ai-data-tables` crate, workspace wiring, IR-2.1.x tests from companion
-  test-case doc; draft PR opened; awaiting review.
+  test-case doc; awaiting review.
+- 2026-04-14T05:25:48Z — plan-implementer — draft PR
+  <https://github.com/cjhowe-us/harmonius/pull/69> opened; progress frontmatter linked.
