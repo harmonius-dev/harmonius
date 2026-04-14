@@ -20,6 +20,7 @@ members = [
   "crates/integration-scripting-ui",
   "crates/rendering_ui",
   "crates/save_system_profiler",
+  "crates/timelines_audio_integration",
 ]
 
 [workspace.package]
