@@ -7,26 +7,45 @@ use crate::types::InstancedSkinningRow;
 use crate::types::SkeletonId;
 use crate::types::SkinningDispatch;
 use crate::types::SkinningMode;
+
+#[cfg(test)]
 use core::sync::atomic::AtomicUsize;
+#[cfg(test)]
 use core::sync::atomic::Ordering;
 
+#[cfg(test)]
 /// Incremented only when [`debug_record_hashmap_touch`] runs; grouping never calls it.
-pub static GROUPING_HASHMAP_HOT_PATH_TOUCHES: AtomicUsize = AtomicUsize::new(0);
+static GROUPING_HASHMAP_HOT_PATH_TOUCHES: AtomicUsize = AtomicUsize::new(0);
 
 /// Test hook simulating a `HashMap` use on the hot path; must stay unused from grouping.
 pub fn debug_record_hashmap_touch() {
-    GROUPING_HASHMAP_HOT_PATH_TOUCHES.fetch_add(1, Ordering::Relaxed);
+    #[cfg(test)]
+    {
+        GROUPING_HASHMAP_HOT_PATH_TOUCHES.fetch_add(1, Ordering::Relaxed);
+    }
 }
 
-/// Resets [`GROUPING_HASHMAP_HOT_PATH_TOUCHES`] (tests).
+/// Resets the hot-path `HashMap` instrumentation counter (tests).
 pub fn reset_grouping_hashmap_touch_count() {
-    GROUPING_HASHMAP_HOT_PATH_TOUCHES.store(0, Ordering::Relaxed);
+    #[cfg(test)]
+    {
+        GROUPING_HASHMAP_HOT_PATH_TOUCHES.store(0, Ordering::Relaxed);
+    }
 }
 
 /// Returns the hot-path `HashMap` instrumentation counter.
+///
+/// Outside unit tests this always returns `0` (no process-global counter in release builds).
 #[must_use]
 pub fn grouping_hashmap_touch_count() -> usize {
-    GROUPING_HASHMAP_HOT_PATH_TOUCHES.load(Ordering::Relaxed)
+    #[cfg(test)]
+    {
+        GROUPING_HASHMAP_HOT_PATH_TOUCHES.load(Ordering::Relaxed)
+    }
+    #[cfg(not(test))]
+    {
+        0
+    }
 }
 
 /// Sorts rows by `(skeleton, clip, entity)` and merges contiguous runs into dispatches.

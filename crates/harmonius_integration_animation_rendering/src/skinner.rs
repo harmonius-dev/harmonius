@@ -6,6 +6,7 @@ use crate::types::AnimationLodTier;
 use crate::types::BlendDescriptor;
 use crate::types::MorphTargets;
 use crate::types::SkinnedMeshProxy;
+use crate::types::SkinningDispatch;
 use crate::types::SkinningMode;
 
 /// Recorded compute ordering for assertions (morph accumulation before skinning).
@@ -50,6 +51,13 @@ impl GpuSkinner {
         self.log.push(ComputePass::Skinning { mode });
     }
 
+    /// Records one instanced skinning batch from a [`SkinningDispatch`] contract value.
+    pub fn dispatch_skinning_dispatch(&mut self, dispatch: &SkinningDispatch) {
+        self.log.push(ComputePass::Skinning {
+            mode: dispatch.mode,
+        });
+    }
+
     /// Records bind-pose fallback when blend weights are all zero.
     pub fn bind_bind_pose_only(&mut self) {
         self.log.push(ComputePass::BindPose);
@@ -62,6 +70,9 @@ impl GpuSkinner {
 }
 
 /// Returns `true` when every active blend weight is `0.0` (bind-pose path).
+///
+/// When `active_count == 0`, upstream must treat the descriptor as “no active clips” and this
+/// crate selects bind pose; callers with explicit all-zero weights must set `active_count > 0`.
 #[must_use]
 pub fn zero_blend_weights(blend: &BlendDescriptor) -> bool {
     if blend.active_count == 0 {
@@ -77,13 +88,32 @@ pub fn next_batch_size_after_gpu_timeout(current: u32) -> u32 {
     (current / 2).max(1)
 }
 
+/// Records morph accumulation (when required) then one instanced batch dispatch.
+///
+/// Ordering matches TC-IR-1.4.2.1 for batched work: morph deltas before skinning compute.
+pub fn dispatch_morph_then_skinning_dispatch(
+    skinner: &mut GpuSkinner,
+    morph: &MorphTargets,
+    morph_buffer_bound: bool,
+    dispatch: &SkinningDispatch,
+) {
+    if morph_buffer_bound && morph_pass_required(morph) {
+        skinner.dispatch_morph(morph);
+    }
+    skinner.dispatch_skinning_dispatch(dispatch);
+}
+
 /// Issues morph-then-skin passes for one skinned mesh proxy (render-thread contract).
+///
+/// When `half_rate_tracker` is [`Some`], [`HalfRateStaleTracker`] participates in half-rate skip vs
+/// forced-full scheduling (IR-1.4.3.N2). When [`None`], half-rate off-frames always skip skinning.
 pub fn dispatch_skinning_passes_for_proxy(
     skinner: &mut GpuSkinner,
     blend: &BlendDescriptor,
     morph: &MorphTargets,
     mesh: &SkinnedMeshProxy,
     evaluate_this_frame: bool,
+    half_rate_tracker: Option<&mut HalfRateStaleTracker>,
 ) {
     if mesh.morph_buffer.is_some() && morph_pass_required(morph) {
         skinner.dispatch_morph(morph);
@@ -91,9 +121,18 @@ pub fn dispatch_skinning_passes_for_proxy(
     if mesh.lod_tier == AnimationLodTier::Vat {
         return;
     }
-    if mesh.lod_tier == AnimationLodTier::HalfRate && !evaluate_this_frame {
-        skinner.record_half_rate_skip();
-        return;
+    if mesh.lod_tier == AnimationLodTier::HalfRate {
+        if let Some(tracker) = half_rate_tracker {
+            if evaluate_this_frame {
+                let _ = half_rate_force_full_after_stale(tracker, true);
+            } else if !half_rate_force_full_after_stale(tracker, false) {
+                skinner.record_half_rate_skip();
+                return;
+            }
+        } else if !evaluate_this_frame {
+            skinner.record_half_rate_skip();
+            return;
+        }
     }
     if zero_blend_weights(blend) {
         skinner.bind_bind_pose_only();

@@ -1,4 +1,9 @@
-//! [`RenderFrame`] snapshot owned by rendering, filled at Phase 7.
+//! [`RenderFrame`] snapshot exchanged at the animation → rendering boundary.
+//!
+//! The integration design places the canonical render snapshot type on the rendering path once
+//! those crates land. This crate hosts a **contract-shaped** snapshot today so animation and
+//! rendering tests share one struct; expect the type to move beside the triple-buffer publisher
+//! without changing field names.
 
 use crate::types::SkinnedMeshProxy;
 use crate::types::SkinningDispatch;

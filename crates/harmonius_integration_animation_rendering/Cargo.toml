@@ -8,9 +8,9 @@ version = "0.1.0"
 
 [dependencies]
 
-[lints.rust]
-missing_docs = "deny"
-unsafe_code = "deny"
+[dev-dependencies]
+criterion = "0.5"
 
-[lints.clippy]
-all = "deny"
+[[bench]]
+harness = false
+name = "grouping_sort"

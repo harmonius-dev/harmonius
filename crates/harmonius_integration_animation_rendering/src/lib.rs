@@ -19,6 +19,7 @@ mod skinner;
 mod types;
 
 pub use arena::allocate_with_arena_overflow_policy;
+pub use arena::ArenaOverflowBudgets;
 pub use arena::ArenaOverflowOutcome;
 pub use bridge::plan_skinned_draws_from_render_frame;
 pub use bridge::AnimationRenderBridge;
@@ -31,6 +32,7 @@ pub use grouping::reset_grouping_hashmap_touch_count;
 pub use handle::GpuBuffer;
 pub use handle::Handle;
 pub use lod::invalid_lod_warning_count;
+pub use lod::lod_tier_evaluates_full_skeleton;
 pub use lod::lod_tier_from_distance_m;
 pub use lod::reset_invalid_lod_warning_count;
 pub use lod::sanitize_lod_tier;
@@ -40,6 +42,7 @@ pub use morph::morph_pass_required;
 pub use render_frame::RenderFrame;
 pub use resource::GpuBufferTable;
 pub use resource::ResourceError;
+pub use skinner::dispatch_morph_then_skinning_dispatch;
 pub use skinner::dispatch_skinning_passes_for_proxy;
 pub use skinner::half_rate_force_full_after_stale;
 pub use skinner::next_batch_size_after_gpu_timeout;
@@ -103,7 +106,7 @@ mod tests {
         let blend = sample_blend_active();
         let morph = sample_morph_four_active();
         let mut skinner = GpuSkinner::new();
-        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true);
+        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true, None);
         assert!(
             skinner
                 .log
@@ -133,9 +136,9 @@ mod tests {
             active_count: 0,
         };
         let mut lbs = GpuSkinner::new();
-        dispatch_skinning_passes_for_proxy(&mut lbs, &blend, &morph, &mesh_lbs, true);
+        dispatch_skinning_passes_for_proxy(&mut lbs, &blend, &morph, &mesh_lbs, true, None);
         let mut dqs = GpuSkinner::new();
-        dispatch_skinning_passes_for_proxy(&mut dqs, &blend, &morph, &mesh_dqs, true);
+        dispatch_skinning_passes_for_proxy(&mut dqs, &blend, &morph, &mesh_dqs, true, None);
         assert_eq!(
             lbs.log,
             vec![ComputePass::Skinning {
@@ -151,6 +154,26 @@ mod tests {
     }
 
     #[test]
+    fn tc_ir_1_4_2_1b_morph_before_instanced_skinning_dispatch() {
+        let morph = sample_morph_four_active();
+        let dispatch = SkinningDispatch {
+            arena_buffer: Handle::from_raw(3, 1),
+            instance_count: 4,
+            bone_count_per_instance: 32,
+            mode: SkinningMode::Lbs,
+        };
+        let mut skinner = GpuSkinner::new();
+        dispatch_morph_then_skinning_dispatch(&mut skinner, &morph, true, &dispatch);
+        assert_eq!(skinner.log[0], ComputePass::MorphAccum);
+        assert_eq!(
+            skinner.log[1],
+            ComputePass::Skinning {
+                mode: SkinningMode::Lbs
+            }
+        );
+    }
+
+    #[test]
     fn tc_ir_1_4_2_1_morph_before_skin() {
         let bone = Handle::from_raw(1, 1);
         let morph_buf = Handle::from_raw(2, 1);
@@ -158,7 +181,7 @@ mod tests {
         let blend = sample_blend_active();
         let morph = sample_morph_four_active();
         let mut skinner = GpuSkinner::new();
-        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true);
+        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true, None);
         assert_eq!(skinner.log[0], ComputePass::MorphAccum);
         assert!(matches!(skinner.log[1], ComputePass::Skinning { .. }));
     }
@@ -175,13 +198,15 @@ mod tests {
             active_count: 4,
         };
         let mut skinner = GpuSkinner::new();
-        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true);
+        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true, None);
         assert!(!skinner.log.contains(&ComputePass::MorphAccum));
     }
 
     #[test]
     fn tc_ir_1_4_3_1_lod_full_near() {
-        assert_eq!(lod_tier_from_distance_m(5.0), AnimationLodTier::Full);
+        let tier = lod_tier_from_distance_m(5.0);
+        assert_eq!(tier, AnimationLodTier::Full);
+        assert!(lod_tier_evaluates_full_skeleton(tier));
     }
 
     #[test]
@@ -196,11 +221,54 @@ mod tests {
             active_count: 0,
         };
         let mut skinner = GpuSkinner::new();
-        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true);
+        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true, None);
         assert!(!skinner
             .log
             .iter()
             .any(|p| matches!(p, ComputePass::Skinning { .. })));
+    }
+
+    #[test]
+    fn tc_ir_1_4_3_3b_half_rate_stale_tracker_forces_full_skinning() {
+        let bone = Handle::from_raw(1, 1);
+        let mesh = sample_mesh_dqs_with_morph(bone, None, AnimationLodTier::HalfRate);
+        let blend = sample_blend_active();
+        let morph = MorphTargets {
+            target_indices: [0; 16],
+            weights: [0.0; 16],
+            active_count: 0,
+        };
+        let mut tracker = HalfRateStaleTracker::new();
+        let mut skinner = GpuSkinner::new();
+        dispatch_skinning_passes_for_proxy(
+            &mut skinner,
+            &blend,
+            &morph,
+            &mesh,
+            false,
+            Some(&mut tracker),
+        );
+        assert_eq!(skinner.log, vec![ComputePass::HalfRateSkip]);
+        skinner.log.clear();
+        dispatch_skinning_passes_for_proxy(
+            &mut skinner,
+            &blend,
+            &morph,
+            &mesh,
+            false,
+            Some(&mut tracker),
+        );
+        assert_eq!(skinner.log, vec![ComputePass::HalfRateSkip]);
+        skinner.log.clear();
+        dispatch_skinning_passes_for_proxy(
+            &mut skinner,
+            &blend,
+            &morph,
+            &mesh,
+            false,
+            Some(&mut tracker),
+        );
+        assert!(matches!(skinner.log[0], ComputePass::Skinning { .. }));
     }
 
     #[test]
@@ -214,9 +282,9 @@ mod tests {
             active_count: 0,
         };
         let mut on = GpuSkinner::new();
-        dispatch_skinning_passes_for_proxy(&mut on, &blend, &morph, &mesh, true);
+        dispatch_skinning_passes_for_proxy(&mut on, &blend, &morph, &mesh, true, None);
         let mut off = GpuSkinner::new();
-        dispatch_skinning_passes_for_proxy(&mut off, &blend, &morph, &mesh, false);
+        dispatch_skinning_passes_for_proxy(&mut off, &blend, &morph, &mesh, false, None);
         assert!(matches!(on.log[0], ComputePass::Skinning { .. }));
         assert_eq!(off.log, vec![ComputePass::HalfRateSkip]);
     }
@@ -252,7 +320,7 @@ mod tests {
             lod_tier: AnimationLodTier::Full,
         };
         let frame = RenderFrame::new(1, vec![proxy], vec![]);
-        let draws = plan_skinned_draws_from_render_frame(&frame);
+        let draws = plan_skinned_draws_from_render_frame(&frame, None);
         assert_eq!(draws, vec![SkinnedDrawCommand { bone_palette: bone }]);
     }
 
@@ -289,7 +357,13 @@ mod tests {
             capacity: 10,
             used: 10,
         };
-        let outcome = allocate_with_arena_overflow_policy(&arena, 5, 5);
+        let outcome = allocate_with_arena_overflow_policy(
+            &arena,
+            5,
+            ArenaOverflowBudgets {
+                reduced_bones_capacity: 5,
+            },
+        );
         assert_eq!(outcome.demoted_to_reduced_bones, 5);
         assert_eq!(outcome.demoted_to_vat, 0);
     }
@@ -301,7 +375,13 @@ mod tests {
             capacity: 10,
             used: 10,
         };
-        let outcome = allocate_with_arena_overflow_policy(&arena, 8, 3);
+        let outcome = allocate_with_arena_overflow_policy(
+            &arena,
+            8,
+            ArenaOverflowBudgets {
+                reduced_bones_capacity: 3,
+            },
+        );
         assert_eq!(outcome.demoted_to_reduced_bones, 3);
         assert_eq!(outcome.demoted_to_vat, 5);
     }
@@ -310,6 +390,22 @@ mod tests {
     fn tc_ir_1_4_1_n3_gpu_timeout_halve_batch() {
         assert_eq!(next_batch_size_after_gpu_timeout(64), 32);
         assert_eq!(next_batch_size_after_gpu_timeout(1), 1);
+    }
+
+    #[test]
+    fn tc_ir_1_4_1_n3b_gpu_timeout_halve_retry_next_frame() {
+        let mut batch = 64_u32;
+        let mut dispatch_attempt = 0_u32;
+        loop {
+            dispatch_attempt = dispatch_attempt.saturating_add(1);
+            if dispatch_attempt == 1 {
+                batch = next_batch_size_after_gpu_timeout(batch);
+                continue;
+            }
+            break;
+        }
+        assert_eq!(batch, 32);
+        assert_eq!(dispatch_attempt, 2);
     }
 
     #[test]
@@ -327,7 +423,7 @@ mod tests {
             active_count: 0,
         };
         let mut skinner = GpuSkinner::new();
-        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true);
+        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true, None);
         assert_eq!(skinner.log, vec![ComputePass::BindPose]);
     }
 
@@ -349,7 +445,7 @@ mod tests {
         let blend = sample_blend_active();
         let morph = sample_morph_four_active();
         let mut skinner = GpuSkinner::new();
-        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true);
+        dispatch_skinning_passes_for_proxy(&mut skinner, &blend, &morph, &mesh, true, None);
         assert!(!skinner.log.contains(&ComputePass::MorphAccum));
     }
 
@@ -370,12 +466,24 @@ mod tests {
     }
 
     #[test]
-    fn tc_ir_1_4_4_n1_stale_handle_skips_validation() {
+    fn tc_ir_1_4_4_n1_stale_handle_skips_draw() {
         let mut table = GpuBufferTable::default();
         let h = table.allocate();
         assert!(table.validate(h).is_ok());
-        table.free(h).unwrap();
+        let proxy = SkinnedMeshProxy {
+            bone_palette: h,
+            bone_count: 10,
+            skinning_mode: SkinningMode::Lbs,
+            morph_buffer: None,
+            lod_tier: AnimationLodTier::Full,
+        };
+        let frame = RenderFrame::new(0, vec![proxy], vec![]);
+        table
+            .free(h)
+            .expect("free must bump generation for live handle");
         assert_eq!(table.validate(h), Err(ResourceError::StaleHandle));
+        let draws = plan_skinned_draws_from_render_frame(&frame, Some(&table));
+        assert!(draws.is_empty());
     }
 
     #[test]

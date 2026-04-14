@@ -59,7 +59,7 @@ pub struct BonePaletteGpu {
 /// Per-skinned mesh snapshot consumed on the render thread without ECS access.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SkinnedMeshProxy {
-    /// Bone palette buffer handle snapshotted into the frame.
+    /// Bone palette buffer handle snapshotted into the frame (flattened from [`BonePaletteGpu`]).
     pub bone_palette: Handle<GpuBuffer>,
     /// Bone count for shader binding.
     pub bone_count: u16,
