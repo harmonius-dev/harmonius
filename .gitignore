@@ -136,6 +136,9 @@ instance/
 # Sphinx documentation
 docs/_build/
 
+# Harmonize local run lock (orchestrator/session state)
+docs/plans/harmonize-run-lock.md
+
 # PyBuilder
 .pybuilder/
 target/
