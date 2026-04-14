@@ -51,7 +51,7 @@ Plan file: [ai-animation.md](../integration/ai-animation.md)
 ## Evidence registry
 
 - Test reports: `cargo test -p integration_ai_animation` (17 unit tests) in worktree
-  `PLAN-integration-ai-animation` at commit `24ef6b4`.
+  `PLAN-integration-ai-animation` through commit `4db2347`.
 - Benchmarks: not run (TC-IR-1.1.5.B* rows require Criterion harness; wall-clock TC-IR-1.1.5.1
   covered via deterministic `FrameBudget` accounting).
 - Screenshots: N/A for this library-only slice.
