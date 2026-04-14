@@ -1,4 +1,7 @@
 //! Optimal Reciprocal Collision Avoidance (ORCA) in the XZ plane (`glam::Vec2`).
+//!
+//! Each `solve_orca` call allocates neighbor agent storage; callers should reuse buffers in hot
+//! paths once ECS integration lands.
 
 use std::borrow::Cow;
 

@@ -12,4 +12,4 @@ pub use flow_cache::{FlowFieldCache, FlowFieldKey};
 pub use flow_field::{
     generate_flow_field, sample_flow_field, CostGrid, FlowField, UniformCostGrid,
 };
-pub use lod::{assign_lod_tiers, AiLodConfig, AiLodTier, LodAgent};
+pub use lod::{assign_lod_tiers, AiBudget, AiLodConfig, AiLodTier, LodAgent};

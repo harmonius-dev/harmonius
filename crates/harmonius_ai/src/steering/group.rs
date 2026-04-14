@@ -3,7 +3,7 @@
 use glam::Vec3;
 use smallvec::SmallVec;
 
-use super::formation::Entity;
+use super::formation::SteeringAgentId;
 
 /// Identifier for a steering group.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -21,7 +21,7 @@ pub struct GroupState {
     /// Scale for alignment with `avg_heading`.
     pub alignment_strength: f32,
     /// Member entities (subset of the simulation).
-    pub members: SmallVec<[Entity; 16]>,
+    pub members: SmallVec<[SteeringAgentId; 16]>,
 }
 
 fn truncate(v: Vec3, max_len: f32) -> Vec3 {
@@ -34,19 +34,21 @@ fn truncate(v: Vec3, max_len: f32) -> Vec3 {
 }
 
 /// Recompute `centroid` and `avg_heading` from member transforms.
-pub fn update_group_state(state: &mut GroupState, positions: &[(Entity, Vec3, Vec3)]) {
-    let count = state.members.len() as f32;
-    if count < 1.0 {
-        return;
-    }
+pub fn update_group_state(state: &mut GroupState, positions: &[(SteeringAgentId, Vec3, Vec3)]) {
     let mut c = Vec3::ZERO;
     let mut h = Vec3::ZERO;
+    let mut matched = 0_u32;
     for &member in &state.members {
         if let Some((_, pos, heading)) = positions.iter().find(|(e, _, _)| *e == member) {
             c += *pos;
             h += *heading;
+            matched += 1;
         }
     }
+    if matched == 0 {
+        return;
+    }
+    let count = matched as f32;
     state.centroid = c / count;
     state.avg_heading = (h / count).normalize_or_zero();
 }
@@ -71,9 +73,9 @@ mod tests {
 
     #[test]
     fn tc_7_2_6_1_group_cohesion() {
-        let mut members: SmallVec<[Entity; 16]> = SmallVec::new();
+        let mut members: SmallVec<[SteeringAgentId; 16]> = SmallVec::new();
         for i in 0..8 {
-            members.push(Entity(i));
+            members.push(SteeringAgentId(i));
         }
         let mut state = GroupState {
             centroid: Vec3::ZERO,
@@ -82,27 +84,31 @@ mod tests {
             alignment_strength: 0.1,
             members,
         };
-        let mut positions: Vec<(Entity, Vec3, Vec3)> = (0..8)
+        let mut positions: Vec<(SteeringAgentId, Vec3, Vec3)> = (0..8)
             .map(|i| {
                 let a = i as f32 * 0.5;
-                (Entity(i), Vec3::new(a.cos(), 0.0, a.sin()) * 2.0, Vec3::X)
+                (
+                    SteeringAgentId(i),
+                    Vec3::new(a.cos(), 0.0, a.sin()) * 2.0,
+                    Vec3::X,
+                )
             })
             .collect();
         let initial_radius = group_radius(&positions);
         for _ in 0..200 {
             update_group_state(&mut state, &positions);
-            for i in 0..8 {
-                let (e, p, h) = positions[i];
+            for entry in &mut positions {
+                let (e, p, h) = *entry;
                 let corr = group_corrections(p, Vec3::ZERO, &state, 3.0);
                 let new_p = p + corr * 0.05;
-                positions[i] = (e, new_p, h);
+                *entry = (e, new_p, h);
             }
         }
         let final_radius = group_radius(&positions);
         assert!(final_radius <= initial_radius * 1.5 + 0.5);
     }
 
-    fn group_radius(positions: &[(Entity, Vec3, Vec3)]) -> f32 {
+    fn group_radius(positions: &[(SteeringAgentId, Vec3, Vec3)]) -> f32 {
         let mut c = Vec3::ZERO;
         for (_, p, _) in positions {
             c += *p;
@@ -116,9 +122,9 @@ mod tests {
 
     #[test]
     fn tc_7_2_6_2_group_velocity_convergence() {
-        let mut members: SmallVec<[Entity; 16]> = SmallVec::new();
+        let mut members: SmallVec<[SteeringAgentId; 16]> = SmallVec::new();
         for i in 0..8 {
-            members.push(Entity(i));
+            members.push(SteeringAgentId(i));
         }
         let shared_dir = Vec3::X;
         let mut state = GroupState {
@@ -128,23 +134,24 @@ mod tests {
             alignment_strength: 1.2,
             members,
         };
-        let mut vels = vec![Vec3::ZERO; 8];
-        for i in 0..8 {
-            let a = i as f32 * 1.7;
-            vels[i] = Vec3::new(a.sin(), 0.0, a.cos()) * 2.0;
-        }
+        let mut vels: Vec<Vec3> = (0..8)
+            .map(|i| {
+                let a = i as f32 * 1.7;
+                Vec3::new(a.sin(), 0.0, a.cos()) * 2.0
+            })
+            .collect();
         let shared_speed = 3.0_f32;
         for _ in 0..800 {
-            let positions: Vec<(Entity, Vec3, Vec3)> = (0..8_usize)
+            let mut positions: Vec<(SteeringAgentId, Vec3, Vec3)> = (0..8_usize)
                 .map(|i| {
                     let ring = Vec3::new((i as f32) * 0.2, 0.0, 0.0);
-                    (Entity(i as u32), ring, vels[i].normalize_or_zero())
+                    (SteeringAgentId(i as u32), ring, vels[i].normalize_or_zero())
                 })
                 .collect();
             update_group_state(&mut state, &positions);
             state.avg_heading = shared_dir;
-            for i in 0..8 {
-                let p = positions[i].1;
+            for (i, slot) in positions.iter_mut().enumerate() {
+                let p = slot.1;
                 let corr = group_corrections(p, vels[i], &state, shared_speed);
                 vels[i] = (vels[i] + corr * 0.1).clamp_length_max(shared_speed);
             }

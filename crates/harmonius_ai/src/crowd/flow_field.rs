@@ -84,7 +84,8 @@ fn neighbors_4(x: u32, y: u32, width: u32, height: u32) -> impl Iterator<Item = 
 }
 
 fn neighbors_8(x: u32, y: u32, width: u32, height: u32) -> impl Iterator<Item = (u32, u32)> {
-    let mut out = Vec::with_capacity(8);
+    let mut out = [(0_u32, 0_u32); 8];
+    let mut n = 0_usize;
     for dy in -1_i32..=1 {
         for dx in -1_i32..=1 {
             if dx == 0 && dy == 0 {
@@ -93,11 +94,12 @@ fn neighbors_8(x: u32, y: u32, width: u32, height: u32) -> impl Iterator<Item = 
             let nx = x as i32 + dx;
             let ny = y as i32 + dy;
             if nx >= 0 && ny >= 0 && nx < width as i32 && ny < height as i32 {
-                out.push((nx as u32, ny as u32));
+                out[n] = (nx as u32, ny as u32);
+                n += 1;
             }
         }
     }
-    out.into_iter()
+    out.into_iter().take(n)
 }
 
 /// Run Dijkstra from `goal` and emit a unit direction field toward lower cost.
