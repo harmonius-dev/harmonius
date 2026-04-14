@@ -37,7 +37,11 @@ fn p0_design_review_artifacts_exist_on_disk() {
     ];
     for rel in paths {
         let path = repo_root().join(rel);
-        assert!(path.is_file(), "expected design artifact {}", path.display());
+        assert!(
+            path.is_file(),
+            "expected design artifact {}",
+            path.display()
+        );
     }
 }
 

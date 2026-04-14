@@ -35,8 +35,8 @@
 3. **F-12.4.4** — Hot reload of logic graph assets. When a logic graph asset is modified in the
    editor, the runtime recompiles the affected graph through the shared build cache (F-15.11.3) and
    patches running graph instances with updated bytecode. Persistent state (local variables,
-   coroutine positions) is preserved when the variable layout is compatible. Incompatible changes
-   trigger a clean restart of the affected graph instance.
+   suspend-state snapshots) is preserved when the variable layout is compatible. Incompatible
+   changes trigger a clean restart of the affected graph instance.
    - **Deps:** F-12.4.1, F-15.8.1 (Logic Graph Runtime), F-15.8.12 (Graph Compilation)
 4. **F-12.4.5** — Detect changes to UI layout definitions, style sheets, and widget templates, then
    rebuild and re-render the affected UI subtree in place. Preserves scroll positions, focus state,

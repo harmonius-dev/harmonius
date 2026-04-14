@@ -26,8 +26,8 @@
 3. **F-13.4.3** — Modify gameplay logic graphs in the editor while the game is running, with changes
    applied immediately without restarting the game session. The hot reload system detects graph
    asset changes, recompiles affected graphs through the shared build cache (F-15.11.3), and patches
-   running graph instances with the new bytecode. Persistent state (local variables, coroutine
-   positions) is preserved across reloads when the variable layout is compatible. Incompatible
+   running graph instances with the new bytecode. Persistent state (local variables, suspend-state
+   snapshots) is preserved across reloads when the variable layout is compatible. Incompatible
    changes trigger a clean restart of the affected graph instance with a warning.
    - **Deps:** F-13.4.1, F-15.11.3 (Logic Graph Cache), F-12.4.1 (File Watcher)
 
