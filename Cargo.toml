@@ -18,6 +18,7 @@ members = [
   "crates/harmonius_shared_messaging_capacities",
   "crates/harmonius_undo",
   "crates/integration-scripting-ui",
+  "crates/render-effects",
   "crates/rendering_ui",
   "crates/save_system_profiler",
   "crates/timelines_audio_integration",
