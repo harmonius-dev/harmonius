@@ -28,6 +28,7 @@ members = [
   "crates/harmonius_physics",
   "crates/harmonius_platform",
   "crates/harmonius_profiler",
+  "crates/harmonius_rendering_core",
   "crates/harmonius_save",
   "crates/harmonius_save_integration",
   "crates/harmonius_scripting",
