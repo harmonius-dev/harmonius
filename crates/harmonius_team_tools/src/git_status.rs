@@ -60,6 +60,18 @@ pub enum VcError {
     },
     /// Path segment could not be decoded.
     InvalidPath,
+    /// Another principal holds the Git LFS lock for this path.
+    LfsLockHeld {
+        /// Repository-relative locked path.
+        path: PathBuf,
+        /// Display name of the lock holder.
+        holder: String,
+    },
+    /// Unlock requested for a path with no lock or a different holder.
+    LfsLockMismatch {
+        /// Path that could not be unlocked.
+        path: PathBuf,
+    },
 }
 
 impl From<git2::Error> for VcError {
@@ -108,10 +120,7 @@ fn extract_path_after_status(line: &str) -> Result<&str, VcError> {
 ///
 /// Returns `Ok(None)` for purely informational lines that do not describe a path (currently none
 /// are emitted, but the variant keeps the API stable for future extensions).
-pub fn parse_short_porcelain_line(
-    line: &str,
-    is_lfs_path: impl Fn(&Path) -> bool,
-) -> Result<Option<FileStatus>, VcError> {
+pub fn parse_short_porcelain_line(line: &str, is_lfs_path: impl Fn(&Path) -> bool) -> Result<Option<FileStatus>, VcError> {
     let line = line.strip_suffix('\r').unwrap_or(line);
     if line.is_empty() {
         return Err(VcError::InvalidLine {
@@ -166,22 +175,17 @@ pub fn parse_short_porcelain_line(
     }
 
     let tail = extract_path_after_status(line)?;
-    let (path_str, index_status, worktree_status) =
-        if let Some((_, new_path)) = tail.rsplit_once(" -> ") {
-            let new_path = new_path.trim();
-            if new_path.is_empty() {
-                return Err(VcError::InvalidLine {
-                    line: line.to_string(),
-                });
-            }
-            (new_path, status_from_column(c0), status_from_column(c1))
-        } else {
-            (
-                tail.trim_end(),
-                status_from_column(c0),
-                status_from_column(c1),
-            )
-        };
+    let (path_str, index_status, worktree_status) = if let Some((_, new_path)) = tail.rsplit_once(" -> ") {
+        let new_path = new_path.trim();
+        if new_path.is_empty() {
+            return Err(VcError::InvalidLine {
+                line: line.to_string(),
+            });
+        }
+        (new_path, status_from_column(c0), status_from_column(c1))
+    } else {
+        (tail.trim_end(), status_from_column(c0), status_from_column(c1))
+    };
 
     if path_str.is_empty() {
         return Err(VcError::InvalidLine {
@@ -210,41 +214,11 @@ mod tests {
     #[test]
     fn tc_15_10_1_1_parses_short_porcelain_rows() {
         let rows = vec![
-            (
-                " M src/lib.rs",
-                "src/lib.rs",
-                StatusKind::Unmodified,
-                StatusKind::Modified,
-                false,
-            ),
-            (
-                "M  src/lib.rs",
-                "src/lib.rs",
-                StatusKind::Modified,
-                StatusKind::Unmodified,
-                false,
-            ),
-            (
-                "A  new.txt",
-                "new.txt",
-                StatusKind::Added,
-                StatusKind::Unmodified,
-                false,
-            ),
-            (
-                " D gone.txt",
-                "gone.txt",
-                StatusKind::Unmodified,
-                StatusKind::Deleted,
-                false,
-            ),
-            (
-                "?? untracked.log",
-                "untracked.log",
-                StatusKind::Untracked,
-                StatusKind::Untracked,
-                false,
-            ),
+            (" M src/lib.rs", "src/lib.rs", StatusKind::Unmodified, StatusKind::Modified, false),
+            ("M  src/lib.rs", "src/lib.rs", StatusKind::Modified, StatusKind::Unmodified, false),
+            ("A  new.txt", "new.txt", StatusKind::Added, StatusKind::Unmodified, false),
+            (" D gone.txt", "gone.txt", StatusKind::Unmodified, StatusKind::Deleted, false),
+            ("?? untracked.log", "untracked.log", StatusKind::Untracked, StatusKind::Untracked, false),
             (
                 "R  old.rs -> new.rs",
                 "new.rs",
@@ -267,11 +241,9 @@ mod tests {
 
     #[test]
     fn marks_lfs_paths_when_predicate_matches() {
-        let got = parse_short_porcelain_line(" M assets/huge.bin", |p| {
-            p.extension().is_some_and(|e| e == "bin")
-        })
-        .expect("parse")
-        .expect("row");
+        let got = parse_short_porcelain_line(" M assets/huge.bin", |p| p.extension().is_some_and(|e| e == "bin"))
+            .expect("parse")
+            .expect("row");
         assert_eq!(got.path, Path::new("assets/huge.bin"));
         assert!(got.is_lfs);
     }
