@@ -1,11 +1,14 @@
-//! Harmonius core runtime primitives.
-//!
-//! This crate hosts the scene and transform stack described in
-//! `docs/design/core-runtime/scene-transforms.md`.
+//! Harmonius core entry: console SDK wiring for the open-source tree.
 
 #![deny(clippy::all)]
+#![deny(missing_docs)]
 #![deny(unsafe_code)]
-#![warn(missing_docs)]
 
-pub mod job;
-pub mod scene;
+pub use console_sdk::*;
+
+/// Active console backend for this build.
+///
+/// The public repository always links the stub while `target_platform_console` is absent.
+/// Private forks replace this alias with proprietary implementations while preserving the trait
+/// surface.
+pub type Console = console_stub::StubConsoleSdk;
