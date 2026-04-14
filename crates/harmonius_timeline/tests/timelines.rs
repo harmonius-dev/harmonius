@@ -92,7 +92,7 @@ fn test_track_sample_cubic_bezier() {
         default_value: 0.0,
     };
     let v = track.sample(0.5);
-    assert!((f64::from(v) - 0.5).abs() < 1e-3);
+    assert!(((v as f64) - 0.5_f64).abs() < 1e-3);
 }
 
 #[test]
@@ -358,6 +358,7 @@ fn playback_state() -> PlaybackState {
         playing: true,
         direction: PlaybackDirection::Forward,
         loop_count: 0,
+        once_completed: false,
     }
 }
 
@@ -389,6 +390,50 @@ fn test_playback_pause_no_advance() {
     let events = state.advance(1.0, &tl);
     assert!(events.is_empty());
     assert!((state.current_time - 2.0).abs() < f64::EPSILON);
+}
+
+#[test]
+fn test_playback_once_lands_on_duration_emits_timeline_complete() {
+    let tl = MultiTrackTimeline {
+        id: AssetId(0),
+        tracks: vec![],
+        duration: 1.0,
+        loop_mode: LoopMode::Once,
+    };
+    let mut state = playback_state();
+    state.current_time = 0.99;
+    let events = state.advance(0.01, &tl);
+    assert!(events.iter().any(|e| matches!(
+        e.kind,
+        TimelineEventKind::TimelineComplete
+    )));
+    assert!(!state.playing);
+    assert!((state.current_time - 1.0).abs() < f64::EPSILON);
+    assert!(state.is_complete(&tl));
+}
+
+#[test]
+fn test_is_complete_false_when_paused_mid_timeline_once() {
+    let tl = MultiTrackTimeline {
+        id: AssetId(0),
+        tracks: vec![],
+        duration: 10.0,
+        loop_mode: LoopMode::Once,
+    };
+    let mut state = playback_state();
+    state.current_time = 3.0;
+    state.pause();
+    assert!(!state.is_complete(&tl));
+}
+
+#[test]
+#[ignore = "NFR smoke; run with: cargo test -p harmonius_timeline -- --ignored"]
+fn timeline_advance_many_states_smoke() {
+    let tl = empty_loop_timeline();
+    for _ in 0..1000 {
+        let mut state = playback_state();
+        state.advance(0.001, &tl);
+    }
 }
 
 #[test]
@@ -572,6 +617,7 @@ fn test_rkyv_roundtrip_playback() {
         playing: true,
         direction: PlaybackDirection::Reverse,
         loop_count: 4,
+        once_completed: false,
     };
     let bytes = to_bytes::<Error>(&state).unwrap();
     let round = from_bytes::<PlaybackState, Error>(bytes.as_slice()).unwrap();
@@ -606,7 +652,7 @@ fn test_rkyv_roundtrip_track() {
             id: KeyframeId(i),
             time: i as f64 * 0.1,
             value: i as f32,
-            interpolation: modes[i as usize].clone(),
+            interpolation: modes[i as usize],
             trigger: i % 3 == 0,
         });
     }

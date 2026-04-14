@@ -5,7 +5,7 @@ use crate::ids::{Entity, KeyframeId, TrackId};
 /// High-level lifecycle signal for timeline consumers.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TimelineEventKind {
-    /// Playback crossed a keyframe marked as a trigger.
+    /// Playback crossed a keyframe time (inclusive boundary in the integration direction).
     KeyframeCrossed {
         /// Track that owns the keyframe.
         track: TrackId,

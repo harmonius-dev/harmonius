@@ -33,6 +33,6 @@ pub struct Keyframe<T> {
     pub value: T,
     /// How this keyframe blends toward the next.
     pub interpolation: Interpolation,
-    /// When true, crossing this time emits `TimelineEventKind::KeyframeCrossed`.
+    /// Authoring marker for tooling; all keyframe crossings emit `KeyframeCrossed` during advance.
     pub trigger: bool,
 }
