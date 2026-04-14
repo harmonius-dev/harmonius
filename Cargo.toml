@@ -11,6 +11,7 @@ members = [
   "crates/harmonius-integration-benches",
   "crates/harmonius-integration-tests",
   "crates/harmonius-localization",
+  "crates/harmonius_ai",
   "crates/harmonius_app",
   "crates/harmonius_asset_build",
   "crates/harmonius_camera",
