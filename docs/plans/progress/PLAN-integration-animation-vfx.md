@@ -59,7 +59,9 @@ Plan file: [animation-vfx.md](../integration/animation-vfx.md)
 
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
   (orchestrator pass; no PR merge).
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+
+Append ISO-8601 UTC entries with actor, action, and outcome.
+
 - 2026-04-13T12:00:00Z — plan-implementer — started, worktree created at
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-animation-vfx`.
 - 2026-04-13T12:00:00Z — plan-implementer — draft PR creation failed: GitHub token lacks

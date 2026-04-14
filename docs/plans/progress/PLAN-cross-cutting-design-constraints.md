@@ -54,7 +54,9 @@ Plan file: [design-constraints.md](../cross-cutting/design-constraints.md)
 
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background pr-reviewer dispatched
   (orchestrator pass; no PR merge).
-- Append ISO-8601 UTC entries with actor, action, and outcome.
+
+Append ISO-8601 UTC entries with actor, action, and outcome.
+
 - 2026-04-14T01:49:09Z — plan-implementer — started, worktree created at
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-cross-cutting-design-constraints`; `gh pr create`
   failed (`CreatePullRequest` permission); `pr_url`/`pr_number` pending human or token fix.

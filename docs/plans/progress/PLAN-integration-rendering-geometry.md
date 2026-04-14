@@ -1,13 +1,12 @@
 ---
-branch: plan/integration-rendering-geometry
-last_updated: 2026-04-14T17:57:36Z
+branch: null
+last_updated: 2026-04-14T02:02:00Z
 plan_id: PLAN-integration-rendering-geometry
-pr_number: 101
-pr_review_status: not_started
-pr_url: https://github.com/cjhowe-us/harmonius/pull/101
-started_at: 2026-04-14T17:54:45Z
-status: code_complete
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-rendering-geometry
+pr_number: null
+pr_url: null
+started_at: null
+status: not_started
+worktree_path: null
 ---
 
 # Progress: Integration Rendering Geometry
@@ -16,54 +15,49 @@ Plan file: [rendering-geometry.md](../integration/rendering-geometry.md)
 
 ## Status checklist
 
-- [x] Worktree created and branch aligned with plan metadata
-- [x] Draft PR opened and linked in frontmatter
-- [x] Design and companion test-case docs reviewed
-- [x] Requirement and user-story trace matrix completed
-- [x] Red phase complete with failing tests for uncovered scope
-- [x] Green phase complete with minimal passing implementation
-- [x] Refactor phase complete with no regressions
-- [x] Integration validation complete across documented boundaries
-- [x] Constraint conformance checks complete
+- [ ] Worktree created and branch aligned with plan metadata
+- [ ] Draft PR opened and linked in frontmatter
+- [ ] Design and companion test-case docs reviewed
+- [ ] Requirement and user-story trace matrix completed
+- [ ] Red phase complete with failing tests for uncovered scope
+- [ ] Green phase complete with minimal passing implementation
+- [ ] Refactor phase complete with no regressions
+- [ ] Integration validation complete across documented boundaries
+- [ ] Constraint conformance checks complete
 - [ ] Manual validation complete with screenshot and video evidence
-- [x] `cargo test --workspace` passes
-- [x] `cargo clippy --workspace -- -D warnings` passes
-- [x] `rumdl check .` passes for touched docs
-- [x] Evidence links logged in this file
+- [ ] `cargo test --workspace` passes
+- [ ] `cargo clippy --workspace -- -D warnings` passes
+- [ ] `rumdl check .` passes for touched docs
+- [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 
 ## Implementation readiness gate
 
-- [x] Linked spec artifact section reviewed (features/requirements/user-stories).
-- [x] Gap closure decisions accepted or escalated.
-- [x] Open questions resolution section reviewed and signed off.
-- [x] Derived tests added for previously unmapped IDs (if any).
+- [ ] Linked spec artifact section reviewed (features/requirements/user-stories).
+- [ ] Gap closure decisions accepted or escalated.
+- [ ] Open questions resolution section reviewed and signed off.
+- [ ] Derived tests added for previously unmapped IDs (if any).
 
 ## TDD launch readiness
 
-- [x] All previously unmapped ID mappings triaged in plan gap-closure section
-- [x] Red test inventory split by requirement and user story
-- [x] First failing test batch selected for implementation loop
+- [ ] All previously unmapped ID mappings triaged in plan gap-closure section
+- [ ] Red test inventory split by requirement and user story
+- [ ] First failing test batch selected for implementation loop
 - [ ] Evidence capture folders prepared (screenshots/videos/logs)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius_integration_rendering_geometry` (8 unit tests).
-- Benchmarks: not run for this slice (no `cargo bench` targets yet).
-- Screenshots: deferred — CPU contract slice only.
-- Videos: deferred — CPU contract slice only.
-- Review notes: first slice covers TC-IR-3.2.1.* (CPU), TC-IR-3.2.10.2 pack/unpack, TC-IR-3.2.1.N1.
+- Test reports: add command output paths or CI URLs.
+- Benchmarks: add artifacts and expected vs observed thresholds.
+- Screenshots: add image paths with acceptance notes.
+- Videos: add capture paths with scenario IDs.
+- Review notes: add previously unmapped issues, waivers, and rationale.
 
 ## Event log
 
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: plan-implementer dispatched (no PR
-  merge).
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
 
-- 2026-04-14T17:54:45Z — plan-implementer — code complete for CPU slice
-  (`harmonius_integration_rendering_geometry`).
-
-- 2026-04-14T17:57:36Z — plan-implementer — draft PR opened (GitHub PR 101).
-
-Append ISO-8601 UTC entries with actor, action, and outcome.
+- Append ISO-8601 UTC entries with actor, action, and outcome.
