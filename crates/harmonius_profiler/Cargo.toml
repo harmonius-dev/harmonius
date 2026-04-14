@@ -1,0 +1,10 @@
+[package]
+description = "CPU/GPU/memory profiling instrumentation for Harmonius"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_profiler"
+repository = "https://github.com/cjhowe/harmonius"
+version = "0.1.0"
+
+[lib]
+path = "src/lib.rs"
