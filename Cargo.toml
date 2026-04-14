@@ -24,6 +24,7 @@ members = [
   "crates/harmonius_directed_graphs",
   "crates/harmonius_editor",
   "crates/harmonius_editor_core",
+  "crates/harmonius_editor_core_runtime",
   "crates/harmonius_event_logs",
   "crates/harmonius_event_logs_ui",
   "crates/harmonius_game",
