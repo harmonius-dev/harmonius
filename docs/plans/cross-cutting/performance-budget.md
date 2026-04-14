@@ -16,70 +16,145 @@ test_cases: []
 worktree_branch: plan/cross-cutting-performance-budget
 ---
 
-# Performance budget plan
+# Performance budget implementation plan
 
-> **Plan ID:** `PLAN-cross-cutting-performance-budget`
->
-> **Agents:** Load the harmonize skill, then this progress file, before edits.
-
-## Execution instructions
-
-1. Open [progress file](../progress/PLAN-cross-cutting-performance-budget.md).
-2. Keep budget tables derived from
-   [integration/high-level.md](../../design/integration/high-level.md); this file extends tiers and
-   frame rates.
-3. Benchmarks that enforce budgets live in subsystem **test-cases** files — wire TC IDs here.
+- Plan ID: `PLAN-cross-cutting-performance-budget`
+- Progress file:
+  [PLAN-cross-cutting-performance-budget.md](../progress/PLAN-cross-cutting-performance-budget.md)
 
 ## Source documents
 
-| Document | Path |
-|----------|------|
-| Performance budget | [../../design/performance-budget.md](../../design/performance-budget.md) |
-| High-level integration | [../../design/integration/high-level.md](../../design/integration/high-level.md) |
-| Progress | [../progress/PLAN-cross-cutting-performance-budget.md](../progress/PLAN-cross-cutting-performance-budget.md) |
+- Design: [performance-budget.md](../../design/performance-budget.md)
+- Progress:
+  [PLAN-cross-cutting-performance-budget.md](../progress/PLAN-cross-cutting-performance-budget.md)
 
-## Scope
+## Linked specification artifacts
 
-Maintain numeric budgets as **immutable reference data** in docs; encode enforcement as benchmark
-tests owned by subsystems (pure timing functions + fixed hardware profile where required).
+### Features (`docs/features`)
 
-### In scope
+- No linked feature docs found from plan feature IDs.
 
-- Doc edits when high-level integration budgets change.
-- Cross-links to `TC-*` benchmark rows that implement each budget line.
+### Requirements (`docs/requirements`)
 
-### Out of scope
+- No linked requirement docs found from plan requirement IDs.
 
-- Implementing subsystem features (owned by domain plans).
+### User stories (`docs/user-stories`)
 
-## Task breakdown
+- No linked user-story docs found from plan user-story IDs.
 
-| # | Task | Est | Notes |
-|---|------|-----|-------|
-| 1 | Map each budget row to an existing or new TC benchmark ID | 4 | table in progress log |
-| 2 | Remove drift vs `integration/high-level.md` | 2 | single PR |
-| 3 | Add CI threshold hooks only where benchmarks already exist | 8 | no mock timers |
+### Test case sources
 
-## Dependencies
+- No explicit `TC-*` IDs declared for this plan.
 
-- `PLAN-integration-high-level` — authoritative 60 fps frame model.
+## Traceability coverage
 
-## Risk assessment
+### Features
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Benchmark flakiness | M | Pin scenario data; use deterministic seeds |
+- No `F-*` IDs found in linked design artifacts.
 
-## Integration points
+### Requirements
 
-Profiler, game loop, and rendering plans consume this doc for regression messaging.
+- No `R-*` IDs found in linked design artifacts.
 
-## Test strategy
+### User stories
 
-- No standalone test file for this doc; verification is via linked subsystem benchmarks.
+- No `US-*` IDs found in linked design artifacts.
 
-## Verification
+### Test cases
 
-1. Every budget table row links to a TC or explicit “not yet instrumented”.
-2. `rumdl check .` clean.
-3. Progress file `status: code_complete`.
+- No `TC-*` IDs found. Derive tests from requirements and user stories.
+
+## Step-by-step implementation workflow
+
+1. Confirm scope boundaries and dependencies from `docs/plans/index.md`.
+2. Build trace matrix from every linked `R-*`, `US-*`, and `TC-*` item.
+3. Add failing tests for one behavior slice at a time (red).
+4. Implement the smallest deterministic change to pass those tests (green).
+5. Refactor internal structure while preserving behavior and passing tests.
+6. Integrate with adjacent subsystems through explicit interfaces and events.
+7. Validate constraints, performance budgets, and fallback behavior.
+8. Collect evidence artifacts and update progress checklist and event log.
+
+## Algorithm-level plan
+
+- Data transforms use pure functions to preserve determinism and replayability.
+- Search or selection paths follow design-defined bounded algorithms.
+- Scheduling follows explicit phase ordering to preserve dependency correctness.
+- Fallback paths degrade gracefully with telemetry instead of hard failure.
+- Integration points are validated at ECS boundaries and serialized interfaces.
+
+## TDD-first sequencing
+
+### Red
+
+- Create failing tests for each uncovered behavior in `TC-*`, `R-*`, and `US-*` scope.
+- Keep fixtures immutable and deterministic; do not use mock frameworks.
+- Verify failures indicate missing behavior, not test harness defects.
+
+### Green
+
+- Implement minimal code to satisfy the current failing slice.
+- Keep side effects at explicit boundaries (IO seams, command buffers).
+- Re-run focused suites after each slice.
+
+### Refactor
+
+- Simplify structure and remove duplication without changing externally visible behavior.
+- Re-run full test suite and lint checks before advancing status.
+
+## Complete test plan
+
+- Unit coverage for each requirement-level behavior and edge case.
+- Integration coverage for subsystem boundaries and data contracts.
+- Benchmark coverage for documented performance targets where present.
+- Regression coverage for previously delivered behaviors in this area.
+
+### Test inventory
+
+- No explicit test-case IDs; derive inventory from requirement coverage.
+
+## Integration and constraint validation
+
+- Validate ECS composition and no hidden mutable global state.
+- Validate engine threading and IO constraints from `docs/design/constraints.md`.
+- Validate deterministic ordering for equal inputs and fixed seeds.
+- Validate cross-subsystem compatibility at documented interfaces.
+
+## Assumptions and fallback handling
+
+- If design prose conflicts with examples, treat normative requirement trace as canonical.
+- If companion test-case docs are missing, derive exhaustive tests from `R-*` and `US-*`.
+- If dependency behavior is unavailable, gate features with explicit safe fallbacks.
+- Log assumptions and fallback decisions in the progress event log.
+
+## Manual validation procedures
+
+1. Execute primary and failure-path scenarios for each linked user story.
+2. Capture screenshots for state transitions and visible acceptance points.
+3. Capture short videos for temporal behaviors and recovery flows.
+4. Record expected vs observed outcomes and link artifacts in progress evidence.
+5. Treat validation as incomplete if evidence or acceptance criteria are missing.
+
+## Gap closure and open question resolution
+
+### Coverage gap closure
+
+- No parent-chain remapping was needed; direct spec links cover declared IDs.
+
+### Remaining open questions
+
+- None. All declared IDs are mapped with explicit implementation-time resolution paths.
+
+### TDD implementation defaults
+
+- Default to pure-function first implementations (`Input -> Output`) before side effects.
+- For each unresolved dependency at runtime, gate the path behind deterministic fallback.
+- Define test-first acceptance with explicit fixture IDs tied to `TC-*` rows.
+- Capture one screenshot per state transition and one short video per temporal behavior.
+- Promote plan status only after red/green/refactor, integration, and evidence checks pass.
+
+## Completion criteria
+
+- All linked `R-*`, `US-*`, and `TC-*` items have passing evidence.
+- All integration and constraints checks pass without unresolved blockers.
+- Progress status is `code_complete` only after red, green, and refactor completion.

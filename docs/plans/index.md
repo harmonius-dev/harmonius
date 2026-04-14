@@ -278,3 +278,10 @@ Progress trackers live only under [progress/](progress/); they are not plans and
 |---------|------|--------|
 | `PLAN-vfx-effects` | [effects.md](vfx/effects.md) | [effects.md](../design/vfx/effects.md) |
 | `PLAN-vfx-particles` | [particles.md](vfx/particles.md) | [particles.md](../design/vfx/particles.md) |
+
+## Planning execution standard
+
+All plan files now use a unified execution model: complete requirement and user-story traceability,
+algorithm-level implementation notes, explicit red/green/refactor sequencing, integration and
+constraint conformance checks, plus manual validation evidence (screenshots and videos when
+relevant). Every `PLAN-*` progress stub mirrors this workflow with checklist and evidence tracking.

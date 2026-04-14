@@ -6,7 +6,7 @@ design_documents:
 execution_mode: sequential
 features: []
 id: PLAN-cross-cutting-design-constraints
-name: Project-wide design constraints
+name: Design Constraints
 parent: null
 progress_file: docs/plans/progress/PLAN-cross-cutting-design-constraints.md
 requirements: []
@@ -15,67 +15,145 @@ test_cases: []
 worktree_branch: plan/cross-cutting-design-constraints
 ---
 
-# Project constraints plan
+# Design Constraints implementation plan
 
-> **Plan ID:** `PLAN-cross-cutting-design-constraints`
->
-> **Agents:** Load the harmonize skill, then this progress file, before edits.
-
-## Execution instructions
-
-1. Open [progress file](../progress/PLAN-cross-cutting-design-constraints.md).
-2. Keep `docs/design/constraints.md` the single source of truth; other docs link here.
-3. When constraints imply CI checks (e.g. grep guards), add them in small PRs with clear messages.
+- Plan ID: `PLAN-cross-cutting-design-constraints`
+- Progress file:
+  [PLAN-cross-cutting-design-constraints.md](../progress/PLAN-cross-cutting-design-constraints.md)
 
 ## Source documents
 
-| Document | Path |
-|----------|------|
-| Constraints | [../../design/constraints.md](../../design/constraints.md) |
-| Progress | [../progress/PLAN-cross-cutting-design-constraints.md](../progress/PLAN-cross-cutting-design-constraints.md) |
+- Design: [constraints.md](../../design/constraints.md)
+- Progress:
+  [PLAN-cross-cutting-design-constraints.md](../progress/PLAN-cross-cutting-design-constraints.md)
 
-## Scope
+## Linked specification artifacts
 
-Maintain and evolve project-wide constraints. Prefer **declarative rules** (tables) and
-**pure verification** (linters, static checks) over narrative duplication.
+### Features (`docs/features`)
 
-### In scope
+- No linked feature docs found from plan feature IDs.
 
-- Edits to `docs/design/constraints.md` that trace to harmonize specify artifacts when normative.
-- Removing duplicate constraint paragraphs elsewhere in favor of links.
+### Requirements (`docs/requirements`)
 
-### Out of scope
+- No linked requirement docs found from plan requirement IDs.
 
-- Subsystem-specific API design (use the relevant subsystem plan).
+### User stories (`docs/user-stories`)
 
-## Task breakdown
+- No linked user-story docs found from plan user-story IDs.
 
-| # | Task | Est | Notes |
-|---|------|-----|-------|
-| 1 | Audit duplicate constraint prose; open dedupe PRs | 4 | link targets only |
-| 2 | Align codegen / lint rules with constraint tables | 8 | optional automation |
-| 3 | Verify `docs/design/constraints.md` references stay 100-char clean | 1 | rumdl |
+### Test case sources
 
-## Dependencies
+- No explicit `TC-*` IDs declared for this plan.
 
-None.
+## Traceability coverage
 
-## Risk assessment
+### Features
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Constraint drift vs code | H | Pair doc changes with lint or test gates |
+- No `F-*` IDs found in linked design artifacts.
 
-## Integration points
+### Requirements
 
-Every subsystem plan’s “Verification” section should cite `constraints.md` for global rules.
+- No `R-*` IDs found in linked design artifacts.
 
-## Test strategy
+### User stories
 
-- `rumdl check .` on `docs/`.
-- Add repo checks only when they encode a single boolean rule (no flaky network).
+- No `US-*` IDs found in linked design artifacts.
 
-## Verification
+### Test cases
 
-1. No contradictory constraint statements in `docs/design/`.
-2. Progress file `status: code_complete` when audit + optional automation land.
+- No `TC-*` IDs found. Derive tests from requirements and user stories.
+
+## Step-by-step implementation workflow
+
+1. Confirm scope boundaries and dependencies from `docs/plans/index.md`.
+2. Build trace matrix from every linked `R-*`, `US-*`, and `TC-*` item.
+3. Add failing tests for one behavior slice at a time (red).
+4. Implement the smallest deterministic change to pass those tests (green).
+5. Refactor internal structure while preserving behavior and passing tests.
+6. Integrate with adjacent subsystems through explicit interfaces and events.
+7. Validate constraints, performance budgets, and fallback behavior.
+8. Collect evidence artifacts and update progress checklist and event log.
+
+## Algorithm-level plan
+
+- Data transforms use pure functions to preserve determinism and replayability.
+- Search or selection paths follow design-defined bounded algorithms.
+- Scheduling follows explicit phase ordering to preserve dependency correctness.
+- Fallback paths degrade gracefully with telemetry instead of hard failure.
+- Integration points are validated at ECS boundaries and serialized interfaces.
+
+## TDD-first sequencing
+
+### Red
+
+- Create failing tests for each uncovered behavior in `TC-*`, `R-*`, and `US-*` scope.
+- Keep fixtures immutable and deterministic; do not use mock frameworks.
+- Verify failures indicate missing behavior, not test harness defects.
+
+### Green
+
+- Implement minimal code to satisfy the current failing slice.
+- Keep side effects at explicit boundaries (IO seams, command buffers).
+- Re-run focused suites after each slice.
+
+### Refactor
+
+- Simplify structure and remove duplication without changing externally visible behavior.
+- Re-run full test suite and lint checks before advancing status.
+
+## Complete test plan
+
+- Unit coverage for each requirement-level behavior and edge case.
+- Integration coverage for subsystem boundaries and data contracts.
+- Benchmark coverage for documented performance targets where present.
+- Regression coverage for previously delivered behaviors in this area.
+
+### Test inventory
+
+- No explicit test-case IDs; derive inventory from requirement coverage.
+
+## Integration and constraint validation
+
+- Validate ECS composition and no hidden mutable global state.
+- Validate engine threading and IO constraints from `docs/design/constraints.md`.
+- Validate deterministic ordering for equal inputs and fixed seeds.
+- Validate cross-subsystem compatibility at documented interfaces.
+
+## Assumptions and fallback handling
+
+- If design prose conflicts with examples, treat normative requirement trace as canonical.
+- If companion test-case docs are missing, derive exhaustive tests from `R-*` and `US-*`.
+- If dependency behavior is unavailable, gate features with explicit safe fallbacks.
+- Log assumptions and fallback decisions in the progress event log.
+
+## Manual validation procedures
+
+1. Execute primary and failure-path scenarios for each linked user story.
+2. Capture screenshots for state transitions and visible acceptance points.
+3. Capture short videos for temporal behaviors and recovery flows.
+4. Record expected vs observed outcomes and link artifacts in progress evidence.
+5. Treat validation as incomplete if evidence or acceptance criteria are missing.
+
+## Gap closure and open question resolution
+
+### Coverage gap closure
+
+- No parent-chain remapping was needed; direct spec links cover declared IDs.
+
+### Remaining open questions
+
+- None. All declared IDs are mapped with explicit implementation-time resolution paths.
+
+### TDD implementation defaults
+
+- Default to pure-function first implementations (`Input -> Output`) before side effects.
+- For each unresolved dependency at runtime, gate the path behind deterministic fallback.
+- Define test-first acceptance with explicit fixture IDs tied to `TC-*` rows.
+- Capture one screenshot per state transition and one short video per temporal behavior.
+- Promote plan status only after red/green/refactor, integration, and evidence checks pass.
+
+## Completion criteria
+
+- All linked `R-*`, `US-*`, and `TC-*` items have passing evidence.
+- All integration and constraints checks pass without unresolved blockers.
+- Progress status is `code_complete` only after red, green, and refactor completion.

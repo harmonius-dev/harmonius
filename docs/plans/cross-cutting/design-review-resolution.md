@@ -4,7 +4,8 @@ dependencies: []
 design_documents:
   - docs/design/design-review.md
 execution_mode: sequential
-features: []
+features:
+  - F-13.4.3
 id: PLAN-cross-cutting-design-review-resolution
 name: Design review resolution backlog
 parent: null
@@ -15,80 +16,145 @@ test_cases: []
 worktree_branch: plan/cross-cutting-design-review-resolution
 ---
 
-# Design review resolution plan
+# Design review resolution backlog implementation plan
 
-> **Plan ID:** `PLAN-cross-cutting-design-review-resolution`
->
-> **Agents:** Load the harmonize skill, then this progress file, before edits.
-
-## Execution instructions
-
-1. Open [progress file](../progress/PLAN-cross-cutting-design-review-resolution.md).
-2. Treat each backlog item as a doc or code change with its own PR; keep edits small and traceable.
-3. Finish each slice with `rumdl check .`; code slices also need `cargo test` / `clippy` as usual.
+- Plan ID: `PLAN-cross-cutting-design-review-resolution`
+- Progress file:
+  [PLAN-cross-cutting-design-review-resolution.md](../progress/PLAN-cross-cutting-design-review-resolution.md)
 
 ## Source documents
 
-| Document | Path |
-|----------|------|
-| Design review | [../../design/design-review.md](../../design/design-review.md) |
-| Progress | [../progress/PLAN-cross-cutting-design-review-resolution.md](../progress/PLAN-cross-cutting-design-review-resolution.md) |
+- Design: [design-review.md](../../design/design-review.md)
+- Progress:
+  [PLAN-cross-cutting-design-review-resolution.md](../progress/PLAN-cross-cutting-design-review-resolution.md)
 
-## Scope
+## Linked specification artifacts
 
-Execute the prioritized backlog in [design-review.md](../../design/design-review.md): graph-runtime
-consolidation, canonical bridge types, deduplicated primitives, async-scope fixes in runtime paths,
-and de-duplicated constraint prose (link to `constraints.md` instead of copy/paste).
+### Features (`docs/features`)
 
-Work as a pipeline of **pure specification steps** (produce diffs) and **integration steps** (merge
-after review). No subsystem feature work beyond what the review lists.
+- [scripting.md](../../features/game-framework/scripting.md) — covers `F-13.4.3`
 
-### In scope
+### Requirements (`docs/requirements`)
 
-- File-level actions enumerated in design-review Section 4 (and follow-up tables).
-- Tracing each change to a single owning plan ID in the progress event log.
+- No linked requirement docs found from plan requirement IDs.
 
-### Out of scope
+### User stories (`docs/user-stories`)
 
-- New features not justified by a review finding.
-- Rewriting designs that are already consistent with `docs/design/constraints.md`.
+- No linked user-story docs found from plan user-story IDs.
 
-## Task breakdown
+### Test case sources
 
-### Phase 1: Triage and batch
+- No explicit `TC-*` IDs declared for this plan.
 
-| # | Task | Est | Notes |
-|---|------|-----|-------|
-| 1 | Import review rows into progress event log with file paths | 2 | one line per finding |
-| 2 | Batch A: `GraphRuntime` / directed-graph ownership (core-runtime) | 16 | unblock codegen |
-| 3 | Batch B: bridge types (`RenderFrame`, `CompileError`, `IoError`, …) | 16 | one type per PR where possible |
-| 4 | Batch C: async audit — reclassify or rewrite runtime `async` uses | 8 | sync engine rule |
-| 5 | Batch D: replace duplicated constraint prose with links | 8 | rumdl-only PRs ok |
+## Traceability coverage
 
-## Dependencies
+### Features
 
-None at plan level; individual batches declare plan IDs they touch.
+- `F-13.4.3`
 
-## Risk assessment
+### Requirements
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Wide doc churn | M | Ordered batches; always link to review section |
-| Bridge type bikeshed | M | Name exactly as in design-review tables |
+- No `R-*` IDs found in linked design artifacts.
 
-## Integration points
+### User stories
 
-Touches many `docs/design/**` files and eventually `crates/**` for graph and error types. Record doc
-PR URLs in this plan’s progress event log; the harmonize `design-orchestrator` maintains
-`docs/plans/progress/phase-design.md` rollups when that file is present in the branch.
+- No `US-*` IDs found in linked design artifacts.
 
-## Test strategy
+### Test cases
 
-- Documentation: `rumdl check .` on touched trees.
-- Code: red tests owned by the subsystem plan that receives the bridge type (spawn child tasks).
+- No `TC-*` IDs found. Derive tests from requirements and user stories.
 
-## Verification
+## Step-by-step implementation workflow
 
-1. Every Section 4 item is either done or explicitly deferred with reason in the progress log.
-2. `rumdl check .` clean for touched docs.
-3. Progress file `status: code_complete` when backlog is empty or deferred set is approved.
+1. Confirm scope boundaries and dependencies from `docs/plans/index.md`.
+2. Build trace matrix from every linked `R-*`, `US-*`, and `TC-*` item.
+3. Add failing tests for one behavior slice at a time (red).
+4. Implement the smallest deterministic change to pass those tests (green).
+5. Refactor internal structure while preserving behavior and passing tests.
+6. Integrate with adjacent subsystems through explicit interfaces and events.
+7. Validate constraints, performance budgets, and fallback behavior.
+8. Collect evidence artifacts and update progress checklist and event log.
+
+## Algorithm-level plan
+
+- Data transforms use pure functions to preserve determinism and replayability.
+- Search or selection paths follow design-defined bounded algorithms.
+- Scheduling follows explicit phase ordering to preserve dependency correctness.
+- Fallback paths degrade gracefully with telemetry instead of hard failure.
+- Integration points are validated at ECS boundaries and serialized interfaces.
+
+## TDD-first sequencing
+
+### Red
+
+- Create failing tests for each uncovered behavior in `TC-*`, `R-*`, and `US-*` scope.
+- Keep fixtures immutable and deterministic; do not use mock frameworks.
+- Verify failures indicate missing behavior, not test harness defects.
+
+### Green
+
+- Implement minimal code to satisfy the current failing slice.
+- Keep side effects at explicit boundaries (IO seams, command buffers).
+- Re-run focused suites after each slice.
+
+### Refactor
+
+- Simplify structure and remove duplication without changing externally visible behavior.
+- Re-run full test suite and lint checks before advancing status.
+
+## Complete test plan
+
+- Unit coverage for each requirement-level behavior and edge case.
+- Integration coverage for subsystem boundaries and data contracts.
+- Benchmark coverage for documented performance targets where present.
+- Regression coverage for previously delivered behaviors in this area.
+
+### Test inventory
+
+- No explicit test-case IDs; derive inventory from requirement coverage.
+
+## Integration and constraint validation
+
+- Validate ECS composition and no hidden mutable global state.
+- Validate engine threading and IO constraints from `docs/design/constraints.md`.
+- Validate deterministic ordering for equal inputs and fixed seeds.
+- Validate cross-subsystem compatibility at documented interfaces.
+
+## Assumptions and fallback handling
+
+- If design prose conflicts with examples, treat normative requirement trace as canonical.
+- If companion test-case docs are missing, derive exhaustive tests from `R-*` and `US-*`.
+- If dependency behavior is unavailable, gate features with explicit safe fallbacks.
+- Log assumptions and fallback decisions in the progress event log.
+
+## Manual validation procedures
+
+1. Execute primary and failure-path scenarios for each linked user story.
+2. Capture screenshots for state transitions and visible acceptance points.
+3. Capture short videos for temporal behaviors and recovery flows.
+4. Record expected vs observed outcomes and link artifacts in progress evidence.
+5. Treat validation as incomplete if evidence or acceptance criteria are missing.
+
+## Gap closure and open question resolution
+
+### Coverage gap closure
+
+- No parent-chain remapping was needed; direct spec links cover declared IDs.
+
+### Remaining open questions
+
+- None. All declared IDs are mapped with explicit implementation-time resolution paths.
+
+### TDD implementation defaults
+
+- Default to pure-function first implementations (`Input -> Output`) before side effects.
+- For each unresolved dependency at runtime, gate the path behind deterministic fallback.
+- Define test-first acceptance with explicit fixture IDs tied to `TC-*` rows.
+- Capture one screenshot per state transition and one short video per temporal behavior.
+- Promote plan status only after red/green/refactor, integration, and evidence checks pass.
+
+## Completion criteria
+
+- All linked `R-*`, `US-*`, and `TC-*` items have passing evidence.
+- All integration and constraints checks pass without unresolved blockers.
+- Progress status is `code_complete` only after red, green, and refactor completion.

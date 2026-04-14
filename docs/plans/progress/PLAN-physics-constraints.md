@@ -9,26 +9,45 @@ status: not_started
 worktree_path: null
 ---
 
-# Progress: Physics constraints
+# Progress: Physics Constraints
 
-Plan file: [../physics/constraints.md](../physics/constraints.md)
+Plan file: [constraints.md](../physics/constraints.md)
 
-## Checklist
+## Status checklist
 
-- [ ] Worktree created
-- [ ] Draft PR opened
-- [ ] Design documents read
-- [ ] Phase 1: red tests written (or doc checklist for normative-only plans)
-- [ ] Phase 1: implementation complete
-- [ ] Phase 1: green tests passing
-- [ ] `cargo test --workspace` — all pass
-- [ ] `cargo clippy --workspace -- -D warnings` — zero warnings
-- [ ] `rumdl check .` — zero lint errors
-- [ ] Code complete marker set (status=code_complete)
-- [ ] Review findings addressed
-- [ ] PR ready for human review (undrafted, status=submitted)
-- [ ] Merged by human (detected by orchestrator via gh)
+- [ ] Worktree created and branch aligned with plan metadata
+- [ ] Draft PR opened and linked in frontmatter
+- [ ] Design and companion test-case docs reviewed
+- [ ] Requirement and user-story trace matrix completed
+- [ ] Red phase complete with failing tests for uncovered scope
+- [ ] Green phase complete with minimal passing implementation
+- [ ] Refactor phase complete with no regressions
+- [ ] Integration validation complete across documented boundaries
+- [ ] Constraint conformance checks complete
+- [ ] Manual validation complete with screenshot and video evidence
+- [ ] `cargo test --workspace` passes
+- [ ] `cargo clippy --workspace -- -D warnings` passes
+- [ ] `rumdl check .` passes for touched docs
+- [ ] Evidence links logged in this file
+- [ ] Review findings addressed and checklist re-verified
+- [ ] PR marked ready for human review (`status: submitted`)
+- [ ] Merge detected and progress archived by orchestrator
+
+## TDD launch readiness
+
+- [ ] All ID mappings verified with zero unresolved entries
+- [ ] Red test inventory split by requirement and user story
+- [ ] First failing test batch selected for implementation loop
+- [ ] Evidence capture folders prepared (screenshots/videos/logs)
+
+## Evidence registry
+
+- Test reports: add command output paths or CI URLs.
+- Benchmarks: add artifacts and expected vs observed thresholds.
+- Screenshots: add image paths with acceptance notes.
+- Videos: add capture paths with scenario IDs.
+- Review notes: add unresolved issues, waivers, and rationale.
 
 ## Event log
 
-- (append ISO-8601 UTC lines)
+- Append ISO-8601 UTC entries with actor, action, and outcome.
