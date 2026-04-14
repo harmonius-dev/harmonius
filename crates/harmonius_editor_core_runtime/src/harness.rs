@@ -74,28 +74,35 @@ impl HeadlessHarness {
         self.staged.push_back(mutation);
     }
 
-    /// Moves staged mutations across the bridge, honoring `FM-1` by draining when full.
+    /// Moves staged mutations onto the bridge queue only.
+    ///
+    /// Does **not** apply mutations to [`GameWorld`](crate::world::GameWorld). When the bridge is
+    /// full (`FM-1`), increments telemetry and leaves the overflow mutation at the **front** of
+    /// `staged` until a later [`Self::run_frame`] drain frees capacity.
     pub fn flush_staged_to_bridge(&mut self) {
-        while let Some(mut current) = self.staged.pop_front() {
-            loop {
-                match self.bridge.try_enqueue(current) {
-                    Ok(()) => break,
-                    Err(m) => {
-                        self.bridge.fm1_backpressure_events =
-                            self.bridge.fm1_backpressure_events.saturating_add(1);
-                        self.bridge.drain_into_game(&mut self.game);
-                        current = m;
-                    }
+        while let Some(current) = self.staged.pop_front() {
+            match self.bridge.try_enqueue(current) {
+                Ok(()) => {}
+                Err(m) => {
+                    self.bridge.fm1_backpressure_events =
+                        self.bridge.fm1_backpressure_events.saturating_add(1);
+                    self.staged.push_front(m);
+                    break;
                 }
             }
         }
     }
 
-    /// Runs one full edit-mode frame: flush → drain → phases 1..8 → snapshot publish.
+    /// Runs one full edit-mode frame: drain → flush → drain → phases 1..8 → snapshot publish.
+    ///
+    /// Phases 1–8 are synthetic placeholders until the real scheduler is wired; ordering is only
+    /// asserted through [`FrameReport::log`].
     pub fn run_frame(&mut self) -> FrameReport {
         let mut log = Vec::new();
+        let drained_pre = self.bridge.drain_into_game(&mut self.game);
         self.flush_staged_to_bridge();
-        let drained = self.bridge.drain_into_game(&mut self.game);
+        let drained_post = self.bridge.drain_into_game(&mut self.game);
+        let drained = drained_pre.saturating_add(drained_post);
         let drained_before_phase1 = drained > 0;
         if drained > 0 {
             log.push("drain");
@@ -190,7 +197,7 @@ pub fn run_hot_reload_barrier(
 mod tests {
     use super::*;
     use crate::mutation::EditorMutationKind;
-    use crate::world::EntityId;
+    use crate::world::{EditorWorld, EntityId};
 
     #[test]
     fn tc_ir_9_1_1_1_editor_edit_without_flush_does_not_touch_game() {
@@ -272,6 +279,33 @@ mod tests {
     }
 
     #[test]
+    fn tc_ir_9_1_2_5_remove_component() {
+        let mut h = HeadlessHarness::new();
+        h.stage_mutation(EditorMutation {
+            mutation_id: 1,
+            kind: EditorMutationKind::SpawnEntity { id: EntityId(5) },
+        });
+        h.stage_mutation(EditorMutation {
+            mutation_id: 2,
+            kind: EditorMutationKind::InsertComponent {
+                entity: EntityId(5),
+                component_id: 9,
+                bytes: vec![1, 2],
+            },
+        });
+        h.stage_mutation(EditorMutation {
+            mutation_id: 3,
+            kind: EditorMutationKind::RemoveComponent {
+                entity: EntityId(5),
+                component_id: 9,
+            },
+        });
+        h.run_frame();
+        assert!(h.game.has_entity(EntityId(5)));
+        assert!(h.game.inner.components.get(&(EntityId(5), 9)).is_none());
+    }
+
+    #[test]
     fn tc_ir_9_1_2_4_update_component() {
         let mut h = HeadlessHarness::new();
         h.stage_mutation(EditorMutation {
@@ -333,6 +367,8 @@ mod tests {
         assert!(drain_pos < p8_pos);
     }
 
+    /// Snapshot [`GameStateSnapshot::frame_index`] uses the tick **before**
+    /// [`GameWorld::tick_frame`]; readers align with `tick.saturating_sub(1)` after a frame.
     #[test]
     fn tc_ir_9_1_3_3_snapshot_frame_matches_tick_after_frame() {
         let mut h = HeadlessHarness::new();
@@ -389,10 +425,39 @@ mod tests {
                 },
             });
         }
-        h.flush_staged_to_bridge();
+        for _ in 0..8 {
+            if h.staged.is_empty() && h.bridge.queued_len() == 0 {
+                break;
+            }
+            h.run_frame();
+        }
         assert!(h.bridge.fm1_backpressure_events > 0);
-        let _tail = h.bridge.drain_into_game(&mut h.game);
         assert_eq!(h.game.inner.entities.len(), 300);
+    }
+
+    #[test]
+    fn tc_ir_9_1_2_fm1_flush_does_not_apply_bridge_to_game() {
+        let mut h = HeadlessHarness::new();
+        for i in 1_u64..=256 {
+            h.bridge
+                .try_enqueue(EditorMutation {
+                    mutation_id: i,
+                    kind: EditorMutationKind::SpawnEntity {
+                        id: EntityId(i),
+                    },
+                })
+                .expect("enqueue");
+        }
+        h.stage_mutation(EditorMutation {
+            mutation_id: 999,
+            kind: EditorMutationKind::SpawnEntity {
+                id: EntityId(999),
+            },
+        });
+        let fp = h.game.inner.fingerprint();
+        h.flush_staged_to_bridge();
+        assert_eq!(fp, h.game.inner.fingerprint());
+        assert!(h.bridge.fm1_backpressure_events >= 1);
     }
 
     #[test]
@@ -564,6 +629,32 @@ mod tests {
         ed.undo_last().expect("u2");
         ed.redo_last().expect("r1");
         assert_eq!(ed.inner.entities.len(), 2);
+    }
+
+    #[test]
+    fn tc_ir_9_1_6_4_undo_remove_component_restores_bytes() {
+        let mut ed = EditorWorld::default();
+        ed.spawn_with_undo(EditorMutation {
+            mutation_id: 1,
+            kind: EditorMutationKind::InsertComponent {
+                entity: EntityId(1),
+                component_id: 5,
+                bytes: vec![9],
+            },
+        });
+        ed.spawn_with_undo(EditorMutation {
+            mutation_id: 2,
+            kind: EditorMutationKind::RemoveComponent {
+                entity: EntityId(1),
+                component_id: 5,
+            },
+        });
+        assert!(ed.inner.components.get(&(EntityId(1), 5)).is_none());
+        ed.undo_last().expect("undo remove");
+        assert_eq!(
+            ed.inner.components.get(&(EntityId(1), 5)),
+            Some(&vec![9_u8])
+        );
     }
 
     #[test]
