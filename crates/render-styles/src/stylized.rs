@@ -29,7 +29,7 @@ pub struct OutlineRequest {
     pub priority: u8,
 }
 
-/// GPU capability flags used to pick outline technique.
+/// GPU capability flags used to pick outline technique (CPU policy only; no GPU API calls).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Capabilities {
     /// Whether compute shaders are available.
@@ -45,7 +45,7 @@ pub enum OutlinePipeline {
     Sobel,
 }
 
-/// Builds outline pipeline from capabilities.
+/// Builds outline pipeline from capabilities (offline policy; not a GPU backend selector).
 pub fn outline_pipeline_for_caps(caps: &Capabilities) -> OutlinePipeline {
     if caps.compute_shaders {
         OutlinePipeline::JumpFlood
@@ -151,6 +151,9 @@ pub enum ToonQuality {
 
 /// Quantizes N·L into `bands` thresholds (`TC-2.11.3.1`).
 pub fn toon_quantize_ndotl(ndotl: f32, bands: &[f32], _quality: ToonQuality) -> f32 {
+    if bands.is_empty() {
+        return 0.0;
+    }
     let mut chosen = bands[0];
     for &b in bands {
         if ndotl >= b {
@@ -161,7 +164,12 @@ pub fn toon_quantize_ndotl(ndotl: f32, bands: &[f32], _quality: ToonQuality) -> 
 }
 
 /// Samples a 1D ramp texture defined by evenly spaced RGB knots (`TC-2.11.3.2`).
+///
+/// Uses **nearest knot** selection (not linear RGB interpolation between knots).
 pub fn toon_ramp_lookup(knots: &[(f32, f32, f32)], ndotl: f32) -> (f32, f32, f32) {
+    if knots.is_empty() {
+        return (0.0, 0.0, 0.0);
+    }
     let u = ndotl.clamp(0.0, 1.0);
     let idx = ((knots.len() - 1) as f32 * u).round() as usize;
     let idx = idx.min(knots.len() - 1);
@@ -245,9 +253,13 @@ pub struct XRayDepthState {
 }
 
 /// Selects depth state when any entity needs X-ray (`TC-2.11.5.1`).
-pub fn xray_depth_state(_has_xray: bool) -> XRayDepthState {
+pub fn xray_depth_state(has_xray: bool) -> XRayDepthState {
     XRayDepthState {
-        depth_compare: DepthCompare::Greater,
+        depth_compare: if has_xray {
+            DepthCompare::Greater
+        } else {
+            DepthCompare::LessEqual
+        },
     }
 }
 
@@ -288,12 +300,13 @@ pub struct PixelArtParams {
 
 /// Quantizes RGB to nearest palette entry (`TC-2.11.7.2`).
 pub fn pixel_art_palette_match(palette: &[[f32; 3]], color: [f32; 3]) -> [f32; 3] {
+    if palette.is_empty() {
+        return [0.0, 0.0, 0.0];
+    }
     let mut best = palette[0];
     let mut best_d = f32::MAX;
     for p in palette {
-        let d = (p[0] - color[0]).powi(2)
-            + (p[1] - color[1]).powi(2)
-            + (p[2] - color[2]).powi(2);
+        let d = (p[0] - color[0]).powi(2) + (p[1] - color[1]).powi(2) + (p[2] - color[2]).powi(2);
         if d < best_d {
             best_d = d;
             best = *p;
@@ -304,6 +317,9 @@ pub fn pixel_art_palette_match(palette: &[[f32; 3]], color: [f32; 3]) -> [f32; 3
 
 /// Nearest-neighbor upscale factor check (`TC-2.11.7.3`).
 pub fn nearest_block_scale(src_w: u32, dst_w: u32) -> u32 {
+    if src_w == 0 {
+        return 0;
+    }
     dst_w / src_w
 }
 
@@ -336,6 +352,14 @@ mod tests {
         }];
         let resolved = outline_resolve_overlap(&reqs);
         assert!((resolved.r - 1.0).abs() < 1.0 / 255.0);
+        let w = 8_usize;
+        let h = 8_usize;
+        let mut mask = vec![false; w * h];
+        mask[3 * w + 3] = true;
+        mask[3 * w + 4] = true;
+        let seeds = outline_jump_flood_init(&mask, w, h);
+        assert_eq!(seeds[3 * w + 3], (3, 3));
+        assert_eq!(seeds[3 * w + 4], (4, 3));
     }
 
     #[test]
@@ -445,12 +469,24 @@ mod tests {
             }
         }
         assert!(hits > 0 && hits < 64);
+        let levels: std::collections::BTreeSet<u8> = b
+            .iter()
+            .flatten()
+            .map(|v| (v * 64.0).round().clamp(0.0, 63.0) as u8)
+            .collect();
+        assert_eq!(
+            levels.len(),
+            64,
+            "order-8 Bayer uses 64 distinct thresholds"
+        );
     }
 
     #[test]
     fn tc_2_11_5_1_xray_depth_compare() {
-        let st = xray_depth_state(true);
-        assert_eq!(st.depth_compare, DepthCompare::Greater);
+        let st_on = xray_depth_state(true);
+        assert_eq!(st_on.depth_compare, DepthCompare::Greater);
+        let st_off = xray_depth_state(false);
+        assert_eq!(st_off.depth_compare, DepthCompare::LessEqual);
     }
 
     #[test]
@@ -462,9 +498,7 @@ mod tests {
 
     #[test]
     fn tc_2_11_6_1_painterly_brush_radius() {
-        let p = PainterlyParams {
-            brush_radius: 5.0,
-        };
+        let p = PainterlyParams { brush_radius: 5.0 };
         assert!((painterly_cluster_width(&p) - 5.0).abs() < 1.0);
     }
 
@@ -507,5 +541,6 @@ mod tests {
     #[test]
     fn tc_2_11_7_3_pixel_art_nearest_neighbor() {
         assert_eq!(nearest_block_scale(160, 1920), 12);
+        assert_eq!(nearest_block_scale(0, 1920), 0);
     }
 }

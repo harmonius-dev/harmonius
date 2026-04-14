@@ -1,4 +1,7 @@
 //! Anti-aliasing and upscaling helpers (`TC-2.6.*`).
+//!
+//! `fxaa_luma_step_edge` and `smaa_blend` are **simplified CPU stubs** (narrow kernels) for
+//! deterministic tests, not full production FXAA/SMAA pipelines.
 
 /// Temporal anti-aliasing jitter offsets.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -46,6 +49,9 @@ pub fn clamp_taa_history(
 /// FXAA-style edge blend on luma (simplified luminance-only pass).
 pub fn fxaa_luma_step_edge(image: &mut [f32], width: usize, height: usize) {
     assert_eq!(image.len(), width * height);
+    if width < 2 || height < 2 {
+        return;
+    }
     let scratch = image.to_vec();
     for y in 1..height - 1 {
         for x in 1..width - 1 {
@@ -71,8 +77,13 @@ pub fn fxaa_luma_step_edge(image: &mut [f32], width: usize, height: usize) {
 }
 
 /// Peak signal-to-noise ratio for single-channel buffers in `[0,1]`.
+///
+/// Empty buffers compare as a perfect match (`100.0` PSNR).
 pub fn psnr_mono(a: &[f32], b: &[f32]) -> f32 {
     assert_eq!(a.len(), b.len());
+    if a.is_empty() {
+        return 100.0;
+    }
     let mut mse = 0.0_f32;
     for (va, vb) in a.iter().zip(b.iter()) {
         let d = va - vb;
@@ -87,6 +98,13 @@ pub fn psnr_mono(a: &[f32], b: &[f32]) -> f32 {
 
 /// Bilinear upscale used as a deterministic stand-in for TSR in `TC-2.6.4.1`.
 pub fn bilinear_upscale(src: &[f32], sw: usize, sh: usize, dw: usize, dh: usize) -> Vec<f32> {
+    if dw == 0 || dh == 0 {
+        return Vec::new();
+    }
+    if sw == 0 || sh == 0 {
+        return vec![0.0_f32; dw * dh];
+    }
+    assert_eq!(src.len(), sw * sh);
     let mut out = vec![0.0_f32; dw * dh];
     for y in 0..dh {
         for x in 0..dw {
@@ -153,6 +171,9 @@ pub fn submission_to_present_ms(
 /// SMAA-style neighborhood blend (simplified edge-aware mix).
 pub fn smaa_blend(image: &mut [f32], width: usize, height: usize) {
     assert_eq!(image.len(), width * height);
+    if width < 2 || height < 2 {
+        return;
+    }
     let scratch = image.to_vec();
     for y in 1..height - 1 {
         for x in 1..width - 1 {
@@ -179,6 +200,10 @@ pub fn smaa_blend(image: &mut [f32], width: usize, height: usize) {
 
 /// Mean absolute error vs a reference image.
 pub fn mean_abs_error(a: &[f32], b: &[f32]) -> f32 {
+    assert_eq!(a.len(), b.len());
+    if a.is_empty() {
+        return 0.0;
+    }
     a.iter()
         .zip(b.iter())
         .map(|(x, y)| (x - y).abs())
@@ -267,7 +292,7 @@ mod tests {
     }
 
     #[test]
-    fn tc_2_6_4_1_tsr_upscale_psnr() {
+    fn tc_2_6_4_1_bilinear_upscale_psnr_stand_in() {
         let sw = 27_usize;
         let sh = 15_usize;
         let dw = 54_usize;
@@ -344,6 +369,7 @@ mod tests {
         assert!((off - baseline).abs() < 0.01);
     }
 
+    /// Uses [`smaa_blend`] as a simplified CPU stub (not full edge-vector SMAA).
     #[test]
     fn tc_2_6_9_1_smaa_neighborhood_blend() {
         let w = 32_usize;
@@ -362,5 +388,17 @@ mod tests {
         let err_fxaa = mean_abs_error(&fx, &reference);
         let err_smaa = mean_abs_error(&sm, &reference);
         assert!(err_smaa < err_fxaa, "smaa {} fxaa {}", err_smaa, err_fxaa);
+    }
+
+    #[test]
+    fn psnr_mono_empty_is_perfect_match() {
+        assert!((psnr_mono(&[], &[]) - 100.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn fxaa_no_panic_on_tiny_buffer() {
+        let mut one = vec![1.0_f32];
+        fxaa_luma_step_edge(&mut one, 1, 1);
+        assert_eq!(one[0], 1.0);
     }
 }

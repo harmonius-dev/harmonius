@@ -1,5 +1,27 @@
 //! Advanced material helpers (`TC-2.12.*`).
 
+use std::fmt;
+
+/// Material graph validation or compile failure (`TC-2.12.9.1`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MaterialGraphError {
+    /// Graph has no nodes.
+    EmptyGraph,
+    /// Output id does not match any node.
+    DisconnectedOutput,
+}
+
+impl fmt::Display for MaterialGraphError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::EmptyGraph => write!(f, "empty material graph"),
+            Self::DisconnectedOutput => write!(f, "material graph output is not connected"),
+        }
+    }
+}
+
+impl std::error::Error for MaterialGraphError {}
+
 /// Snell shift in pixels (simplified) for sphere rim (`TC-2.12.1.1`).
 pub fn glass_snell_shift_px(ior: f32) -> f32 {
     ior * 4.0
@@ -65,6 +87,8 @@ pub struct MaterialNode {
 }
 
 /// Material graph (`TC-2.12.9.1`).
+///
+/// Edges are not modeled yet; [`material_graph_validate`] only checks output membership.
 #[derive(Debug, Clone)]
 pub struct MaterialGraph {
     /// Nodes.
@@ -73,35 +97,39 @@ pub struct MaterialGraph {
     pub output: u32,
 }
 
-/// Compiled material stub (`TC-2.12.9.1`).
+/// Stub compile artifact (`TC-2.12.9.1`).
+///
+/// `stub_token_len` counts opaque stub units only — **not** bytecode for a VM (see engine
+/// constraints: no material bytecode interpreter in-tree).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompiledMaterial {
-    /// Bytecode length marker.
-    pub bytecode_len: usize,
+    /// Stub serialized size marker (not VM bytecode).
+    pub stub_token_len: usize,
 }
 
-/// Validates connectivity; returns error message if disconnected.
-pub fn material_graph_validate(graph: &MaterialGraph) -> Result<(), &'static str> {
-    if graph.nodes.len() < graph.output as usize {
-        return Err("disconnected output");
+/// Validates that the graph declares a reachable output (`TC-2.12.9.1`).
+#[must_use = "check the returned `Result` for validation errors"]
+pub fn material_graph_validate(graph: &MaterialGraph) -> Result<(), MaterialGraphError> {
+    if graph.nodes.is_empty() {
+        return Err(MaterialGraphError::EmptyGraph);
+    }
+    if !graph.nodes.iter().any(|n| n.id == graph.output) {
+        return Err(MaterialGraphError::DisconnectedOutput);
     }
     Ok(())
 }
 
-/// Compiles graph to bytecode stub.
+/// Compiles graph to a deterministic stub artifact (`TC-2.12.9.1`).
+#[must_use = "check the returned `Result` for compile errors"]
 pub fn material_graph_compile(
     graph: &MaterialGraph,
     tier: PlatformTier,
-) -> Result<CompiledMaterial, &'static str> {
+) -> Result<CompiledMaterial, MaterialGraphError> {
+    material_graph_validate(graph)?;
     match tier {
-        PlatformTier::Desktop => {
-            if graph.nodes.is_empty() {
-                return Err("empty graph");
-            }
-            Ok(CompiledMaterial {
-                bytecode_len: graph.nodes.len() * 4,
-            })
-        }
+        PlatformTier::Desktop => Ok(CompiledMaterial {
+            stub_token_len: graph.nodes.len() * 4,
+        }),
     }
 }
 
@@ -169,11 +197,22 @@ mod tests {
         }
         let graph = MaterialGraph { nodes, output: 9 };
         let compiled = material_graph_compile(&graph, PlatformTier::Desktop).unwrap();
-        assert!(compiled.bytecode_len > 0);
+        assert!(compiled.stub_token_len > 0);
         let bad = MaterialGraph {
             nodes: vec![MaterialNode { id: 0 }],
             output: 5,
         };
-        assert!(material_graph_validate(&bad).is_err());
+        assert_eq!(
+            material_graph_validate(&bad),
+            Err(MaterialGraphError::DisconnectedOutput)
+        );
+        let empty = MaterialGraph {
+            nodes: vec![],
+            output: 0,
+        };
+        assert_eq!(
+            material_graph_validate(&empty),
+            Err(MaterialGraphError::EmptyGraph)
+        );
     }
 }
