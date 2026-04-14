@@ -5,6 +5,9 @@ use crate::ids::Entity;
 use crate::types::VirtualCamera;
 
 /// Per-player camera brain configuration.
+///
+/// `custom_blends` stores a numeric asset-handle placeholder until the asset pipeline wires in
+/// `blend::CustomBlends` data from disk.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CameraBrain {
     /// Channel mask to filter virtual cameras.
@@ -33,7 +36,7 @@ pub enum CameraUpdateMode {
 /// Selects the highest-priority virtual camera visible to `brain_channel_mask`.
 ///
 /// Cameras must overlap the brain mask (`camera.channel_mask & brain_channel_mask != 0`). Ties on
-/// priority prefer the higher [`Entity::0`] value for deterministic ordering.
+/// priority prefer the higher underlying [`Entity`] id (tuple field `0`) for deterministic ordering.
 #[must_use]
 pub fn select_highest_priority_camera(
     brain_channel_mask: u32,
@@ -59,6 +62,9 @@ impl FixedUpdateBrainClock {
     }
 
     /// Adds `delta_time` and returns how many fixed steps occurred for `fixed_dt`.
+    ///
+    /// Emits at most one million steps per call so pathological frame times cannot stall the main
+    /// thread; excess time remains in `accumulator` for subsequent frames (spiral-of-death guard).
     pub fn consume(&mut self, delta_time: f32, fixed_dt: f32) -> u32 {
         if fixed_dt <= 0.0 {
             return 0;

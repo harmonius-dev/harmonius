@@ -8,6 +8,7 @@ repository = "https://github.com/cjhowe-us/harmonius"
 version = "0.1.0"
 
 [dependencies]
+# Standalone vectors until shared engine math types are published for dependency-light crates.
 glam = "0.29"
 
 [lints.rust]

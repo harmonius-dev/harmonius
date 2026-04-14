@@ -2,6 +2,17 @@
 //!
 //! This crate implements deterministic, test-first camera logic described in
 //! `docs/design/game-framework/camera.md`.
+//!
+//! ## Dependencies
+//!
+//! `glam` is the only external dependency here so vectors stay consistent with the engine until
+//! shared math types are published from the workspace root crate.
+//!
+//! ## Design parity
+//!
+//! Some structs intentionally use numeric placeholders (`Option<u32>` / `Option<u64>`) where the
+//! design references `StringId` or asset handles; those will converge when authoring/runtime APIs
+//! land.
 
 #![deny(clippy::all)]
 #![forbid(unsafe_code)]
@@ -47,7 +58,7 @@ pub use extensions::{
 };
 pub use group::{
     evaluate_group_framing_fov, evaluate_shot_quality_with_occlusion, group_bounding_box_center,
-    GroupFraming, TargetGroup, TargetGroupMember,
+    group_weighted_center, GroupFraming, TargetGroup, TargetGroupMember,
 };
 pub use ids::{Entity, LayerMask};
 pub use input::integrate_camera_input_frame_independent;
@@ -71,9 +82,9 @@ pub use rotation::{
 };
 pub use shake::{
     evaluate_cinematic_shake_at, evaluate_composite_shake, evaluate_impulse_listener_response,
-    evaluate_perlin_noise_offset, evaluate_perlin_with_gain, evaluate_wave_oscillation_position,
-    CinematicShakeClip, CompositeShakeLayer, ImpulseListener, ImpulseSource, PerlinNoiseProfile,
-    WaveOscillation,
+    evaluate_sinusoidal_noise_offset, evaluate_sinusoidal_noise_with_gain,
+    evaluate_wave_oscillation_position, CinematicShakeClip, CompositeShakeLayer, ImpulseListener,
+    ImpulseSource, SinusoidalNoiseProfile, WaveOscillation,
 };
 pub use third_person::{
     evaluate_third_person_collision_retraction, evaluate_third_person_shoulder, ThirdPersonFollow,

@@ -1,4 +1,7 @@
 //! Shake, noise, impulse, and composite layering.
+//!
+//! Deterministic noise offsets use summed sinusoids (not gradient Perlin); naming tracks the
+//! subsystem vocabulary until a full noise implementation lands.
 
 use glam::Vec3;
 
@@ -13,9 +16,9 @@ pub struct NoiseChannel {
     pub amplitude: f32,
 }
 
-/// Lightweight noise profile for deterministic tests.
+/// Lightweight summed-sinusoid profile for deterministic tests.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct PerlinNoiseProfile {
+pub struct SinusoidalNoiseProfile {
     /// Primary oscillation channels.
     pub channels: [NoiseChannel; 3],
 }
@@ -60,8 +63,8 @@ pub struct CompositeShakeLayer {
 
 /// Deterministic pseudo-noise offset built from sinusoids.
 #[must_use]
-pub fn evaluate_perlin_noise_offset(
-    profile: &PerlinNoiseProfile,
+pub fn evaluate_sinusoidal_noise_offset(
+    profile: &SinusoidalNoiseProfile,
     time: f32,
     frequency_gain: f32,
 ) -> Vec3 {
@@ -75,13 +78,13 @@ pub fn evaluate_perlin_noise_offset(
 
 /// Applies amplitude gain (0 mutes the profile).
 #[must_use]
-pub fn evaluate_perlin_with_gain(
-    profile: &PerlinNoiseProfile,
+pub fn evaluate_sinusoidal_noise_with_gain(
+    profile: &SinusoidalNoiseProfile,
     time: f32,
     amplitude_gain: f32,
     frequency_gain: f32,
 ) -> Vec3 {
-    evaluate_perlin_noise_offset(profile, time, frequency_gain) * amplitude_gain
+    evaluate_sinusoidal_noise_offset(profile, time, frequency_gain) * amplitude_gain
 }
 
 /// Computes listener shake response with radial falloff.
@@ -146,8 +149,8 @@ pub fn evaluate_cinematic_shake_at(clip: &CinematicShakeClip, time: f32) -> Vec3
 mod tests {
     use super::*;
 
-    fn sample_profile() -> PerlinNoiseProfile {
-        PerlinNoiseProfile {
+    fn sample_profile() -> SinusoidalNoiseProfile {
+        SinusoidalNoiseProfile {
             channels: [
                 NoiseChannel {
                     frequency: 1.0,
@@ -165,18 +168,18 @@ mod tests {
         }
     }
 
-    /// TC-13.25.18.1 — zero amplitude gain silences Perlin output.
+    /// TC-13.25.18.1 — zero amplitude gain silences sinusoidal output.
     #[test]
-    fn tc_13_25_18_1_perlin_mute() {
+    fn tc_13_25_18_1_sinusoidal_mute() {
         let profile = sample_profile();
-        let offset = evaluate_perlin_with_gain(&profile, 0.4, 0.0, 1.0);
+        let offset = evaluate_sinusoidal_noise_with_gain(&profile, 0.4, 0.0, 1.0);
         assert_eq!(offset, Vec3::ZERO);
     }
 
     /// TC-13.25.18.2 — doubling frequency doubles oscillation rate metric.
     #[test]
-    fn tc_13_25_18_2_perlin_frequency_gain() {
-        let profile = PerlinNoiseProfile {
+    fn tc_13_25_18_2_sinusoidal_frequency_gain() {
+        let profile = SinusoidalNoiseProfile {
             channels: [
                 NoiseChannel {
                     frequency: 1.0,
@@ -192,8 +195,8 @@ mod tests {
                 },
             ],
         };
-        let a = evaluate_perlin_noise_offset(&profile, 0.125, 1.0).x;
-        let b = evaluate_perlin_noise_offset(&profile, 0.125, 2.0).x;
+        let a = evaluate_sinusoidal_noise_offset(&profile, 0.125, 1.0).x;
+        let b = evaluate_sinusoidal_noise_offset(&profile, 0.125, 2.0).x;
         assert!((a - b).abs() > 1e-3);
     }
 
