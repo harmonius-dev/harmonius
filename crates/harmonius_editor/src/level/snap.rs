@@ -1,4 +1,4 @@
-//! Grid snapping for entity placement ([TC-15.2.1.1](https://github.com/cjhowe-us/harmonius/blob/main/docs/design/tools/level-world-test-cases.md)).
+//! Grid snapping for entity placement (TC-15.2.1.1 in `docs/design/tools/level-world-test-cases.md`).
 
 /// World-space vector with `f32` components (authoritative layout in `level-world.md`).
 #[derive(Clone, Copy, Debug, PartialEq)]
