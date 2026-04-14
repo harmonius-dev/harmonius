@@ -42,6 +42,7 @@ members = [
   "crates/harmonius_undo",
   "crates/harmonius_vfx",
   "crates/integration-scripting-ui",
+  "crates/integration_ai_animation",
   "crates/integration_input_camera",
   "crates/integration_networking_save",
   "crates/integration_timelines_camera",

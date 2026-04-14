@@ -1120,6 +1120,14 @@ name = "integration-scripting-ui"
 version = "0.1.0"
 
 [[package]]
+name = "integration_ai_animation"
+version = "0.1.0"
+dependencies = [
+ "glam",
+ "smallvec",
+]
+
+[[package]]
 name = "integration_input_camera"
 version = "0.1.0"
 dependencies = [
