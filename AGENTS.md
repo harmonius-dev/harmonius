@@ -44,10 +44,10 @@ and Commands tables). All tools below are pre-installed on the VM:
   Linux VMs.
 - **Direct3D 12**: Windows only, not applicable on Linux VMs.
 - **Vulkan**: fully functional via Mesa LLVMpipe (software Vulkan
-  1.4). `vkcube` renders correctly with `DISPLAY=:1`. `vulkaninfo`
-  has a known BadMatch bug when DISPLAY is set; run it without
-  DISPLAY (`env -u DISPLAY vulkaninfo --summary`) or force the
-  lavapipe ICD:
+  1.4.318). Both `vkcube` and `vulkaninfo` work with `DISPLAY=:1`.
+  Use the LunarG SDK `vulkan-tools` (>=1.4.313); the Ubuntu default
+  (1.3.275) has a BadMatch bug on X11. Force the lavapipe ICD on
+  this VM:
   `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json`.
 
 ### Gotchas
@@ -59,3 +59,7 @@ and Commands tables). All tools below are pre-installed on the VM:
   `/usr/local/lib`; ensure `ldconfig` has been run after install.
 - `rumdl check .` currently reports ~228 pre-existing lint issues.
   These are in the documentation, not in agent changes.
+- The LunarG Vulkan SDK apt repo (`packages.lunarg.com`) is added
+  at `/etc/apt/sources.list.d/lunarg-vulkan-noble.list`. This
+  provides newer `vulkan-tools` that fix the X11 BadMatch bug in
+  `vulkaninfo`.
