@@ -1,0 +1,31 @@
+[package]
+description = "Visual logic graph scripting and directed-graph integration"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_scripting"
+repository = "https://github.com/cjhowe-us/harmonius"
+version = "0.1.0"
+
+[dependencies]
+harmonius_directed_graphs = { path = "../harmonius_directed_graphs" }
+rkyv = { version = "0.8.12", features = ["bytecheck", "std"] }
+rkyv_derive = "0.8.12"
+
+[dev-dependencies]
+criterion = "0.5"
+syn = { version = "2.0", features = ["extra-traits", "full", "visit"] }
+
+[features]
+default = []
+integration = []
+
+[[bench]]
+harness = false
+name = "directed_graphs_scripting"
+path = "benches/directed_graphs_scripting.rs"
+required-features = ["integration"]
+
+[[test]]
+name = "directed_graphs_scripting"
+path = "tests/directed_graphs_scripting.rs"
+required-features = ["integration"]
