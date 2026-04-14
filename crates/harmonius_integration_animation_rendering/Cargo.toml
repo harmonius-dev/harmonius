@@ -1,0 +1,16 @@
+[package]
+description = "Animation ↔ rendering integration contracts (IR-1.4.x)"
+edition = "2021"
+license = "Apache-2.0"
+name = "harmonius_integration_animation_rendering"
+repository = "https://github.com/cjhowe-us/harmonius"
+version = "0.1.0"
+
+[dependencies]
+
+[lints.rust]
+missing_docs = "deny"
+unsafe_code = "deny"
+
+[lints.clippy]
+all = "deny"
