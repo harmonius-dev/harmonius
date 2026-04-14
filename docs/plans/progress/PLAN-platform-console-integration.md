@@ -1,6 +1,6 @@
 ---
 branch: plan/platform-console-integration
-last_updated: 2026-04-14T14:43:11Z
+last_updated: 2026-04-14T11:39:21Z
 plan_id: PLAN-platform-console-integration
 pr_number: 33
 pr_review_status: complete
@@ -66,8 +66,9 @@ Plan file: [console-integration.md](../platform/console-integration.md)
 - 2026-04-14T05:18:50Z — plan-implementer — code complete; tests and clippy clean in worktree.
 - 2026-04-14T05:18:50Z — plan-implementer — repo-wide `rumdl` still noisy from unrelated files; not
   cleared here. Awaiting `pr-reviewer`.
+
+Append ISO-8601 UTC entries with actor, action, and outcome.
+
 - 2026-04-14T11:39:21Z — pr-reviewer — inline review (no nested supervisor): design-aligned console
   SDK surface, stub, target cfg, policy tests; `rumdl fmt` + README link + event-log template fixes
   for repo-wide `rumdl check .`; `cargo test` / `cargo clippy` clean; PR undrafted for human review.
-- 2026-04-14T14:43:11Z — pr-reviewer — removed stray event-log template line; re-verified checks
-  clean before push.

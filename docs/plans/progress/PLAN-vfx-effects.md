@@ -1,12 +1,12 @@
 ---
-branch: plan/vfx-effects
-last_updated: 2026-04-14T05:17:15Z
+branch: null
+last_updated: 2026-04-14T02:02:00Z
 plan_id: PLAN-vfx-effects
-pr_number: 22
-pr_url: https://github.com/cjhowe-us/harmonius/pull/22
-started_at: 2026-04-14T05:17:15Z
-status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-vfx-effects
+pr_number: null
+pr_url: null
+started_at: null
+status: not_started
+worktree_path: null
 ---
 
 # Progress: Vfx Effects
@@ -15,18 +15,18 @@ Plan file: [effects.md](../vfx/effects.md)
 
 ## Status checklist
 
-- [x] Worktree created and branch aligned with plan metadata
-- [x] Draft PR opened and linked in frontmatter
-- [x] Design and companion test-case docs reviewed
+- [ ] Worktree created and branch aligned with plan metadata
+- [ ] Draft PR opened and linked in frontmatter
+- [ ] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
-- [x] Red phase complete with failing tests for uncovered scope
-- [x] Green phase complete with minimal passing implementation
+- [ ] Red phase complete with failing tests for uncovered scope
+- [ ] Green phase complete with minimal passing implementation
 - [ ] Refactor phase complete with no regressions
 - [ ] Integration validation complete across documented boundaries
 - [ ] Constraint conformance checks complete
 - [ ] Manual validation complete with screenshot and video evidence
-- [x] `cargo test --workspace` passes
-- [x] `cargo clippy --workspace -- -D warnings` passes
+- [ ] `cargo test --workspace` passes
+- [ ] `cargo clippy --workspace -- -D warnings` passes
 - [ ] `rumdl check .` passes for touched docs
 - [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
@@ -57,14 +57,7 @@ Plan file: [effects.md](../vfx/effects.md)
 
 ## Event log
 
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only (no PR merge).
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
 
-- 2026-04-14T05:17:15Z — plan-implementer — started; draft PR #22; worktree `PLAN-vfx-effects`.
-
-- 2026-04-14T05:17:15Z — plan-implementer — **TC-11.2.4.1** red/green; `harmonius_vfx` workspace
-  bootstrap.
-
-- 2026-04-14T05:17:15Z — plan-implementer — note: `rumdl check` clean for this progress file only;
-  repository-wide rumdl backlog unchanged.
-
-Append ISO-8601 UTC entries with actor, action, and outcome.
+- Append ISO-8601 UTC entries with actor, action, and outcome.

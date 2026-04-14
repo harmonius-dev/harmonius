@@ -1,12 +1,12 @@
 ---
-branch: plan/tools-profiler
-last_updated: 2026-04-14T05:16:00Z
+branch: null
+last_updated: 2026-04-14T02:02:00Z
 plan_id: PLAN-tools-profiler
-pr_number: 17
-pr_url: https://github.com/cjhowe-us/harmonius/pull/17
-started_at: 2026-04-14T05:16:00Z
-status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-profiler
+pr_number: null
+pr_url: null
+started_at: null
+status: not_started
+worktree_path: null
 ---
 
 # Progress: Tools Profiler
@@ -15,8 +15,8 @@ Plan file: [profiler.md](../tools/profiler.md)
 
 ## Status checklist
 
-- [x] Worktree created and branch aligned with plan metadata
-- [x] Draft PR opened and linked in frontmatter
+- [ ] Worktree created and branch aligned with plan metadata
+- [ ] Draft PR opened and linked in frontmatter
 - [ ] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
 - [ ] Red phase complete with failing tests for uncovered scope
@@ -59,6 +59,5 @@ Plan file: [profiler.md](../tools/profiler.md)
 
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
   (orchestrator pass; no PR merge).
-- 2026-04-14T05:16:00Z — plan-implementer — started, worktree + draft PR created (PR #17).
-- 2026-04-14T05:16:00Z — plan-implementer — slice: `harmonius_profiler` ring buffer, `FrameArena`,
-  `CpuEvent`; tests TC-15.5.1.1, TC-15.5.1.2.
+
+- Append ISO-8601 UTC entries with actor, action, and outcome.

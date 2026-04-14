@@ -1,12 +1,12 @@
 ---
-branch: plan/tools-level-world
-last_updated: 2026-04-14T17:48:13Z
+branch: null
+last_updated: 2026-04-14T02:02:00Z
 plan_id: PLAN-tools-level-world
-pr_number: 11
-pr_url: https://github.com/cjhowe-us/harmonius/pull/11
-started_at: 2026-04-14T05:12:46Z
-status: started
-worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-level-world
+pr_number: null
+pr_url: null
+started_at: null
+status: not_started
+worktree_path: null
 ---
 
 # Progress: Tools Level World
@@ -15,9 +15,9 @@ Plan file: [level-world.md](../tools/level-world.md)
 
 ## Status checklist
 
-- [x] Worktree created and branch aligned with plan metadata
-- [x] Draft PR opened and linked in frontmatter
-- [x] Design and companion test-case docs reviewed (initial slice: snap / TC-15.2.1.1)
+- [ ] Worktree created and branch aligned with plan metadata
+- [ ] Draft PR opened and linked in frontmatter
+- [ ] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
 - [ ] Red phase complete with failing tests for uncovered scope
 - [ ] Green phase complete with minimal passing implementation
@@ -25,9 +25,9 @@ Plan file: [level-world.md](../tools/level-world.md)
 - [ ] Integration validation complete across documented boundaries
 - [ ] Constraint conformance checks complete
 - [ ] Manual validation complete with screenshot and video evidence
-- [x] `cargo test --workspace` passes (workspace: `harmonius_editor` only)
-- [x] `cargo clippy --workspace -- -D warnings` passes
-- [x] `rumdl check .` passes for touched docs (this progress file)
+- [ ] `cargo test --workspace` passes
+- [ ] `cargo clippy --workspace -- -D warnings` passes
+- [ ] `rumdl check .` passes for touched docs
 - [ ] Evidence links logged in this file
 - [ ] Review findings addressed and checklist re-verified
 - [ ] PR marked ready for human review (`status: submitted`)
@@ -44,8 +44,7 @@ Plan file: [level-world.md](../tools/level-world.md)
 
 - [ ] All previously unmapped ID mappings triaged in plan gap-closure section
 - [ ] Red test inventory split by requirement and user story
-- [x] First failing test batch selected for implementation loop (through `TC-15.2.3.2`; next slice:
-      `TC-15.2.4.1`)
+- [ ] First failing test batch selected for implementation loop
 - [ ] Evidence capture folders prepared (screenshots/videos/logs)
 
 ## Evidence registry
@@ -60,9 +59,5 @@ Plan file: [level-world.md](../tools/level-world.md)
 
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
   (orchestrator pass; no PR merge).
-- 2026-04-14T05:12:46Z — plan-implementer — started, worktree + draft PR created (PR #11).
-- 2026-04-14T05:18:07Z — plan-implementer — red/green: TC-15.2.1.1 grid snap in `harmonius_editor`;
-  commits on `plan/tools-level-world`, branch pushed.
-- 2026-04-14T17:48:13Z — plan-implementer — resume: `TC-15.2.2.1`/`TC-15.2.2.2` template hierarchy +
-  hp propagation; `TC-15.2.3.1`/`TC-15.2.3.2` property override map + apply-to-source; 10 unit
-  tests; pushed to PR #11 (`plan/tools-level-world`).
+
+- Append ISO-8601 UTC entries with actor, action, and outcome.
