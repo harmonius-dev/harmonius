@@ -43,9 +43,12 @@ and Commands tables). All tools below are pre-installed on the VM:
 - **Metal / Metal Shader Converter**: macOS only, not applicable on
   Linux VMs.
 - **Direct3D 12**: Windows only, not applicable on Linux VMs.
-- **Vulkan**: installed; `vulkaninfo` requires a display so it will
-  fail in headless VMs. The dev libraries and validation layers are
-  available for compilation.
+- **Vulkan**: fully functional via Mesa LLVMpipe (software Vulkan
+  1.4). `vkcube` renders correctly with `DISPLAY=:1`. `vulkaninfo`
+  has a known BadMatch bug when DISPLAY is set; run it without
+  DISPLAY (`env -u DISPLAY vulkaninfo --summary`) or force the
+  lavapipe ICD:
+  `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json`.
 
 ### Gotchas
 
