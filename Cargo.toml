@@ -11,6 +11,7 @@ members = [
   "crates/harmonius_save",
   "crates/harmonius_save_integration",
   "crates/harmonius_undo",
+  "crates/rendering_ui",
 ]
 
 [workspace.package]
