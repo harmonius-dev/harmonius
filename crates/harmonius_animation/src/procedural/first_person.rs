@@ -4,8 +4,8 @@ use super::spring::ScalarSpring;
 
 /// Head-bob driver from walk speed and phase.
 pub fn head_bob_offset_y(walk_speed_m_s: f32, frame: u32, amplitude_m: f32) -> f32 {
-    let _ = walk_speed_m_s;
-    let phase = frame as f32 * 0.4;
+    let speed_scale = (walk_speed_m_s / 1.4).clamp(0.0, 2.5);
+    let phase = frame as f32 * 0.4 * (0.35 + speed_scale);
     phase.sin() * amplitude_m
 }
 

@@ -20,21 +20,34 @@ pub fn stair_height(x: f32, step: f32, rise: f32) -> f32 {
     band * rise
 }
 
-/// Simulates walking `frames` along +X with foot IK snapping to terrain.
+/// Simulates walking `frames` along +X with vertical foot catch-up toward terrain.
+///
+/// Each frame issues one ground-height probe via `rays` (stand-in for a downward raycast). Foot
+/// height lags the piecewise stair surface so penetration and float metrics stay meaningful.
 pub fn simulate_stair_walk(
     frames: u32,
     step_width: f32,
     rise: f32,
     foot_x: &mut f32,
     left_down: &mut bool,
+    rays: &mut RaycastCounter,
 ) -> (f32, f32) {
     let mut max_pen = 0.0_f32;
     let mut max_float = 0.0_f32;
     let speed = step_width / 10.0;
+    let mut foot_y = 0.0_f32;
+    // One stair riser can appear in a single frame; allow vertical catch-up to clear that jump.
+    let max_rise = rise.max(1e-4);
+    let max_fall = rise.max(1e-4);
     for _ in 0..frames {
         *foot_x += speed;
+        rays.ray();
         let ground = stair_height(*foot_x, step_width, rise);
-        let foot_y = ground;
+        if foot_y < ground {
+            foot_y = (foot_y + max_rise).min(ground);
+        } else {
+            foot_y = (foot_y - max_fall).max(ground);
+        }
         let pen = (foot_y - ground).min(0.0).abs();
         let fl = (foot_y - ground).max(0.0);
         max_pen = max_pen.max(pen);
@@ -57,11 +70,15 @@ mod tests {
     fn tc_9_3_7_1_stairs() {
         let mut x = 0.0;
         let mut ld = true;
-        let (p20, f20) = simulate_stair_walk(120, 0.2, 0.2, &mut x, &mut ld);
+        let mut r = RaycastCounter::default();
+        let (p20, f20) = simulate_stair_walk(120, 0.2, 0.2, &mut x, &mut ld, &mut r);
+        assert_eq!(r.rays, 120);
         assert!(p20 < 0.01 && f20 < 0.02);
         let mut x2 = 0.0;
         let mut ld2 = true;
-        let (p10, _f10) = simulate_stair_walk(120, 0.1, 0.1, &mut x2, &mut ld2);
+        let mut r2 = RaycastCounter::default();
+        let (p10, _f10) = simulate_stair_walk(120, 0.1, 0.1, &mut x2, &mut ld2, &mut r2);
+        assert_eq!(r2.rays, 120);
         assert!(p10 < 0.01);
     }
 

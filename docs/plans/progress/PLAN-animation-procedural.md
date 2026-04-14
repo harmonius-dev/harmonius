@@ -1,6 +1,6 @@
 ---
 branch: plan/animation-procedural
-last_updated: 2026-04-14T11:33:27Z
+last_updated: 2026-04-14T18:00:25Z
 plan_id: PLAN-animation-procedural
 pr_number: 76
 pr_review_status: complete
@@ -56,10 +56,14 @@ Plan file: [procedural.md](../animation/procedural.md)
 - Benchmarks: not run for this slice.
 - Screenshots: deferred until engine/runtime integration.
 - Videos: deferred until engine/runtime integration.
-- Review notes: inline pr-reviewer pass (correctness vs design TCs, Rust standards including
-  `#![deny(unsafe_code)]`, architecture: pure deterministic CPU helpers, no async/tokio). Scoped
-  `rumdl check` on this progress file and plan path passes; repository-wide `rumdl check .` reports
-  pre-existing issues in other `PLAN-*` progress files not touched by this branch.
+- Review notes: review-supervisor pass (0 blocker, 5 substantive, 5 moderate, 4 minor). In-scope
+  fixes landed in `harmonius_animation` (scope docs, spring stand-in note, sever entity plumbing,
+  stair probe + vertical catch-up, tests). Rust standards include `#![deny(unsafe_code)]`;
+  architecture: deterministic CPU helpers, no async/tokio.
+- Integration: boundary review for this standalone workspace member; cross-crate integration tests
+  follow full-repo workspace wiring.
+- Lint: scoped `rumdl check` on this progress file passes; repo-wide `rumdl check .` still reports
+  pre-existing issues in other `PLAN-*` progress files outside this branch.
 
 ## Event log
 
@@ -68,5 +72,8 @@ Plan file: [procedural.md](../animation/procedural.md)
   `crates/harmonius_animation` with TC-mapped unit tests.
 - 2026-04-14T05:30:00Z — plan-implementer — code complete, awaiting review (manual visual evidence
   deferred to full engine stack).
-- 2026-04-14T11:33:27Z — pr-reviewer — submitted for human review, 0 findings addressed (no code
-  changes required).
+- 2026-04-14T11:33:27Z — pr-reviewer — review-supervisor report received; PR marked ready for human
+  review (`gh pr ready`).
+- 2026-04-14T18:00:25Z — pr-reviewer — addressed 14 findings where in-scope (API/docs honesty, TC
+  tightening, sever entity id, `DetachedRagdollFlag`, foot stair model, head-bob speed, CCD/FABRIK
+  /look-aim/cloth/ecs notes); re-ran `cargo test --workspace` and `cargo clippy -D warnings`.

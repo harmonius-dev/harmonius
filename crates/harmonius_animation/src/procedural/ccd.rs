@@ -115,9 +115,19 @@ mod tests {
             };
             6
         ];
+        let chain_pi = straight_chain_6();
+        let lim_pi = [CcdJointLimit {
+            max_swing_rad: std::f32::consts::PI,
+        }; 6];
+        let out_pi = solve_ccd(chain_pi, Vec3::new(2.0, 0.5, 0.0), 10, &lim_pi);
+        let m_pi = max_joint_angle(&out_pi);
         let out = solve_ccd(chain, Vec3::new(2.0, 0.5, 0.0), 10, &lim30);
         let m = max_joint_angle(&out);
         assert!(m.is_finite() && m < std::f32::consts::PI);
+        assert!(
+            m <= m_pi + 1e-3,
+            "tight per-step swings should not increase worst inter-segment angle vs unconstrained"
+        );
 
         let chain2 = straight_chain_6();
         let lim5 = vec![

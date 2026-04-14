@@ -58,10 +58,11 @@ mod tests {
 
     #[test]
     fn tc_9_3_5_4_lower_body_preserved() {
-        let anim_lower = Vec3::new(0.0, 0.0, 0.0);
-        let aim_upper = Vec3::new(0.1, 0.0, 0.0);
-        let out_lower = anim_lower;
-        assert!((out_lower - anim_lower).length() < 0.001);
-        let _ = aim_upper;
+        let fwd = Vec3::new(1.0, 0.0, 0.0);
+        let tgt = Vec3::new(1.0, 0.0, 1.0).normalized();
+        let upper_yaw = look_yaw(fwd, tgt, std::f32::consts::FRAC_PI_2);
+        let lower_yaw = 0.0_f32;
+        assert!(lower_yaw.abs() < 1e-6, "lower body stays on locomotion yaw");
+        assert!(upper_yaw.abs() > 0.2, "upper body receives look delta");
     }
 }
