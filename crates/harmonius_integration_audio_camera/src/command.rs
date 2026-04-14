@@ -1,4 +1,7 @@
 //! Command types crossing the game thread → audio thread boundary.
+//!
+//! Intentionally minimal for this integration crate; extend or unify with the canonical audio
+//! command enum when that crate is wired in.
 
 use glam::{Quat, Vec3};
 

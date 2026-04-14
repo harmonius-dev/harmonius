@@ -23,6 +23,17 @@ pub struct CameraListenerInput {
     pub rotation: Quat,
 }
 
+/// Debug toggles matching `ListenerDebug` in `docs/design/integration/audio-camera.md`.
+///
+/// `draw_gizmo` is honored by engine debug-draw integration; this crate does not render.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct ListenerDebug {
+    /// When true, emit a debug log line per listener update.
+    pub log_each_update: bool,
+    /// When true, host code should draw listener gizmos (no-op inside this crate).
+    pub draw_gizmo: bool,
+}
+
 /// Counts non-fatal drops while syncing one frame.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ListenerSyncMetrics {
@@ -49,11 +60,14 @@ pub fn listener_velocity(prev_world: Option<Vec3>, current_world: Vec3, dt: f32)
 ///
 /// When multiple [`CameraListenerInput`] rows share the same `player_index`, only the first row
 /// produces a command (deterministic “first in iteration order wins”).
+///
+/// `debug.draw_gizmo` is carried for API parity with the ECS design; only
+/// `debug.log_each_update` affects behavior inside this helper.
 pub fn camera_listener_sync_frame(
     inputs: &[CameraListenerInput],
     prev: &mut ListenerPrevPositions,
     delta_seconds: f32,
-    log_each_update: bool,
+    debug: ListenerDebug,
     sink: &mut impl AudioCommandSink,
 ) -> ListenerSyncMetrics {
     let mut metrics = ListenerSyncMetrics::default();
@@ -70,7 +84,10 @@ pub fn camera_listener_sync_frame(
         seen[idx] = true;
 
         if input.position.is_nan() {
-            warn!("NaN listener position; dropped update for player {}", input.player_index);
+            warn!(
+                "NaN listener position; dropped update for player {}",
+                input.player_index
+            );
             metrics.dropped_nan += 1;
             continue;
         }
@@ -84,7 +101,7 @@ pub fn camera_listener_sync_frame(
             velocity,
         };
 
-        if log_each_update {
+        if debug.log_each_update {
             log::debug!(
                 "listener {} pos={:?} vel={:?}",
                 input.player_index,
@@ -96,7 +113,6 @@ pub fn camera_listener_sync_frame(
         match sink.try_send(cmd) {
             Ok(()) => {
                 metrics.sent += 1;
-                prev.set(input.player_index, input.position);
             }
             Err(_) => {
                 warn!(
@@ -106,6 +122,9 @@ pub fn camera_listener_sync_frame(
                 metrics.dropped_queue_full += 1;
             }
         }
+        // Match design: advance `prev` even when the sink is full so the next frame’s velocity
+        // does not spike from a stale prior sample.
+        prev.set(input.player_index, input.position);
     }
 
     metrics
@@ -186,7 +205,13 @@ mod tests {
             position: pos,
             rotation: Quat::IDENTITY,
         }];
-        camera_listener_sync_frame(&inputs, &mut prev, 1.0 / 60.0, false, &mut sink);
+        camera_listener_sync_frame(
+            &inputs,
+            &mut prev,
+            1.0 / 60.0,
+            ListenerDebug::default(),
+            &mut sink,
+        );
         match &sink.commands[0] {
             AudioCommand::UpdateListener { position, .. } => {
                 assert_eq!(*position, pos);
@@ -207,7 +232,7 @@ mod tests {
             }],
             &mut prev,
             dt,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         sink.commands.clear();
@@ -219,7 +244,7 @@ mod tests {
             }],
             &mut prev,
             dt,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         match &sink.commands[0] {
@@ -234,7 +259,13 @@ mod tests {
         let mut prev = ListenerPrevPositions::new();
         prev.set(0, Vec3::new(1.0, 2.0, 3.0));
         let mut sink = RecordingSink::new(8);
-        camera_listener_sync_frame(&[], &mut prev, 1.0 / 60.0, false, &mut sink);
+        camera_listener_sync_frame(
+            &[],
+            &mut prev,
+            1.0 / 60.0,
+            ListenerDebug::default(),
+            &mut sink,
+        );
         assert!(sink.commands.is_empty());
         assert_eq!(prev.get(0), Some(Vec3::new(1.0, 2.0, 3.0)));
     }
@@ -252,7 +283,7 @@ mod tests {
             }],
             &mut prev,
             dt,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         sink.commands.clear();
@@ -264,7 +295,7 @@ mod tests {
             }],
             &mut prev,
             dt,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         match &sink.commands[0] {
@@ -289,7 +320,7 @@ mod tests {
             }],
             &mut prev,
             dt,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         sink.commands.clear();
@@ -301,7 +332,7 @@ mod tests {
             }],
             &mut prev,
             dt,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         match &sink.commands[0] {
@@ -324,7 +355,7 @@ mod tests {
             }],
             &mut prev,
             dt,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         sink.commands.clear();
@@ -336,7 +367,7 @@ mod tests {
             }],
             &mut prev,
             dt,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         match &sink.commands[0] {
@@ -359,7 +390,7 @@ mod tests {
             }],
             &mut prev,
             0.0,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         match &sink.commands[0] {
@@ -385,7 +416,13 @@ mod tests {
                 rotation: Quat::IDENTITY,
             },
         ];
-        camera_listener_sync_frame(&inputs, &mut prev, 1.0 / 60.0, false, &mut sink);
+        camera_listener_sync_frame(
+            &inputs,
+            &mut prev,
+            1.0 / 60.0,
+            ListenerDebug::default(),
+            &mut sink,
+        );
         assert_eq!(sink.commands.len(), 2);
     }
 
@@ -405,7 +442,13 @@ mod tests {
                 rotation: Quat::IDENTITY,
             },
         ];
-        camera_listener_sync_frame(&inputs, &mut prev, 1.0 / 60.0, false, &mut sink);
+        camera_listener_sync_frame(
+            &inputs,
+            &mut prev,
+            1.0 / 60.0,
+            ListenerDebug::default(),
+            &mut sink,
+        );
         let ids: Vec<u8> = sink
             .commands
             .iter()
@@ -429,7 +472,7 @@ mod tests {
             }],
             &mut prev,
             1.0 / 60.0,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         match &sink.commands[0] {
@@ -452,7 +495,7 @@ mod tests {
             }],
             &mut prev,
             dt,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         sink.commands.clear();
@@ -465,7 +508,7 @@ mod tests {
             }],
             &mut prev,
             dt,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         match &sink.commands[0] {
@@ -479,12 +522,18 @@ mod tests {
     fn tc_ir_1_7_1_n1_no_camera_brain_no_cmd() {
         let mut prev = ListenerPrevPositions::new();
         let mut sink = RecordingSink::new(8);
-        camera_listener_sync_frame(&[], &mut prev, 1.0 / 60.0, false, &mut sink);
+        camera_listener_sync_frame(
+            &[],
+            &mut prev,
+            1.0 / 60.0,
+            ListenerDebug::default(),
+            &mut sink,
+        );
         assert!(sink.commands.is_empty());
     }
 
     #[test]
-    fn tc_ir_1_7_1_n2_despawn_clears_slot_via_clear() {
+    fn tc_ir_1_7_1_n2_prev_clear_slot_models_despawn() {
         let mut prev = ListenerPrevPositions::new();
         prev.set(0, Vec3::ONE);
         prev.clear(0);
@@ -516,7 +565,7 @@ mod tests {
             }],
             &mut prev,
             1.0 / 60.0,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         assert!(sink.commands.is_empty());
@@ -527,19 +576,21 @@ mod tests {
     fn tc_ir_1_7_4_n2_mpsc_queue_full_drops_update() {
         let mut prev = ListenerPrevPositions::new();
         let mut sink = RecordingSink::new(0);
+        let pos = Vec3::ONE;
         let m = camera_listener_sync_frame(
             &[CameraListenerInput {
                 player_index: 0,
-                position: Vec3::ONE,
+                position: pos,
                 rotation: Quat::IDENTITY,
             }],
             &mut prev,
             1.0 / 60.0,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         assert_eq!(m.dropped_queue_full, 1);
         assert_eq!(m.sent, 0);
+        assert_eq!(prev.get(0), Some(pos));
     }
 
     #[test]
@@ -558,7 +609,13 @@ mod tests {
                 rotation: Quat::IDENTITY,
             },
         ];
-        camera_listener_sync_frame(&inputs, &mut prev, 1.0 / 60.0, false, &mut sink);
+        camera_listener_sync_frame(
+            &inputs,
+            &mut prev,
+            1.0 / 60.0,
+            ListenerDebug::default(),
+            &mut sink,
+        );
         assert_eq!(sink.commands.len(), 1);
         match &sink.commands[0] {
             AudioCommand::UpdateListener { position, .. } => {
@@ -567,6 +624,8 @@ mod tests {
         }
     }
 
+    /// TC-IR-1.7.2.2 in this slice: orientation reaches the command; ear-level HRTF checks belong
+    /// with the mixer once device-backed tests exist.
     #[test]
     fn tc_ir_1_7_2_2_orientation_propagates_to_command() {
         let mut prev = ListenerPrevPositions::new();
@@ -580,7 +639,7 @@ mod tests {
             }],
             &mut prev,
             1.0 / 60.0,
-            false,
+            ListenerDebug::default(),
             &mut sink,
         );
         match &sink.commands[0] {
