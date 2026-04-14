@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-animation-rendering
-last_updated: 2026-04-14T12:00:00Z
+last_updated: 2026-04-14T05:17:30Z
 plan_id: PLAN-integration-animation-rendering
 pr_number: 25
 pr_review_status: not_started
@@ -55,15 +55,13 @@ Plan file: [animation-rendering.md](../integration/animation-rendering.md)
   grouping sort covered by `tc_ir_1_4_5_b2_grouping_sort_10k_smoke`.
 - Screenshots: deferred (no runtime engine viewport in this PR).
 - Videos: deferred.
-- Review notes: README.md MD057 fixed on plan branch (dead `test-case-coverage-audit.md` link).
+- Review notes: `rumdl check .` reports pre-existing README.md MD057; this PR does not modify
+  Markdown under `docs/`.
 
 ## Event log
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
-  (orchestrator pass; no PR merge).
 - 2026-04-14T05:17:00Z — plan-implementer — started, worktree at
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-animation-rendering`, draft PR #25.
 - 2026-04-14T05:17:30Z — plan-implementer — code complete: integration crate + TC-IR-1.4.* unit
   tests; awaiting pr-reviewer.
-- 2026-04-14T12:00:00Z — plan-implementer — README audit link fixed (MD057); `rumdl check .` clean.
