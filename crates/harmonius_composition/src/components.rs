@@ -77,6 +77,13 @@ pub struct AbilityState {
     pub mana: f32,
 }
 
+/// Optional single-target focus for [`AbilityState`] resolution during [`crate::step_frame`].
+#[derive(Component, Clone, Copy, Debug, PartialEq)]
+pub struct AbilityCastTarget {
+    /// Entity receiving ability effects when a cast is requested.
+    pub target: Entity,
+}
+
 /// Inventory + equipment linkage.
 #[derive(Component, Clone, Debug, PartialEq)]
 pub struct InventoryState {

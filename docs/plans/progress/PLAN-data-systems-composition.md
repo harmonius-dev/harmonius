@@ -1,6 +1,6 @@
 ---
 branch: plan/data-systems-composition
-last_updated: 2026-04-14T11:34:44Z
+last_updated: 2026-04-14T16:45:00Z
 plan_id: PLAN-data-systems-composition
 pr_number: 6
 pr_review_status: complete
@@ -57,8 +57,11 @@ Plan file: [composition.md](../data-systems/composition.md)
   TC-16.5.5.B1–B10 harness).
 - Screenshots: N/A (library milestone).
 - Videos: N/A (library milestone).
-- Review notes: `pr-reviewer` — design API alignment spot-check (DefinitionAsset, CompositionRecipe,
-  determinism, snapshots); no `Arc`/`Rc`/async; 1 minor fix (README MD057).
+- Review notes: `pr-reviewer` — review-supervisor batch (10 findings): keyframe→event queue,
+  six-recipe combined determinism + `DeterministicRng`, `AbilityCastTarget` + `step_frame` damage,
+  recipe `primitives()` trimmed to installed bindings, bench budget disclaimer, workspace merge
+  reminder in `Cargo.toml`, stub coupling note in crate docs. `#![allow(missing_docs)]` retained
+  pending a rustdoc pass before full-workspace promotion.
 
 ## Event log
 
@@ -69,5 +72,8 @@ Plan file: [composition.md](../data-systems/composition.md)
   plan branch; tests + clippy green; awaiting pr-reviewer.
 - 2026-04-14T11:34:44Z — pr-reviewer — submitted for human review; 1 minor finding addressed (README
   broken relative link for `test-case-coverage-audit.md`).
+- 2026-04-14T16:45:00Z — pr-reviewer — re-verified after supervisor pass: code fixes for substantive
+  correctness + tests; `cargo test` / `clippy -D warnings` / `rumdl check` green; PR #6 already
+  undrafted.
 
 Note: Append ISO-8601 UTC entries with actor, action, and outcome.

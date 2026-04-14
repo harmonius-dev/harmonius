@@ -1,4 +1,7 @@
 //! Criterion benches for composition budgets (TC-16.5.5.B1–B10).
+//!
+//! Bench names mirror TC rows for traceability. CI does **not** enforce wall-time budgets from
+//! these harnesses; use Criterion baselines locally or a separate perf gate when limits matter.
 
 use std::time::Instant;
 
