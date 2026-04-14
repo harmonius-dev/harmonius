@@ -151,7 +151,6 @@ For a complete picture, read in this order:
    [tools/](docs/design/tools/), [content-pipeline/](docs/design/content-pipeline/)
 8. **Integration** — [high-level.md](docs/design/integration/high-level.md), then pair-wise specs
    between subsystem pairs
-9. **Audits** — [design-review.md](docs/design/design-review.md); integration test-case tables live
-   beside each integration design (for example
-   [animation-physics-test-cases.md](docs/design/integration/animation-physics-test-cases.md))
+9. **Audits** — [design-review.md](docs/design/design-review.md) (test-case coverage audit is not
+   yet published as a standalone doc)
 10. **Business** — [business/](docs/business/): domain decomposition, go-to-market, monetization

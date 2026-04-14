@@ -5,7 +5,9 @@ use std::collections::VecDeque;
 use crate::ids::SequenceTick;
 
 /// Stable identifier assigned when a snapshot is captured (survives until eviction).
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone, Copy, Debug, Eq, Hash, PartialEq, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+)]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Eq, Hash, PartialEq))]
 #[repr(transparent)]
@@ -111,11 +113,7 @@ impl SnapshotBuffer {
         let id = SnapshotIndex(self.next_id);
         self.next_id = self.next_id.wrapping_add(1);
         let tick = snapshot.tick;
-        self.ring.push_back(SnapshotEntry {
-            id,
-            tick,
-            snapshot,
-        });
+        self.ring.push_back(SnapshotEntry { id, tick, snapshot });
         while self.ring.len() > self.capacity as usize {
             self.ring.pop_front();
         }
@@ -151,28 +149,32 @@ impl SnapshotBuffer {
         chunk: u32,
     ) -> Option<ResolvedChunkBytes<'_>> {
         let snap = self.get_at(tick)?;
-        let range = snap
-            .ranges
-            .iter()
-            .find(|r| match r {
-                ChunkRange::Owned {
-                    archetype: a,
-                    chunk: c,
-                    ..
-                } => *a == archetype && *c == chunk,
-                ChunkRange::Shared {
-                    archetype: a,
-                    chunk: c,
-                    ..
-                } => *a == archetype && *c == chunk,
-            })?;
+        let range = snap.ranges.iter().find(|r| match r {
+            ChunkRange::Owned {
+                archetype: a,
+                chunk: c,
+                ..
+            } => *a == archetype && *c == chunk,
+            ChunkRange::Shared {
+                archetype: a,
+                chunk: c,
+                ..
+            } => *a == archetype && *c == chunk,
+        })?;
         self.resolve_range(range)
     }
 
     fn resolve_range<'a>(&'a self, range: &'a ChunkRange) -> Option<ResolvedChunkBytes<'a>> {
         match range {
-            ChunkRange::Owned { bytes, .. } => Some(ResolvedChunkBytes { bytes: bytes.as_slice() }),
-            ChunkRange::Shared { source, archetype, chunk, .. } => {
+            ChunkRange::Owned { bytes, .. } => Some(ResolvedChunkBytes {
+                bytes: bytes.as_slice(),
+            }),
+            ChunkRange::Shared {
+                source,
+                archetype,
+                chunk,
+                ..
+            } => {
                 let entry = self.ring.iter().find(|e| e.id == *source)?;
                 let inner = entry.snapshot.ranges.iter().find(|r| match r {
                     ChunkRange::Owned {
@@ -247,9 +249,7 @@ mod tests {
                 }],
             });
         }
-        let resolved = buf
-            .resolve_chunk(SequenceTick(50), 0, 0)
-            .expect("tick 50");
+        let resolved = buf.resolve_chunk(SequenceTick(50), 0, 0).expect("tick 50");
         assert_eq!(resolved.bytes, &[50u8, 50, 50, 50]);
     }
 
