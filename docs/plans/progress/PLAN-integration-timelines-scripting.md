@@ -1,10 +1,10 @@
 ---
 branch: plan/integration-timelines-scripting
-last_updated: 2026-04-14T18:04:09Z
+last_updated: 2026-04-14T18:10:00Z
 plan_id: PLAN-integration-timelines-scripting
-pr_number: null
+pr_number: 114
 pr_review_status: not_started
-pr_url: null
+pr_url: https://github.com/cjhowe-us/harmonius/pull/114
 started_at: 2026-04-14T18:04:09Z
 status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-timelines-scripting
@@ -17,7 +17,7 @@ Plan file: [timelines-scripting.md](../integration/timelines-scripting.md)
 ## Status checklist
 
 - [x] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
+- [x] Draft PR opened and linked in frontmatter
 - [x] Design and companion test-case docs reviewed
 - [x] Requirement and user-story trace matrix completed
 - [x] Red phase complete with failing tests for uncovered scope
@@ -61,4 +61,4 @@ Plan file: [timelines-scripting.md](../integration/timelines-scripting.md)
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
 - 2026-04-14T18:04:09Z plan-implementer: code complete (IR-4.9 tests).
-- 2026-04-14T18:04:09Z plan-implementer: draft PR pending gh pr create.
+- 2026-04-14T18:10:00Z plan-implementer: opened draft PR 114.
