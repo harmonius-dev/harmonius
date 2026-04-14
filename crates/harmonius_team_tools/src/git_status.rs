@@ -45,9 +45,14 @@ pub struct FileStatus {
     pub is_lfs: bool,
 }
 
-/// Recoverable parse failures for porcelain lines.
+/// Recoverable parse failures for porcelain lines and version-control operations.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum VcError {
+    /// libgit2 reported an error during repository access or mutation.
+    Git {
+        /// Human-readable message from libgit2.
+        message: String,
+    },
     /// Input line was empty or too short to be valid short porcelain.
     InvalidLine {
         /// Original line (lossy for diagnostics only).
@@ -55,6 +60,14 @@ pub enum VcError {
     },
     /// Path segment could not be decoded.
     InvalidPath,
+}
+
+impl From<git2::Error> for VcError {
+    fn from(value: git2::Error) -> Self {
+        VcError::Git {
+            message: value.message().to_string(),
+        }
+    }
 }
 
 fn status_from_column(ch: char) -> StatusKind {
