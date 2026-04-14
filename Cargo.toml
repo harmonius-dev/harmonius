@@ -7,6 +7,7 @@ members = [
   "crates/harmonius_gpu",
   "crates/harmonius_gpu_runtime",
   "crates/harmonius_integration",
+  "crates/harmonius_integration_rendering_geometry",
   "crates/harmonius_integration_rendering_grids_volumes",
   "crates/harmonius_integration_rendering_vfx",
   "crates/harmonius_platform",
