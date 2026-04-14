@@ -1,0 +1,21 @@
+[package]
+description = "ECS composition layer for Harmonius data primitives (DefinitionAsset, recipes, determinism)."
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_composition"
+publish = false
+rust-version = "1.80"
+version = "0.1.0"
+
+[dependencies]
+bevy_ecs = "0.15"
+rkyv = "0.8.15"
+smallvec = { version = "1.13", features = ["const_generics"] }
+
+[dev-dependencies]
+criterion = "0.5"
+tempfile = "3"
+
+[[bench]]
+harness = false
+name = "composition"
