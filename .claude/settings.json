@@ -1,5 +1,6 @@
 {
   "enabledPlugins": {
+    "harmonize@cjhowe-us-workflow": true,
     "rumdl@cjhowe-us-workflow": true
   },
   "extraKnownMarketplaces": {
@@ -11,18 +12,6 @@
     }
   },
   "hooks": {
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "command": ".claude/hooks/check-config.sh",
-            "timeout": 30,
-            "type": "command"
-          }
-        ],
-        "matcher": "Write|Edit"
-      }
-    ],
     "Stop": [
       {
         "hooks": [
