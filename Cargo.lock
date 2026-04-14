@@ -773,6 +773,9 @@ dependencies = [
 [[package]]
 name = "harmonius_platform"
 version = "0.1.0"
+dependencies = [
+ "raw-window-handle",
+]
 
 [[package]]
 name = "harmonius_profiler"

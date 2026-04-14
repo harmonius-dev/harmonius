@@ -7,6 +7,7 @@ repository = "https://github.com/cjhowe-us/harmonius"
 version = "0.1.0"
 
 [dependencies]
+raw-window-handle = { version = "0.6", default-features = false }
 
 [lints.rust]
 unsafe_code = "forbid"
