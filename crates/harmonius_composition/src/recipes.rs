@@ -11,6 +11,7 @@ use crate::definition_asset::DefinitionAsset;
 use crate::definitions::{
     AttributeSetDefinition, ContainerDefinition, DirectedGraphDefinition, MeterDefinition,
 };
+use crate::events::{CompositionEvent, CompositionEventQueue, EntryAppended};
 use crate::primitive_kind::PrimitiveKind;
 use crate::recipe::{CompositionRecipe, DefinitionRef, RecipeContext, RecipeError, RecipeHandle};
 
@@ -28,12 +29,7 @@ impl CompositionRecipe for QuestRecipe {
     }
 
     fn primitives(&self) -> &'static [PrimitiveKind] {
-        const P: &[PrimitiveKind] = &[
-            PrimitiveKind::DirectedGraph,
-            PrimitiveKind::DataTable,
-            PrimitiveKind::Attributes,
-            PrimitiveKind::EventLog,
-        ];
+        const P: &[PrimitiveKind] = &[PrimitiveKind::DirectedGraph, PrimitiveKind::Attributes];
         P
     }
 
@@ -83,14 +79,7 @@ impl CompositionRecipe for AbilityRecipe {
     }
 
     fn primitives(&self) -> &'static [PrimitiveKind] {
-        const P: &[PrimitiveKind] = &[
-            PrimitiveKind::DirectedGraph,
-            PrimitiveKind::Attributes,
-            PrimitiveKind::Timeline,
-            PrimitiveKind::Awareness,
-            PrimitiveKind::EventLog,
-            PrimitiveKind::DataTable,
-        ];
+        const P: &[PrimitiveKind] = &[PrimitiveKind::DirectedGraph, PrimitiveKind::Attributes];
         P
     }
 
@@ -136,12 +125,7 @@ impl CompositionRecipe for InventoryRecipe {
     }
 
     fn primitives(&self) -> &'static [PrimitiveKind] {
-        const P: &[PrimitiveKind] = &[
-            PrimitiveKind::Containers,
-            PrimitiveKind::DataTable,
-            PrimitiveKind::Attributes,
-            PrimitiveKind::EventLog,
-        ];
+        const P: &[PrimitiveKind] = &[PrimitiveKind::Containers, PrimitiveKind::Attributes];
         P
     }
 
@@ -189,9 +173,7 @@ impl CompositionRecipe for CraftingRecipe {
     fn primitives(&self) -> &'static [PrimitiveKind] {
         const P: &[PrimitiveKind] = &[
             PrimitiveKind::DirectedGraph,
-            PrimitiveKind::DataTable,
             PrimitiveKind::Containers,
-            PrimitiveKind::EventLog,
             PrimitiveKind::Timeline,
         ];
         P
@@ -246,13 +228,7 @@ impl CompositionRecipe for StealthRecipe {
     }
 
     fn primitives(&self) -> &'static [PrimitiveKind] {
-        const P: &[PrimitiveKind] = &[
-            PrimitiveKind::Grid,
-            PrimitiveKind::Awareness,
-            PrimitiveKind::EventLog,
-            PrimitiveKind::Attributes,
-            PrimitiveKind::DataTable,
-        ];
+        const P: &[PrimitiveKind] = &[PrimitiveKind::Attributes];
         P
     }
 
@@ -291,12 +267,7 @@ impl CompositionRecipe for ScheduleRecipe {
     }
 
     fn primitives(&self) -> &'static [PrimitiveKind] {
-        const P: &[PrimitiveKind] = &[
-            PrimitiveKind::Timeline,
-            PrimitiveKind::Awareness,
-            PrimitiveKind::EventLog,
-            PrimitiveKind::DataTable,
-        ];
+        const P: &[PrimitiveKind] = &[PrimitiveKind::Timeline, PrimitiveKind::Attributes];
         P
     }
 
@@ -388,8 +359,16 @@ pub fn on_cell_changed_apply_effect(world: &mut World, evt: &crate::events::Cell
     }
 }
 
-/// Timeline keyframe fires -> append logical event log entry (R-16.5.3).
+/// Timeline keyframe fires -> enqueue logical event log entry (R-16.5.3).
+///
+/// When a [`CompositionEventQueue`](crate::events::CompositionEventQueue) resource is present,
+/// appends [`CompositionEvent::EntryAppended`](crate::events::CompositionEvent::EntryAppended) so
+/// tests and future ingest phases observe the same bus shape.
 pub fn on_keyframe_fire_log(world: &mut World, evt: &crate::events::KeyframeFired) {
-    let _ = (world, evt);
-    // Event log persistence is represented by `CompositionEventQueue` in tests.
+    if let Some(mut q) = world.get_resource_mut::<CompositionEventQueue>() {
+        q.send(CompositionEvent::EntryAppended(EntryAppended {
+            target: evt.owner,
+            label: "keyframe",
+        }));
+    }
 }

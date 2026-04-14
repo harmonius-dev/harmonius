@@ -3,8 +3,8 @@
 use bevy_ecs::prelude::*;
 
 use crate::components::{
-    AbilityState, AttributeSet, Container, CraftingState, DirectedGraphInstance, Effect,
-    InventoryState, Meter, QuestState, ScheduleState, StealthState,
+    AbilityCastTarget, AbilityState, AttributeSet, Container, CraftingState, DirectedGraphInstance,
+    Effect, InventoryState, Meter, QuestState, ScheduleState, StealthState,
 };
 use crate::phase::FramePhase;
 
@@ -109,6 +109,19 @@ pub fn step_frame(world: &mut World, input: &FrameInput) {
             }
             FramePhase::EffectTick => {
                 if input.ability_cast {
+                    let mut targets: Vec<(Entity, Entity)> = Vec::new();
+                    let mut tq = world.query::<(Entity, &AbilityCastTarget)>();
+                    for (caster, focus) in tq.iter(world) {
+                        targets.push((caster, focus.target));
+                    }
+                    for (_caster, target) in targets {
+                        if world.get_entity(target).is_ok() {
+                            world.entity_mut(target).insert(Effect {
+                                name: "damage".into(),
+                                magnitude: 10.0,
+                            });
+                        }
+                    }
                     let mut q = world.query::<&mut AbilityState>();
                     for mut a in q.iter_mut(world) {
                         a.mana = (a.mana - 20.0).max(0.0);

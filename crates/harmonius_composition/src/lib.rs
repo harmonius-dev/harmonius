@@ -1,9 +1,14 @@
 //! Composition layer primitives: [`DefinitionAsset`], recipes, deterministic stepping, snapshots.
 //!
 //! Implements design `docs/design/data-systems/composition.md` (R-16.5.x).
+//!
+//! Cross-primitive wiring is expressed as synchronous helper callbacks plus an optional
+//! [`CompositionEventQueue`](events::CompositionEventQueue) resource until engine-wide Bevy event
+//! routing lands for this subsystem.
 
 #![deny(clippy::all)]
 #![deny(unsafe_code)]
+// Rustdoc on every `pub use` re-export is deferred until this crate lands in the full workspace.
 #![allow(missing_docs)]
 #![allow(dead_code)]
 
@@ -23,9 +28,9 @@ mod snapshot;
 pub use asset_id::AssetId;
 pub use bind_error::BindError;
 pub use components::{
-    AbilityState, AttributeSet, Container, ContainerLayout, CraftingState, Destination,
-    DirectedGraphInstance, Effect, InventoryState, ItemId, Meter, QuestState, ScheduleState,
-    StealthState,
+    AbilityCastTarget, AbilityState, AttributeSet, Container, ContainerLayout, CraftingState,
+    Destination, DirectedGraphInstance, Effect, InventoryState, ItemId, Meter, QuestState,
+    ScheduleState, StealthState,
 };
 pub use definition_asset::DefinitionAsset;
 pub use definitions::{

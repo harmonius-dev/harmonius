@@ -3,12 +3,13 @@
 use bevy_ecs::prelude::*;
 use harmonius_composition::{
     apply_quest_reward, load_crafting_snapshot, load_inventory_snapshot, load_snapshot,
-    on_cell_changed_apply_effect, on_entry_appended_advance_graph, on_slot_changed_aggregate,
-    peer_state_hash, save_crafting_snapshot, save_inventory_snapshot, save_snapshot, step_frame,
-    AbilityRecipe, AbilityState, AssetId, AttributeSet, AttributeSetDefinition, BindError,
-    CellChanged, CompositionEvent, CompositionEventQueue, CompositionRecipe, Container,
-    ContainerDefinition, ContainerLayout, CraftingRecipe, CraftingState, DefinitionAsset,
-    Destination, DirectedGraphDefinition, DirectedGraphInstance, Effect, EntryAppended, FrameInput,
+    on_cell_changed_apply_effect, on_entry_appended_advance_graph, on_keyframe_fire_log,
+    on_slot_changed_aggregate, peer_state_hash, save_crafting_snapshot, save_inventory_snapshot,
+    save_snapshot, step_frame, AbilityCastTarget, AbilityRecipe, AbilityState, AssetId,
+    AttributeSet, AttributeSetDefinition, BindError, CellChanged, CompositionEvent,
+    CompositionEventQueue, CompositionRecipe, Container, ContainerDefinition, ContainerLayout,
+    CraftingRecipe, CraftingState, DefinitionAsset, Destination, DeterministicRng,
+    DirectedGraphDefinition, DirectedGraphInstance, Effect, EntryAppended, FrameInput,
     InventoryRecipe, InventoryState, KeyframeFired, Meter, MeterDefinition, QuestRecipe,
     QuestState, RecipeContext, ScheduleRecipe, ScheduleState, SlotChanged, StealthRecipe,
     StealthState,
@@ -198,6 +199,9 @@ fn test_ability_recipe_end_to_end() {
     recipe
         .install(&mut world, caster, &RecipeContext { tick: 0 })
         .unwrap();
+    world
+        .entity_mut(caster)
+        .insert(AbilityCastTarget { target });
     step_frame(
         &mut world,
         &FrameInput {
@@ -208,11 +212,9 @@ fn test_ability_recipe_end_to_end() {
     );
     let a = world.entity(caster).get::<AbilityState>().unwrap();
     assert!((a.mana - 80.0).abs() < f32::EPSILON);
-    world.entity_mut(target).insert(Effect {
-        name: "damage".into(),
-        magnitude: 10.0,
-    });
-    assert!(world.entity(target).contains::<Effect>());
+    let eff = world.entity(target).get::<Effect>().unwrap();
+    assert_eq!(eff.name, "damage");
+    assert!((eff.magnitude - 10.0).abs() < f32::EPSILON);
 }
 
 #[test]
@@ -371,18 +373,21 @@ fn test_timeline_to_event_log_fire() {
     let mut world = World::new();
     world.insert_resource(CompositionEventQueue::default());
     let owner = world.spawn_empty().id();
-    let mut q = world.resource_mut::<CompositionEventQueue>();
-    q.send(CompositionEvent::KeyframeFired(KeyframeFired {
-        owner,
-        tick: 540,
-    }));
+    let fired = KeyframeFired { owner, tick: 540 };
+    on_keyframe_fire_log(&mut world, &fired);
     let evt = world
         .resource::<CompositionEventQueue>()
         .events
         .front()
         .cloned()
         .unwrap();
-    assert!(matches!(evt, CompositionEvent::KeyframeFired(_)));
+    match evt {
+        CompositionEvent::EntryAppended(e) => {
+            assert_eq!(e.target, owner);
+            assert_eq!(e.label, "keyframe");
+        }
+        other => panic!("expected EntryAppended, got {other:?}"),
+    }
 }
 
 // --- TC-16.5.4.x Determinism ----------------------------------------------------
@@ -457,23 +462,60 @@ fn test_two_peer_determinism_combined() {
         1800,
         || {
             let mut world = World::new();
-            let e = world.spawn_empty().id();
-            let q = QuestRecipe {
+            let ctx = RecipeContext { tick: 0 };
+            let quest_e = world.spawn_empty().id();
+            QuestRecipe {
                 graph: DirectedGraphDefinition::new(AssetId(120), 1, 4, 3),
                 buff_attrs: AttributeSetDefinition::new(AssetId(121), 1, vec![]),
-            };
-            q.install(&mut world, e, &RecipeContext { tick: 0 })
-                .unwrap();
-            (world, e)
+            }
+            .install(&mut world, quest_e, &ctx)
+            .unwrap();
+            let ability_e = world.spawn_empty().id();
+            AbilityRecipe {
+                graph: DirectedGraphDefinition::new(AssetId(122), 1, 3, 2),
+                mana: MeterDefinition::new(AssetId(123), 1, 0.0, 200.0, 100.0),
+            }
+            .install(&mut world, ability_e, &ctx)
+            .unwrap();
+            let inv_e = world.spawn_empty().id();
+            InventoryRecipe {
+                container: ContainerDefinition::new(AssetId(124), 1, 2, 4, 8),
+                stats: AttributeSetDefinition::new(AssetId(125), 1, vec![("attack".into(), 10.0)]),
+            }
+            .install(&mut world, inv_e, &ctx)
+            .unwrap();
+            let craft_e = world.spawn_empty().id();
+            CraftingRecipe {
+                graph: DirectedGraphDefinition::new(AssetId(126), 1, 2, 1),
+                container: ContainerDefinition::new(AssetId(127), 1, 1, 4, 8),
+            }
+            .install(&mut world, craft_e, &ctx)
+            .unwrap();
+            let stealth_e = world.spawn_empty().id();
+            StealthRecipe {
+                attrs: AttributeSetDefinition::new(AssetId(128), 1, vec![]),
+            }
+            .install(&mut world, stealth_e, &ctx)
+            .unwrap();
+            let sched_e = world.spawn_empty().id();
+            ScheduleRecipe {
+                role_table: AttributeSetDefinition::new(AssetId(129), 1, vec![]),
+            }
+            .install(&mut world, sched_e, &ctx)
+            .unwrap();
+            (world, quest_e)
         },
-        |t| FrameInput {
-            tick: t,
-            quest_kills: ((t % 13) == 0) as u8,
-            ability_cast: t % 17 == 0,
-            inventory_equip: t % 19 == 0,
-            craft_attempt: t % 23 == 0,
-            stealth_move: t % 29 == 0,
-            schedule_ticks: t % 3,
+        |t| {
+            let mut r = DeterministicRng::from_tick(t, 0xC0_57_16_15);
+            FrameInput {
+                tick: t,
+                quest_kills: (r.next_u32() % 3) as u8,
+                ability_cast: r.next_u32() % 2 == 0,
+                inventory_equip: r.next_u32() % 2 == 0,
+                craft_attempt: r.next_u32() % 2 == 0,
+                stealth_move: r.next_u32() % 2 == 0,
+                schedule_ticks: u64::from(r.next_u32() % 4),
+            }
         },
     );
 }

@@ -1,3 +1,5 @@
+# Plan branch: single-crate workspace. Reconcile `members` with the full engine list before merge
+# to `main`.
 [workspace]
 resolver = "3"
 members = [
