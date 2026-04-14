@@ -1,0 +1,15 @@
+[package]
+name = "harmonius_content"
+description = "In-process asset import, CAS, metadata, cache, and hot-reload primitives"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+version = "0.0.1"
+
+[dependencies]
+blake3 = "1.8"
+exr = "1.74"
+lz4_flex = "0.11"
+png = "0.17"
+tempfile = "3.23"
+
+[dev-dependencies]
