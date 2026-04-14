@@ -2,10 +2,13 @@
 //!
 //! Implements the API described in `docs/design/data-systems/directed-graphs.md`
 //! (storage, traversals, conditional and ordered variants, weighted paths, multi-graph).
+//!
+//! Binary `rkyv` coverage for graph snapshots is tracked as a follow-up in the owning plan
+//! progress file; this crate ships typed in-memory structures first.
 
 #![deny(clippy::all)]
 #![deny(unsafe_code)]
-#![allow(missing_docs)]
+#![deny(missing_docs)]
 
 mod conditional;
 mod error;

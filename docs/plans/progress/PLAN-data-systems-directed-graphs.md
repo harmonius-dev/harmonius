@@ -1,6 +1,6 @@
 ---
 branch: plan/data-systems-directed-graphs
-last_updated: 2026-04-14T11:34:53Z
+last_updated: 2026-04-14T18:00:02Z
 plan_id: PLAN-data-systems-directed-graphs
 pr_number: 68
 pr_review_status: complete
@@ -25,11 +25,12 @@ Plan file: [directed-graphs.md](../data-systems/directed-graphs.md)
 - [x] Refactor phase complete with no regressions
 - [x] Integration validation complete across documented boundaries
 - [x] Constraint conformance checks complete
-- [ ] Manual validation complete with screenshot and video evidence
+- [x] Manual validation complete with screenshot and video evidence (N/A: library-only crate; see
+      Evidence registry)
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
-- [ ] Evidence links logged in this file
+- [x] Evidence links logged in this file
 - [x] Review findings addressed and checklist re-verified
 - [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
@@ -47,7 +48,7 @@ Plan file: [directed-graphs.md](../data-systems/directed-graphs.md)
 - [x] All previously unmapped ID mappings triaged in plan gap-closure section
 - [x] Red test inventory split by requirement and user story
 - [x] First failing test batch selected for implementation loop
-- [ ] Evidence capture folders prepared (screenshots/videos/logs)
+- [x] Evidence capture folders prepared (screenshots/videos/logs) (N/A for this pass)
 
 ## Evidence registry
 
@@ -56,9 +57,11 @@ Plan file: [directed-graphs.md](../data-systems/directed-graphs.md)
 - Benchmarks: not added in this pass (design TC-16.4.B.* deferred).
 - Screenshots: N/A (library-only).
 - Videos: N/A.
-- Review notes: PR #68 — pr-reviewer inline review (2026-04-14): two low-severity fixes (README
-  MD057 dead link removed; `TransitionError` docs no longer link a missing `GraphTraversalState`
-  type). Full `cargo test`, `cargo clippy -D warnings`, `rumdl check .` re-run clean; PR undrafted.
+- Review notes: PR #68 — review-supervisor pass (2026-04-14): backward `dead_node_elimination` from
+  output roots (design RF-16), `transitive_reduction` index fix (no `expect`), insertion-order
+  traversals (`bfs`/`dfs`/cycle DFS + conditional successors), `deny(missing_docs)` with `rkyv`
+  deferral called out in crate docs, `TransitionError` doc clarified. Remaining deltas (generic
+  `WeightedGraph<W>`, `GraphTraversalState` surface, richer `validate`) tracked for follow-up plans.
 
 ## Event log
 
@@ -69,3 +72,8 @@ Plan file: [directed-graphs.md](../data-systems/directed-graphs.md)
 - 2026-04-14T05:25:15Z — plan-implementer — `status: code_complete`, awaiting review.
 - 2026-04-14T11:34:53Z — pr-reviewer — submitted for human review, 2 low-severity findings
   addressed.
+- 2026-04-14T12:00:00Z — pr-reviewer — re-verified `cargo test`, `clippy -D warnings`, and
+  `rumdl check`; progress checklist aligned (manual validation / evidence N/A for library-only).
+- 2026-04-14T18:00:02Z — pr-reviewer — review-supervisor findings: 9 addressed in-tree (blocker
+  dead-node semantics, fmt, panic removal, traversal order, docs); PR already open for review;
+  `cargo test --workspace`, `cargo clippy -D warnings`, `rumdl check .` clean after push.
