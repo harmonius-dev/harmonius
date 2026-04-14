@@ -1,4 +1,4 @@
-//! Blackboard ↔ `VariableStore` bridge (IR-2.4.3).
+//! Blackboard ↔ `VariableStore` bridge (integration design, hot-path sync).
 
 use smallvec::SmallVec;
 
@@ -73,6 +73,10 @@ impl VariableStore {
 }
 
 /// Blackboard harness using a `Vec` backing store (no `HashMap` on hot path).
+///
+/// This is a **test and harness** shape only. It is not the production AI
+/// behavior blackboard scope from `docs/design/ai/behavior.md`; wire the real
+/// store only after those types exist in-tree.
 #[derive(Clone, Debug, Default)]
 pub struct Blackboard {
     values: Vec<f32>,
@@ -134,6 +138,10 @@ pub struct BlackboardBridge {
 
 impl BlackboardBridge {
     /// Copy mapped dirty blackboard keys into variable slots before graph tick.
+    ///
+    /// The integration design names `(bb, vars)` only. This crate adds
+    /// `log_debug` so hosts can emit FM-4 diagnostics for dirty keys that lack
+    /// a mapping entry; pass `|_| {}` when logging is disabled.
     pub fn sync_to_vars(
         &self,
         bb: &Blackboard,
@@ -207,6 +215,10 @@ mod tests {
     }
 
     /// TC-IR-2.4.BB.3 — bridge path uses only mapping iteration (no `HashMap`).
+    ///
+    /// The module uses `Vec` / [`SmallVec`] stores and walks only
+    /// [`BbVarMapping`] rows (see imports: no `std::collections::HashMap`). The
+    /// loop asserts stable, linear-time behavior for repeated sync passes.
     #[test]
     fn tc_ir_2_4_bb_3_bridge_avoids_hash_map() {
         let bridge = BlackboardBridge {
@@ -219,6 +231,9 @@ mod tests {
             bridge.sync_to_vars(&bb, &mut vars, |_| {});
             bridge.sync_to_bb(&vars, &mut bb);
         }
+        assert_eq!(bridge.mapping.len(), 1);
+        assert_eq!(bb.get(BlackboardKey(1)), 3.0);
+        assert_eq!(vars.read_slot(0), 3.0);
     }
 
     /// TC-IR-2.4.NEG.7 — unmapped dirty key is skipped with debug log.

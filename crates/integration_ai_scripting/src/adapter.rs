@@ -1,4 +1,4 @@
-//! `StepResult` ↔ `NodeStatus` mapping (IR-2.4.3).
+//! `StepResult` ↔ `NodeStatus` mapping for BT leaf integration (design § adapter).
 
 /// Runtime error payload carried by [`StepResult::Error`].
 #[derive(Clone, Debug, PartialEq, Eq)]

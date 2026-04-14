@@ -1,4 +1,8 @@
 //! BT leaf adapter for codegen'd graph dispatch (IR-2.4.3).
+//!
+//! Codegen'd leaves carry a compile-time `fn_idx` and dispatch through
+//! [`crate::runtime::FnPtrTable`] only — they never consult the declarative
+//! `LeafNodeRegistry` string map described in the integration design.
 
 use crate::adapter::{step_to_status, NodeStatus};
 use crate::runtime::{ExecutionContext, FnPtrTable, GraphInstanceState};
@@ -24,6 +28,7 @@ pub fn tick_bt_graph_leaf(
     mut log_error: impl FnMut(&str),
 ) -> NodeStatus {
     let Some(graph_fn) = table.get(leaf.fn_idx) else {
+        // FM-2 rare failure path; formatted message keeps tests deterministic.
         log_error(&format!(
             "bt_graph_leaf: fn_idx {} out of range for entity {}",
             leaf.fn_idx, entity_id
@@ -76,9 +81,7 @@ mod tests {
     /// TC-IR-2.4.NEG.4 — `fn_idx` out of range returns failure and logs entity + index.
     #[test]
     fn tc_ir_2_4_neg_4_oob_fn_idx_failure() {
-        let leaf = BtGraphLeaf {
-            fn_idx: u32::MAX,
-        };
+        let leaf = BtGraphLeaf { fn_idx: u32::MAX };
         let table = FnPtrTable::new(vec![|_, _| StepResult::Complete]);
         let mut state = GraphInstanceState::default();
         let mut logs = Vec::new();
