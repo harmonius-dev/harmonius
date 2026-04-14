@@ -1,6 +1,6 @@
 ---
 branch: plan/core-runtime-primitives
-last_updated: 2026-04-14T11:33:35Z
+last_updated: 2026-04-14T17:57:53Z
 plan_id: PLAN-core-runtime-primitives
 pr_number: 58
 pr_review_status: complete
@@ -51,13 +51,16 @@ Plan file: [primitives.md](../core-runtime/primitives.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test --workspace` in worktree `PLAN-core-runtime-primitives` at commit
-  `e1504bd`.
+- Test reports: `cargo test --workspace` in worktree `PLAN-core-runtime-primitives` (see git log on
+  `plan/core-runtime-primitives` for the latest verification commit).
 - Benchmarks: perf-oriented `TC-*` cases are present as `#[ignore]` probes in
   `crates/harmonius_primitives/tests/primitives.rs` (run with `--release` locally when profiling).
 - Screenshots: deferred (no UI surface in this plan).
 - Videos: deferred (no temporal UI acceptance in this plan).
-- Review notes: `pr-reviewer` completed 2026-04-14 (0 findings); PR 58 undrafted for human merge.
+- Review notes: `pr-reviewer` 2026-04-14 — review-supervisor pass addressed **10** findings (1
+  blocker, 4 moderate, 5 minor): clippy test fixes, unbiased `gen_range`, `no_std` + `alloc`, rkyv
+  `std` removal, docs for dispatch/coalesce/rkyv width, golden RNG vectors, diagnostic field rename,
+  scoped `unsafe` allow. PR 58 ready (not draft).
 
 ## Event log
 
@@ -69,3 +72,7 @@ Plan file: [primitives.md](../core-runtime/primitives.md)
   consolidated review (correctness, standards, architecture) clean; `cargo test` / `cargo clippy`
   verified in worktree; repo-wide `rumdl check .` still fails on pre-existing progress templates
   (unchanged by this PR).
+- 2026-04-14T17:57:53Z — pr-reviewer — follow-up: **10** review-supervisor findings addressed in
+  code (clippy, RNG bias + contract, `no_std`, deps, docs, golden vectors); `cargo test` /
+  `cargo clippy --all-targets -D warnings` clean; `rumdl check` on this progress file clean
+  (repo-wide `rumdl check .` unchanged pre-existing failures).

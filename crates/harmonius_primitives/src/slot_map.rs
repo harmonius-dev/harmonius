@@ -1,7 +1,7 @@
 //! Dense storage with a sparse generation-aware index table.
 
 use crate::handle::Handle;
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 /// Densely packed storage keyed by [`Handle`], optimized for fast iteration over live values.
 #[derive(Debug)]

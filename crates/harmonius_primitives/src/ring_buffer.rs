@@ -1,4 +1,7 @@
 //! Fixed-capacity ring buffer.
+//!
+//! `RingBuffer` uses `MaybeUninit` and manual drop logic as specified by the design.
+#![allow(unsafe_code)]
 
 use core::mem::MaybeUninit;
 

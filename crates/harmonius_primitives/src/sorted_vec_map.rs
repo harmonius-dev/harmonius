@@ -1,6 +1,6 @@
 //! Deterministic ordered map backed by a sorted vector.
 
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 /// Sorted vector of `(K, V)` pairs with deterministic iteration order.
 #[derive(Clone, Debug, Eq, PartialEq)]

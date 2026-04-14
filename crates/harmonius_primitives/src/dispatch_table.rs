@@ -1,6 +1,6 @@
 //! Compact static dispatch keyed by integer IDs.
 
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 /// Enum-dispatch replacement keyed by a compact `u32` id.
 #[derive(Debug)]
@@ -24,6 +24,9 @@ impl<F> DispatchTable<F> {
     }
 
     /// Registers `f` at `id`, replacing any previous entry.
+    ///
+    /// `id` should stay in a **dense low range**; sparse large values grow the backing `Vec` to
+    /// `id + 1` slots.
     pub fn register(&mut self, id: u32, f: F) {
         let idx = id as usize;
         while self.entries.len() <= idx {

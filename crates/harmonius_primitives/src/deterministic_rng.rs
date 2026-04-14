@@ -63,13 +63,30 @@ impl DeterministicRng {
         (u as f32) / ((1u32 << 24) as f32)
     }
 
-    /// Returns a value in `[lo, hi)` when `lo < hi`.
+    /// Returns a value in `[lo, hi)`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `lo >= hi` or if `(hi - lo)` does not fit in `u64` (this cannot occur for
+    /// ordinary `i32` endpoints).
     pub fn gen_range(&mut self, lo: i32, hi: i32) -> i32 {
-        debug_assert!(lo < hi);
-        let range = i64::from(hi) - i64::from(lo);
-        debug_assert!(range > 0);
-        let span = u64::try_from(range).expect("gen_range span must fit in u64");
-        let offset = self.next_u64().wrapping_rem(span) as i32;
-        lo.saturating_add(offset)
+        assert!(lo < hi, "gen_range requires lo < hi");
+        let lo_i = i64::from(lo);
+        let hi_i = i64::from(hi);
+        let span = u64::try_from(hi_i - lo_i).expect("gen_range span must fit in u64");
+        let offset = self.next_uniform_below(span) as i64;
+        i32::try_from(lo_i + offset).expect("gen_range result must fit in i32")
+    }
+
+    /// Uniform `u64` in `[0, span)` via rejection sampling (unbiased for any `span > 0`).
+    fn next_uniform_below(&mut self, span: u64) -> u64 {
+        assert!(span > 0, "span must be positive");
+        let cutoff = (u64::MAX / span).saturating_mul(span);
+        loop {
+            let draw = self.next_u64();
+            if draw < cutoff {
+                return draw % span;
+            }
+        }
     }
 }

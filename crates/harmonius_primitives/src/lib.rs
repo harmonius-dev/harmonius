@@ -1,11 +1,16 @@
 //! Shared container and utility primitives for Harmonius core runtime.
 //!
 //! This crate implements the types described in `docs/design/core-runtime/primitives.md`.
+//!
+//! The library is `#![no_std]` and uses [`alloc`]. Integration tests still link `std`.
+//!
+//! `rkyv` is built with `pointer_width_64`; archived values assume **64-bit** pointer targets.
 
+#![no_std]
 #![deny(clippy::all)]
 #![deny(missing_docs)]
-// `RingBuffer` uses `MaybeUninit` and manual drop logic as specified by the design.
-#![allow(unsafe_code)]
+
+extern crate alloc;
 
 mod aliases;
 mod budget_allocator;
