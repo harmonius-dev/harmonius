@@ -1,10 +1,10 @@
 ---
 branch: plan/rendering-shader-variants
-last_updated: 2026-04-14T12:00:00Z
+last_updated: 2026-04-14T12:15:00Z
 plan_id: PLAN-rendering-shader-variants
-pr_number: null
+pr_number: 57
 pr_review_status: not_started
-pr_url: null
+pr_url: https://github.com/cjhowe-us/harmonius/pull/57
 started_at: 2026-04-14T12:00:00Z
 status: code_complete
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-rendering-shader-variants
@@ -65,3 +65,6 @@ Plan file: [shader-variants.md](../rendering/shader-variants.md)
 - 2026-04-14T12:00:00Z — plan-implementer — code complete: added `shader_variants` workspace crate
   (permutation keys, budgets, bundle mmap I/O, metrics, resolver, coverage helpers); unit +
   integration tests map to `TC-2.3.10.*` matrix; DXC subprocess left for follow-up.
+- 2026-04-14T12:15:00Z — plan-implementer — draft PR opened
+  ([PR #57](https://github.com/cjhowe-us/harmonius/pull/57)).
+- 2026-04-14T12:15:00Z — plan-implementer — code complete, awaiting review (pr-reviewer).
