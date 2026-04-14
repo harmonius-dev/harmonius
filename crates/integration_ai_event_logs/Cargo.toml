@@ -1,0 +1,12 @@
+[package]
+description = "Reference types and pure logic for AI behavior ↔ event log integration."
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "integration_ai_event_logs"
+version = "0.1.0"
+
+[dependencies]
+bytecheck = "0.6"
+crossbeam-channel = "0.5"
+rkyv = { version = "0.7", features = ["std", "validation"] }
+smallvec = "1.13"

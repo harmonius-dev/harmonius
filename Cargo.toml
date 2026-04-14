@@ -63,6 +63,7 @@ members = [
   "crates/integration-localization-ui",
   "crates/integration-scripting-ui",
   "crates/integration_ai_animation",
+  "crates/integration_ai_event_logs",
   "crates/integration_attributes_effects_physics",
   "crates/integration_input_camera",
   "crates/integration_networking_save",
