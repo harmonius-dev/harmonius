@@ -17,7 +17,9 @@ mod spike;
 mod tsc;
 
 pub use arena::FrameArena;
-pub use collector::{FrameCapture, FrameCollector, FrameStats, LatestFrameCapture};
+pub use collector::{
+    FrameCapture, FrameCollector, FrameStats, LatestFrameCapture, MAX_REGISTERED_PROFILER_THREADS,
+};
 pub use cpu_event::CpuEvent;
 pub use phase::Phase;
 pub use ring_buffer::ProfileRingBuffer;
