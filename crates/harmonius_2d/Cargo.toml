@@ -1,0 +1,9 @@
+[package]
+edition = "2021"
+name = "harmonius_2d"
+rust-version = "1.85"
+version = "0.1.0"
+
+[dependencies]
+glam = { version = "0.29", default-features = false, features = ["libm"] }
+smallvec = "1.15"
