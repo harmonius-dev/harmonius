@@ -1,8 +1,19 @@
 //! Pipeline state object cache types and helpers for Harmonius rendering.
 //!
-//! This crate implements the in-memory and on-disk contracts described in
-//! `docs/design/rendering/pipeline-state-cache.md` with deterministic, testable
-//! pure-Rust behavior (no GPU backends).
+//! This crate holds the in-memory and on-disk contracts aligned with
+//! `docs/design/rendering/pipeline-state-cache.md`, with deterministic,
+//! testable pure-Rust behavior (no GPU backends).
+//!
+//! # On-disk layout (implementation v1)
+//!
+//! The device partition uses [`DeviceFingerprint::directory_name`], which folds
+//! the graphics API token into the subdirectory name so distinct APIs never
+//! share a cache root.
+//!
+//! The blob index file is `index.bin` (magic `HMNSPIDX`, versioned header, CRC
+//! over record bodies). A future revision may switch the index to an mmap'd
+//! rkyv archive as sketched in the design prose; v1 keeps this framed binary
+//! format for self-contained bring-up and corruption recovery tests.
 
 #![deny(clippy::all)]
 #![deny(missing_docs)]

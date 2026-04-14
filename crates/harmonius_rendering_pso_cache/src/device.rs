@@ -28,8 +28,8 @@ impl DeviceFingerprint {
     pub fn directory_name(&self) -> String {
         let (maj, min, pat) = split_version(self.driver_version);
         format!(
-            "vendor_{:04x}_dev_{:04x}_drv_{}_{}_{}",
-            self.vendor_id, self.device_id, maj, min, pat
+            "vendor_{:04x}_dev_{:04x}_api_{:08x}_drv_{}_{}_{}",
+            self.vendor_id, self.device_id, self.api_version, maj, min, pat
         )
     }
 }
