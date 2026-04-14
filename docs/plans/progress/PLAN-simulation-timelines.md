@@ -1,12 +1,12 @@
 ---
-branch: null
-last_updated: 2026-04-14T02:02:00Z
+branch: plan/simulation-timelines
+last_updated: 2026-04-14T05:29:16Z
 plan_id: PLAN-simulation-timelines
-pr_number: null
-pr_url: null
-started_at: null
-status: not_started
-worktree_path: null
+pr_number: 84
+pr_url: https://github.com/cjhowe-us/harmonius/pull/84
+started_at: 2026-04-14T05:29:16Z
+status: started
+worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-simulation-timelines
 ---
 
 # Progress: Simulation Timelines
@@ -15,12 +15,12 @@ Plan file: [timelines.md](../simulation/timelines.md)
 
 ## Status checklist
 
-- [ ] Worktree created and branch aligned with plan metadata
-- [ ] Draft PR opened and linked in frontmatter
-- [ ] Design and companion test-case docs reviewed
+- [x] Worktree created and branch aligned with plan metadata
+- [x] Draft PR opened and linked in frontmatter
+- [x] Design and companion test-case docs reviewed
 - [ ] Requirement and user-story trace matrix completed
 - [ ] Red phase complete with failing tests for uncovered scope
-- [ ] Green phase complete with minimal passing implementation
+- [x] Green phase complete with minimal passing implementation
 - [ ] Refactor phase complete with no regressions
 - [ ] Integration validation complete across documented boundaries
 - [ ] Constraint conformance checks complete
@@ -56,6 +56,13 @@ Plan file: [timelines.md](../simulation/timelines.md)
 - Review notes: add previously unmapped issues, waivers, and rationale.
 
 ## Event log
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
+
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
+
+- 2026-04-14T05:29:16Z — plan-implementer — started: worktree
+  `/Users/cjhowe/Code/harmonius-worktrees/PLAN-simulation-timelines`, draft PR
+  <https://github.com/cjhowe-us/harmonius/pull/84>, initial `harmonius_timeline` crate with 30
+  companion tests (`cargo test -p harmonius_timeline`).
 
 - Append ISO-8601 UTC entries with actor, action, and outcome.
