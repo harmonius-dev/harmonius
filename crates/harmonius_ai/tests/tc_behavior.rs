@@ -67,7 +67,7 @@ fn tc_7_3_1_1_sequence_fail_fast() {
         vec!["S".into(), "L0".into(), "L1".into(), "L2".into()],
     );
     let mut st = BtTickState::new(asset.nodes.len());
-    let mut tab = [
+    let tab = [
         (LeafId(0), NodeStatus::Success),
         (LeafId(1), NodeStatus::Failure),
         (LeafId(2), NodeStatus::Success),
@@ -76,7 +76,7 @@ fn tc_7_3_1_1_sequence_fail_fast() {
     let mut ctx = BtTickContext::new(0.0, &mut leaf);
     let r = tick_tree(&asset, &mut st, &mut ctx);
     assert_eq!(r, NodeStatus::Failure);
-    let mut tab2 = [
+    let tab2 = [
         (LeafId(0), NodeStatus::Success),
         (LeafId(1), NodeStatus::Success),
         (LeafId(2), NodeStatus::Success),
@@ -105,7 +105,7 @@ fn tc_7_3_1_2_selector_succeed_fast() {
         vec!["Sel".into(), "a".into(), "b".into(), "c".into()],
     );
     let mut st = BtTickState::new(asset.nodes.len());
-    let mut tab = [
+    let tab = [
         (LeafId(0), NodeStatus::Failure),
         (LeafId(1), NodeStatus::Success),
         (LeafId(2), NodeStatus::Failure),
@@ -113,7 +113,7 @@ fn tc_7_3_1_2_selector_succeed_fast() {
     let mut leaf = leaf_table(&tab);
     let mut ctx = BtTickContext::new(0.0, &mut leaf);
     assert_eq!(tick_tree(&asset, &mut st, &mut ctx), NodeStatus::Success);
-    let mut tab2 = [
+    let tab2 = [
         (LeafId(0), NodeStatus::Failure),
         (LeafId(1), NodeStatus::Failure),
         (LeafId(2), NodeStatus::Failure),
@@ -139,7 +139,7 @@ fn tc_7_3_1_3_parallel_require_all() {
     ];
     let asset = mk_asset(NodeId(0), nodes, vec!["P".into(); 4]);
     let mut st = BtTickState::new(asset.nodes.len());
-    let mut tab = [
+    let tab = [
         (LeafId(0), NodeStatus::Success),
         (LeafId(1), NodeStatus::Success),
         (LeafId(2), NodeStatus::Success),
@@ -147,7 +147,7 @@ fn tc_7_3_1_3_parallel_require_all() {
     let mut leaf = leaf_table(&tab);
     let mut ctx = BtTickContext::new(0.0, &mut leaf);
     assert_eq!(tick_tree(&asset, &mut st, &mut ctx), NodeStatus::Success);
-    let mut tab2 = [
+    let tab2 = [
         (LeafId(0), NodeStatus::Success),
         (LeafId(1), NodeStatus::Failure),
         (LeafId(2), NodeStatus::Success),
@@ -172,7 +172,7 @@ fn tc_7_3_1_4_parallel_require_one() {
     ];
     let asset = mk_asset(NodeId(0), nodes, vec!["P".into(); 4]);
     let mut st = BtTickState::new(asset.nodes.len());
-    let mut tab = [
+    let tab = [
         (LeafId(0), NodeStatus::Failure),
         (LeafId(1), NodeStatus::Success),
         (LeafId(2), NodeStatus::Failure),
@@ -180,7 +180,7 @@ fn tc_7_3_1_4_parallel_require_one() {
     let mut leaf = leaf_table(&tab);
     let mut ctx = BtTickContext::new(0.0, &mut leaf);
     assert_eq!(tick_tree(&asset, &mut st, &mut ctx), NodeStatus::Success);
-    let mut tab2 = [
+    let tab2 = [
         (LeafId(0), NodeStatus::Failure),
         (LeafId(1), NodeStatus::Failure),
         (LeafId(2), NodeStatus::Failure),
@@ -203,16 +203,16 @@ fn tc_7_3_2_1_inverter() {
     ];
     let asset = mk_asset(NodeId(0), nodes, vec!["D".into(), "L".into()]);
     let mut st = BtTickState::new(asset.nodes.len());
-    let mut tab = [(LeafId(0), NodeStatus::Success)];
+    let tab = [(LeafId(0), NodeStatus::Success)];
     let mut leaf = leaf_table(&tab);
     let mut ctx = BtTickContext::new(0.0, &mut leaf);
     assert_eq!(tick_tree(&asset, &mut st, &mut ctx), NodeStatus::Failure);
-    let mut tab2 = [(LeafId(0), NodeStatus::Failure)];
+    let tab2 = [(LeafId(0), NodeStatus::Failure)];
     let mut leaf2 = leaf_table(&tab2);
     let mut st2 = BtTickState::new(asset.nodes.len());
     let mut ctx2 = BtTickContext::new(0.0, &mut leaf2);
     assert_eq!(tick_tree(&asset, &mut st2, &mut ctx2), NodeStatus::Success);
-    let mut tab3 = [(LeafId(0), NodeStatus::Running)];
+    let tab3 = [(LeafId(0), NodeStatus::Running)];
     let mut leaf3 = leaf_table(&tab3);
     let mut st3 = BtTickState::new(asset.nodes.len());
     let mut ctx3 = BtTickContext::new(0.0, &mut leaf3);
@@ -292,7 +292,7 @@ fn tc_7_3_2_3_cooldown_blocks_reentry() {
     ];
     let asset = mk_asset(NodeId(0), nodes, vec!["C".into(), "L".into()]);
     let mut st = BtTickState::new(asset.nodes.len());
-    let mut tab = [(LeafId(0), NodeStatus::Success)];
+    let tab = [(LeafId(0), NodeStatus::Success)];
     let mut leaf = leaf_table(&tab);
     let mut ctx = BtTickContext::new(0.0, &mut leaf);
     assert_eq!(tick_tree(&asset, &mut st, &mut ctx), NodeStatus::Success);
@@ -580,7 +580,7 @@ fn tc_7_3_3_3_abort_no_state_leak() {
 #[test]
 fn tc_7_3_4_1_blackboard_self_scope() {
     let mut a = ScopedBlackboard::new();
-    let mut b = ScopedBlackboard::new();
+    let b = ScopedBlackboard::new();
     a.set(K_HP, BlackboardValue::Int(50));
     assert!(get_self(&b, K_HP).is_none());
     assert_eq!(get_self(&a, K_HP), Some(&BlackboardValue::Int(50)));
@@ -591,8 +591,8 @@ fn tc_7_3_4_2_blackboard_group_scope() {
     let mut groups = GroupBlackboardStore::new();
     let g1 = GroupId(1);
     groups.set(g1, K_HP, BlackboardValue::Bool(true));
-    let mut agent_a = ScopedBlackboard::new();
-    let mut agent_b = ScopedBlackboard::new();
+    let agent_a = ScopedBlackboard::new();
+    let agent_b = ScopedBlackboard::new();
     assert_eq!(
         resolve_with_group(&agent_a, Some(g1), &groups, K_HP),
         Some(BlackboardValue::Bool(true))
@@ -602,7 +602,7 @@ fn tc_7_3_4_2_blackboard_group_scope() {
         Some(BlackboardValue::Bool(true))
     );
     let g2 = GroupId(2);
-    let mut agent_c = ScopedBlackboard::new();
+    let agent_c = ScopedBlackboard::new();
     assert!(resolve_with_group(&agent_c, Some(g2), &groups, K_HP).is_none());
 }
 
@@ -634,7 +634,7 @@ fn tc_7_3_5_1_bt_serialization_roundtrip() {
             nodes.push(BtNode::Leaf(LeafId(9)));
         }
     }
-    let mut labels: Vec<String> = (0..10).map(|i| format!("n{i}")).collect();
+    let labels: Vec<String> = (0..10).map(|i| format!("n{i}")).collect();
     let asset = mk_asset(NodeId(0), nodes, labels.clone());
     let ron = ron::ser::to_string(&asset).expect("ron");
     let back: BehaviorTreeAsset = ron::de::from_str(&ron).expect("de");
@@ -679,7 +679,7 @@ fn tc_7_3_7_1_trace_log_accuracy() {
     ];
     let asset = mk_asset(NodeId(0), nodes, labels);
     let mut st = BtTickState::new(asset.nodes.len());
-    let mut tab = [
+    let tab = [
         (LeafId(0), NodeStatus::Success),
         (LeafId(1), NodeStatus::Failure),
     ];
@@ -1129,7 +1129,7 @@ fn tc_7_5_5_1_replan_on_precondition_failure() {
         },
         cost: 1.0,
     }]);
-    let mut plan = Plan {
+    let plan = Plan {
         steps: vec![0],
         total_cost: 1.0,
         current_step: 0,

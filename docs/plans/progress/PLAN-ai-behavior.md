@@ -1,6 +1,6 @@
 ---
 branch: plan/ai-behavior
-last_updated: 2026-04-14T14:41:45Z
+last_updated: 2026-04-14T11:35:07Z
 plan_id: PLAN-ai-behavior
 pr_number: 82
 pr_review_status: complete
@@ -73,5 +73,3 @@ Plan file: [behavior.md](../ai/behavior.md)
 - 2026-04-14T11:35:07Z — pr-reviewer — submitted for human review, 2 minor findings addressed (test
   hygiene, GOAP planner documentation vs design A* wording); inline review (no nested
   review-supervisor Task on Cursor host)
-- 2026-04-14T14:41:45Z — plan-implementer (Cursor) — revalidated worktree (`cargo test` / `clippy`);
-  synced primary checkout progress file with branch state

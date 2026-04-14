@@ -1,4 +1,8 @@
-//! GOAP world state, actions, Dijkstra planner, cache, and agent helpers.
+//! GOAP world state, actions, planner, cache, and agent helpers.
+//!
+//! [`plan_dijkstra`] runs uniform-cost (Dijkstra) search. That is A* with a zero heuristic, so it
+//! stays optimal for the additive edge costs used here; a future admissible heuristic only changes
+//! the open-set ordering.
 
 use std::collections::HashMap;
 
@@ -317,7 +321,8 @@ impl From<WorldState> for StateKey {
     }
 }
 
-/// Dijkstra search for a cheapest action sequence to satisfy the goal bits + int mins.
+/// Uniform-cost (Dijkstra) search for a cheapest action sequence to satisfy the goal bits + int
+/// mins. Equivalent to A* with a zero heuristic, so plans are optimal for this additive cost model.
 pub fn plan_dijkstra(
     start: WorldState,
     goal_bits_mask: u128,
