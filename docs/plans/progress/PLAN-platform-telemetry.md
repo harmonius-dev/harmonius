@@ -1,6 +1,6 @@
 ---
 branch: plan/platform-telemetry
-last_updated: 2026-04-14T11:35:56Z
+last_updated: 2026-04-14T17:53:40Z
 plan_id: PLAN-platform-telemetry
 pr_number: 50
 pr_review_status: complete
@@ -28,7 +28,8 @@ Plan file: [telemetry.md](../platform/telemetry.md)
 - [ ] Manual validation complete with screenshot and video evidence
 - [x] `cargo test --workspace` passes
 - [x] `cargo clippy --workspace -- -D warnings` passes
-- [x] `rumdl check .` passes for touched docs (progress file only in primary checkout)
+- [x] `rumdl check docs/plans/progress/PLAN-platform-telemetry.md` passes; repo-wide rumdl debt
+      unchanged outside this plan
 - [x] Evidence links logged in this file
 - [x] Review findings addressed and checklist re-verified
 - [x] PR marked ready for human review (`status: submitted`)
@@ -68,9 +69,11 @@ Plan file: [telemetry.md](../platform/telemetry.md)
   from companion doc are `#[ignore]` placeholders pending HTTP/3/UI harnesses; benchmarks deferred.
 - 2026-04-14T05:23:00Z — plan-implementer — code complete, awaiting review
   (`pr_review_status: not_started`).
-- 2026-04-14T11:35:56Z — pr-reviewer — submitted for human review, 1 minor finding addressed
-  (document ring-buffer overflow on `TelemetryClient::record`); correctness, standards, and
-  architecture pass in-line review; full-repo `rumdl check .` still reports pre-existing issues
-  outside this plan.
+- 2026-04-14T14:44:41Z — pr-reviewer — submitted for human review, 1 finding addressed (record
+  timestamps use wall clock per design); correctness/standards/architecture pass with notes for
+  human on intentional design deltas (JSONL spill vs rkyv prose, generic uploader/delete hooks).
+- 2026-04-14T17:53:40Z — pr-reviewer — review batch: clippy bool asserts, FaultInjectingUploader
+  rename, 75% auto disk spill, consent-disable memory purge, wall-clock export/delete, numeric spill
+  sort, TaggedPayload::encode Result, new tests; rkyv/QUIC/bench scope unchanged.
 
 Append ISO-8601 UTC entries with actor, action, and outcome.

@@ -26,8 +26,8 @@ pub struct TaggedPayload {
 
 impl TaggedPayload {
     /// Serialize to an opaque blob stored inside [`crate::ring_buffer::EventRecord::payload`].
-    pub fn encode(&self) -> Vec<u8> {
-        serde_json::to_vec(self).expect("TaggedPayload serialization is infallible for tests")
+    pub fn encode(&self) -> Result<Vec<u8>, serde_json::Error> {
+        serde_json::to_vec(self)
     }
 
     /// Decode from a payload blob.
@@ -49,7 +49,7 @@ mod tests {
                 ("frame_ms".to_owned(), PiiClass::None),
             ],
         };
-        let bytes = tagged.encode();
+        let bytes = tagged.encode().unwrap();
         let round = TaggedPayload::decode(&bytes).unwrap();
         assert_eq!(round, tagged);
     }

@@ -32,4 +32,6 @@ pub use event::{Event, TaggedPayload};
 pub use ring_buffer::{list_spill_files, read_disk_spill, EventRecord, RingBuffer};
 pub use schema::{archive_event_wired, EventSchema, FieldDescriptor, FieldKind, SchemaCatalog};
 pub use types::{AnonId, PiiClass, SchemaId, Scope};
-pub use uploader::{DeleteBackend, MockUploader, NoopDeleteBackend, NoopUploader, Uploader};
+pub use uploader::{
+    DeleteBackend, FaultInjectingUploader, NoopDeleteBackend, NoopUploader, Uploader,
+};
