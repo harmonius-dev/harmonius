@@ -1,9 +1,10 @@
 //! Reliable ordered channel with selective repeat and SACK (test doubles).
 
+#[cfg(test)]
 /// Runs a selective-repeat simulation: `seq` is message id, second arg is attempt number.
 ///
 /// Returns `(delivered_in_order, retx_count)`.
-pub fn simulate_reliable_lossy<F: FnMut(u32, u32) -> bool>(
+fn simulate_reliable_lossy<F: FnMut(u32, u32) -> bool>(
     count: u32,
     mut loss: F,
 ) -> (Vec<u32>, u32) {
@@ -39,8 +40,9 @@ pub fn simulate_reliable_lossy<F: FnMut(u32, u32) -> bool>(
     (delivered, retx)
 }
 
+#[cfg(test)]
 /// SACK: ranges of received seq excluding holes; sender retransmits only missing.
-pub fn retransmit_missing_only(
+fn retransmit_missing_only(
     sent_max: u32,
     sack_ok: &[(u32, u32)],
     lost: &[u32],

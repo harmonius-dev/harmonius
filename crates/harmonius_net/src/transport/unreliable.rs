@@ -1,5 +1,7 @@
 //! Unreliable channel semantics (unordered and sequenced).
 
+use super::SequenceNumber;
+
 /// Unreliable unordered: no retransmissions; delivery count tracks received unique seqs.
 #[derive(Debug, Default)]
 pub struct UnreliableUnorderedChannel {
@@ -40,9 +42,9 @@ impl UnreliableUnorderedChannel {
 /// Unreliable sequenced: stale (older than latest) arrivals are dropped.
 #[derive(Debug, Default)]
 pub struct UnreliableSequencedRx {
-    latest: Option<u32>,
+    latest: Option<SequenceNumber>,
     pub(crate) drops: u32,
-    pub(crate) delivered: Vec<u32>,
+    pub(crate) delivered: Vec<SequenceNumber>,
 }
 
 impl UnreliableSequencedRx {
@@ -52,7 +54,7 @@ impl UnreliableSequencedRx {
     }
 
     /// Ingest one message with sequence `seq` (arrival order arbitrary).
-    pub fn receive(&mut self, seq: u32) {
+    pub fn receive(&mut self, seq: SequenceNumber) {
         match self.latest {
             None => {
                 self.latest = Some(seq);
@@ -62,7 +64,7 @@ impl UnreliableSequencedRx {
                 if seq == cur {
                     return;
                 }
-                if seq > cur {
+                if seq.is_newer_than(cur) {
                     self.latest = Some(seq);
                     self.delivered.push(seq);
                 } else {
@@ -104,10 +106,25 @@ mod tests {
     #[test]
     fn test_unreliable_sequenced_drop_old() {
         let mut rx = UnreliableSequencedRx::new();
-        rx.receive(1);
-        rx.receive(3);
-        rx.receive(2);
-        assert_eq!(rx.delivered, vec![1, 3]);
+        rx.receive(SequenceNumber(1));
+        rx.receive(SequenceNumber(3));
+        rx.receive(SequenceNumber(2));
+        assert_eq!(
+            rx.delivered,
+            vec![SequenceNumber(1), SequenceNumber(3)]
+        );
         assert_eq!(rx.drop_count(), 1);
+    }
+
+    /// Wrapping 16-bit order: 0 follows 65535.
+    #[test]
+    fn test_unreliable_sequenced_wrap() {
+        let mut rx = UnreliableSequencedRx::new();
+        rx.receive(SequenceNumber(65535));
+        rx.receive(SequenceNumber(0));
+        assert_eq!(
+            rx.delivered,
+            vec![SequenceNumber(65535), SequenceNumber(0)]
+        );
     }
 }

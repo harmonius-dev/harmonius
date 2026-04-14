@@ -48,16 +48,29 @@ pub fn cast_ability(msg: &CastAbility) -> Result<(), RpcError> {
     Ok(())
 }
 
-/// Coalesce to latest invocation id in one tick.
+/// Coalesce to the highest invocation id in one tick (not tail order).
 pub fn merge_reliable_latest(invocations: &[i32]) -> Option<i32> {
-    invocations.last().copied()
+    invocations.iter().max().copied()
 }
 
-/// Spatial multicast: clients within `radius` of `center` on a line.
+/// Spatial multicast on a line: `positions` are scalar offsets (y ignored).
 pub fn multicast_spatial(center: f32, radius: f32, positions: &[f32]) -> usize {
     positions
         .iter()
         .filter(|&&p| (p - center).abs() <= radius)
+        .count()
+}
+
+/// Planar disk multicast: each position is `(x, y)` in meters; counts peers inside the circle.
+pub fn multicast_spatial_disk(center: (f32, f32), radius: f32, positions: &[(f32, f32)]) -> usize {
+    let r2 = radius * radius;
+    positions
+        .iter()
+        .filter(|&&(x, y)| {
+            let dx = x - center.0;
+            let dy = y - center.1;
+            dx * dx + dy * dy <= r2
+        })
         .count()
 }
 
@@ -77,10 +90,8 @@ pub fn rpc_param_checks() -> [Result<(), RpcError>; 3] {
             ability_id: i32::MAX,
         }),
         {
-            let c = Chat {
-                text: "\0".repeat(1 << 20),
-            };
-            if c.text.len() > 4096 {
+            let text = "\0".repeat(4097);
+            if text.len() > 4096 {
                 Err(RpcError::Validation { reason: "chat_len" })
             } else {
                 Ok(())
@@ -137,6 +148,16 @@ mod tests {
     fn test_rpc_reliable_latest() {
         let v: Vec<i32> = (1..=10).collect();
         assert_eq!(merge_reliable_latest(&v), Some(10));
+        assert_eq!(merge_reliable_latest(&[5, 10, 3]), Some(10));
+    }
+
+    #[test]
+    fn test_multicast_disk_counts() {
+        let positions: Vec<(f32, f32)> = (0..30).map(|_| (10.0, 0.0)).collect();
+        let far: Vec<(f32, f32)> = (0..70).map(|_| (200.0, 0.0)).collect();
+        let mut all = positions;
+        all.extend(far);
+        assert_eq!(multicast_spatial_disk((10.0, 0.0), 50.0, &all), 30);
     }
 
     /// TC-8.3.5.1 — three validation errors.

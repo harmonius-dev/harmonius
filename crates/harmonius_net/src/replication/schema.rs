@@ -15,9 +15,12 @@ pub struct ServerPayload {
 
 /// Decode on client at negotiated `client_rev`.
 pub fn decode_with_optional_field(bytes: &[u8], client_rev: SchemaRev) -> (i32, Option<i32>) {
-    let base = i32::from_le_bytes(bytes[0..4].try_into().unwrap());
+    if bytes.len() < 4 {
+        return (0, None);
+    }
+    let base = i32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
     if client_rev.0 >= 1 && bytes.len() >= 8 {
-        let x = i32::from_le_bytes(bytes[4..8].try_into().unwrap());
+        let x = i32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]);
         (base, Some(x))
     } else {
         (base, None)

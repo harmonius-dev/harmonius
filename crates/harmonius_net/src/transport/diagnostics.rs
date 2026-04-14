@@ -14,7 +14,7 @@ pub struct Diagnostics {
 }
 
 impl Diagnostics {
-    /// Builds diagnostics from observed samples after many RTTs.
+    /// Builds diagnostics from observed RTT samples (loss/util are spread-derived heuristics).
     pub fn from_samples(rtt_samples_ms: &[f32]) -> Self {
         let n = rtt_samples_ms.len().max(1) as f32;
         let sum: f32 = rtt_samples_ms.iter().copied().sum();
@@ -24,11 +24,23 @@ impl Diagnostics {
             .map(|x| (x - mean).powi(2))
             .sum::<f32>()
             / n;
+        let jitter_ms = var.sqrt();
+        let (mn, mx) = rtt_samples_ms.iter().copied().fold(
+            (f32::MAX, f32::MIN),
+            |(a, b), x| (a.min(x), b.max(x)),
+        );
+        let spread = (mx - mn).max(0.0);
+        let loss_pct = if rtt_samples_ms.len() >= 2 {
+            ((spread / mean.max(1.0)) * 50.0).min(100.0)
+        } else {
+            0.0
+        };
+        let bandwidth_util = (mean / 200.0).min(1.0);
         Self {
             rtt_ms: mean,
-            jitter_ms: var.sqrt(),
-            loss_pct: 2.0,
-            bandwidth_util: 0.75,
+            jitter_ms,
+            loss_pct,
+            bandwidth_util,
         }
     }
 }
@@ -40,7 +52,8 @@ mod tests {
     /// TC-8.1.8.1 — RTT mean within ±10% of injected latency.
     #[test]
     fn test_diagnostics_rtt_estimate() {
-        let samples: Vec<f32> = (0..100).map(|_| 100.0).collect();
+        let mut samples: Vec<f32> = (0..50).map(|_| 100.0).collect();
+        samples.extend((0..50).map(|i| 100.0 + (i as f32) * 0.2));
         let d = Diagnostics::from_samples(&samples);
         assert!((90.0..=110.0).contains(&d.rtt_ms), "rtt={}", d.rtt_ms);
         assert!(d.jitter_ms >= 0.0);

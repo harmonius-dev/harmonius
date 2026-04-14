@@ -9,7 +9,9 @@ pub mod schema;
 
 pub use delta::{delta_encode_component20, Component20Fields};
 pub use dormancy::{DormancyTracker, EntityId};
-pub use interest::{filter_aoi_radius_m, EntityPos};
+pub use interest::{
+    filter_aoi_radius_m, filter_aoi_same_cell, EntityGridPos, EntityPos, GridCell,
+};
 pub use owner::owner_only_field;
 pub use priority::{schedule_replication, EntityRep, PriorityClass};
 pub use schema::{decode_with_optional_field, SchemaRev};
