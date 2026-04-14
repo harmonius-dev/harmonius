@@ -6,7 +6,7 @@ only deviations are called out below.
 ## Overview
 
 Raw input events cross the main thread to worker thread boundary via a bounded MPSC channel
-(capacity 256, see [shared-messaging-capacities.md](shared-messaging-capacities.md) row CH-1).
+(capacity 1024, see [shared-messaging-capacities.md](shared-messaging-capacities.md) row CH-1).
 Workers running in Phase 2 (PreUpdate) drain the channel into `PointerEvent` / `KeyboardEvent`
 streams and feed the `EventRouter` for hit testing plus the `FocusManager` for focus traversal. The
 UI framework consumes abstract `UiPointerEvent` entity events so input backends (mouse, touch,

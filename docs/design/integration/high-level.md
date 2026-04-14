@@ -295,7 +295,7 @@ flowchart LR
     MT -->|"MPSC input cap=1024"| WK
     MT -->|"MPSC net packets cap=4096"| WK
     WK -->|"Triple Buffer RenderFrame cap=3"| RT
-    WK -->|"MPSC audio cmd cap=2048"| AT
+    WK -->|"MPSC audio cmd cap=4096"| AT
     WK -->|"MPSC I/O req cap=1024"| MT
     WK -->|"MPSC save cap=64"| MT
 
@@ -316,13 +316,14 @@ coalesce on full per the rules below.
 | Input events (Main -> Workers) | MPSC | 1024 events | Drop oldest; log overflow |
 | Network packets (Main -> Workers) | MPSC | 4096 packets | Drop oldest; NAK at protocol layer |
 | Render frame (Workers -> Render) | Triple buffer | 3 slots | Overwrite middle slot |
-| Audio commands (Workers -> Audio RT) | MPSC | 2048 commands | Coalesce params; never block |
+| Audio commands (Workers -> Audio RT) | MPSC | 4096 commands | Coalesce params; never block |
 | I/O requests (Workers -> Main) | MPSC | 1024 requests | Back-pressure worker (park) |
 | Save writes (Workers -> Main) | MPSC | 64 jobs | Back-pressure worker (park) |
 
 Buffer lengths were chosen to cover one frame of peak burst traffic (input: ~200 events, packets:
-~500, audio: ~300 commands) with roughly 4x headroom. Capacities are const generics in the channel
-type and tunable per-title without recompiling the engine core.
+~500, audio: see `CH-3` rationale in
+[shared-messaging-capacities.md](shared-messaging-capacities.md)). Capacities are const generics in
+the channel type and tunable per-title without recompiling the engine core.
 
 ### Subsystem thread assignments
 
@@ -385,7 +386,7 @@ audio.
 sequenceDiagram
     participant GL as Game Loop (Worker)
     participant TB as Triple Buffer
-    participant AQ as Audio MPSC (cap=2048)
+    participant AQ as Audio MPSC (cap=4096)
     participant RT as Render Thread (pinned)
     participant AT as Audio RT Thread
 
