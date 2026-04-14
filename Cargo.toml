@@ -13,6 +13,7 @@ members = [
   "crates/harmonius-localization",
   "crates/harmonius_app",
   "crates/harmonius_asset_build",
+  "crates/harmonius_camera",
   "crates/harmonius_containers",
   "crates/harmonius_containers_slots_ui",
   "crates/harmonius_core",

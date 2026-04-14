@@ -1,0 +1,17 @@
+[package]
+authors = ["Harmonius Contributors"]
+description = "Deterministic virtual camera evaluation logic for the Harmonius game framework."
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "harmonius_camera"
+repository = "https://github.com/cjhowe-us/harmonius"
+version = "0.1.0"
+
+[dependencies]
+glam = "0.29"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
