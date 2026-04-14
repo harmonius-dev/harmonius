@@ -53,6 +53,7 @@ members = [
   "crates/harmonius_integration_rendering_scripting",
   "crates/harmonius_integration_rendering_vfx",
   "crates/harmonius_net",
+  "crates/harmonius_pcg",
   "crates/harmonius_physics",
   "crates/harmonius_platform",
   "crates/harmonius_primitives",
