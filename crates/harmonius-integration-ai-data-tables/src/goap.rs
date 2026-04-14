@@ -26,3 +26,18 @@ pub fn bake_goap_action_cost(formula: FormulaId, inputs: &[f32]) -> Result<f32, 
         _ => Err(BakeError::UnknownFormula(formula)),
     }
 }
+
+/// Bakes a [`GoapAction`] from a `FormulaId` column (content-pipeline hook, IR-2.1.3).
+pub fn bake_goap_action_from_formula(
+    formula: FormulaId,
+    inputs: &[f32],
+) -> Result<GoapAction, BakeError> {
+    Ok(GoapAction {
+        cost: bake_goap_action_cost(formula, inputs)?,
+    })
+}
+
+/// Runtime GOAP planning read of baked cost (IR-2.1.3 — no formula indirection).
+pub fn read_goap_planning_cost(action: &GoapAction) -> f32 {
+    action.cost
+}
