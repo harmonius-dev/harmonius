@@ -1,4 +1,8 @@
 //! Graph function tables and minimal execution context stubs.
+//!
+//! GOAP execution shares [`FnPtrTable`] with BT leaves; a dedicated
+//! `tick_goap_graph_action` helper can mirror [`crate::leaf::tick_bt_graph_leaf`]
+//! once the GOAP runtime types land in-repo.
 
 use crate::adapter::StepResult;
 
@@ -128,7 +132,10 @@ mod tests {
     /// TC-IR-2.4.4.3 — `GoapGraphAction` carries only `fn_idx`.
     #[test]
     fn tc_ir_2_4_4_3_goap_graph_action_only_fn_idx() {
-        assert_eq!(core::mem::size_of::<GoapGraphAction>(), core::mem::size_of::<u32>());
+        assert_eq!(
+            core::mem::size_of::<GoapGraphAction>(),
+            core::mem::size_of::<u32>()
+        );
         let a = GoapGraphAction { fn_idx: 2 };
         assert_eq!(a.fn_idx, 2);
     }
@@ -151,9 +158,7 @@ mod tests {
         let score: UtilityScoreFn =
             |s: &GraphInstanceState, _: &ExecutionContext<'_>| s.resume_variant as f32;
         let table = UtilityScoreTable::new(vec![score]);
-        let state = GraphInstanceState {
-            resume_variant: 3,
-        };
+        let state = GraphInstanceState { resume_variant: 3 };
         assert_eq!(
             utility_score(&table, 0, &state, &ExecutionContext::stub(), |_| {}),
             3.0

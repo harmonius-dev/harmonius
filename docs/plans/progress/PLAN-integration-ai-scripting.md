@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-ai-scripting
-last_updated: 2026-04-14T11:38:21Z
+last_updated: 2026-04-14T16:05:00Z
 plan_id: PLAN-integration-ai-scripting
 pr_number: 9
 pr_review_status: complete
@@ -69,3 +69,7 @@ Plan file: [ai-scripting.md](../integration/ai-scripting.md)
   `integration_ai_scripting` with TC-IR-2.4.ADPT.1, BB.*, 2.4.2.3, 2.4.4.3, NEG.4/5/7 unit tests).
 - 2026-04-14T11:38:21Z — pr-reviewer — inline review vs `docs/design/integration/ai-scripting.md`: 0
   findings; `rumdl fmt` + MD076/MD057 cleanups repo-wide; PR marked ready for human review.
+- 2026-04-14T14:44:01Z — pr-reviewer — follow-up: 2 minor module-doc fixes (adapter/bridge IR tags);
+  `cargo fmt` on touched tests; design conformance unchanged.
+- 2026-04-14T16:05:00Z — pr-reviewer — review-supervisor (sim): 8 findings, 0 blockers; addressed
+  via crate/bridge/leaf/runtime docs + BB.3 invariants; `cargo test`/`clippy`/`rumdl` clean; pushed.
