@@ -602,6 +602,101 @@ impl BvhIndex {
     }
 }
 
+#[cfg(test)]
+impl BvhIndex {
+    /// Validates tree shape: every leaf reachable once, parent bounds enclose children, parent
+    /// links match traversal (TC-1.9.1.1).
+    pub(crate) fn verify_structure_invariants(&self) -> Result<(), &'static str> {
+        if self.leaves.is_empty() {
+            if self.root != INVALID {
+                return Err("non-invalid root with zero leaves");
+            }
+            if !self.nodes.is_empty() {
+                return Err("nodes present with zero leaves");
+            }
+            if self.entity_count != 0 {
+                return Err("entity_count non-zero with zero leaves");
+            }
+            return Ok(());
+        }
+
+        if self.root == INVALID {
+            return Err("root invalid with non-empty leaves");
+        }
+        if self.entity_count as usize != self.leaves.len() {
+            return Err("entity_count does not match leaves length");
+        }
+        if self.root as usize >= self.nodes.len() {
+            return Err("root index out of bounds");
+        }
+
+        let mut seen_leaf = vec![false; self.leaves.len()];
+        let mut stack = vec![self.root];
+        while let Some(ni) = stack.pop() {
+            let node = self
+                .nodes
+                .get(ni as usize)
+                .ok_or("node index out of bounds")?;
+            let bounds = node.aabb();
+
+            if BvhNode::is_leaf(node.left) {
+                let li = BvhNode::leaf_index(node.left) as usize;
+                if li >= self.leaves.len() {
+                    return Err("leaf pointer out of bounds");
+                }
+                if seen_leaf[li] {
+                    return Err("leaf reachable more than once");
+                }
+                seen_leaf[li] = true;
+                let leaf = &self.leaves[li];
+                if leaf.node_index != ni {
+                    return Err("leaf node_index does not match BVH node");
+                }
+                if leaf.aabb != bounds {
+                    return Err("leaf AABB does not match node bounds");
+                }
+                continue;
+            }
+
+            let left = node.left;
+            let right = node.right;
+            if left == INVALID {
+                return Err("internal node missing left child");
+            }
+            if right == INVALID {
+                return Err("internal node missing right child");
+            }
+            if self.parents.get(left as usize).copied() != Some(ni) {
+                return Err("left child parent link mismatch");
+            }
+            if self.parents.get(right as usize).copied() != Some(ni) {
+                return Err("right child parent link mismatch");
+            }
+
+            let la = node_aabb(self, left);
+            let ra = node_aabb(self, right);
+            let merged = la.merged(&ra);
+            if !bounds.contains_aabb(&la) || !bounds.contains_aabb(&ra) {
+                return Err("internal node does not enclose child bounds");
+            }
+            if (bounds.min - merged.min).abs().max_element() > 1e-3
+                || (bounds.max - merged.max).abs().max_element() > 1e-3
+            {
+                return Err("internal node bounds differ from merged child bounds");
+            }
+
+            stack.push(right);
+            stack.push(left);
+        }
+
+        if seen_leaf.iter().any(|v| !*v) {
+            return Err("not all leaves reachable from root");
+        }
+
+        Ok(())
+    }
+}
+
 pub(crate) fn safe_inv(axis: f32) -> f32 {
     if axis.abs() < 1e-8 {
         1e8 * if axis >= 0.0 { 1.0 } else { -1.0 }
