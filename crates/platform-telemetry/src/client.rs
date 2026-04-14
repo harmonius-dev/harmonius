@@ -94,9 +94,7 @@ impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
         for file in list_spill_files(dir)? {
             let rows = read_disk_spill(&file)?;
             for row in rows {
-                memory
-                    .push(row)
-                    .map_err(|_| TelemetryError::Config("replay overflow"))?;
+                memory.push(row).map_err(|_| TelemetryError::Config("replay overflow"))?;
             }
         }
         Ok(())
@@ -117,6 +115,9 @@ impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
     }
 
     /// Record an event if consent allows the scope.
+    ///
+    /// When the in-memory ring is full, the event is dropped without error. Callers should drain,
+    /// upload, or spill to disk before sustained bursts exceed [`TelemetryConfig::memory_cap`].
     pub fn record<E: Event>(&mut self, event: &E) {
         if !self.state.consent_for(E::SCOPE) {
             return;
@@ -140,12 +141,13 @@ impl<U: Uploader, D: DeleteBackend> TelemetryClient<U, D> {
 
     /// Drain exactly `n` records and upload them, restoring the buffer on transport failure.
     pub fn send_batch_exact(&mut self, n: usize) -> Result<(), TelemetryError> {
-        let batch = self.memory.try_drain_exact(n).map_err(|e| {
-            TelemetryError::Config(match e {
+        let batch = self
+            .memory
+            .try_drain_exact(n)
+            .map_err(|e| TelemetryError::Config(match e {
                 BufferError::NotEnoughRecords => "not enough records for exact batch",
                 BufferError::Full => "unexpected full buffer while draining",
-            })
-        })?;
+            }))?;
         match self.uploader.send_batch(&batch) {
             Ok(()) => {
                 self.backoff.reset(100);
@@ -223,8 +225,8 @@ mod tests {
     use super::*;
     use crate::list_spill_files;
     use crate::schema::{EventSchema, SchemaCatalog};
-    use crate::types::SchemaId;
     use crate::uploader::MockUploader;
+    use crate::types::SchemaId;
     use tempfile::tempdir;
 
     struct EnginePing;
@@ -422,14 +424,10 @@ mod tests {
         client.set_consent(Scope::Engine, true);
         client.record(&EnginePing);
         client.flush_memory_to_disk(1).unwrap();
-        assert!(!list_spill_files(&client.config.buffer_dir)
-            .unwrap()
-            .is_empty());
+        assert!(!list_spill_files(&client.config.buffer_dir).unwrap().is_empty());
         client.delete().unwrap();
         assert_eq!(client.memory_len(), 0);
-        assert!(list_spill_files(&client.config.buffer_dir)
-            .unwrap()
-            .is_empty());
+        assert!(list_spill_files(&client.config.buffer_dir).unwrap().is_empty());
     }
 
     #[test]
