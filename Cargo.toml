@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+  "crates/content_services",
   "crates/harmonius-build-deploy",
   "crates/harmonius-integration-tests",
   "crates/harmonius_app",
