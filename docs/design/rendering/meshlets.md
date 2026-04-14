@@ -24,7 +24,8 @@
 2. **R-2.4.2** -- `Meshlet` holds at most 64 vertices and 124 triangles (mesh shader native)
 3. **R-2.4.3** -- `LodGroup` holds a cluster hierarchy with screen-space error per level
 4. **R-2.4.4** -- `MeshletBuilder` uses meshopt-style clustering and optimization
-5. **R-2.4.5** -- GPU layout: SoA vertex buffer + meshlet header buffer + index stream
+5. **R-2.4.5** -- GPU layout: SoA vertex buffer, meshlet headers, global `u32` indices, meshlet
+   vertex index + micro-index streams
 6. **R-2.4.6** -- BLAS is built from meshlets using the same vertex/index buffers
 7. **R-2.4.7** -- Collision shape integration via `Handle<MeshAsset>` on `Collider`
 8. **R-2.4.8** -- Per-meshlet cone apex/axis/angle for back-face cone culling
@@ -59,7 +60,8 @@ LOD, culling bounds, and the BLAS all flow from the one canonical `MeshletAsset`
 ### Design Principles
 
 1. **Meshlet-first** -- even a single triangle is stored as one meshlet
-2. **Zero runtime conversion** -- GPU buffers are mmap'd from the rkyv archive
+2. **Archive-ready layout** -- `BufferView` fields describe byte ranges inside the rkyv archive;
+   production loads mmap those slabs; the CPU builder uses owned `Vec<u8>` with offset `0`
 3. **Deterministic build** -- given identical input, the builder produces identical output
 4. **Uniform LOD** -- each LOD level is a complete independent meshlet set
 5. **BLAS parity** -- ray-traced geometry equals rasterized geometry
@@ -97,12 +99,17 @@ classDiagram
         +vertex_buffer: BufferView
         +index_buffer: BufferView
         +meshlet_buffer: BufferView
+        +meshlet_vertex_index_buffer: BufferView
+        +meshlet_triangle_buffer: BufferView
     }
     class LodGroup {
         +level: u8
         +screen_error: f32
+        +index_byte_start: u64
+        +index_byte_count: u64
         +meshlets: Vec~Meshlet~
-        +bounds: Sphere
+        +bounds_center: Vec3
+        +bounds_radius: f32
     }
     class Meshlet {
         +vertex_start: u32
@@ -112,7 +119,8 @@ classDiagram
         +cone_apex: Vec3
         +cone_axis: Vec3
         +cone_angle: f32
-        +bounds: Sphere
+        +bounds_center: Vec3
+        +bounds_radius: f32
     }
     class BufferView {
         +offset: u64
@@ -149,15 +157,22 @@ classDiagram
 
 ### GPU Buffer Layout
 
-| Buffer              | Stride    | Element                             |
-|---------------------|-----------|-------------------------------------|
-| Vertex buffer (SoA) | 32 bytes  | Position (12) + Normal (12) + UV (8) |
-| Index buffer        | 1 byte    | Meshlet-local index (u8)            |
-| Meshlet buffer      | 64 bytes  | `Meshlet` header (aligned, padded)  |
-| Global indirect     | 16 bytes  | Draw call parameters per meshlet    |
+| Buffer                   | Stride   | Element                                      |
+|--------------------------|----------|----------------------------------------------|
+| Vertex buffer (SoA)      | 32 bytes | Position (12) + Normal (12) + UV (8)         |
+| Global index buffer      | 4 bytes  | Triangle corners as LE `u32` (compact VB)    |
+| Meshlet vertex index buf | 4 bytes  | Per-meshlet global index list (meshopt list) |
+| Meshlet micro-index buf  | 1 byte   | Micro-triangle corners into meshlet list     |
+| Meshlet header buffer    | 64 bytes | `Meshlet` struct (GPU padded)                |
+| Global indirect          | 16 bytes | Draw parameters per meshlet                  |
 
-The meshlet buffer is a large SSBO that the mesh shader reads. The global indirect buffer drives
-`DispatchMeshIndirect`. Both are bindless, indexed by `MeshAssetId`.
+1. **Global indices** -- full mesh indices per LOD live in `index_data`; each [`LodGroup`] records
+   `index_byte_start` / `index_byte_count` into that stream.
+2. **Meshlet locals** -- `triangle_start` indexes the `u8` micro stream; corners index the meshlet
+   vertex list at `vertex_start` in `meshlet_vertex_index_data` (`u32` LE globals).
+
+The meshlet header buffer is a large SSBO that the mesh shader reads. The global indirect buffer
+drives `DispatchMeshIndirect`. Both are bindless, indexed by `MeshAssetId`.
 
 ---
 
@@ -176,15 +191,25 @@ pub struct MeshletAsset {
     pub vertex_buffer: BufferView,
     pub index_buffer: BufferView,
     pub meshlet_buffer: BufferView,
+    pub meshlet_vertex_index_buffer: BufferView,
+    pub meshlet_triangle_buffer: BufferView,
     pub source_hash: [u8; 32],
+    pub vertex_data: Vec<u8>,
+    pub index_data: Vec<u8>,
+    pub meshlet_data: Vec<u8>,
+    pub meshlet_vertex_index_data: Vec<u8>,
+    pub meshlet_triangle_data: Vec<u8>,
 }
 
 #[derive(rkyv::Archive, rkyv::Serialize)]
 pub struct LodGroup {
     pub level: u8,
     pub screen_error: f32,
+    pub index_byte_start: u64,
+    pub index_byte_count: u64,
     pub meshlets: Vec<Meshlet>,
-    pub bounds: Sphere,
+    pub bounds_center: [f32; 3],
+    pub bounds_radius: f32,
 }
 
 #[derive(rkyv::Archive, rkyv::Serialize, Clone, Copy)]
@@ -197,7 +222,8 @@ pub struct Meshlet {
     pub cone_apex: Vec3,
     pub cone_axis: Vec3,
     pub cone_angle: f32,
-    pub bounds: Sphere,
+    pub bounds_center: [f32; 3],
+    pub bounds_radius: f32,
 }
 
 #[derive(rkyv::Archive, rkyv::Serialize, Clone, Copy)]

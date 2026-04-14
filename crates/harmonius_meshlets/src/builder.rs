@@ -39,6 +39,21 @@ pub enum BuildError {
     BoundsDegenerate,
 }
 
+impl std::fmt::Display for BuildError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BuildError::InvalidTopology => write!(f, "invalid mesh topology for meshlet build"),
+            BuildError::SimplifyFailed { level, reason } => {
+                write!(f, "mesh simplification failed at LOD {level}: {reason}")
+            }
+            BuildError::VertexOverflow => write!(f, "meshlet vertex or triangle cap exceeded"),
+            BuildError::BoundsDegenerate => write!(f, "mesh bounds are degenerate"),
+        }
+    }
+}
+
+impl std::error::Error for BuildError {}
+
 /// Configures and runs the deterministic meshlet bake (`R-2.4.4`).
 #[derive(Debug, Clone)]
 pub struct MeshletBuilder {
@@ -153,7 +168,7 @@ impl MeshletBuilder {
         for level in 1..=self.simplify_lods {
             let parent = lod_indices_chain
                 .last()
-                .expect("lod chain starts with base indices");
+                .ok_or(BuildError::InvalidTopology)?;
             if parent.len() < 12 {
                 return Err(BuildError::SimplifyFailed {
                     level,
@@ -183,16 +198,25 @@ impl MeshletBuilder {
 
         let mut cumulative = vec![0.0f32];
         for e in &per_pass_error {
-            let next = cumulative.last().copied().expect("cumulative starts at 0") + e;
-            cumulative.push(next);
+            let base = cumulative.last().copied().unwrap_or(0.0);
+            cumulative.push(base + e);
         }
 
         let mut lod_groups: Vec<LodGroup> = Vec::new();
         let mut index_data: Vec<u8> = Vec::new();
+        let mut meshlet_vertex_index_data: Vec<u8> = Vec::new();
         let mut meshlet_triangle_data: Vec<u8> = Vec::new();
         let mut all_meshlets: Vec<Meshlet> = Vec::new();
 
         for (lod_idx, indices) in lod_indices_chain.iter().enumerate() {
+            let lod_index_byte_start = index_data.len() as u64;
+            for tri in indices.chunks_exact(3) {
+                for idx in tri {
+                    index_data.extend_from_slice(&idx.to_le_bytes());
+                }
+            }
+            let lod_index_byte_count = index_data.len() as u64 - lod_index_byte_start;
+
             let meshlets = clusterize::build_meshlets(
                 indices,
                 &adapter,
@@ -210,12 +234,6 @@ impl MeshletBuilder {
                 .get(lod_idx)
                 .ok_or(BuildError::BoundsDegenerate)?;
 
-            for tri in indices.chunks_exact(3) {
-                for idx in tri {
-                    index_data.extend_from_slice(&idx.to_le_bytes());
-                }
-            }
-
             let mut harmonius_meshlets: Vec<Meshlet> = Vec::new();
             for mi in 0..meshlets.len() {
                 let meshlet = meshlets.get(mi);
@@ -231,14 +249,13 @@ impl MeshletBuilder {
                 let tri_byte_start = meshlet_triangle_data.len() as u32;
                 meshlet_triangle_data.extend_from_slice(meshlet.triangles);
 
-                let min_v = *meshlet
-                    .vertices
-                    .iter()
-                    .min()
-                    .ok_or(BuildError::BoundsDegenerate)?;
+                let vertex_index_byte_start = meshlet_vertex_index_data.len() as u32;
+                for &gv in meshlet.vertices {
+                    meshlet_vertex_index_data.extend_from_slice(&gv.to_le_bytes());
+                }
 
                 harmonius_meshlets.push(Meshlet {
-                    vertex_start: min_v,
+                    vertex_start: vertex_index_byte_start,
                     vertex_count: ffi.vertex_count as u8,
                     pad_vertex: [0; 3],
                     triangle_start: tri_byte_start,
@@ -257,6 +274,8 @@ impl MeshletBuilder {
             lod_groups.push(LodGroup {
                 level: lod_idx as u8,
                 screen_error,
+                index_byte_start: lod_index_byte_start,
+                index_byte_count: lod_index_byte_count,
                 meshlets: harmonius_meshlets,
                 bounds_center: lg_center.to_array(),
                 bounds_radius: lg_radius,
@@ -287,6 +306,16 @@ impl MeshletBuilder {
             size: meshlet_data.len() as u64,
             stride: meshlet_stride as u32,
         };
+        let mvb = BufferView {
+            offset: 0,
+            size: meshlet_vertex_index_data.len() as u64,
+            stride: 4,
+        };
+        let mtb = BufferView {
+            offset: 0,
+            size: meshlet_triangle_data.len() as u64,
+            stride: 1,
+        };
 
         Ok(MeshletAsset {
             id: self.id,
@@ -297,10 +326,13 @@ impl MeshletBuilder {
             vertex_buffer: vb,
             index_buffer: ib,
             meshlet_buffer: mb,
+            meshlet_vertex_index_buffer: mvb,
+            meshlet_triangle_buffer: mtb,
             source_hash: hash_mesh(&self.input),
             vertex_data: vertex_bytes,
             index_data,
             meshlet_data,
+            meshlet_vertex_index_data,
             meshlet_triangle_data,
         })
     }
@@ -390,17 +422,17 @@ fn hash_mesh(mesh: &NormalizedMesh) -> [u8; 32] {
     h.update(b"HARMONIUS_MESHLET_ASSET_V1");
     for p in &mesh.positions {
         for c in p.to_array() {
-            h.update(c.to_ne_bytes());
+            h.update(c.to_le_bytes());
         }
     }
     for n in &mesh.normals {
         for c in n.to_array() {
-            h.update(c.to_ne_bytes());
+            h.update(c.to_le_bytes());
         }
     }
     for uv in &mesh.uvs {
         for c in uv.to_array() {
-            h.update(c.to_ne_bytes());
+            h.update(c.to_le_bytes());
         }
     }
     for i in &mesh.indices {

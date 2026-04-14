@@ -1,6 +1,7 @@
 //! Deterministic meshlet asset layout and CPU-side [`MeshletBuilder`].
 //!
-//! Implements the Harmonius `MeshletAsset` pipeline described in `docs/design/rendering/meshlets.md`.
+//! Implements the Harmonius `MeshletAsset` pipeline described in
+//! `docs/design/rendering/meshlets.md`.
 
 #![deny(clippy::all)]
 #![deny(missing_docs)]
