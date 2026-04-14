@@ -1,12 +1,12 @@
 ---
 branch: plan/tools-plugin-marketplace
-last_updated: 2026-04-14T11:00:00Z
+last_updated: 2026-04-14T17:55:24Z
 plan_id: PLAN-tools-plugin-marketplace
 pr_number: 89
-pr_review_status: not_started
+pr_review_status: complete
 pr_url: https://github.com/cjhowe-us/harmonius/pull/89
 started_at: 2026-04-14T10:45:00Z
-status: code_complete
+status: submitted
 worktree_path: /Users/cjhowe/Code/harmonius-worktrees/PLAN-tools-plugin-marketplace
 ---
 
@@ -30,8 +30,8 @@ Plan file: [plugin-marketplace.md](../tools/plugin-marketplace.md)
 - [x] `cargo clippy --workspace -- -D warnings` passes
 - [x] `rumdl check .` passes for touched docs
 - [ ] Evidence links logged in this file
-- [ ] Review findings addressed and checklist re-verified
-- [ ] PR marked ready for human review (`status: submitted`)
+- [x] Review findings addressed and checklist re-verified
+- [x] PR marked ready for human review (`status: submitted`)
 - [ ] Merge detected and progress archived by orchestrator
 - [x] Code complete marker set (unit slice; integration bench deferred)
 
@@ -51,6 +51,8 @@ Plan file: [plugin-marketplace.md](../tools/plugin-marketplace.md)
 
 ## Evidence registry
 
+- Review (2026-04-14): PM-001 and PM-002 (blockers) fixed in-tree; PM-010 (moderate) fixed.
+- Deferred for follow-up: PM-003 through PM-009, PM-011 through PM-016 (resolver/docs scope).
 - Test reports: add command output paths or CI URLs.
 - Benchmarks: add artifacts and expected vs observed thresholds.
 - Screenshots: add image paths with acceptance notes.
@@ -76,3 +78,5 @@ Plan file: [plugin-marketplace.md](../tools/plugin-marketplace.md)
 - 2026-04-14T10:55:00Z — plan-implementer — opened draft PR 89 for branch
   `plan/tools-plugin-marketplace`.
 - 2026-04-14T11:00:00Z — plan-implementer — code complete for unit slice; awaiting pr-reviewer.
+- 2026-04-14T17:55:24Z — pr-reviewer — submitted for human review; 3 findings addressed (PM-001
+  trust key binding, PM-002 install signature verification, PM-010 catalog cursor); PR undrafted.

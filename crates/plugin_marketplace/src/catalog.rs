@@ -1,6 +1,7 @@
 //! Catalog query encoding and in-memory pagination helpers.
 
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 /// Client-side catalog search and pagination parameters (JSON on the wire).
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -33,25 +34,41 @@ pub struct Page<T> {
     pub next_cursor: Option<String>,
 }
 
+/// Invalid catalog cursor or query state.
+#[derive(Clone, Debug, Eq, PartialEq, Error)]
+pub enum CatalogError {
+    /// Cursor string was present but not a valid `o:<usize>` token.
+    #[error("invalid pagination cursor")]
+    InvalidCursor,
+}
+
 /// Encode `offset` as an opaque cursor token (stable for tests).
 #[must_use]
 pub fn offset_cursor(offset: usize) -> String {
     format!("o:{offset}")
 }
 
-/// Decode cursor from [`offset_cursor`]; `None` means start.
-pub fn parse_offset_cursor(cursor: Option<&String>) -> usize {
-    let Some(c) = cursor else {
-        return 0;
-    };
-    c.strip_prefix("o:")
-        .and_then(|n| n.parse().ok())
-        .unwrap_or(0)
+/// Decode cursor from [`offset_cursor`]; `None` or empty means offset zero.
+pub fn parse_offset_cursor(cursor: Option<&str>) -> Result<usize, CatalogError> {
+    match cursor {
+        None | Some("") => Ok(0),
+        Some(c) => {
+            let rest = c.strip_prefix("o:").ok_or(CatalogError::InvalidCursor)?;
+            if rest.is_empty() {
+                return Err(CatalogError::InvalidCursor);
+            }
+            rest
+                .parse()
+                .map_err(|_| CatalogError::InvalidCursor)
+        }
+    }
 }
 
 /// Return the next page of `all` listings for a query (stable ordering: by id).
-#[must_use]
-pub fn paginate_catalog(all: &[Listing], query: &CatalogQuery) -> Page<Listing> {
+pub fn paginate_catalog(
+    all: &[Listing],
+    query: &CatalogQuery,
+) -> Result<Page<Listing>, CatalogError> {
     let mut filtered: Vec<Listing> = all
         .iter()
         .filter(|l| {
@@ -62,7 +79,7 @@ pub fn paginate_catalog(all: &[Listing], query: &CatalogQuery) -> Page<Listing> 
         .cloned()
         .collect();
     filtered.sort_by(|a, b| a.id.cmp(&b.id));
-    let offset = parse_offset_cursor(query.cursor.as_ref());
+    let offset = parse_offset_cursor(query.cursor.as_deref())?;
     let limit = query.limit.max(1) as usize;
     let total = filtered.len();
     let slice: Vec<Listing> = filtered.into_iter().skip(offset).take(limit).collect();
@@ -72,8 +89,8 @@ pub fn paginate_catalog(all: &[Listing], query: &CatalogQuery) -> Page<Listing> 
     } else {
         None
     };
-    Page {
+    Ok(Page {
         items: slice,
         next_cursor,
-    }
+    })
 }

@@ -1,7 +1,8 @@
 //! Local CAS layout, blob fetch coordination, and install / uninstall hooks.
 
-use crate::manifest::PluginManifest;
+use crate::manifest::{manifest_to_bytes, PluginManifest};
 use crate::resolve::ResolvedSet;
+use crate::trust::{Signature, TrustStore};
 use crate::types::{Blake3Hash, PluginId};
 use semver::Version;
 use std::fs;
@@ -20,6 +21,12 @@ pub enum InstallError {
     /// Codegen or middleman rebuild failed.
     #[error("codegen failed: {0}")]
     CodegenFailed(String),
+    /// Manifest trust or detached signature verification failed.
+    #[error("trust verification failed")]
+    Trust(#[from] crate::trust::TrustError),
+    /// No detached signature was supplied for a resolved plugin version.
+    #[error("missing detached signature for resolved plugin")]
+    MissingSignature,
 }
 
 /// Summary counters for an install pass.
@@ -60,11 +67,16 @@ impl<B: BlobSource, C: CodegenPort> InstallPipeline<B, C> {
         }
     }
 
-    /// Install all plugins in `set` using `manifests` keyed by `(id, version)`.
+    /// Install all plugins in `set` using `manifests` and matching detached `signatures`.
+    ///
+    /// Verifies each manifest's detached signature against `trust` using the canonical
+    /// serialized manifest bytes before staging blobs or writing CAS entries.
     pub fn install(
         &mut self,
         set: &ResolvedSet,
         manifests: &[(PluginId, Version, PluginManifest)],
+        trust: &TrustStore,
+        signatures: &[(PluginId, Version, Signature)],
     ) -> Result<InstallReport, InstallError> {
         let mut report = InstallReport::default();
         let mut staged: Vec<(PluginId, PluginManifest)> = Vec::new();
@@ -84,6 +96,14 @@ impl<B: BlobSource, C: CodegenPort> InstallPipeline<B, C> {
                 .ok_or_else(|| {
                     InstallError::CodegenFailed("missing manifest for resolved plugin".into())
                 })?;
+            let sig = signatures
+                .iter()
+                .find(|(i, v, _)| i == id && v == &ver)
+                .map(|(_, _, s)| s)
+                .ok_or(InstallError::MissingSignature)?;
+            let manifest_bytes = manifest_to_bytes(manifest)
+                .map_err(|e| InstallError::CodegenFailed(e.to_string()))?;
+            trust.verify_with_author(&manifest_bytes, &manifest.author, sig)?;
             self.stage_blobs_and_manifest(id, manifest, &mut report)?;
             staged.push((id.clone(), manifest.clone()));
         }
