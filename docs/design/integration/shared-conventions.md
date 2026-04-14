@@ -241,9 +241,9 @@ classDiagram
 ```
 
 1. **Automated check.** Run `python3 scripts/lint_integration_mermaid_sc11.py` from the repository
-   root. It rejects `...` or `/* ... */` elision on lines after `<<enumeration>>` or `<<enum>>`
-   inside each Mermaid `classDiagram` (all `docs/design/integration/*.md` except `*-test-cases.md`,
-   `PROMPT*.md`, and this normative file).
+   root. Pass `--self-test` to run embedded regression tests. It rejects `...` or `/* ... */`
+   elision on lines after `<<enumeration>>` or `<<enum>>` inside each Mermaid `classDiagram` (all
+   `docs/design/integration/*.md` except `*-test-cases.md`, `PROMPT*.md`, and this normative file).
 2. **Long enums**: split the class diagram into multiple diagrams rather than eliding variants.
 
 ## SC-12 -- Persistent Types Require rkyv Derives

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import sys
+import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -81,7 +82,7 @@ def violations_in_mermaid(
                             f"{file_rel}:{phys}: SC-11: `...` not allowed after "
                             f"<<enumeration>>/<<enum>> in classDiagram: {ln.strip()!r}"
                         )
-                    if re.search(r"/\*.*\.\.\..*\*/", ln):
+                    elif re.search(r"/\*[\s\S]*?\.\.\.[\s\S]*?\*/", ln):
                         out.append(
                             f"{file_rel}:{phys}: SC-11: `/* ... */` elision not allowed after "
                             f"<<enumeration>>/<<enum>> in classDiagram: {ln.strip()!r}"
@@ -126,5 +127,55 @@ def main() -> int:
     return 0
 
 
+class TestLintIntegrationMermaidSc11(unittest.TestCase):
+    """Regression tests for SC-11 Mermaid ``classDiagram`` enumeration elision."""
+
+    def test_clean_enumeration_class(self) -> None:
+        block = [
+            "classDiagram",
+            "    class E {",
+            "        <<enumeration>>",
+            "        A",
+            "        B",
+            "    }",
+        ]
+        self.assertEqual(violations_in_mermaid(block, "x.md", 1), [])
+
+    def test_rejects_ellipsis_after_enumeration(self) -> None:
+        block = [
+            "classDiagram",
+            "    class E {",
+            "        <<enumeration>>",
+            "        A",
+            "        ...",
+            "    }",
+        ]
+        v = violations_in_mermaid(block, "x.md", 1)
+        self.assertEqual(len(v), 1)
+        self.assertIn("SC-11", v[0])
+        self.assertIn("...", v[0])
+
+    def test_ignores_non_classdiagram_mermaid(self) -> None:
+        block = [
+            "sequenceDiagram",
+            "    A->>B: ...",
+        ]
+        self.assertEqual(violations_in_mermaid(block, "x.md", 1), [])
+
+    def test_accepts_enum_stereotype_alias(self) -> None:
+        block = [
+            "classDiagram",
+            "    class E {",
+            "        <<enum>>",
+            "        One",
+            "        Two",
+            "    }",
+        ]
+        self.assertEqual(violations_in_mermaid(block, "x.md", 1), [])
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    if len(sys.argv) > 1 and sys.argv[1] == "--self-test":
+        unittest.main(argv=[sys.argv[0], "-v"])
+    else:
+        raise SystemExit(main())
