@@ -1,7 +1,14 @@
 //! Audio–physics integration: collision impact, sliding friction, and trigger-zone commands.
 //!
 //! Implements the contracts in `docs/design/integration/audio-physics.md` as deterministic,
-//! queue-testable logic without ECS wiring.
+//! queue-testable logic without ECS wiring (phase-1 logic crate; ECS observers land upstream).
+//!
+//! The command queue uses a [`std::sync::Mutex`] so multiple producers can call [`send`](
+//! crate::BoundedAudioCommandQueue::send) concurrently; it preserves the design’s
+//! lowest-priority eviction policy. A future swap to `crossbeam_queue::ArrayQueue` can follow
+//! once overflow handling maps cleanly to a pure ring. Persistent asset tables match the design’s
+//! fixed-array layout; `rkyv` derives are expected when this crate shares the workspace’s baked
+//! asset handle types.
 
 #![deny(clippy::all)]
 #![deny(unsafe_code)]

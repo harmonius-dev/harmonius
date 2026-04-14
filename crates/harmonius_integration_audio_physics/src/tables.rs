@@ -16,6 +16,8 @@ pub struct ImpactSoundSet {
 
 impl ImpactSoundSet {
     /// Picks the first populated clip starting at `salt % 8` and scanning cyclically.
+    ///
+    /// Deterministic stand-in for the design’s `pick_random()` so tests and replays stay stable.
     pub fn pick_clip(self, salt: u32) -> Option<AssetHandle<AudioClip>> {
         let start = (salt as usize) % self.clips.len();
         for i in 0..self.clips.len() {

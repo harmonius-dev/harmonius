@@ -13,10 +13,19 @@ pub struct CooldownSlot {
     pub remaining_sec: f32,
 }
 
-/// Fixed-capacity cooldown list with FIFO eviction at 256 entries (integration design).
+impl CooldownSlot {
+    const EMPTY: Self = Self {
+        entity_a: Entity(0),
+        entity_b: Entity(0),
+        remaining_sec: 0.0,
+    };
+}
+
+/// Fixed 256-slot cooldown tracker with FIFO eviction (integration design).
 #[derive(Clone, Debug, PartialEq)]
 pub struct ImpactCooldownTracker {
-    slots: Vec<CooldownSlot>,
+    entries: [CooldownSlot; 256],
+    len: usize,
 }
 
 impl Default for ImpactCooldownTracker {
@@ -28,7 +37,10 @@ impl Default for ImpactCooldownTracker {
 impl ImpactCooldownTracker {
     /// Constructs an empty tracker.
     pub fn new() -> Self {
-        Self { slots: Vec::new() }
+        Self {
+            entries: [CooldownSlot::EMPTY; 256],
+            len: 0,
+        }
     }
 
     fn normalize_pair(a: Entity, b: Entity) -> (Entity, Entity) {
@@ -42,45 +54,56 @@ impl ImpactCooldownTracker {
     /// Returns `true` when the pair is actively cooling.
     pub fn is_cooling(&self, a: Entity, b: Entity) -> bool {
         let (ea, eb) = Self::normalize_pair(a, b);
-        self.slots.iter().any(|s| {
-            s.entity_a == ea && s.entity_b == eb && s.remaining_sec > 0.0
-        })
+        self.entries[..self.len]
+            .iter()
+            .any(|s| s.entity_a == ea && s.entity_b == eb && s.remaining_sec > 0.0)
     }
 
     /// Starts or refreshes cooldown for a pair, evicting FIFO when at capacity.
     pub fn start(&mut self, a: Entity, b: Entity, duration: f32) {
         let (ea, eb) = Self::normalize_pair(a, b);
-        for slot in &mut self.slots {
+        for i in 0..self.len {
+            let slot = &mut self.entries[i];
             if slot.entity_a == ea && slot.entity_b == eb {
                 slot.remaining_sec = duration;
                 return;
             }
         }
-        if self.slots.len() == 256 {
-            self.slots.remove(0);
+        if self.len == 256 {
+            for i in 1..256 {
+                self.entries[i - 1] = self.entries[i];
+            }
+            self.len = 255;
         }
-        self.slots.push(CooldownSlot {
+        self.entries[self.len] = CooldownSlot {
             entity_a: ea,
             entity_b: eb,
             remaining_sec: duration,
-        });
+        };
+        self.len += 1;
     }
 
-    /// Advances cooldown timers and drops expired slots.
+    /// Advances cooldown timers and compacts expired slots.
     pub fn tick(&mut self, dt: f32) {
-        for slot in &mut self.slots {
+        let mut w = 0usize;
+        for r in 0..self.len {
+            let mut slot = self.entries[r];
             slot.remaining_sec -= dt;
+            if slot.remaining_sec > 0.0 {
+                self.entries[w] = slot;
+                w += 1;
+            }
         }
-        self.slots.retain(|s| s.remaining_sec > 0.0);
+        self.len = w;
     }
 
     /// Returns the number of live cooldown slots (for diagnostics tests).
     pub fn len(&self) -> usize {
-        self.slots.len()
+        self.len
     }
 
     /// Returns `true` when no cooldown slots are active.
     pub fn is_empty(&self) -> bool {
-        self.slots.is_empty()
+        self.len == 0
     }
 }
