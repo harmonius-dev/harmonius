@@ -1,6 +1,6 @@
 ---
 branch: plan/integration-ai-spatial-awareness
-last_updated: 2026-04-14T11:34:59Z
+last_updated: 2026-04-14T17:55:00Z
 plan_id: PLAN-integration-ai-spatial-awareness
 pr_number: 13
 pr_review_status: complete
@@ -50,14 +50,16 @@ Plan file: [ai-spatial-awareness.md](../integration/ai-spatial-awareness.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius-integration-ai-sa` (21 integration tests) on branch
+- Test reports: `cargo test -p harmonius-integration-ai-sa` (23 integration tests) on branch
   `plan/integration-ai-spatial-awareness` in worktree
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-ai-spatial-awareness`.
 - Benchmarks: not run (benchmark cases deferred to perf CI per test-case doc).
 - Screenshots: deferred (no runtime scene in this repo slice).
 - Videos: deferred (no temporal gameplay harness in this repo slice).
-- Review notes: pr-reviewer — `rumdl check .` failed on `README.md` (MD057 broken link to
-  `docs/design/test-case-coverage-audit.md`); replaced with prose until the audit doc exists.
+- Review notes: pr-reviewer pass — prior README MD057 fix (commit `24bccc3`); follow-up commit
+  `73dbfdc` addresses review-supervisor F1–F8 (Lost BB export, RR budget cursor, memory-expiry test,
+  crate scope docs, `Cargo.toml` repo URL, test-case doc benchmarks/N.1, `highest_level` / FM-2
+  notes).
 
 ## Event log
 
@@ -72,3 +74,7 @@ Plan file: [ai-spatial-awareness.md](../integration/ai-spatial-awareness.md)
 - 2026-04-14T11:34:59Z — pr-reviewer — submitted for human review: 1 finding addressed (README
   dead-link rumdl MD057); `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`, and
   `rumdl check .` re-run clean on plan worktree; PR #13 marked ready.
+- 2026-04-14T17:55:00Z — pr-reviewer — code follow-up after review-supervisor: 8 findings (0
+  blocker, 1 substantive scope doc in `lib.rs`, 2 moderate, 5 minor) addressed in `73dbfdc`;
+  `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`, `rumdl check .` clean; PR #13
+  already ready for review on GitHub.
