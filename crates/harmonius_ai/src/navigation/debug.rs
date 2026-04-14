@@ -16,7 +16,6 @@ pub struct NavMeshDebugRecorder {
 impl NavMeshDebugRecorder {
     /// Adds polygon edges for `polygon_count` convex polygons (approximate edge count).
     pub fn record_polygons(&mut self, polygon_count: u32) {
-        let _ = shipping_overlay_enabled();
         self.polygon_edges = self
             .polygon_edges
             .saturating_add(polygon_count.saturating_mul(4));
@@ -48,6 +47,7 @@ pub struct NavMeshDebugBundle {
 /// Shipping builds use a zero-cost stub (TC-7.1.15.2 — no retained overlay state).
 #[cfg(not(debug_assertions))]
 #[inline]
+#[allow(dead_code)] // Public hook for editor/shipping wiring; exercised in unit tests.
 pub fn shipping_overlay_enabled() -> bool {
     false
 }
@@ -55,6 +55,7 @@ pub fn shipping_overlay_enabled() -> bool {
 /// Debug/editor builds may enable overlays.
 #[cfg(debug_assertions)]
 #[inline]
+#[allow(dead_code)] // Public hook for editor/shipping wiring; exercised in unit tests.
 pub fn shipping_overlay_enabled() -> bool {
     true
 }

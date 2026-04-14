@@ -1,11 +1,15 @@
-//! Funnel (string-pulling) style corridor simplification.
+//! Corridor simplification after polygon A* (TC-7.1.4).
+//!
+//! Collapses nearly straight runs using polygon centroids and turn angles. Portal-based
+//! string-pulling from the design doc is future work; this pass is deterministic and mesh-safe.
 
 use glam::Vec3;
 
 use super::tile_map::NavMeshTileMap;
 use super::types::{PolyRef, Waypoint};
 
-/// Funnel post-process for polygon corridors.
+/// Post-process for polygon corridors (centroid turn reduction).
+#[derive(Debug)]
 pub struct FunnelSmoother;
 
 impl FunnelSmoother {
@@ -31,6 +35,9 @@ impl FunnelSmoother {
             .filter_map(|p| poly_center(tile_map, *p))
             .collect();
         if centers.len() != corridor.len() {
+            let Some(last) = corridor.last().copied() else {
+                return Vec::new();
+            };
             return vec![
                 Waypoint {
                     position: start,
@@ -39,7 +46,7 @@ impl FunnelSmoother {
                 },
                 Waypoint {
                     position: goal,
-                    poly_ref: *corridor.last().expect("nonempty"),
+                    poly_ref: last,
                     link: None,
                 },
             ];

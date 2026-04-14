@@ -97,6 +97,12 @@ impl NavMeshGenerator {
         Self { config }
     }
 
+    /// World-space edge length of one streaming tile (meters).
+    #[must_use]
+    pub fn tile_size(&self) -> f32 {
+        self.config.tile_size
+    }
+
     /// Generates one tile for `coord` / `layer` from `geometry`.
     pub fn generate_tile(
         &self,
