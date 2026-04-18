@@ -91,70 +91,60 @@ starting any design or implementation work.
   test planning, test-driven implementation, verification, documentation, and release into distinct
   phases. Do not start implementation until the design is approved and finalized.
 
-## Harmonize plugin
+## Workflow and artifact plugins
 
-Always use the harmonize plugin's agents and skills for every part of the software
-development cycle: ideation, design, testing, implementation, review, or release. Do not
-perform these tasks manually — spawn the right background agent or load the right
-interactive sub-skill.
+Always use the `workflow` and `artifact` plugins (from the `cjhowe-us-marketplace`
+marketplace, repo [`cjhowe-us/marketplace`](https://github.com/cjhowe-us/marketplace))
+for every part of the software development cycle: ideation, design, testing,
+implementation, review, or release. Do not perform these tasks manually — dispatch an
+orchestrator or load an interactive skill.
 
-### Lifecycle
-
-| Phase | Orchestrator | Workers |
-|-------|--------------|---------|
-| 1 Specify | `specify-orchestrator` | `feature-author`, `requirement-author`, `user-story-author` |
-| 2 Design | `design-orchestrator` | `subsystem-designer`, `interface-designer`, `component-designer`, `integration-designer`, `design-reviewer`, `design-reviser` |
-| 3 Plan + TDD | `plan-orchestrator` | `plan-author`, `plan-implementer`, `pr-reviewer`, `test-writer`, `implementer`, `review-supervisor`, `correctness/standards/architecture-reviewer` |
-| 4 Release | `release-orchestrator` | `release-notes-author`, `changelog-updater`, `tagger` |
-
-The `harmonize` master agent supervises all four phases and dispatches phase orchestrators
-as background tasks.
-
-### Interactive sub-skills
-
-Load the appropriate sub-skill when you want to give feedback at a specific level:
-
-| Sub-skill | For |
-|-----------|-----|
-| `harmonize-specify` | Author or revise features, requirements, user stories |
-| `harmonize-design` | Author or revise subsystem / interface / component / integration designs |
-| `harmonize-plan` | Author or revise implementation plans |
-| `harmonize-implement` | Step through or observe a plan's TDD loop |
-| `harmonize-review` | Triage a draft PR's review findings interactively |
-| `harmonize-release` | Cut a release |
-
-Each sub-skill claims a coarse `(phase, subsystem)` lock so background workers stay away
-from what the user is working on.
+These plugins replace the retired `harmonize` plugin. The phase-specific orchestrators
+(`specify-orchestrator`, `design-orchestrator`, `plan-orchestrator`,
+`release-orchestrator`) are gone. In their place the `workflow` plugin ships a single
+generic `worker` agent that executes any named workflow, and four meta-workflows that
+cover the lifecycle via a uniform orchestration surface.
 
 ### Skills
 
 | Skill | Purpose |
 |-------|---------|
-| `harmonize` | Master entry point — default `/harmonize` continues work in topological order |
-| `harmonize-specify` | Interactive Phase 1 |
-| `harmonize-design` | Interactive Phase 2 |
-| `harmonize-plan` | Interactive Phase 3 plan authoring |
-| `harmonize-implement` | Interactive Phase 3 TDD step-through |
-| `harmonize-review` | Interactive Phase 3 PR review |
-| `harmonize-release` | Interactive Phase 4 |
-| `document-templates` | Templates for every artifact type |
+| `/workflow` | Dispatch the configured orchestrator (default `default`); run/status/resume/retry/skip/abort/release/tunnel/untunnel/limit sub-commands |
+| `/artifact` | Inspect, list, query any artifact by URI; scaffold new provider plugins |
 
-### Harmonize trigger
+### Meta-workflows
 
-When the user mentions "harmonize" in any form (e.g., "harmonize", "run harmonize",
-"harmonize status", "author a harmonize plan"), you MUST invoke the `/harmonize` skill via
-the Skill tool BEFORE doing anything else. The skill is the operational playbook for the
-full SDLC. Do not act on harmonize requests from memory — always load the skill first.
+The `workflow` plugin ships four meta-workflows under
+`skills/workflows/<name>/`:
 
-Similarly, when the user mentions a specific sub-skill name or a phase-scoped request,
-invoke the matching sub-skill directly (e.g., `/harmonize-design docs/design/...`).
+| Workflow | Purpose |
+|----------|---------|
+| `default` | Topological continuation of in-flight executions (the usual `/workflow` with no args) |
+| `author` | Author a new artifact (design, plan, requirement, user story, release notes) |
+| `review` | Review an artifact (design review, PR review, plan review) |
+| `update` | Revise an existing artifact in place |
 
-The `harmonize` skill (2.0.12+) treats a bare `/harmonize` like **`run`**: it dispatches the master
-agent to continue incomplete SDLC work in **topological order** (`docs/plans/index.md` for Phase 3).
-Use `/harmonize merge-detect` (or the backup path in the skill) for a lightweight merge check only.
-Refresh the installed copy after the marketplace updates:
+### Artifact providers and templates
 
-`claude plugin update harmonize@cjhowe-us-workflow`
+Artifacts are addressed by URI: `<scheme>|<backend>/<path>`. The `artifact-github`
+and `artifact-documents` plugins (optional) add GitHub PR/issue/release backends and
+markdown templates for eight artifact types (design, plan, review, release, test,
+requirement, user-story, triage).
+
+### Workflow trigger
+
+When the user mentions "workflow" (e.g., "run a workflow", "workflow status",
+"start the default workflow") or types `/workflow`, you MUST invoke the `/workflow`
+skill via the Skill tool BEFORE doing anything else. When the user references an
+artifact by URI or says "show/list/status/progress/lock", invoke `/artifact` instead.
+Do not act from memory — always load the skill first.
+
+Refresh installed copies after marketplace updates:
+
+```bash
+claude plugin update artifact@cjhowe-us-marketplace
+claude plugin update workflow@cjhowe-us-marketplace
+```
 
 ## Markdown linting
 
@@ -185,7 +175,8 @@ not manually rewrap prose — let rumdl handle it.
 | Tool | Version |
 |------|---------|
 | Rust | stable (1.80+) |
-| harmonize plugin | 2.0.12+ (`harmonize@cjhowe-us-workflow`) |
+| artifact plugin | 1.0.0+ (`artifact@cjhowe-us-marketplace`) |
+| workflow plugin | 1.0.0+ (`workflow@cjhowe-us-marketplace`) |
 | jq | latest |
 | rumdl | latest |
 | taplo | latest |
