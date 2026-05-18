@@ -1,25 +1,24 @@
 # User Stories — Agent Guide
 
-All rules from the root [CLAUDE.md](../../CLAUDE.md) apply here.
+All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
 
 ## Purpose
 
-User stories describing WHO wants WHAT and WHY from a specific
-persona's perspective. Stories are written BEFORE requirements.
+User stories describing WHO wants WHAT and WHY from a specific persona's perspective. Stories are
+written BEFORE requirements.
 
 ## Structure
 
 ```text
 docs/user-stories/
   README.md                 — user story index
-  CLAUDE.md                 — this file
+  AGENTS.md                 — this file
   personas.md               — persona definitions
   {domain}/
     {topic}.md              — user stories
 ```
 
-One file per domain topic in its domain subdirectory.
-`personas.md` stays at root level.
+One file per domain topic in its domain subdirectory. `personas.md` stays at root level.
 
 ## Rules
 

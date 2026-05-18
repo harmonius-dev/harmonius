@@ -1,25 +1,24 @@
 # Requirements — Agent Guide
 
-All rules from the root [CLAUDE.md](../../CLAUDE.md) apply here.
+All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
 
 ## Purpose
 
-Functional and non-functional requirements for all engine
-subsystems. Requirements define what the system SHALL do.
+Functional and non-functional requirements for all engine subsystems. Requirements define what the
+system SHALL do.
 
 ## Structure
 
 ```text
 docs/requirements/
   README.md                 — requirements index
-  CLAUDE.md                 — this file
+  AGENTS.md                 — this file
   cross-cutting.md          — cross-domain requirements
   {domain}/
     {topic}.md              — requirements
 ```
 
-One file per domain topic in its domain subdirectory.
-`cross-cutting.md` stays at root level.
+One file per domain topic in its domain subdirectory. `cross-cutting.md` stays at root level.
 
 ## Rules
 
@@ -42,8 +41,9 @@ One file per domain topic in its domain subdirectory.
 
 ```markdown
 N. **R-X.Y.Z** — The engine **SHALL** {requirement}.
-   - **Rationale:** {why}
-   - **Verification:** {how to test}
+
+- **Rationale:** {why}
+- **Verification:** {how to test}
 ```
 
 ## What MUST NOT Be Included

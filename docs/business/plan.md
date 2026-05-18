@@ -672,28 +672,29 @@ Candidate feature-group mappings:
 **[game-framework/character-customization](../features/game-framework/character-customization.md)**
 — [game-framework/character-customization](../features/game-framework/character-customization.md)
 11. **[game-framework/cinematics](../features/game-framework/cinematics.md)** —
-    [game-framework/cinematics](../features/game-framework/cinematics.md)
+
+   [game-framework/cinematics](../features/game-framework/cinematics.md)
 12. **[game-framework/scripting](../features/game-framework/scripting.md)** —
-    [game-framework/scripting](../features/game-framework/scripting.md)
+   [game-framework/scripting](../features/game-framework/scripting.md)
 13. **[game-framework/gameplay-databases](../features/game-framework/gameplay-databases.md)** —
-    [game-framework/gameplay-databases](../features/game-framework/gameplay-databases.md)
+   [game-framework/gameplay-databases](../features/game-framework/gameplay-databases.md)
 14. **[game-framework/block-voxel](../features/game-framework/block-voxel.md)** —
-    [game-framework/block-voxel](../features/game-framework/block-voxel.md)
+   [game-framework/block-voxel](../features/game-framework/block-voxel.md)
 15. **[tools/level-editor](../features/tools/level-editor.md)** —
-    [tools/level-editor](../features/tools/level-editor.md)
+   [tools/level-editor](../features/tools/level-editor.md)
 16. **[tools/asset-store](../features/tools/asset-store.md)** —
-    [tools/asset-store](../features/tools/asset-store.md)
+   [tools/asset-store](../features/tools/asset-store.md)
 17. **[tools/server-infrastructure](../features/tools/server-infrastructure.md)** —
-    [tools/server-infrastructure](../features/tools/server-infrastructure.md)
+   [tools/server-infrastructure](../features/tools/server-infrastructure.md)
 18. **[tools/ai-assistant](../features/tools/ai-assistant.md)** —
-    [tools/ai-assistant](../features/tools/ai-assistant.md)
+   [tools/ai-assistant](../features/tools/ai-assistant.md)
 19. **[tools/ai-governance](../features/tools/ai-governance.md)** —
-    [tools/ai-governance](../features/tools/ai-governance.md)
+   [tools/ai-governance](../features/tools/ai-governance.md)
 20. **[tools/shared-cache](../features/tools/shared-cache.md)** —
-    [tools/shared-cache](../features/tools/shared-cache.md)
+   [tools/shared-cache](../features/tools/shared-cache.md)
 21. **[ui/common-widgets](../features/ui/common-widgets.md)** —
-    [ui/common-widgets](../features/ui/common-widgets.md)
+   [ui/common-widgets](../features/ui/common-widgets.md)
 22. **[audio/dsp-and-effects](../features/audio/dsp-and-effects.md)** —
-    [audio/dsp-and-effects](../features/audio/dsp-and-effects.md)
+   [audio/dsp-and-effects](../features/audio/dsp-and-effects.md)
 23. **[audio/music-system](../features/audio/music-system.md)** —
-    [audio/music-system](../features/audio/music-system.md)
+   [audio/music-system](../features/audio/music-system.md)

@@ -1,18 +1,17 @@
 # Features — Agent Guide
 
-All rules from the root [CLAUDE.md](../../CLAUDE.md) apply here.
+All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
 
 ## Purpose
 
-Feature definitions for all engine subsystems. Features define
-WHAT the engine provides.
+Feature definitions for all engine subsystems. Features define WHAT the engine provides.
 
 ## Structure
 
 ```text
 docs/features/
   README.md                 — feature index
-  CLAUDE.md                 — this file
+  AGENTS.md                 — this file
   {domain}/
     {topic}.md              — feature definitions
 ```

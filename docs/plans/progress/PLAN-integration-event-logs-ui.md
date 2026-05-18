@@ -64,9 +64,8 @@ Plan file: [event-logs-ui.md](../integration/event-logs-ui.md)
 - 2026-04-14T18:04:16Z — plan-implementer — started: worktree adopted at
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-event-logs-ui`; merged
   `plan/simulation-event-logs` baseline; draft PR
-  https://github.com/cjhowe-us/harmonius/pull/112; added `harmonius_event_logs_ui` with
+  <https://github.com/cjhowe-us/harmonius/pull/112>; added `harmonius_event_logs_ui` with
   TC-IR-2.10.* tests (29); `cargo test`/`cargo clippy --workspace -D warnings` pass in
   worktree; `rumdl check .` not clean on merged docs tree (pre-existing progress MD
   issues); status `code_complete`, awaiting pr-reviewer.
-
 - Append ISO-8601 UTC entries with actor, action, and outcome.

@@ -61,6 +61,6 @@ Plan file: [audio-physics.md](../integration/audio-physics.md)
 - 2026-04-14T05:19:00Z — plan-implementer — added `harmonius_integration_audio_physics` crate with
   bridge + queue + tests mapped to TC-IR-1.8.*.
 - 2026-04-14T05:25:00Z — plan-implementer — draft PR
-  https://github.com/cjhowe-us/harmonius/pull/43 opened; `code_complete`, awaiting `pr-reviewer`.
+  <https://github.com/cjhowe-us/harmonius/pull/43> opened; `code_complete`, awaiting `pr-reviewer`.
 - 2026-04-14T12:00:00Z — plan-implementer — verified `cargo test` / `clippy` / `rumdl` in worktree;
   fixed README broken link (MD057); pushed branch; synced progress on primary checkout.

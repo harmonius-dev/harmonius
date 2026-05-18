@@ -56,7 +56,9 @@ Plan file: [attributes-effects-animation.md](../integration/attributes-effects-a
 - Review notes: add previously unmapped issues, waivers, and rationale.
 
 ## Event log
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
+
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
 
 - 2026-04-13T12:00:00Z — started, worktree created; draft PR via `gh pr create` failed (GraphQL:
   insufficient `CreatePullRequest` permission). Branch pushed:

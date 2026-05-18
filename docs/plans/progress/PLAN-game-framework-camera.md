@@ -60,7 +60,8 @@ Plan file: [camera.md](../game-framework/camera.md)
 
 ## Event log
 
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
 - 2026-04-14T05:10:00Z — plan-implementer — started, worktree + draft PR created.
 - 2026-04-14T05:22:34Z — plan-implementer — code complete, awaiting review
   (`harmonius_camera`, PR 52).

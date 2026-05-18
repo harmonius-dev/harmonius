@@ -53,8 +53,8 @@ designing systems in the associated language.
 ## Philosophy
 
 The engine's design philosophy — composition over inheritance, generic primitives, platform-native
-harmony — is in the [README.md](README.md#philosophy) Philosophy section. Read it to understand
-the "why" behind every design decision.
+harmony — is in the [README.md](README.md#philosophy) Philosophy section. Read it to understand the
+"why" behind every design decision.
 
 ## Architecture
 
@@ -93,17 +93,16 @@ starting any design or implementation work.
 
 ## Workflow and artifact plugins
 
-Always use the `workflow` and `artifact` plugins (from the `cjhowe-us-marketplace`
-marketplace, repo [`cjhowe-us/marketplace`](https://github.com/cjhowe-us/marketplace))
-for every part of the software development cycle: ideation, design, testing,
-implementation, review, or release. Do not perform these tasks manually — dispatch an
-orchestrator or load an interactive skill.
+Always use the `workflow` and `artifact` plugins (from the `cjhowe-us-marketplace` marketplace, repo
+[`cjhowe-us/marketplace`](https://github.com/cjhowe-us/marketplace)) for every part of the software
+development cycle: ideation, design, testing, implementation, review, or release. Do not perform
+these tasks manually — dispatch an orchestrator or load an interactive skill.
 
 These plugins replace the retired `harmonize` plugin. The phase-specific orchestrators
-(`specify-orchestrator`, `design-orchestrator`, `plan-orchestrator`,
-`release-orchestrator`) are gone. In their place the `workflow` plugin ships a single
-generic `worker` agent that executes any named workflow, and four meta-workflows that
-cover the lifecycle via a uniform orchestration surface.
+(`specify-orchestrator`, `design-orchestrator`, `plan-orchestrator`, `release-orchestrator`) are
+gone. In their place the `workflow` plugin ships a single generic `worker` agent that executes any
+named workflow, and four meta-workflows that cover the lifecycle via a uniform orchestration
+surface.
 
 ### Skills
 
@@ -114,8 +113,7 @@ cover the lifecycle via a uniform orchestration surface.
 
 ### Meta-workflows
 
-The `workflow` plugin ships four meta-workflows under
-`skills/workflows/<name>/`:
+The `workflow` plugin ships four meta-workflows under `skills/workflows/<name>/`:
 
 | Workflow | Purpose |
 |----------|---------|
@@ -126,18 +124,17 @@ The `workflow` plugin ships four meta-workflows under
 
 ### Artifact providers and templates
 
-Artifacts are addressed by URI: `<scheme>|<backend>/<path>`. The `artifact-github`
-and `artifact-documents` plugins (optional) add GitHub PR/issue/release backends and
-markdown templates for eight artifact types (design, plan, review, release, test,
-requirement, user-story, triage).
+Artifacts are addressed by URI: `<scheme>|<backend>/<path>`. The `artifact-github` and
+`artifact-documents` plugins (optional) add GitHub PR/issue/release backends and markdown templates
+for eight artifact types (design, plan, review, release, test, requirement, user-story, triage).
 
 ### Workflow trigger
 
-When the user mentions "workflow" (e.g., "run a workflow", "workflow status",
-"start the default workflow") or types `/workflow`, you MUST invoke the `/workflow`
-skill via the Skill tool BEFORE doing anything else. When the user references an
-artifact by URI or says "show/list/status/progress/lock", invoke `/artifact` instead.
-Do not act from memory — always load the skill first.
+When the user mentions "workflow" (e.g., "run a workflow", "workflow status", "start the default
+workflow") or types `/workflow`, you MUST invoke the `/workflow` skill via the Skill tool BEFORE
+doing anything else. When the user references an artifact by URI or says
+"show/list/status/progress/lock", invoke `/artifact` instead. Do not act from memory — always load
+the skill first.
 
 Refresh installed copies after marketplace updates:
 

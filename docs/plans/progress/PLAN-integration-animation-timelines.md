@@ -56,8 +56,9 @@ Plan file: [animation-timelines.md](../integration/animation-timelines.md)
 - Review notes: add previously unmapped issues, waivers, and rationale.
 
 ## Event log
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
 
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
 - Append ISO-8601 UTC entries with actor, action, and outcome.
 - 2026-04-14T01:58:23Z — plan-implementer — started; worktree at
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-integration-animation-timelines`; `gh pr create`

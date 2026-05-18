@@ -50,14 +50,19 @@ Plan file: [meshlets.md](../rendering/meshlets.md)
 
 ## Evidence registry
 
-- Test reports: `cargo test -p harmonius_meshlets` in worktree (17 passed, 6 ignored integration stubs).
+- Test reports: `cargo test -p harmonius_meshlets` in worktree (17 passed, 6 ignored integration
+  stubs).
 - Benchmarks: not run (benchmark TCs deferred).
 - Screenshots: deferred (manual validation checklist).
 - Videos: deferred.
-- Review notes: integration TC-2.4.5.3 / 2.4.6.x / 2.4.7.x ignored until GPU / BLAS / ECS harness exists.
+- Review notes: integration TC-2.4.5.3 / 2.4.6.x / 2.4.7.x ignored until GPU / BLAS / ECS harness
+  exists.
 
 ## Event log
 
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
-- 2026-04-14T05:35:34Z — plan-implementer — started: worktree `PLAN-rendering-meshlets`, draft PR https://github.com/cjhowe-us/harmonius/pull/91
-- 2026-04-14T05:35:34Z — plan-implementer — code complete: `harmonius_meshlets` crate landed with unit TC coverage; GPU/physics integration tests remain `#[ignore]` pending harness.
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
+- 2026-04-14T05:35:34Z — plan-implementer — started: worktree `PLAN-rendering-meshlets`, draft PR
+  <https://github.com/cjhowe-us/harmonius/pull/91>
+- 2026-04-14T05:35:34Z — plan-implementer — code complete: `harmonius_meshlets` crate landed with
+  unit TC coverage; GPU/physics integration tests remain `#[ignore]` pending harness.

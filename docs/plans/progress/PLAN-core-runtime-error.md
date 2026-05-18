@@ -51,10 +51,11 @@ Plan file: [error.md](../core-runtime/error.md)
 
 ## Evidence registry
 
-- **Tests:** `cargo test -p core_runtime`, `cargo test -p core_runtime --release` (worktree); 17 unit
-  tests + 1 integration test binary (`tc_1_12_5_2_diagnostic_allocation.rs`)
+- **Tests:** `cargo test -p core_runtime`, `cargo test -p core_runtime --release` (worktree); 17
+  unit tests + 1 integration test binary (`tc_1_12_5_2_diagnostic_allocation.rs`)
 - **Lint:** `cargo clippy --workspace -- -D warnings` (worktree)
-- **Benchmarks:** TC-1.12.1.12 uses debug/release scaled wall-clock guard in unit test (not Criterion)
+- **Benchmarks:** TC-1.12.1.12 uses debug/release scaled wall-clock guard in unit test (not
+  Criterion)
 - **Branch:** `plan/core-runtime-error` pushed to `origin`
 - **PR:** <https://github.com/cjhowe-us/harmonius/pull/4> (draft)
 

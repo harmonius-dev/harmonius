@@ -2505,7 +2505,8 @@ A locomotion state in the state machine can use `PoseSource::MotionMatching` ins
 blend space. The state machine handles transitions TO/FROM motion matching states using
 inertialization (RF-5).
 
-Reference: [Clavet, "Motion Matching" (GDC 2016)](https://www.gdcvault.com/play/1023280/Motion-Matching-and-The-Road)
+Reference:
+[Clavet, "Motion Matching" (GDC 2016)](https://www.gdcvault.com/play/1023280/Motion-Matching-and-The-Road)
 
 ### RF-4: Clarify Reflect as codegen
 
@@ -2529,7 +2530,8 @@ Inertialization blends from a stored pose offset toward zero over the transition
 target pose is evaluated — the source is not sampled after the transition starts. Produces smoother
 transitions than crossfade for motion matching and avoids the cost of evaluating two poses.
 
-Reference: [Bonavita, "Inertialization" (GDC 2018)](https://www.gdcvault.com/play/1025165/Inertialization-High-Performance-Animation-Transitions)
+Reference:
+[Bonavita, "Inertialization" (GDC 2018)](https://www.gdcvault.com/play/1025165/Inertialization-High-Performance-Animation-Transitions)
 
 ### RF-6: Add Multiply to LayerBlendMode
 

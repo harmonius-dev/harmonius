@@ -59,5 +59,5 @@ Plan file: [render-pipeline.md](../rendering/render-pipeline.md)
 ## Event log
 
 - 2026-04-14T05:31:12Z — plan-implementer — started, worktree + draft PR created (PR 85).
-- 2026-04-14T05:31:12Z — plan-implementer — code complete, awaiting review (`harmonius_gpu` 18 tests,
-  `harmonius_rg` 17 lib tests + 1 trybuild).
+- 2026-04-14T05:31:12Z — plan-implementer — code complete, awaiting review (`harmonius_gpu` 18
+  tests, `harmonius_rg` 17 lib tests + 1 trybuild).

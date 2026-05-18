@@ -5,7 +5,7 @@ cross-cutting backlog plans driven by [design-review.md](../design/design-review
 [constraints.md](../design/constraints.md), and
 [performance-budget.md](../design/performance-budget.md).
 
-Excluded from one-to-one mapping (no code plan): [CLAUDE.md](../design/CLAUDE.md) (authoring guide),
+Excluded from one-to-one mapping (no code plan): [AGENTS.md](../design/AGENTS.md) (authoring guide),
 [game-framework/test-link.md](../design/game-framework/test-link.md),
 [integration/PROMPT.md](../design/integration/PROMPT.md) (integration prompt template).
 

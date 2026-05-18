@@ -63,6 +63,6 @@ Plan file: [rendering-physics.md](../integration/rendering-physics.md)
 - 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer
   dispatched (orchestrator pass; no PR merge).
 - 2026-04-14T18:00:00Z — plan-implementer — started; adopted existing worktree; draft PR
-  https://github.com/cjhowe-us/harmonius/pull/106 opened.
+  <https://github.com/cjhowe-us/harmonius/pull/106> opened.
 - 2026-04-14T18:00:00Z — plan-implementer — code complete, awaiting pr-reviewer (32 unit
   tests; no integration benchmarks in this slice).

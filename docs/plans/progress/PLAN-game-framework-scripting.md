@@ -56,7 +56,9 @@ Plan file: [scripting.md](../game-framework/scripting.md)
 - Review notes: add previously unmapped issues, waivers, and rationale.
 
 ## Event log
-- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched (orchestrator pass; no PR merge).
+
+- 2026-04-14T02:02:00Z — plan-orchestrator — dispatch-only: background plan-implementer dispatched
+  (orchestrator pass; no PR merge).
 
 - `2026-04-14T01:58:50Z` — plan-implementer: worktree created at
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-game-framework-scripting`; `gh pr create` failed

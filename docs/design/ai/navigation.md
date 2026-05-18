@@ -1934,7 +1934,8 @@ Voxelization pipeline in pure Rust:
 
 Each step is well-documented in the Recast source and in:
 
-Reference: [Mikko Mononen, "Recast & Detour" (2009)](http://digestingduck.blogspot.com/2009/08/recast-documentation-and-changes.html)
+Reference:
+[Mikko Mononen, "Recast & Detour" (2009)](http://digestingduck.blogspot.com/2009/08/recast-documentation-and-changes.html)
 
 The algorithms are not complex — Recast's value is in the implementation, not patented algorithms. A
 Rust implementation benefits from: no FFI overhead, native rkyv serialization, job system

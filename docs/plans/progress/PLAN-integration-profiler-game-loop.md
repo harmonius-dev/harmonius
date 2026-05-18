@@ -65,5 +65,5 @@ Plan file: [profiler-game-loop.md](../integration/profiler-game-loop.md)
   (orchestrator pass; no PR merge).
 - 2026-04-14T05:24:10Z — plan-implementer — started, worktree + draft PR created.
 - 2026-04-14T05:24:10Z — plan-implementer — code complete, awaiting review.
-- 2026-04-14T14:44:24Z — plan-implementer — README MD057 fix pushed; rumdl check clean; main progress
-  synced.
+- 2026-04-14T14:44:24Z — plan-implementer — README MD057 fix pushed; rumdl check clean; main
+  progress synced.

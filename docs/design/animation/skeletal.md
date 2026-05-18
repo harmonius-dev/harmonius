@@ -2159,7 +2159,8 @@ FABRIK iterates: reach toward target (forward pass), then pull back to root (bac
 Converges in 5-10 iterations for most chains. Supports joint constraints (angle limits per bone) to
 prevent unnatural bending.
 
-Reference: [Aristidou & Lasenby, "FABRIK" (2011)](https://www.sciencedirect.com/science/article/pii/S1524070311000178)
+Reference:
+[Aristidou & Lasenby, "FABRIK" (2011)](https://www.sciencedirect.com/science/article/pii/S1524070311000178)
 
 ### RF-23: Hip bone to physics collider alignment
 

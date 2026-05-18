@@ -64,5 +64,4 @@ Plan file: [audio-spatial-awareness.md](../integration/audio-spatial-awareness.m
   (orchestrator pass; no PR merge).
 - 2026-04-14T14:44:24Z — plan-implementer — reconciled: worktree and draft PR #7 already present;
   verified `cargo test` / `cargo clippy`; progress set to `code_complete`, awaiting review.
-
 - Append ISO-8601 UTC entries with actor, action, and outcome.

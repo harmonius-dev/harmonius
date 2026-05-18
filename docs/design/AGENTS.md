@@ -1,6 +1,6 @@
 # Design Documents — Agent Guide
 
-All rules from the root [CLAUDE.md](../../CLAUDE.md) apply here.
+All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
 
 ## Purpose
 

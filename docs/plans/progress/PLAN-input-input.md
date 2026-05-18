@@ -66,5 +66,5 @@ Plan file: [input.md](../input/input.md)
 - 2026-04-14T12:00:00Z — plan-implementer — adopted worktree
   `/Users/cjhowe/Code/harmonius-worktrees/PLAN-input-input` (PR 87).
 - 2026-04-14T12:00:00Z — plan-implementer — verified `cargo test --workspace` and clippy.
-- 2026-04-14T12:00:00Z — plan-implementer — progress set to `code_complete` (implementation in branch;
-  awaiting `pr-reviewer`).
+- 2026-04-14T12:00:00Z — plan-implementer — progress set to `code_complete` (implementation in
+  branch; awaiting `pr-reviewer`).
