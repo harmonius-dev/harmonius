@@ -1343,7 +1343,7 @@ impl UndoHistory {
 | Feature | Windows | macOS | Linux | iOS | Android |
 |---------|---------|-------|-------|-----|---------|
 | Heightmap I/O | IOCP via windows-rs | GCD dispatch_io via dispatch2 | io_uring via rustix | GCD dispatch_io | io_uring via rustix |
-| GPU erosion | D3D12 compute | Metal compute | Vulkan compute | Metal compute | Vulkan compute |
+| GPU erosion | Vulkan compute | Vulkan compute | Vulkan compute | Vulkan compute | Vulkan compute |
 | Stack capture | `CaptureStackBackTrace` | `backtrace` | `backtrace` | `backtrace` | `backtrace` |
 | Multi-user transport | MsQuic via windows-rs | Networking.framework via objc2 | quinn-proto | Networking.framework | quinn-proto |
 | Spatial index | Shared BVH | Shared BVH | Shared BVH | Shared BVH | Shared BVH |
@@ -2362,10 +2362,10 @@ probe placement, Poisson-disk foliage distribution, world partitioning (quadtree
 
 | Platform | I/O | Compute | Transport |
 |----------|-----|---------|-----------|
-| Windows | IOCP | D3D12 compute | MsQuic |
-| macOS | GCD dispatch_io | Metal compute | Networking.framework |
+| Windows | IOCP | Vulkan compute | MsQuic |
+| macOS | GCD dispatch_io | Vulkan compute | Networking.framework |
 | Linux | io_uring | Vulkan compute | quinn-proto |
-| iOS | GCD dispatch_io | Metal compute | Networking.framework |
+| iOS | GCD dispatch_io | Vulkan compute | Networking.framework |
 | Android | io_uring | Vulkan compute | quinn-proto |
 | Consoles | Platform SDK | Platform SDK | Platform SDK |
 

@@ -60,7 +60,7 @@
    Material authors choose between tessellation and POM per material based on target platform
    budget.
    - **Deps:** F-2.3.1 (Lighting Pipeline), F-2.10.5 (Material Parameter Binding)
-   - **Platform:** Hardware tessellation requires D3D12/Vulkan/Metal tessellation pipeline stages.
+   - **Platform:** Hardware tessellation requires Vulkan tessellation pipeline stages.
      POM fallback works on all platforms.
 
 ## Material Types
@@ -136,11 +136,11 @@
    metallic, emissive, opacity, world position offset, custom data channels). Custom materials can
    implement any shading model — procedural wood grain, animated lava, holographic displays, energy
    shields, magic effects, terrain blend materials — without engine source modification. Material
-   functions (reusable sub-graphs) compose into complex materials. The graph compiles to HLSL, which
-   DXC compiles to DXIL and SPIR-V, and Metal Shader Converter translates DXIL to MSL (F-12.2.9).
+   functions (reusable sub-graphs) compose into complex materials. The graph compiles to GLSL, which
+   glslc compiles to SPIR-V, and glslc compiles GLSL to SPIR-V
    This provides Unreal Engine Material Editor-level flexibility within the no-code visual authoring
    workflow. F-2.10.5 (Material Parameter Binding)
    - **Deps:** F-15.8.5 (Shader and Material Graphs), F-12.2.9 (Shader Compilation Pipeline),
    - **Platform:** Mobile: graph complexity capped (max 64 nodes, 4 texture reads); compiled to
-     SPIR-V (Vulkan) or MSL (Metal) with aggressive half-precision. Switch: max 128 nodes, 8 texture
-     reads. Desktop/High-end: no node or texture limits; full-precision evaluation.
+     SPIR-V (Vulkan) or SPIR-V (Vulkan) with aggressive half-precision. Switch: max 128 nodes, 8
+     texture reads. Desktop/High-end: no node or texture limits; full-precision evaluation.

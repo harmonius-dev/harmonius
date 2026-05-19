@@ -197,7 +197,7 @@
    AI provenance metadata (F-15.7.1). Resolution options from 256x256 to 4096x4096. Batch generation
    for texture variations. All generation runs through the local AI inference system (F-15.17.27).
    - **Deps:** F-15.3.1, F-15.7.1, F-15.17.27
-   - **Platform:** GPU-accelerated; requires Metal, Vulkan, or D3D12 compute.
+   - **Platform:** GPU-accelerated; requires Vulkan, or Vulkan compute.
 2. **F-15.17.20** — Generate 3D meshes from text prompts or reference images. Output includes clean
    quad-dominant topology, automatic UV unwrapping, and auto-generated LOD chain. Meshes are
    import-ready with collision geometry. Poly count is controllable via a target budget parameter.
@@ -245,12 +245,12 @@
    (F-15.7.6).
    - **Deps:** F-15.1.3, F-15.7.1, F-15.7.6, F-15.17.27
 9. **F-15.17.27** — Run AI models locally without cloud connectivity. GPU-accelerated inference
-   using Metal (macOS), Vulkan (Linux), or D3D12 (Windows) compute shaders. Model download and
+   using Vulkan (macOS), Vulkan (Linux), or Vulkan (Windows) compute shaders. Model download and
    caching via the shared cache system (F-15.11.1). Supports ONNX and safetensors model formats.
    Memory management respects GPU VRAM budgets and falls back to CPU inference when GPU memory is
    insufficient. No telemetry or data collection from local inference. default.
    - **Deps:** F-15.11.1, F-2.1.1 (GPU Backend)
-   - **Platform:** Metal on macOS, Vulkan on Linux, D3D12 on Windows. No cloud fallback by
+   - **Platform:** Vulkan on macOS, Vulkan on Linux, Vulkan on Windows. No cloud fallback by
 10. **F-15.17.28** — Provenance tracking for all AI-generated content using the engine's AI
     governance system (F-15.7.1). Opt-out lists for artists who do not consent to their work being
     used in training data. License- safe training data verification that audits model training

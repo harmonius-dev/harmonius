@@ -36,7 +36,7 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-12.2.8.3   | `test_dep_graph_impact_analysis`    | R-12.2.8  |
 | TC-12.2.9.1   | `test_dxc_dxil_compile`             | R-12.2.9  |
 | TC-12.2.9.2   | `test_dxc_spirv_compile`            | R-12.2.9  |
-| TC-12.2.9.3   | `test_metal_shaderconverter_msl`    | R-12.2.9  |
+| TC-12.2.9.3   | `test_glslc_spirv`    | R-12.2.9  |
 | TC-12.2.9.4   | `test_dxc_dead_code_elimination`    | R-12.2.9  |
 | TC-12.2.9.5   | `test_dxc_error_line_mapping`       | R-12.2.9  |
 | TC-12.5.1.1   | `test_vfs_unified_namespace`        | R-12.5.1  |
@@ -146,19 +146,19 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Expected: `format == AudioEncoding::Pcm16`, `output_bytes == source_bytes`
 
 20. **TC-12.2.7.1** `test_shader_graph_to_hlsl` — Compile a 3-node graph (texture sample → tint →
-    output). Assert generated HLSL contains a `main()` entry point and a `Texture2D` declaration.
+    output). Assert generated GLSL contains a `main()` entry point and a `Texture2D` declaration.
     - Input: graph `{ TextureSample("Albedo") → Multiply([1,0,0,1]) → Output }`
-    - Expected: HLSL string contains `Texture2D Albedo`, contains `float4 main`, compiles via dxc
+    - Expected: GLSL string contains `Texture2D Albedo`, contains `float4 main`, compiles via glslc
 
-21. **TC-12.2.7.2** `test_shader_graph_no_template_marker` — Generated HLSL must not contain `{{`,
+21. **TC-12.2.7.2** `test_shader_graph_no_template_marker` — Generated GLSL must not contain `{{`,
     `}}`, `<%`, `%>`, or any other template marker.
     - Input: any non-trivial shader graph
     - Expected: regex `r"(\{\{|\}\}|<%|%>)"` finds no match in output
 
-22. **TC-12.2.7.3** `test_shader_graph_node_to_function` — Each graph node emits exactly one HLSL
+22. **TC-12.2.7.3** `test_shader_graph_node_to_function` — Each graph node emits exactly one GLSL
     function. For a 5-node graph, assert 5 helper functions plus one entry point.
     - Input: 5-node logic graph
-    - Expected: HLSL contains 5 distinct `<type> nodeN_<name>(...)` functions
+    - Expected: GLSL contains 5 distinct `<type> nodeN_<name>(...)` functions
 
 23. **TC-12.2.7.4** `test_shader_graph_variant_pruning` — Graph has 3 boolean static switches but
     only 4 of 8 combinations are reachable. Assert only 4 variants are emitted.
@@ -180,19 +180,19 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Input: 4-node DAG
     - Expected: returned set equals `{Mat1, Mat2, Scn}`
 
-27. **TC-12.2.9.1** `test_dxc_dxil_compile` — Run dxc CLI on a trivial pixel shader. Assert output
-    is DXIL bytecode beginning with magic `BC\xC0\xDE`.
+27. **TC-12.2.9.1** `test_dxc_dxil_compile` — Run glslc CLI on a trivial pixel shader. Assert output
+    is SPIR-V bytecode beginning with magic `BC\xC0\xDE`.
     - Input: `float4 main() : SV_Target { return float4(1,0,0,1); }`, target `ps_6_0`
-    - Expected: dxc subprocess exit 0, output starts with DXIL magic bytes
+    - Expected: glslc subprocess exit 0, output starts with SPIR-V magic bytes
 
 28. **TC-12.2.9.2** `test_dxc_spirv_compile` — Same shader, target SPIR-V. Assert output starts with
     magic `0x07230203`.
-    - Input: same shader, dxc flag `-spirv`
+    - Input: same shader, glslc flag `-spirv`
     - Expected: first u32 of output == `0x07230203`
 
-29. **TC-12.2.9.3** `test_metal_shaderconverter_msl` — Run metal-shaderconverter on a DXIL blob.
-    Assert output is a valid metallib (header magic `MTLB`).
-    - Input: DXIL bytes from TC-12.2.9.1
+29. **TC-12.2.9.3** `test_glslc_spirv` — Run glslc on a SPIR-V blob.
+    Assert output is a valid SPIR-V module (header magic `MTLB`).
+    - Input: SPIR-V bytes from TC-12.2.9.1
     - Expected: subprocess exit 0, output bytes contain `b"MTLB"` near start
 
 30. **TC-12.2.9.4** `test_dxc_dead_code_elimination` — Compile a shader with an unreachable branch.
@@ -201,10 +201,10 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Expected: reflected bytecode has no `discard` instruction
 
 31. **TC-12.2.9.5** `test_dxc_error_line_mapping` — Compile a shader generated from a graph with a
-    deliberate type error at HLSL line 42 (graph node `mul_node`). Assert error report contains line
+    deliberate type error at GLSL line 42 (graph node `mul_node`). Assert error report contains line
     42 and the originating graph node name.
-    - Input: HLSL with type mismatch, source map mapping line 42 to `mul_node`
-    - Expected: `CompilationError { hlsl_line: 42, graph_node: Some("mul_node") }`
+    - Input: GLSL with type mismatch, source map mapping line 42 to `mul_node`
+    - Expected: `CompilationError { glsl_line: 42, graph_node: Some("mul_node") }`
 
 32. **TC-12.5.1.1** `test_vfs_unified_namespace` — Mount the same logical path under a loose-file
     store, a pak archive, and a mock HTTP store. Read bytes from `"textures/brick.ktx2"` through
@@ -221,7 +221,7 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
       `harmonius_content::streaming` crate
 
 34. **TC-12.5.3.1** `test_gpu_direct_storage_submit` — On a backend reporting
-    `DirectStorageBackend::is_available() == true`, submit a `GpuTransferRequest` for a 16 MB
+    `StagingBufferBackend::is_available() == true`, submit a `GpuTransferRequest` for a 16 MB
     compressed texture. Assert the destination GPU buffer contains the decompressed pixels.
     - Input: 16 MB Zstd-compressed texture, valid `GpuBufferHandle`, `codec: Zstd`
     - Expected: `submit().await == Ok(())`, sampled GPU pixels match reference decode
@@ -329,11 +329,11 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
    - Expected: second pass invokes processor 1 time; 99 cache hits
 
 3. **TC-12.2.I.3** `test_shader_graph_full_pipeline` — Compile a 20-node shader graph end-to-end:
-   graph → HLSL → DXIL → MSL. Assert the final metallib loads on Metal and the HLSL roundtrips
-   through dxc with no warnings.
+   graph → GLSL → SPIR-V → SPIR-V. Assert the final SPIR-V module loads on Vulkan and the GLSL
+   roundtrips through glslc with no warnings.
    - Input: 20-node PBR shader graph
-   - Expected: all 3 outputs present in CAS, HLSL passes IDE-compatible parse, no template markers,
-     dxc warnings == 0
+   - Expected: all 3 outputs present in CAS, GLSL passes IDE-compatible parse, no template markers,
+     glslc warnings == 0
 
 4. **TC-12.2.I.4** `test_texture_processor_per_target` — Process a single 1K texture with three
    `PlatformProfile` targets. Assert three distinct `ArtifactKey`s are produced.
@@ -413,10 +413,10 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Expected: first artifact bitrate ∈ [28k, 36k], second ∈ [88k, 104k]
 
 17. **TC-12.2.I.17** `us_artist_readable_hlsl_output` — As a technical artist, compile a 10-node PBR
-    graph and open the generated HLSL in an IDE parser. Assert the parser reports zero errors and
+    graph and open the generated GLSL in an IDE parser. Assert the parser reports zero errors and
     each node emits a comment containing the graph node ID.
     - Input: 10-node PBR graph
-    - Expected: HLSL has one `// node: nodeN` comment per graph node, IDE parser returns 0 errors
+    - Expected: GLSL has one `// node: nodeN` comment per graph node, IDE parser returns 0 errors
 
 18. **TC-12.2.I.18** `us_build_eng_dep_graph_incremental` — As a build engineer, process 500 assets
     with a dep graph (texture → material → mesh → scene). Touch one texture; re-run processing.
@@ -431,10 +431,10 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Expected: `Err(ProcessingError::CycleDetected { cycle: [Mat_A, Mat_B, Mat_A] })`
 
 20. **TC-12.2.I.20** `us_artist_shader_error_click_thru` — As a technical artist, edit a graph node
-    to produce a type error. Assert the error report contains both the HLSL line number and the
+    to produce a type error. Assert the error report contains both the GLSL line number and the
     originating graph node identifier so the editor can jump to the node.
     - Input: 8-node graph with invalid `mul` types
-    - Expected: `CompilationError { hlsl_line: N, graph_node: Some("mul_node") }` where N > 0
+    - Expected: `CompilationError { glsl_line: N, graph_node: Some("mul_node") }` where N > 0
 
 21. **TC-12.2.I.21** `us_designer_auto_collider_import` — As a game designer, import a prop mesh
     with default settings and assert a collision shape is produced and stored in the processed
@@ -456,10 +456,10 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Expected: single `load(mesh_id)` yields both render mesh and collider; physics world contains
       the body
 
-24. **TC-12.2.I.24** `us_eng_shader_reflection_all_backs` — As an engine developer, compile one HLSL
-    source through the pipeline to DXIL, SPIR-V, and MSL. Assert reflection data extracted from each
+24. **TC-12.2.I.24** `us_eng_shader_reflection_all_backs` — As an engine developer, compile one GLSL
+    source through the pipeline to SPIR-V. Assert reflection data extracted from each
     backend reports identical binding layouts and push-constant ranges.
-    - Input: single PBR HLSL source, dxc → DXIL, dxc → SPIR-V, metal-shaderconverter → MSL
+    - Input: single PBR GLSL source, glslc → SPIR-V, glslc → SPIR-V, glslc → SPIR-V
     - Expected: all three reflections contain the same descriptor-set/binding tuples and
       push-constant ranges; no mismatches
 
@@ -484,9 +484,9 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
    - Expected: workers make forward progress during load; measured BW ≥ 80% of raw
 
 4. **TC-12.5.I.4** `us_eng_file_to_gpu_dma` — As an engine developer, stream a 256 MB compressed
-   texture pack directly into GPU memory through `DirectStorageBackend`. Assert CPU utilization
+   texture pack directly into GPU memory through `StagingBufferBackend`. Assert CPU utilization
    stays below 5% during the transfer.
-   - Input: 256 MB Zstd pack, DirectStorage-capable backend
+   - Input: 256 MB Zstd pack, staging-capable backend
    - Expected: transfer completes, CPU busy < 5%, final pixels match reference
 
 5. **TC-12.5.I.5** `us_env_artist_mip_screen_density` — As an environment artist, place 1,000
@@ -531,9 +531,9 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Expected: 20 downloads on first frame, 0 downloads on second visit, hash match on all
 
 12. **TC-12.5.I.12** `us_eng_gpu_direct_storage_stream` — As an engine developer, stream 500
-    textures into GPU memory via the platform direct-storage path (DirectStorage, Metal IO, or
-    io_uring staging). Assert NVMe bandwidth saturates (≥ 3 GB/s) and CPU memory bandwidth is not
-    consumed by copies.
+    textures into GPU memory via the platform direct-storage path (Vulkan staging buffers, Vulkan
+    staging buffers, or io_uring staging). Assert NVMe bandwidth saturates (≥ 3 GB/s) and CPU memory
+    bandwidth is not consumed by copies.
     - Input: 500 textures (total 2 GB), platform DS backend
     - Expected: sustained ≥ 3 GB/s, CPU memcpy traffic ≈ 0 (via perf counter)
 
@@ -575,8 +575,8 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
 3. **TC-12.2.B.3** — Partition a 50k-triangle LOD0 mesh into meshlets (64v/124t bounds) and compute
    per-meshlet AABB and normal cones. Wall time end-to-end.
 
-4. **TC-12.2.B.4** — Cold compile of a 20-node shader graph: graph → HLSL → DXC subprocess → DXIL.
-   Wall time from `process()` to artifact stored in CAS. Excludes Metal stage.
+4. **TC-12.2.B.4** — Cold compile of a 20-node shader graph: graph → GLSL → glslc subprocess →
+   SPIR-V. Wall time from `process()` to artifact stored in CAS. Excludes glslc compile stage.
 
 5. **TC-12.2.B.5** — Re-process the same shader graph with cache populated. Wall time should be
    bounded by cache lookup + metadata load only.

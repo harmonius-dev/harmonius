@@ -13,7 +13,7 @@
 | Feature  | Scope                                                              |
 |----------|--------------------------------------------------------------------|
 | F-1.15.1 | Shared DAG validation, topological sort, cycle detection           |
-| F-1.15.2 | Multi-target codegen (Rust, HLSL, type descriptors)                |
+| F-1.15.2 | Multi-target codegen (Rust, GLSL, type descriptors)                |
 | F-1.15.3 | Graph IR with stable node / pin IDs                                |
 | F-1.15.4 | Constant folding and dead-node elimination                         |
 | F-13.4.1 | Logic / scripting graph runtime                                    |
@@ -47,7 +47,7 @@ validation, optimization, compilation, and hot-reload integration.
 | Goal                    | Rationale                                                          |
 |-------------------------|--------------------------------------------------------------------|
 | One DAG validator       | Removes six duplicate cycle/topology implementations               |
-| Multi-target codegen    | Rust, HLSL, and type-descriptor emission from one IR               |
+| Multi-target codegen    | Rust, GLSL, and type-descriptor emission from one IR               |
 | Stable node IDs         | Hot-reload can map old state to new graph shape                    |
 | Pure functional IR      | Transformation passes are `fn(GraphIr) -> GraphIr`                 |
 | Static dispatch         | Codegen backends are enum variants, not `dyn` trait objects        |
@@ -58,9 +58,9 @@ validation, optimization, compilation, and hot-reload integration.
 | Client doc                              | Node type             | Edge type   | Backend                |
 |-----------------------------------------|-----------------------|-------------|------------------------|
 | `game-framework/scripting.md`           | `LogicNode`           | `DataEdge`  | `RustBackend`          |
-| `rendering/render-styles.md`            | `MaterialNode`        | `PinEdge`   | `HlslBackend`          |
+| `rendering/render-styles.md`            | `MaterialNode`        | `PinEdge`   | `GlslBackend`          |
 | `ai/behavior.md`                        | `BehaviorNode`        | `FlowEdge`  | `RustBackend`          |
-| `vfx/effects.md`                        | `EffectNode`          | `PinEdge`   | `HlslBackend`          |
+| `vfx/effects.md`                        | `EffectNode`          | `PinEdge`   | `GlslBackend`          |
 | `animation/state-machine.md`            | `StateNode`           | `Transition`| `RustBackend`          |
 | `geometry/procedural-generation.md`     | `ProcNode`            | `PinEdge`   | `RustBackend`          |
 | `data-systems/directed-graphs.md`       | `DagNode`             | `DagEdge`   | `TypeDescriptorBackend`|
@@ -94,7 +94,7 @@ flowchart TD
 
     subgraph Backends
         RB[RustBackend]
-        HB[HlslBackend]
+        HB[GlslBackend]
         TDB[TypeDescriptorBackend]
     end
 
@@ -240,8 +240,8 @@ classDiagram
         +emit(ir) Result~EmitOutput, CodegenError~
     }
 
-    class HlslBackend {
-        +profile: HlslProfile
+    class GlslBackend {
+        +profile: GlslProfile
         +emit(ir) Result~EmitOutput, CodegenError~
     }
 
@@ -258,7 +258,7 @@ classDiagram
     class BackendKind {
         <<enumeration>>
         Rust
-        Hlsl
+        Glsl
         TypeDescriptor
     }
 
@@ -299,7 +299,7 @@ classDiagram
     GraphRuntime --> HotReloadBarrierRef
     DagValidator ..|> GraphValidator
     RustBackend ..|> CodegenBackend
-    HlslBackend ..|> CodegenBackend
+    GlslBackend ..|> CodegenBackend
     TypeDescriptorBackend ..|> CodegenBackend
     GraphIr --> IrNode
     GraphIr --> IrEdge
@@ -456,8 +456,8 @@ pub struct RustBackend {
     pub module_name: &'static str,
 }
 
-pub struct HlslBackend {
-    pub profile: HlslProfile,
+pub struct GlslBackend {
+    pub profile: GlslProfile,
 }
 
 pub struct TypeDescriptorBackend;
@@ -471,7 +471,7 @@ pub struct EmitOutput {
 #[derive(Copy, Clone)]
 pub enum BackendKind {
     Rust,
-    Hlsl,
+    Glsl,
     TypeDescriptor,
 }
 
@@ -554,9 +554,9 @@ sequenceDiagram
 
 | Platform   | Backend subprocess         | Notes                                  |
 |------------|----------------------------|----------------------------------------|
-| Windows    | rustc.exe, dxc.exe         | Launched via main-thread I/O requests  |
-| macOS      | rustc, dxc, msl-converter  | dispatch2 child process                |
-| Linux      | rustc, dxc                 | io_uring spawned process               |
+| Windows    | rustc.exe, glslc.exe         | Launched via main-thread I/O requests  |
+| macOS      | rustc, glslc, msl-converter  | dispatch2 child process                |
+| Linux      | rustc, glslc                 | io_uring spawned process               |
 | iOS        | No runtime codegen         | Compiled offline only                  |
 | Android    | No runtime codegen         | Compiled offline only                  |
 

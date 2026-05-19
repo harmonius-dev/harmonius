@@ -100,7 +100,7 @@ and parses responses. No intermediary server, no proxy, no reselling.
    The engine functions fully without any AI provider configured -- AI features degrade gracefully
    rather than producing errors.
    - **Deps:** F-15.23.1, F-15.15.1
-   - **Platform:** Local inference uses platform GPU compute: Metal on macOS, Vulkan compute on
+   - **Platform:** Local inference uses platform GPU compute: Vulkan on macOS, Vulkan compute on
      Windows/Linux. CPU fallback available.
 
 ## AI Context Injection

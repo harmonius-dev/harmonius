@@ -17,15 +17,11 @@ rendering subsystems.
 | F-2.1.2  | R-2.1.2     |
 | F-2.1.3  | R-2.1.3     |
 | F-2.1.4  | R-2.1.4     |
-| F-2.1.5  | R-2.1.5     |
-| F-2.1.6  | R-2.1.6     |
 
 1. **F-2.1.1** -- GPU backend trait, static dispatch via generics
 2. **F-2.1.2** -- Command buffer for graphics, compute, copy
 3. **F-2.1.3** -- Unified pipeline state objects pre-validated
-4. **F-2.1.4** -- Metal backend via `objc2-metal`
-5. **F-2.1.5** -- D3D12 backend via windows-rs
-6. **F-2.1.6** -- Vulkan backend via ash
+4. **F-2.1.4** -- Vulkan backend via `ash` on all platforms
 
 ### GPU Runtime (2.1 continued)
 
@@ -103,8 +99,7 @@ rendering subsystems.
 
 ### GPU Abstraction Layer
 
-The GPU abstraction provides a unified, type-safe interface across Metal (macOS/iOS), D3D12
-(Windows), and Vulkan (Linux/Android). Two crates:
+The GPU abstraction provides a unified, type-safe Vulkan interface on all platforms. Two crates:
 
 1. **`harmonius_gpu`** -- Backend trait interface. Defines `GpuBackend`, `CommandBuffer`,
    `PipelineState`, resources, swapchain, shader compilation. Static dispatch via `cfg`-gated type
@@ -112,9 +107,8 @@ The GPU abstraction provides a unified, type-safe interface across Metal (macOS/
 2. **`harmonius_gpu_runtime`** -- Shared services: memory sub-allocation, state tracking, barrier
    optimization, descriptor binding, work graphs, feature emulation, profiling.
 
-HLSL is the sole shader language. The `dxc` CLI compiles HLSL to DXIL and SPIR-V as a subprocess
-during asset processing. The `metal-shaderconverter` CLI translates DXIL to metallib as a
-subprocess. No runtime shader compilation in shipping builds.
+GLSL is the sole shader language. The `glslc` CLI compiles GLSL to SPIR-V as a subprocess during
+asset processing. No runtime shader compilation in shipping builds.
 
 ### Render Graph
 
@@ -201,14 +195,9 @@ graph TD
 
 ```mermaid
 flowchart LR
-    HLSL["HLSL Source"] --> DXC["dxc CLI\n(subprocess)"]
-    DXC -->|"--target dxil"| DXIL["DXIL"]
-    DXC -->|"--target spirv"| SPIRV["SPIR-V"]
-    DXIL --> MSC["metal-shaderconverter\nCLI (subprocess)"]
-    MSC --> METALLIB["metallib"]
-    DXIL -->|D3D12| D3D12P["D3D12 Pipeline"]
-    SPIRV -->|Vulkan| VKP["Vulkan Pipeline"]
-    METALLIB -->|Metal| MTLP["Metal Pipeline"]
+    GLSL["GLSL Source"] --> glslc["glslc CLI\n(subprocess)"]
+    glslc --> SPIRV["SPIR-V"]
+    SPIRV --> VKP["Vulkan Pipeline"]
 ```
 
 ### Graph Lifecycle
@@ -412,14 +401,10 @@ classDiagram
     }
 
     class ShaderTarget {
-        Dxil
         SpirV
-        MetalLib
     }
 
     class BackendType {
-        Metal
-        D3D12
         Vulkan
     }
 
@@ -623,9 +608,9 @@ classDiagram
 
 | Backend | BindGroup mapping |
 |---------|-------------------|
-| D3D12 | Root signature table entries |
+| Vulkan | Root signature table entries |
 | Vulkan | VkDescriptorSet per bind group |
-| Metal | Argument buffer per bind group |
+| Vulkan | Argument buffer per bind group |
 
 ### Resource Aliasing Algorithm
 
@@ -752,11 +737,9 @@ fn analyze(plan: &ExecutionPlan) -> Vec<BarrierBatch> {
 ```
 
 References: Wihlidal, "Optimizing Graphics Pipeline" (GDC 2016), and the Vulkan
-`VK_KHR_synchronization2` spec (section on split / event-based barriers). D3D12 reference:
-`D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY` / `D3D12_RESOURCE_BARRIER_FLAG_END_ONLY` in the
-[D3D12 resource barriers documentation][d3d12-barriers].
-
-[d3d12-barriers]: https://learn.microsoft.com/en-us/windows/win32/direct3d12/using-resource-barriers-to-synchronize-resource-states-in-direct3d-12
+`VK_KHR_synchronization2` spec (section on split / event-based barriers). Vulkan reference:
+`VkMemoryBarrier2_FLAG_BEGIN_ONLY` / `VkMemoryBarrier2_FLAG_END_ONLY` in the
+[Vulkan resource barriers documentation][d3d12-barriers].
 
 ### Swapchain Trait
 
@@ -786,13 +769,12 @@ pub struct AcquiredBackbuffer {
 }
 ```
 
-All three backends implement `Swapchain`:
+The Vulkan backend implements `Swapchain`:
 
-| Backend | `acquire_backbuffer`            | `present`                              |
-|---------|----------------------------------|----------------------------------------|
-| D3D12   | `IDXGISwapChain3::Present` wait  | `ExecuteCommandLists` + `Present`      |
-| Vulkan  | `vkAcquireNextImageKHR`          | `vkQueueSubmit` + `vkQueuePresentKHR`  |
-| Metal   | `CAMetalLayer::nextDrawable`     | `MTLCommandBuffer::present(drawable)`  |
+| Operation | Vulkan API |
+|-----------|------------|
+| `acquire_backbuffer` | `vkAcquireNextImageKHR` |
+| `present` | `vkQueueSubmit` + `vkQueuePresentKHR` |
 
 ### Frame Synchronization
 
@@ -821,9 +803,9 @@ snapshot.
 
 ### Descriptor Layout Inference
 
-`ShaderCompiler::compile` reads dxc DXIL/SPIR-V bytecode metadata (or Metal IR reflection for
-metallib) and produces a `DescriptorLayout`. The `DescriptorBinder` then allocates descriptor sets
-per layout and caches them next to the PSO in the `PsoCache`.
+`ShaderCompiler::compile` reads glslc SPIR-V bytecode metadata via SPIR-V reflection and produces a
+`DescriptorLayout`. The `DescriptorBinder` then allocates descriptor sets per layout and caches them
+next to the PSO in the `PsoCache`.
 
 ```rust
 pub struct ShaderCompileResult {
@@ -870,60 +852,57 @@ that `DescriptorLayout` stays in sync with the shader.
 [rendering-core.md](rendering-core.md) Material System) and produces the platform-specific binding
 call:
 
-| Backend | Allocation                | Binding call                           |
-|---------|---------------------------|----------------------------------------|
-| D3D12   | descriptor heap slice     | `SetGraphicsRootDescriptorTable`       |
-| Vulkan  | `VkDescriptorSet` per set | `vkCmdBindDescriptorSets`              |
-| Metal   | argument buffer encoder   | `setFragmentBuffer:offset:atIndex:`    |
+| Allocation | Binding call |
+|------------|--------------|
+| `VkDescriptorSet` per layout | `vkCmdBindDescriptorSets` |
 
 ## Platform Considerations
 
-### GPU Backend Comparison
+### Vulkan Backend Mapping
 
-| Component | D3D12 | Vulkan | Metal |
-|-----------|-------|--------|-------|
-| Device | ID3D12Device | VkDevice (ash) | MTLDevice (objc2-metal) |
-| Cmd buf | ID3D12GraphicsCommandList | VkCommandBuffer | MTLCommandBuffer |
-| Fence | ID3D12Fence | VkSemaphore (timeline) | MTLEvent |
-| Barriers | ResourceBarrier | vkCmdPipelineBarrier2 | Driver-managed |
-| Descriptors | Root sig + heap | VkDescriptorSet | Argument buffers |
-| Shader fmt | DXIL | SPIR-V | metallib |
+| Component | Vulkan (`ash`) |
+|-----------|----------------|
+| Device | `VkDevice` |
+| Cmd buf | `VkCommandBuffer` |
+| Fence | `VkSemaphore` (timeline) |
+| Barriers | `vkCmdPipelineBarrier2` |
+| Descriptors | `VkDescriptorSet` + bindless (`VK_EXT_descriptor_indexing`) |
+| Shader fmt | SPIR-V |
 
 ### Alignment Requirements
 
-| Resource | D3D12 | Vulkan | Metal |
-|----------|-------|--------|-------|
-| Constant buf | 256 B | Queried | 256 B |
-| Storage buf | 16 B | Queried | 16 B |
-| Texture | 64 KB | Queried | 4096 B |
+| Resource | Alignment |
+|----------|-----------|
+| Uniform buffer | `minUniformBufferOffsetAlignment` |
+| Storage buffer | `minStorageBufferOffsetAlignment` |
+| Texture | `minMemoryMapAlignment` |
 
 ### Feature Support Matrix
 
-| Feature | D3D12 | Vulkan | Metal |
-|---------|-------|--------|-------|
-| Mesh shaders | FL 12.2+ | VK_EXT_mesh_shader | Apple 7+ |
-| Ray tracing | DXR 1.1 | VK_KHR_ray_tracing | Apple 9+ |
-| Work graphs | Native | Emulated | Emulated |
-| Bindless | SM 6.6 | descriptor_indexing | Arg buf T2 |
+| Feature | Vulkan requirement |
+|---------|-------------------|
+| Mesh shaders | `VK_EXT_mesh_shader` |
+| Ray tracing | `VK_KHR_ray_tracing_pipeline` |
+| Work graphs | `VK_KHR_work_graphs` or compute emulation |
+| Bindless | `VK_EXT_descriptor_indexing` |
 
 ### Queue Model
 
-| Backend | Graphics | Compute | Transfer |
-|---------|----------|---------|----------|
-| D3D12 | Direct queue | Compute queue | Copy queue |
-| Vulkan | Graphics family | Compute family | Transfer family |
-| Metal | MTLCommandQueue | Private queue | Shared |
+| Queue | Use |
+|-------|-----|
+| Graphics | Draw and present |
+| Compute | Async simulation / culling |
+| Transfer | Staging uploads |
 
-### Proposed Dependencies
+### Dependencies
 
-| Crate |
-|-------|
-| `windows` |
-| `ash` |
-| `smallvec` |
-| `bitflags` |
+| Crate | Purpose |
+|-------|---------|
+| `ash` | Vulkan bindings |
+| `smallvec` | Inline descriptor binding lists |
+| `bitflags` | Stage and access flags |
 
-1. **`windows`** -- D3D12/DXGI bindings
+1. **`ash`** — Vulkan instance, device, and queue management
 2. **`ash`** -- Zero-overhead Vulkan function loader
 3. **`smallvec`** -- Inline-allocated small vectors
 4. **`bitflags`** -- Ergonomic bitflag operations
@@ -941,9 +920,9 @@ Test cases are defined inline below.
 | `test_texture_create_all_formats` | R-2.1.1 |
 | `test_cmd_buf_graphics_compute_copy` | R-2.1.2 |
 | `test_pso_invalid_combination` | R-2.1.3 |
-| `test_metal_ffi_swift_bridge` | R-2.1.4 |
-| `test_d3d12_no_cpp` | R-2.1.5 |
-| `test_vulkan_validation_zero_errors` | R-2.1.6 |
+| `test_vulkan_ffi_ash` | R-2.1.4 |
+| `test_vulkan_no_cpp` | R-2.1.4 |
+| `test_vulkan_validation_zero_errors` | R-2.1.4 |
 | `test_suballoc_alignment_d3d12` | R-2.1.7, GR-1.2 |
 | `test_suballoc_alignment_vulkan` | R-2.1.7, GR-1.2 |
 | `test_suballoc_alignment_metal` | R-2.1.7, GR-1.2 |
@@ -994,8 +973,8 @@ Test cases are defined inline below.
 | `test_full_frame_graph` | RG-13.1 |
 | `test_multi_view_shadow_cascades` | RG-9.1 |
 | `test_parallel_encoding_correctness` | RG-10.1 |
-| `test_d3d12_barrier_mapping` | RG-3.1 |
-| `test_metal_no_intra_queue_barriers` | RG-3.1 |
+| `test_vulkan_barrier_mapping` | RG-3.1 |
+| `test_vulkan_queue_family_barriers` | RG-3.1 |
 
 ### Benchmarks
 
@@ -1013,9 +992,9 @@ Test cases are defined inline below.
 
 ## Open Questions
 
-1. **Descriptor heap on D3D12** -- Monolithic shader-visible heap vs ring-allocated regions. Ring
+1. **Descriptor heap on Vulkan** -- Monolithic shader-visible heap vs ring-allocated regions. Ring
    matches engine pattern but needs careful index management.
-2. **Metal argument buffer tier** -- Require Tier 2 (Apple 6+) or provide Tier 1 fallback with
+2. **Vulkan descriptor set tier** -- Require Tier 2 (Apple 6+) or provide Tier 1 fallback with
    descriptor workarounds.
 3. **GPU fence reactor integration** -- Event-based (efficient) vs poll-based (simpler). Need to
    decide per-backend.
@@ -1117,22 +1096,21 @@ Route through `FeatureEmulation` only when `DeviceCapabilities::mesh_shaders` is
 
 ### RF-5: Rename swift_bridge test
 
-Rename `test_metal_ffi_swift_bridge` to `test_metal_ffi_objc2`. Swift is forbidden. Metal uses
-objc2-metal.
+Rename `test_vulkan_ffi_ash` to `test_vulkan_ffi_ash`. Swift is forbidden. Vulkan uses ash.
 
-### RF-6: Add objc2-metal to proposed dependencies
+### RF-6: Add ash to proposed dependencies
 
-Add `objc2-metal` and `objc2` to the dependency table. Request approval for `bitflags` (not in core
-deps list).
+Add `ash` and `objc2` to the dependency table. Request approval for `bitflags` (not in core deps
+list).
 
-### RF-7: Add Metal 4 specifics
+### RF-7: Add Vulkan specifics
 
-Document which Metal 4 APIs are targeted:
+Document which Vulkan APIs are targeted:
 
 - Placement heaps for explicit memory management
 - Sparse resources (virtual textures)
 - Improved shader compilation pipeline
-- Minimum requirement: Apple Silicon with Metal 4 support
+- Minimum requirement: Apple Silicon with Vulkan support
 
 ### RF-8: Add sparse resource API
 
@@ -1154,9 +1132,9 @@ Required for virtual textures and GPU-driven terrain streaming.
 
 Document the shader hot-reload flow:
 
-1. FileWatcher detects HLSL change on main thread
+1. FileWatcher detects GLSL change on main thread
 2. Main thread posts recompile job via channel
-3. Worker runs dxc/msc subprocess
+3. Worker runs glslc/msc subprocess
 4. New shader bytecode sent to render thread via channel
 5. Render thread invalidates affected PSOs
 6. PSO recompiled on next use (lazy) or eagerly in background
@@ -1276,7 +1254,7 @@ during development.
 
 | Algorithm | Reference |
 |-----------|-----------|
-| PSO cache | D3D12 GetCachedBlob / CreatePipelineState |
+| PSO cache | Vulkan vkGetPipelineCacheData / vkCreateGraphicsPipelines |
 | Shader pipeline | [Wihlidal shader blog](https://www.wihlidal.com/blog/pipeline/2018-12-28-containerized-shader-compilers/) |
 | Hot reload | [Tatarchuk, Destiny (GDC 2017)](https://advances.realtimerendering.com/destiny/gdc_2017/) |
 
@@ -1286,7 +1264,7 @@ during development.
 |-----------|-----------|
 | Triple buffering | van Waveren, "Latency Mitigation" (GDC 2016) |
 | Frame pacing | [Android AGDK](https://developer.android.com/games/sdk/frame-pacing) |
-| iOS display sync | [CAMetalDisplayLink](https://developer.apple.com/documentation/quartzcore/cametaldisplaylink) |
+| iOS display sync | [Vulkan WSI present timing](https://developer.apple.com/documentation/quartzcore/cametaldisplaylink) |
 
 ### RF-13: Multi-frame async compute
 
@@ -1508,3 +1486,5 @@ pub struct StagingPool {
 4. Baked asset loads instantly (zero-copy mmap)
 5. Procedural generation no longer runs for this chunk
 6. Designer can re-generate any time (non-destructive)
+
+[d3d12-barriers]: https://learn.microsoft.com/en-us/windows/win32/direct3d12/using-resource-barriers-to-synchronize-resource-states-in-direct3d-12

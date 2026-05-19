@@ -150,7 +150,7 @@ Companion test cases for [error.md](error.md).
 |---|-------------|
 | 1 | F-1.12.4    |
 
-1. **#1** — dxc subprocess exits with non-zero; shader compile error raised
+1. **#1** — glslc subprocess exits with non-zero; shader compile error raised
    - **Expected:** `EngineError::Codegen(CodegenError::Compile(CompileError::Subprocess ..))`
 
 ## Benchmarks

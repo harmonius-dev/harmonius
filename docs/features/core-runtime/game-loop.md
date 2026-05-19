@@ -98,9 +98,9 @@
 | F-1.11.11 | Platform-Native Frame Pacing        |
 
 1. **F-1.11.11** — Support platform-specific frame pacing to synchronize frame presentation with
-   display refresh. Desktop uses VSync via swapchain present modes. Mobile uses CAMetalDisplayLink
-   (Apple) and Choreographer (Android) for display-aligned frame submission. VR uses
-   reprojection/timewarp with automatic half-rate fallback when frame time exceeds target.
+   display refresh. Desktop uses VSync via swapchain present modes. Mobile uses Vulkan WSI present
+   timing (Apple) and Vulkan WSI present timing (Android) for display-aligned frame submission. VR
+   uses reprojection/timewarp with automatic half-rate fallback when frame time exceeds target.
    - **Deps:** F-1.11.7
    - **Platform:** Desktop: VSync on/off/adaptive via swapchain. Mobile: display link callbacks. VR:
      compositor-driven pacing with reprojection.

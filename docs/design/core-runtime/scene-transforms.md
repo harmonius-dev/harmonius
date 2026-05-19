@@ -1542,8 +1542,9 @@ entities move per frame, this reduces propagation cost by 99%+.
 ## Platform Considerations
 
 Transform propagation is platform-agnostic. SIMD acceleration of matrix multiplication is delegated
-to the math library (`glam`). Non-send resources (e.g., Metal main-thread constraints) are handled
-by the ECS scheduler, not transforms. Platform dependencies are indirect, through the job system.
+to the math library (`glam`). Non-send resources (e.g., Vulkan WSI main-thread constraints) are
+handled by the ECS scheduler, not transforms. Platform dependencies are indirect, through the job
+system.
 
 ### Parallel Propagation Scaling
 

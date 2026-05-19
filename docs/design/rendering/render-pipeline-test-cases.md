@@ -37,9 +37,8 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
 | TC-2.1.1.4    | `test_static_dispatch_no_vtable`     | R-2.1.1   |
 | TC-2.1.2.3    | `test_cmd_buf_graphics_compute_copy` | R-2.1.2   |
 | TC-2.1.3.1    | `test_pso_invalid_combination`       | R-2.1.3   |
-| TC-2.1.4.3    | `test_metal_backend_objc2_init`      | R-2.1.4   |
-| TC-2.1.5.1    | `test_d3d12_backend_windows_init`    | R-2.1.5   |
-| TC-2.1.6.1    | `test_vulkan_validation_zero_errors` | R-2.1.6   |
+| TC-2.1.4.3    | `test_vulkan_backend_ash_init`      | R-2.1.4   |
+| TC-2.1.4.4    | `test_vulkan_validation_zero_errors` | R-2.1.4   |
 | TC-2.1.7.1    | `test_heap_suballoc_alignment`       | R-2.1.7   |
 | TC-2.1.8.1    | `test_state_tracker_redundant_bind`  | R-2.1.8   |
 | TC-2.1.9.1    | `test_barrier_batching_merge`        | R-2.1.9   |
@@ -174,7 +173,7 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
 
 26. **TC-2.1.1.4** `test_static_dispatch_no_vtable` — Confirm `GpuBackend` impls use generics, not
     trait objects. Verify via `cargo asm` or `trybuild` that no `dyn GpuBackend` appears in API.
-    - Input: full backend trait surface; compile a fixture using `MetalBackend` directly
+    - Input: full backend trait surface; compile a fixture using `VulkanBackend` directly
     - Expected: zero `dyn GpuBackend` references in generated symbols; calls inlined
 
 27. **TC-2.1.2.3** `test_cmd_buf_graphics_compute_copy` — Open one command buffer; record a graphics
@@ -187,47 +186,42 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
     - Input: `PipelineDesc { vs, fs }` with incompatible interfaces
     - Expected: `PsoBuildError::SignatureMismatch`, no GPU object created
 
-29. **TC-2.1.4.3** `test_metal_backend_objc2_init` — Initialize `MetalBackend` via `objc2-metal`,
-    enumerate devices, and create a default queue. Run only on macOS.
-    - Input: `MetalBackend::new(MetalConfig::default())`
-    - Expected: device count >= 1, default queue valid, no Objective-C exceptions
+29. **TC-2.1.4.3** `test_vulkan_backend_ash_init` — Initialize `VulkanBackend` via `ash`,
+    enumerate devices, and create a default queue on each supported OS.
+    - Input: `VulkanBackend::new(VulkanConfig::default())`
+    - Expected: device count >= 1, default queue valid, no validation errors
 
-30. **TC-2.1.5.1** `test_d3d12_backend_windows_init` — Initialize `D3D12Backend` via windows-rs,
-    enumerate adapters, and create a direct queue. Run only on Windows.
-    - Input: `D3D12Backend::new(D3D12Config::default())`
-    - Expected: adapter count >= 1, direct queue valid, no HRESULT errors
-
-31. **TC-2.1.6.1** `test_vulkan_validation_zero_errors` — Initialize Vulkan with validation layers,
+30. **TC-2.1.4.4** `test_vulkan_validation_zero_errors` — Initialize Vulkan with validation layers,
     create instance + device + queue, run a no-op submit. Assert zero validation errors.
     - Input: `VulkanBackend::new(VulkanConfig { validation: true, .. })`
     - Expected: validation callback recorded 0 messages
 
-32. **TC-2.1.7.1** `test_heap_suballoc_alignment` — Sub-allocate buffers requiring alignments
+31. **TC-2.1.7.1** `test_heap_suballoc_alignment` — Sub-allocate buffers requiring alignments
     `[16, 256, 65536]` from a single heap. Assert each returned offset matches alignment.
     - Input: `heap.suballoc(size, align)` for each alignment
     - Expected: `offset % align == 0` for all three; no overlap between allocations
 
-33. **TC-2.1.8.1** `test_state_tracker_redundant_bind` — Bind the same vertex buffer 100 times.
+32. **TC-2.1.8.1** `test_state_tracker_redundant_bind` — Bind the same vertex buffer 100 times.
     Assert the state tracker filters all but the first to the backend.
     - Input: 100 `bind_vertex_buffer(vb, 0)` calls in a row
     - Expected: backend `set_vertex_buffer` invoked exactly once
 
-34. **TC-2.1.9.1** `test_barrier_batching_merge` — Issue 4 barriers on 4 distinct resources at the
+33. **TC-2.1.9.1** `test_barrier_batching_merge` — Issue 4 barriers on 4 distinct resources at the
     same point. Assert the backend receives a single batched barrier call.
     - Input: 4 resources transition `ShaderRead → RenderTarget`
     - Expected: backend `resource_barrier(&[r1, r2, r3, r4])` invoked once
 
-35. **TC-2.1.10.1** `test_work_graph_native_dispatch` — On a device with native work graph support,
+34. **TC-2.1.10.1** `test_work_graph_native_dispatch` — On a device with native work graph support,
     submit a work graph with 3 nodes. Assert all nodes execute and produce expected outputs.
     - Input: `WorkGraph { nodes: [a, b, c], edges: [(a,b),(b,c)] }`
     - Expected: outputs match reference; on unsupported device, emulated path used
 
-36. **TC-2.1.11.1** `test_cross_backend_emulation` — Run mesh shader pipeline on a backend lacking
+35. **TC-2.1.11.1** `test_cross_backend_emulation` — Run mesh shader pipeline on a backend lacking
     native mesh shaders. Assert compute-emulation path is selected and produces same output.
     - Input: mesh pipeline desc, backend `mesh_shaders: false`
     - Expected: emulated compute path used; output framebuffer matches native within tolerance
 
-37. **TC-2.1.12.1** `test_gpu_perf_query_resolve` — Insert a timestamp query around a draw, submit,
+36. **TC-2.1.12.1** `test_gpu_perf_query_resolve` — Insert a timestamp query around a draw, submit,
     and resolve. Assert returned timestamps are monotonic and non-zero.
     - Input: `cmd.write_timestamp(q0); cmd.draw(...); cmd.write_timestamp(q1)`
     - Expected: `t1 > t0`, both > 0, units in nanoseconds per backend convention
@@ -241,7 +235,7 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
 | TC-2.2.I.3  | `test_streaming_world_traverse` | R-2.2.9  |
 | TC-2.2.I.4  | `test_async_compute_overlap`    | R-2.2.5  |
 | TC-2.2.I.5  | `test_diagnostic_overlay`       | R-2.2.11 |
-| TC-2.1.I.1  | `test_metal_d3d12_parity`       | GR-3.3   |
+| TC-2.1.I.1  | `test_vulkan_backend_parity`       | GR-3.3   |
 | TC-2.1.I.2  | `test_dedicated_alloc_24h`      | GR-1.6   |
 
 1. **TC-2.2.I.1** `test_full_graph_compile` — Compile a 30-pass production graph with shadows,
@@ -269,7 +263,7 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
    - Input: `enable_graph_overlay()`, single frame
    - Expected: overlay rendered, DOT file parses, timings non-zero
 
-6. **TC-2.1.I.1** `test_metal_d3d12_parity` — Run identical render graph on Metal and D3D12
+6. **TC-2.1.I.1** `test_vulkan_backend_parity` — Run identical render graph on Vulkan
    backends. Compare hash of final framebuffer. Assert pixel-identical within tolerance.
    - Input: same scene, two backends
    - Expected: PSNR > 50 dB (allowing minor rounding)

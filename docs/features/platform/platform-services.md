@@ -120,7 +120,7 @@
      `getCacheDir()` (system may purge). Console: scratch storage with title-managed lifecycle.
 3. **F-14.5.10** — A managed local cache for game developers (separate from player cache) storing:
    compiled asset cache (cooked textures, meshlet data, LODs), shader bytecode cache (compiled
-   DXIL/SPIR-V/MSL keyed by HLSL source hash), logic graph bytecode cache, editor thumbnail cache,
+   SPIR-V keyed by GLSL source hash), logic graph bytecode cache, editor thumbnail cache,
    and hot-reload intermediate files. Stored in the project directory under `.harmonius/cache/`
    (git-ignored). The developer cache integrates with the shared build cache (F-15.11.1) — local
    cache is checked first, shared cache second, full rebuild last. Cache invalidation is hash-based:
@@ -142,9 +142,9 @@
    reduces first-frame stutter from 100+ms to <1ms for previously-seen pipeline states. Cache is
    stored in the player local cache directory (F-14.5.9) under a `pso/` subdirectory.
    - **Deps:** F-2.1.1 (GPU Backend Trait), F-14.5.9 (Local File Cache)
-   - **Platform:** D3D12: uses `ID3D12Device::CreatePipelineState` with cached blob via
-     `GetCachedBlob`. Vulkan: uses `VkPipelineCache` with `vkGetPipelineCacheData`. Metal: uses
-     `MTLBinaryArchive` for pre-compiled pipelines. Mobile GPUs often have driver-managed PSO
+   - **Platform:** Vulkan: uses `VkDevice::vkCreateGraphicsPipelines` with cached blob via
+     `vkGetPipelineCacheData`. Vulkan uses `VkPipelineCache` with `vkGetPipelineCacheData`.
+     `VkPipelineCache` for pre-compiled pipelines. Mobile GPUs often have driver-managed PSO
      caches; the engine's cache supplements but does not replace them.
 5. **F-14.5.12** — A managed temporary directory for short-lived files needed during engine and game
    operation: screenshot captures before save, video encoding intermediates, crash dump staging,

@@ -530,9 +530,9 @@ classDiagram
 
     class CompileTarget {
         <<enumeration>>
-        Dxil
         SpirV
-        Metal
+        SpirV
+        Vulkan
         All
     }
 
@@ -1295,9 +1295,9 @@ impl<K: Eq + Hash, V> TaggedLookupTable<K, V> {
 
 #### 15. `GraphCompiler`
 
-Shared framework for compiling visual node graphs to HLSL shader code. Performs topological sort,
-type checking, dead code elimination, HLSL emission, DXC compilation, and Metal Shader Converter
-(MSC) translation. Each graph domain (material, effect, shader) supplies node type definitions; the
+Shared framework for compiling visual node graphs to GLSL shader code. Performs topological sort,
+type checking, dead code elimination, GLSL emission, glslc compilation, and glslc (glslc)
+translation. Each graph domain (material, effect, shader) supplies node type definitions; the
 compiler provides the shared pipeline.
 
 ```rust
@@ -1340,14 +1340,14 @@ pub enum ShaderDataType {
     Sampler,
 }
 
-/// Shared graph-to-HLSL compiler.
+/// Shared graph-to-GLSL compiler.
 pub struct GraphCompiler;
 
 impl GraphCompiler {
     /// Compiles a graph to shader bytecode.
     /// Steps: topological sort, type check, dead code
-    /// elimination, HLSL emission, DXC compilation,
-    /// optional MSC conversion.
+    /// elimination, GLSL emission, glslc compilation,
+    /// optional glslc conversion.
     pub fn compile(
         nodes: &[NodeDef],
         edges: &[(NodeId, usize, NodeId, usize)],
@@ -1357,12 +1357,12 @@ impl GraphCompiler {
 
 /// Target platform for compilation output.
 pub enum CompileTarget {
-    /// DXIL for Direct3D 12.
-    Dxil,
     /// SPIR-V for Vulkan.
     SpirV,
-    /// MSL for Metal (via DXC + MSC).
-    Metal,
+    /// SPIR-V for Vulkan.
+    SpirV,
+    /// SPIR-V (via glslc).
+    Vulkan,
     /// All targets.
     All,
 }
@@ -1420,8 +1420,8 @@ Core algorithms are consumed at different points in the frame lifecycle:
 1. **`Handle<T>` / `HandleMap<T>`** — No platform specifics
    - **macOS:** No platform specifics
    - **Linux:** No platform specifics
-2. **`UniformGrid<T>` GPU upload** — D3D12 buffer
-   - **macOS:** Metal buffer
+2. **`UniformGrid<T>` GPU upload** — Vulkan buffer
+   - **macOS:** Vulkan buffer
    - **Linux:** Vulkan buffer
 3. **`Octree<T>`** — No platform specifics (CPU-only)
    - **macOS:** No platform specifics
@@ -1429,9 +1429,9 @@ Core algorithms are consumed at different points in the frame lifecycle:
 4. **`CompressionCodec`** — Platform-native async I/O
    - **macOS:** kqueue-based async compress
    - **Linux:** io_uring-based async compress
-5. **`GraphCompiler`** — DXC CLI subprocess
-   - **macOS:** DXC CLI subprocess + MSC CLI subprocess
-   - **Linux:** DXC CLI subprocess
+5. **`GraphCompiler`** — glslc CLI subprocess
+   - **macOS:** glslc CLI subprocess + glslc CLI subprocess
+   - **Linux:** glslc CLI subprocess
 6. **`PlatformTier`** — Desktop / HighEnd
    - **macOS:** Mobile / Desktop
    - **Linux:** Desktop / HighEnd
@@ -1500,7 +1500,7 @@ Rust stdlib file I/O.
 4. **`TaggedLookupTable<K, V>`** — Insert/get round-trip; weighted selection respects weights over
    many samples; missing key returns None
 5. **`GraphCompiler`** — Topological sort correctness; type mismatch produces CompileError; dead
-   code elimination removes unreachable nodes; HLSL output for simple graph
+   code elimination removes unreachable nodes; GLSL output for simple graph
 
 ### Integration Tests
 
@@ -1681,7 +1681,7 @@ streaming policy.
 - Replace all Tokio references with compio
 - Remove `*mut World` from `WorkContext` — use safe `&mut World` with lifetime
 - Fix `ConditionCheckFn` lifetime — use `for<'w> fn(&ConditionContext<'w>) -> bool`
-- Fix `GraphCompiler` platform notes — "DXC CLI subprocess" not "DXC via C API"
+- Fix `GraphCompiler` platform notes — "glslc CLI subprocess" not "glslc via C API"
 - Use `impl Fn` instead of `fn` pointer for `ConnectivityAnalyzer` neighbor function
 - Resolve handle bit layout as 32+32 universally
 - Add `DeterministicRng` primitive (identified gap)

@@ -100,13 +100,13 @@ Companion test cases for [graph-runtime.md](graph-runtime.md).
 1. **#1** — Canonical 3-node arithmetic IR through RustBackend
    - **Expected:** `EmitOutput.artifact` contains `pub fn evaluate(...)`
 
-### TC-1.15.2.2 HlslBackend Emits Shader
+### TC-1.15.2.2 GlslBackend Emits Shader
 
 | # | Requirement |
 |---|-------------|
 | 1 | F-1.15.2    |
 
-1. **#1** — Canonical material IR through HlslBackend
+1. **#1** — Canonical material IR through GlslBackend
    - **Expected:** `EmitOutput.artifact` contains `float4 main(` header
 
 ### TC-1.15.2.3 TypeDescriptorBackend Emits Layout
@@ -157,7 +157,7 @@ Companion test cases for [graph-runtime.md](graph-runtime.md).
 | 1 | F-2.7.1     |
 
 1. **#1** — Material subsystem compiles "color + normal" graph
-   - **Expected:** HlslBackend artifact passes dxc compile
+   - **Expected:** GlslBackend artifact passes glslc compile
 
 ### TC-7.2.3.1 Behavior Tree Client Round-Trip
 

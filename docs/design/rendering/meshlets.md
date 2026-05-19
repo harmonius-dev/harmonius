@@ -208,8 +208,8 @@ pub struct BufferView {
 }
 ```
 
-Caps chosen to match D3D12/Vulkan/Metal mesh shader native sizes: 64 vertices and 124 triangles per
-meshlet (meshoptimizer default).
+Caps chosen to match Vulkan mesh shader native sizes: 64 vertices and 124 triangles per meshlet
+(meshoptimizer default).
 
 ### Builder API
 
@@ -311,8 +311,8 @@ sequenceDiagram
 
 | Backend       | Mesh Shader | Indirect Dispatch | Bindless |
 |---------------|-------------|-------------------|----------|
-| D3D12         | yes (SM 6.5)| yes               | yes      |
-| Metal 4       | yes         | yes               | yes      |
+| Vulkan         | yes (SM 6.5)| yes               | yes      |
+| Vulkan       | yes         | yes               | yes      |
 | Vulkan        | yes (ext)   | yes (EXT_mesh_shader) | yes  |
 
 All three backends share the same meshlet layout. A fallback vertex-shader path exists for legacy

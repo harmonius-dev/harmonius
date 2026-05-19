@@ -1929,8 +1929,9 @@ This path is optional. The CPU path is always available as fallback on all platf
 | Linux    |
 | Mobile   |
 
-1. **Windows** — SIMD via `std::arch::x86_64` for batch steering math. GPU crowds via D3D12 compute.
-2. **macOS** — SIMD via `std::arch::aarch64` (NEON). GPU crowds via Metal compute. Thread pool
+1. **Windows** — SIMD via `std::arch::x86_64` for batch steering math. GPU crowds via Vulkan
+   compute.
+2. **macOS** — SIMD via `std::arch::aarch64` (NEON). GPU crowds via Vulkan compute. Thread pool
    scoped tasks for parallel flocking batches.
 3. **Linux** — SIMD via `std::arch::x86_64`. GPU crowds via Vulkan compute. CPU-bound subsystem, no
    async I/O.

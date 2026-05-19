@@ -97,8 +97,8 @@ threading, error handling, determinism, and other concerns that no single domain
 | R-X.3.2 | Network disconnection resilience |
 | R-X.3.3 | Fallback assets for failed loads |
 
-1. **R-X.3.1** — The engine **SHALL** detect GPU device loss (D3D12 device removed, Vulkan device
-   lost, Metal command buffer error) and orchestrate recovery: (1) notify the render thread to
+1. **R-X.3.1** — The engine **SHALL** detect GPU device loss (Vulkan device removed, Vulkan device
+   lost, Vulkan command buffer error) and orchestrate recovery: (1) notify the render thread to
    abandon in-flight frames, (2) release all GPU resources, (3) recreate the device and swapchain,
    (4) re-upload persistent resources (shaders, pipelines, static buffers), (5) resume rendering
    from the next simulation frame. Game state **SHALL NOT** be lost during recovery. The recovery
@@ -244,8 +244,8 @@ threading, error handling, determinism, and other concerns that no single domain
    behavior, and which are platform-exclusive. At minimum: ECS behavior, physics simulation, save
    format, and networking protocol **SHALL** be bit-identical across Windows, macOS, and Linux. GPU
    rendering **SHALL** produce visually equivalent results (not bit-identical due to GPU hardware
-   differences). Platform-exclusive features (DirectStorage, Metal I/O, console certification)
-   **SHALL NOT** be dependencies of platform-agnostic systems.
+   differences). Platform-exclusive features (Vulkan staging buffers, Vulkan staging buffers,
+   console certification) **SHALL NOT** be dependencies of platform-agnostic systems.
    - **Rationale:** Platform-specific code that leaks into platform-agnostic systems creates
      maintenance burden and prevents cross-platform testing.
    - **Verification:** Cross-platform CI: run the full test suite on Windows, macOS, and Linux;
@@ -260,7 +260,7 @@ threading, error handling, determinism, and other concerns that no single domain
 | R-X.9.1 | Unified wind system |
 | R-X.9.2 | Single cloth and ragdoll owner |
 | R-X.9.3 | Voice chat single jitter buffer |
-| R-X.9.4 | HLSL shader compilation pipeline |
+| R-X.9.4 | GLSL shader compilation pipeline |
 | R-X.9.5 | Visual-only authoring surfaces |
 | R-X.9.6 | Cross-domain accessibility hooks |
 
@@ -298,18 +298,14 @@ threading, error handling, determinism, and other concerns that no single domain
      adaptation algorithms.
    - **Verification:** Integration test: send voice packets over a simulated 100ms jitter link;
      verify packets pass through exactly one buffer (audio) and arrive with latency under 200ms.
-4. **R-X.9.4** — The shader graph system **SHALL** compile material and shader graphs to HLSL, which
-   DXC (Direct3D Shader Compiler) compiles to DXIL and SPIR-V, and Metal Shader Converter translates
-   DXIL to MSL. HLSL is the sole shader intermediate language. WGSL **SHALL NOT** be generated as
-   web is not a target platform. All shader compilation paths in the engine **SHALL** use DXC and
-   Metal Shader Converter as the shader compilation backend, with no SPIRV-Cross dependencies. DXC
-   is accessed via `windows-rs` COM on Windows and C API on Linux. Metal Shader Converter is
-   accessed via CLI subprocess.
-   - **Rationale:** HLSL is the universal shader intermediate representation. DXC provides
-     industry-standard compilation to DXIL and SPIR-V, and Metal Shader Converter provides Apple's
-     official DXIL-to-MSL translation.
-   - **Verification:** Build test: compile all engine shaders; verify HLSL is the sole intermediate
-     format, DXC produces DXIL and SPIR-V, and Metal Shader Converter produces MSL.
+4. **R-X.9.4** — The shader graph system **SHALL** compile material and shader graphs to GLSL, which
+   the `glslc` CLI compiles to SPIR-V. GLSL is the sole shader intermediate language. WGSL **SHALL
+   NOT** be generated as web is not a target platform. All shader compilation paths **SHALL** use
+   `glslc` invoked as a CLI subprocess on every platform.
+   - **Rationale:** GLSL is the universal shader source format. `glslc` provides industry-standard
+     compilation to SPIR-V for the Vulkan backend.
+   - **Verification:** Build test: compile all engine shaders; verify GLSL is the sole intermediate
+     format and `glslc` produces valid SPIR-V for every target.
 5. **R-X.9.5** — All user-facing authoring surfaces — gameplay logic, material graphs, animation
    state machines, VFX effect graphs, audio mixing, AI behavior trees, UI layout, quest/dialogue
    trees, formula definitions, and gesture recognition — **SHALL** be authored exclusively through

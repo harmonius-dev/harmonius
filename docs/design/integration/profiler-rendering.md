@@ -50,7 +50,7 @@ This integration targets 3D render pipelines (mesh shader meshlets, deferred mat
 ### Timebase Calibration
 
 On backend init the renderer records a paired `(cpu_tsc, gpu_ticks)` sample via `calibrate_timer`
-(D3D12 `GetClockCalibration`, Metal `MTLCounterSampleBuffer.sampleTimestamps`, Vulkan
+(Vulkan `vkGetCalibratedTimestampsEXT`, `vkGetQueryPoolResults` for timestamps, Vulkan
 `vkGetCalibratedTimestampsEXT`). Ticks are multiplied by `gpu_hz` to produce milliseconds on the CPU
 timeline. Algorithm: linear interpolation against a single anchor, re-anchored every 256 frames to
 bound drift.
@@ -244,8 +244,8 @@ pub struct GpuFrameCapture {
 
 /// Backend-agnostic GPU timestamp query pool. Owned
 /// exclusively by the render thread; never shared.
-/// Wraps the platform-specific query heap (D3D12
-/// query heap, Metal counter sample buffer, Vulkan
+/// Wraps the platform-specific query heap (Vulkan
+/// query heap, Vulkan timestamp query pool, Vulkan
 /// query pool).
 pub struct QueryPool {
     // Opaque, backend-specific fields.
@@ -611,8 +611,8 @@ frame N-2 while frame N is executing, avoiding GPU stalls from synchronous readb
 
 | Platform | Timestamp API | Calibration API | Vendor counters |
 |----------|---------------|-----------------|-----------------|
-| D3D12 | `EndQuery(TIMESTAMP)` | `GetClockCalibration` | PIX, AMD GPUPerfAPI |
-| Metal | `MTLCounterSampleBuffer` | `sampleTimestamps` | Metal System Trace |
+| Vulkan | `vkCmdWriteTimestamp` | `vkGetCalibratedTimestampsEXT` | PIX, AMD GPUPerfAPI |
+| Vulkan | `VkQueryPool` | `sampleTimestamps` | Vulkan trace |
 | Vulkan | `vkCmdWriteTimestamp2` | `vkGetCalibratedTimestampsEXT` | `VK_KHR_performance_query` |
 
 Query pool management differs per backend. The `ProfilingQueries` abstraction in

@@ -683,16 +683,16 @@ Companion test cases for [algorithms.md](algorithms.md).
 | 1 | F-15.3      |
 
 1. **#1** — Graph with unreachable node D
-   - **Expected:** HLSL output excludes D's code
+   - **Expected:** GLSL output excludes D's code
 
-### TC-15.3.4 GraphCompiler HLSL Output
+### TC-15.3.4 GraphCompiler GLSL Output
 
 | # | Requirement |
 |---|-------------|
 | 1 | F-15.3      |
 
 1. **#1** — Simple add-node graph (Float + Float)
-   - **Expected:** Valid HLSL source string
+   - **Expected:** Valid GLSL source string
 
 ### TC-12.5.6 VirtualResourceStreamer Feedback
 

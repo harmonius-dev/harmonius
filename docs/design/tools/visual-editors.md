@@ -28,7 +28,7 @@
 3. **F-15.8.3** -- Strict validation before save/compile
 4. **F-15.8.4** -- Gameplay graphs with yield lowering
 5. **F-15.8.5a** -- Shader graph core (vertex, fragment, compute)
-6. **F-15.8.5b** -- Shader graph to HLSL via DXC + Metal Shader Converter
+6. **F-15.8.5b** -- Shader graph to GLSL via glslc
 7. **F-15.8.5c** -- Material graph variant with PBR and live preview
 8. **F-15.8.6** -- Render graph configuration
 9. **F-15.8.7** -- Animation logic graphs
@@ -175,8 +175,8 @@ pub struct MacroGroup {
 | Domain | Compiles To | Runtime |
 |--------|-------------|---------|
 | Gameplay | ECS systems | ECS scheduler |
-| Shader | HLSL source | DXC / Metal Shader Converter |
-| Material | HLSL (PBR) | DXC / Metal Shader Converter |
+| Shader | GLSL source | glslc / glslc |
+| Material | GLSL (PBR) | glslc / glslc |
 | Animation | Controller data | Animation system |
 | Audio | Audio graph desc | Audio engine |
 | Render pipeline | Frame graph desc | Render graph executor |
@@ -217,7 +217,7 @@ graph TD
     subgraph harmonius_logic_graph_shader
         SG[Shader Graph]
         MAT[Material Graph]
-        HLSL[HLSL Emitter]
+        GLSL[GLSL Emitter]
     end
 
     subgraph harmonius_editor_visual
@@ -256,7 +256,7 @@ graph TD
     COR --> EMT
     SG --> IR
     MAT --> SG
-    SG --> HLSL
+    SG --> GLSL
     EMT --> ECS
     TS --> STT
     AGE --> GEW
@@ -274,7 +274,7 @@ graph TD
 | Subsystem | Direction | Data | Mechanism |
 |-----------|-----------|------|-----------|
 | Scripting runtime | produces | compiled system fns | Middleman `.dylib` |
-| Render graph | produces | shader + pass registration | HLSL + codegen'd node |
+| Render graph | produces | shader + pass registration | GLSL + codegen'd node |
 | Animation runtime | produces | compiled clips, state machines | rkyv assets |
 | Audio engine | produces | audio graph configuration | rkyv assets |
 | Asset pipeline | bidirectional | import/export, hot-reload | `AssetDatabase` API |
@@ -327,8 +327,8 @@ All compiled graph output flows through the codegen pipeline into the middleman 
 1. **Visual graph → Rust source** — `EcsCompiler` emits `.rs` files (systems, suspend-state
    machines, query closures). Bundled `rustc` compiles them. Output is linked into the middleman
    `.dylib`.
-2. **Material graph → HLSL source** — `HlslEmitter` emits `.hlsl` source. `dxc` CLI produces
-   DXIL/SPIR-V. On Apple, `metal-shaderconverter` CLI produces MSL.
+2. **Material graph → GLSL source** — `GlslEmitter` emits `.glsl` source. `glslc` CLI produces
+   SPIR-V. On Apple, `glslc` CLI produces SPIR-V.
 3. **Custom enum variants → codegen'd in middleman** — extensible enums (`GraphDomain`, `NodeKind`,
    `PinType`, `ColumnType`) have plugin-contributed variants generated into the middleman.
    Engine-fixed enums (`TickPhase`, `SystemTrigger`, `TangentMode`, `Severity`) live in the engine
@@ -341,7 +341,7 @@ All compiled graph output flows through the codegen pipeline into the middleman 
 | Graph compile | `.logicgraph` | `.rs` source | `EcsCompiler` |
 | Rust compile | `.rs` source | `.dylib` | bundled `rustc` |
 | Hot-reload | `.dylib` | live systems | `libloading` |
-| Shader compile | `.hlsl` | DXIL/SPIR-V/MSL | `dxc`, `metal-shaderconverter` CLI |
+| Shader compile | `.glsl` | SPIR-V | `glslc` CLI |
 
 ### Enum Codegen Classification
 
@@ -375,15 +375,15 @@ sequenceDiagram
     participant A as Artist
     participant MG as MaterialGraph
     participant CG as CodeGenerator
-    participant DXC as DXC Compiler
-    participant MSC as Metal Shader Converter
+    participant glslc as glslc Compiler
+    participant glslc as glslc
 
     A->>MG: edit node connections
     MG->>MG: validate pin types
-    MG->>CG: compile graph to HLSL
-    CG->>DXC: compile HLSL to DXIL/SPIR-V
+    MG->>CG: compile graph to GLSL
+    CG->>glslc: compile GLSL to SPIR-V
     opt macOS
-        CG->>MSC: convert DXIL to MSL
+        CG->>glslc: convert GLSL to SPIR-V
     end
     CG-->>A: preview updates
 ```
@@ -562,14 +562,14 @@ classDiagram
         +diff(base, head) GraphDiff
         +merge_three_way(base, ours, theirs) MergeResult
     }
-    class HlslEmitter {
-        +emit(graph, stage, registry) Result~HlslOutput~
+    class GlslEmitter {
+        +emit(graph, stage, registry) Result~GlslOutput~
     }
     class MaterialGraph {
         +AssetId id
         +Vec~MaterialNode~ nodes
         +Vec~MaterialEdge~ edges
-        +compile() Result~HlslSource~
+        +compile() Result~GlslSource~
         +validate() Vec~ValidationError~
     }
     class MaterialInstance {
@@ -667,7 +667,7 @@ classDiagram
     EcsCompiler --> CompiledGraph
     CompiledGraph --> SystemTrigger
     GraphDebugger --> DebugState
-    HlslEmitter --> ShaderStage
+    GlslEmitter --> ShaderStage
     SubgraphDef --> LogicGraph
     GraphValidator --> Severity
     MaterialGraph *-- MaterialNode
@@ -857,7 +857,7 @@ Each graph editor domain provides:
 - Node palette (which nodes are available)
 - Pin types and colors
 - Validation rules (domain-specific constraints)
-- Compilation backend (Rust, HLSL, or both)
+- Compilation backend (Rust, GLSL, or both)
 - Preview mode (inline preview per domain)
 - Custom node widgets (domain-specific inline UI)
 
@@ -866,8 +866,8 @@ Each graph editor domain provides:
 | Editor | Domain | Compilation target |
 |--------|--------|--------------------|
 | Logic graph | Gameplay, AI, formulas | Rust → middleman `.dylib` |
-| Material graph | Shading | HLSL → DXC + MSC |
-| VFX graph | Particle compute | HLSL → compute shaders |
+| Material graph | Shading | GLSL → glslc |
+| VFX graph | Particle compute | GLSL → compute shaders |
 | Animation state machine | State transitions | Rust → middleman `.dylib` |
 | Animation blend tree | Blend weights | Rust → middleman `.dylib` |
 | Audio graph | Audio routing | Rust → middleman `.dylib` |
@@ -876,7 +876,7 @@ Each graph editor domain provides:
 | Story progress graph | Narrative branching | Rust → middleman `.dylib` |
 | Character progression | Talent/skill trees | Rust → middleman `.dylib` |
 | Technology tree | Research/unlock | Rust → middleman `.dylib` |
-| Render graph (advanced) | Pass composition | Rust + HLSL |
+| Render graph (advanced) | Pass composition | Rust + GLSL |
 | Custom user graphs | User-defined domains | Rust → middleman `.dylib` |
 
 ## API Design
@@ -1025,9 +1025,9 @@ Non-trivial algorithms used in the compiler and editor, with authoritative sourc
 
 ### Material Graph
 
-`MaterialGraph::compile()` produces `HlslSource`. The HLSL is compiled via `dxc` CLI (DXIL for
-Direct3D 12, SPIR-V for Vulkan) and `metal-shaderconverter` CLI (MSL for Metal). See the HLSL coding
-standard skill for HLSL style rules and the `hlsl` skill for DXC invocation conventions.
+`MaterialGraph::compile()` produces `GlslSource`. The GLSL is compiled via `glslc` CLI (SPIR-V for
+Vulkan, SPIR-V for Vulkan) and `glslc` CLI (SPIR-V). See the GLSL coding standard skill for GLSL
+style rules and the `glsl` skill for glslc invocation conventions.
 
 ```rust
 pub struct MaterialGraph {
@@ -1051,7 +1051,7 @@ impl MaterialGraph {
     ) -> Result<(), PinTypeError>;
     pub fn compile(
         &self,
-    ) -> Result<HlslSource, CompileError>;
+    ) -> Result<GlslSource, CompileError>;
 }
 
 pub struct MaterialInstance {
@@ -1216,7 +1216,7 @@ results are committed at well-defined frame boundaries:
 | Validation (type check, lint) | Worker | Triggered by edit; job dispatch |
 | Incremental graph compile | Worker | Triggered by edit; job dispatch |
 | Commit compiled systems | Main | `PreUpdate` of next frame |
-| Shader compile (DXC/MSC) | Worker | Triggered by save; job dispatch |
+| Shader compile (glslc/glslc) | Worker | Triggered by save; job dispatch |
 | Material preview update | Render | Sync with render extraction |
 | `.dylib` hot-reload | Main | `PreUpdate` of next frame |
 
@@ -1516,15 +1516,15 @@ preview, and install marketplace assets alongside project assets.
 
 | Platform | Shader target | AOT target | Notes |
 |----------|---------------|------------|-------|
-| Windows | DXIL via `dxc` | x86_64 | Full editor + runtime |
-| macOS | MSL via `metal-shaderconverter` | arm64/x86_64 | Full editor + runtime |
-| Linux | SPIR-V via `dxc` | x86_64 | Full editor + runtime |
-| iOS | MSL via `metal-shaderconverter` | arm64 | Runtime only; AOT compiled on desktop |
-| Android | SPIR-V via `dxc` | arm64 | Runtime only; AOT compiled on desktop |
+| Windows | SPIR-V via `glslc` | x86_64 | Full editor + runtime |
+| macOS | SPIR-V via `glslc` | arm64/x86_64 | Full editor + runtime |
+| Linux | SPIR-V via `glslc` | x86_64 | Full editor + runtime |
+| iOS | SPIR-V via `glslc` | arm64 | Runtime only; AOT compiled on desktop |
+| Android | SPIR-V via `glslc` | arm64 | Runtime only; AOT compiled on desktop |
 | Consoles | Platform SDK | Platform SDK | Cross-compiled from desktop editor |
 
 Editor-only features (live preview, node debugging, incremental compilation) run on desktop only.
-Compiled outputs (`.dylib` systems, DXIL/MSL shaders, rkyv assets) must be produced for all target
+Compiled outputs (`.dylib` systems, SPIR-V shaders, rkyv assets) must be produced for all target
 platforms from the desktop build pipeline.
 
 ## Test Plan
@@ -1538,12 +1538,12 @@ Test cases are in [visual-editors-test-cases.md](visual-editors-test-cases.md).
 | Benchmarks | 10 |
 
 1. **Unit** -- Graph IR CRUD, type inference, validation passes, optimizer passes, suspend-state
-   lowering, HLSL emission, material compile, animation timeline, curve editor, graph/table widget
+   lowering, GLSL emission, material compile, animation timeline, curve editor, graph/table widget
    ops. All test cases use explicit `TC-X.Y.Z.N` IDs with defined input/expected output — no prose
    test descriptions.
 2. **Integration** -- End-to-end compile-to-ECS, shader compilation pipeline, material hot-reload,
    animation state machine evaluation, graph diff/merge, specialized editor registration
-3. **Benchmarks** -- Compile time for 500-node graph, type inference latency, HLSL generation
+3. **Benchmarks** -- Compile time for 500-node graph, type inference latency, GLSL generation
    throughput, material parameter update latency. All benchmarks link to numeric targets below.
 
 ### Benchmark targets
@@ -1552,7 +1552,7 @@ Test cases are in [visual-editors-test-cases.md](visual-editors-test-cases.md).
 |-----------|--------|
 | 500-node graph compile | < 200 ms |
 | Type inference per edit | < 2 ms |
-| HLSL generation | < 50 ms |
+| GLSL generation | < 50 ms |
 | Material param update | < 1 ms |
 | Animation timeline scrub | < 16 ms |
 | State machine validation | < 10 ms |
@@ -1580,7 +1580,7 @@ Add an "Architecture — codegen pipeline" subsection:
 
 1. Visual graph -> codegen emits `.rs` source -> bundled rustc compiles -> middleman .dylib ->
    engine hot-reloads
-2. Material graph -> codegen emits HLSL source -> DXC + MSC CLI
+2. Material graph -> codegen emits GLSL source -> glslc CLI
 3. Custom enum variants -> codegen'd in middleman
 4. Resolve open question #1: compiled graphs produce Rust code in the middleman .dylib, not
    relocatable object files
@@ -1611,7 +1611,7 @@ Add to companion test cases file:
 |-----------|--------|
 | 500-node graph compile | < 200 ms |
 | Type inference per edit | < 2 ms |
-| HLSL generation | < 50 ms |
+| GLSL generation | < 50 ms |
 | Material param update | < 1 ms |
 | Animation timeline scrub | < 16 ms |
 | State machine validation | < 10 ms |
@@ -1622,7 +1622,7 @@ Add to companion test cases file:
 | Subsystem | Direction | Data | Mechanism |
 |-----------|-----------|------|-----------|
 | Scripting runtime | produces | compiled system fns | Middleman .dylib |
-| Render graph | produces | shader + pass registration | HLSL + codegen'd node |
+| Render graph | produces | shader + pass registration | GLSL + codegen'd node |
 | Animation runtime | produces | compiled clips, state machines | rkyv assets |
 | Audio engine | produces | audio graph configuration | rkyv assets |
 | Asset pipeline | bidirectional | import/export, hot-reload | AssetDatabase API |
@@ -1644,11 +1644,11 @@ compilation order.
 
 | Platform | Shader target | AOT target | Notes |
 |----------|--------------|------------|-------|
-| Windows | DXIL via DXC | x86_64 | Full editor + runtime |
-| macOS | MSL via MSC | arm64/x86_64 | Full editor + runtime |
-| Linux | SPIR-V via DXC | x86_64 | Full editor + runtime |
-| iOS | MSL via MSC | arm64 | Runtime only, AOT compile on desktop |
-| Android | SPIR-V via DXC | arm64 | Runtime only, AOT compile on desktop |
+| Windows | SPIR-V via glslc | x86_64 | Full editor + runtime |
+| macOS | SPIR-V via glslc | arm64/x86_64 | Full editor + runtime |
+| Linux | SPIR-V via glslc | x86_64 | Full editor + runtime |
+| iOS | SPIR-V via glslc | arm64 | Runtime only, AOT compile on desktop |
+| Android | SPIR-V via glslc | arm64 | Runtime only, AOT compile on desktop |
 | Consoles | Platform SDK | Platform SDK | Cross-compile from desktop editor |
 
 Editor-only features (live preview, debugging) are desktop-only. Compiled outputs must target all
@@ -1748,11 +1748,10 @@ render frame.
 Compiled systems registered at next frame boundary. Shader compilation results committed at
 PreUpdate. Material preview updates sync with render extraction.
 
-### RF-19: HLSL pipeline cross-reference [APPLIED]
+### RF-19: GLSL pipeline cross-reference [APPLIED]
 
-Material editor's `compile() -> HlslSource` feeds into DXC (DXIL for D3D12/Vulkan via SPIR-V) and
-metal-shaderconverter (MSL for Metal) as CLI subprocesses. Cross-reference the HLSL coding standard
-skill.
+Material editor's `compile() -> GlslSource` feeds into glslc (SPIR-V for Vulkan via SPIR-V) and
+glslc (SPIR-V) as CLI subprocesses. Cross-reference the GLSL coding standard skill.
 
 ### RF-20: State engine UI framework dependency [APPLIED]
 
@@ -1822,7 +1821,7 @@ adds visual editing capabilities:
     - Node palette (which nodes are available)
     - Pin types and colors
     - Validation rules (domain-specific constraints)
-    - Compilation backend (Rust or HLSL or both)
+    - Compilation backend (Rust or GLSL or both)
     - Preview mode (inline preview per domain)
     - Custom node widgets (domain-specific inline UI)
 
@@ -1831,8 +1830,8 @@ adds visual editing capabilities:
 | Editor | Domain | Compilation target |
 |--------|--------|-------------------|
 | Logic graph | Gameplay, AI, formulas | Rust -> middleman .dylib |
-| Material graph | Shading | HLSL -> DXC + MSC |
-| VFX graph | Particle compute | HLSL -> compute shaders |
+| Material graph | Shading | GLSL -> glslc |
+| VFX graph | Particle compute | GLSL -> compute shaders |
 | Animation state machine | State transitions | Rust -> middleman .dylib |
 | Animation blend tree | Blend weights | Rust -> middleman .dylib |
 | Audio graph | Audio routing | Rust -> middleman .dylib |
@@ -1841,7 +1840,7 @@ adds visual editing capabilities:
 | Story progress graph | Narrative branching | Rust -> middleman .dylib |
 | Character progression | Talent/skill trees | Rust -> middleman .dylib |
 | Technology tree | Research/unlock | Rust -> middleman .dylib |
-| Render graph (advanced) | Pass composition | Rust + HLSL |
+| Render graph (advanced) | Pass composition | Rust + GLSL |
 | Custom user graphs | User-defined domains | Rust -> middleman .dylib |
 
 ### RF-24: Viewport capabilities [APPLIED]

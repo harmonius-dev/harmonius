@@ -14,8 +14,8 @@
    - **Verification:** Build the same commit twice in the same container and verify identical output
      hashes.
 
-3. **R-15.24.3** — The engine **SHALL** compile HLSL shaders to all target formats (DXIL, SPIR-V,
-   Metal IR) in the cloud with output stored in the shared build cache.
+3. **R-15.24.3** — The engine **SHALL** compile GLSL shaders to all target formats (SPIR-V, SPIR-V,
+   SPIR-V) in the cloud with output stored in the shared build cache.
    - **Rationale:** Cloud shader compilation eliminates local toolchain requirements.
    - **Verification:** Compile a shader in the cloud and verify the cache entry is reused by a local
      build.

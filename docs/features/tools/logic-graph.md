@@ -54,7 +54,7 @@
 | ID | Feature |
 | ----------- | ---------------------------------- |
 | F-15.8.5a | Shader Graph Core |
-| F-15.8.5b | Shader Graph to HLSL Compilation |
+| F-15.8.5b | Shader Graph to GLSL Compilation |
 | F-15.8.5c | Material Graph Variant |
 | F-15.8.6 | Render Graph Configuration |
 
@@ -64,17 +64,14 @@
    utility, flow control). Shader graphs validate stage-specific constraints (e.g., vertex outputs
    must include position).
    - **Deps:** F-15.8.1, F-15.8.2, F-2.1.1 (GPU Abstraction)
-2. **F-15.8.5b** — The shader graph compiles to HLSL, which DXC compiles to DXIL (for D3D12) and
-   SPIR-V (for Vulkan). Metal Shader Converter translates DXIL to MSL (for Metal). DXC and Metal
-   Shader Converter are accessed via Rust FFI bindings (DXC via windows-rs on Windows, libloading on
-   Linux; Metal Shader Converter via CLI subprocess on macOS). HLSL is the sole shader intermediate
-   language. Compilation errors map back to the originating graph node. MSL on macOS. All formats
-   are produced through DXC and Metal Shader Converter.
+2. **F-15.8.5b** — The shader graph compiles to GLSL, which `glslc` compiles to SPIR-V via CLI
+   subprocess on every platform. GLSL is the sole shader intermediate language. Compilation errors
+   map back to the originating graph node.
    - **Deps:** F-15.8.5a
-   - **Platform:** Shader output format is platform-dependent: DXIL on Windows, SPIR-V on Linux,
+   - **Platform:** SPIR-V output on all targets (Vulkan 1.4+)
 3. **F-15.8.5c** — Material graphs are a specialized shader graph variant with PBR inputs (base
    color, metallic, roughness, normal, emissive) and live preview in the viewport. Material graphs
-   compile through the same HLSL pipeline as shader graphs. Replaces all hand-written shader code
+   compile through the same GLSL pipeline as shader graphs. Replaces all hand-written shader code
    with visual authoring. Material parameter changes reflect in the viewport in real time.
    - **Deps:** F-15.8.5b, F-15.3.1 (Material Graph)
 4. **F-15.8.6** — Configures the rendering pipeline — passes, resources, and dependencies — via a

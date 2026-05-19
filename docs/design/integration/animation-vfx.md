@@ -401,8 +401,7 @@ Fallback details:
 ## Platform Considerations
 
 None -- identical across all platforms. Animation events and VFX spawning use platform-agnostic ECS
-primitives. Particle simulation runs on GPU compute shaders compiled per-backend (HLSL to
-DXIL/SPIR-V/ Metal IR).
+primitives. Particle simulation runs on GPU compute shaders compiled per-backend (GLSL to SPIR-V).
 
 ## Test Plan
 

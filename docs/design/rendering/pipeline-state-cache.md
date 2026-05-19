@@ -26,7 +26,7 @@
 5. **R-2.3.9.5** -- LRU GC with configurable on-disk cap (default 512 MiB)
 6. **R-2.3.9.6** -- Corrupted entries are isolated; cache reopens clean
 7. **R-2.3.9.7** -- Hot-reload sends `Invalidate(PsoKey)` to the render thread
-8. **R-2.3.9.8** -- Descriptor layout is inferred from DXIL / SPIR-V reflection once, cached
+8. **R-2.3.9.8** -- Descriptor layout is inferred from SPIR-V / SPIR-V reflection once, cached
 
 ### Cross-Cutting Dependencies
 
@@ -260,9 +260,9 @@ pub fn infer_descriptor_layout(
     api: ShaderApi,
 ) -> Result<DescriptorLayout, CacheError> {
     match api {
-        ShaderApi::Dxil => reflect_dxil(bytecode),
+        ShaderApi::SpirV => reflect_spirv(bytecode),
         ShaderApi::Spirv => reflect_spirv(bytecode),
-        ShaderApi::Metal => reflect_metal_lib(bytecode),
+        ShaderApi::Vulkan => reflect_metal_lib(bytecode),
     }
 }
 ```
@@ -353,8 +353,8 @@ Memory GC runs every 120 frames, trimming entries not used in the last 600 frame
 
 | Backend | PSO Blob Format         | Serialization API              |
 |---------|-------------------------|--------------------------------|
-| D3D12   | `ID3D12PipelineLibrary` | `GetSerializedSize` / `Load`   |
-| Metal 4 | `MTLBinaryArchive`      | `serializeToURL` / `fromURL`   |
+| Vulkan   | `VkPipelineCache` | `GetSerializedSize` / `Load`   |
+| Vulkan | `VkPipelineCache`      | `serializeToURL` / `fromURL`   |
 | Vulkan  | `VK_PIPELINE_CACHE`     | `vkGetPipelineCacheData`       |
 
 Each backend exposes a blob API. The Harmonius cache wraps that blob in our own header + key

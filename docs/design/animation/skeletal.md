@@ -54,7 +54,7 @@ evaluation tiers: full, reduced bones, half bones at lower update rate, or verte
 
 Key design decisions:
 
-1. **GPU-first** -- all per-bone math runs in HLSL compute shaders, not on the CPU. The CPU only
+1. **GPU-first** -- all per-bone math runs in GLSL compute shaders, not on the CPU. The CPU only
    computes blend descriptors and uploads them.
 2. **Instanced arena** -- thousands of skeleton instances share a single GPU arena buffer and are
    evaluated in one dispatch, grouped by clip.
@@ -157,11 +157,11 @@ harmonius_animation/
 |   +-- blend.rs        # GpuBlendDispatch
 |   +-- arena.rs        # GpuArenaBuffer management
 |   +-- shaders/
-|       +-- skinning_lbs.hlsl
-|       +-- skinning_dqs.hlsl
-|       +-- keyframe_eval.hlsl
-|       +-- blend_linear.hlsl
-|       +-- blend_additive.hlsl
+|       +-- skinning_lbs.glsl
+|       +-- skinning_dqs.glsl
+|       +-- keyframe_eval.glsl
+|       +-- blend_linear.glsl
+|       +-- blend_additive.glsl
 +-- components.rs       # ECS components:
                         # SkeletonRef,
                         # AnimationPlayer,
@@ -996,10 +996,10 @@ pub fn gpu_animation_system(
 );
 ```
 
-### GPU Compute Shaders (HLSL)
+### GPU Compute Shaders (GLSL)
 
-```hlsl
-// keyframe_eval.hlsl
+```glsl
+// keyframe_eval.glsl
 // Dispatched per (instance, bone) pair.
 
 struct BoneTrackHeader {
@@ -1057,8 +1057,8 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
 }
 ```
 
-```hlsl
-// skinning_lbs.hlsl
+```glsl
+// skinning_lbs.glsl
 // Linear blend skinning compute shader.
 // Dispatched per vertex.
 
@@ -1120,8 +1120,8 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
 }
 ```
 
-```hlsl
-// skinning_dqs.hlsl
+```glsl
+// skinning_dqs.glsl
 // Dual-quaternion skinning compute shader.
 // Eliminates candy-wrapping at twist joints.
 
@@ -1536,8 +1536,8 @@ Animation events follow this path:
 
 ### Compute Shader Dispatch
 
-All three compute stages (keyframe eval, blend, skinning) use HLSL compiled via DXC. On macOS, DXIL
-is translated to MSL via Metal Shader Converter (CLI subprocess per project constraints).
+All three compute stages (keyframe eval, blend, skinning) use GLSL compiled via glslc. On macOS,
+SPIR-V is translated to SPIR-V via glslc (CLI subprocess per project constraints).
 
 Thread group sizes:
 
@@ -1687,7 +1687,7 @@ Curve evaluation for animation clips uses the shared `Curve<T>` type (see
 constraint? What is the best possible solution imaginable without those constraints? What is the
 impact of removing them?
 
-The GPU-first constraint (all per-bone math in HLSL compute, CPU only computes blend descriptors) is
+The GPU-first constraint (all per-bone math in GLSL compute, CPU only computes blend descriptors) is
 the biggest limiter. It means every new animation feature (retargeting, compression, events) must
 have a GPU compute path, even when a CPU implementation would be simpler to develop and debug. If
 lifted, a CPU fallback pipeline could handle small skeleton counts (mobile) while GPU handles
@@ -1713,7 +1713,7 @@ A CPU-side animation pipeline (as most engines use) would be simpler to implemen
 extend. We are not taking it because the instanced evaluation requirement (R-9.1.5: 1000+ instances
 in a single dispatch) cannot be met CPU-side without unacceptable per-instance overhead. The GPU
 approach processes all instances in one dispatch regardless of count. The trade-off is that GPU
-development is harder (HLSL compute shaders, debugging with GPU captures) but the scalability to
+development is harder (GLSL compute shaders, debugging with GPU captures) but the scalability to
 MMO-density character counts is a hard requirement that CPU pipelines cannot satisfy.
 
 **Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
@@ -1773,7 +1773,7 @@ ambiguity and align both modules.
 Skinning happens inside the mesh shader, not as a separate compute pass writing to a vertex buffer.
 Each meshlet cluster reads the bone palette and skins vertices during meshlet decode:
 
-```hlsl
+```glsl
 // In mesh shader per meshlet:
 // 1. Load meshlet vertex indices
 // 2. Read bone palette from structured buffer
@@ -1814,7 +1814,7 @@ Advance frame index after submit. Poll fence before reusing.
 Store the previous frame's bone palette alongside the current one. The mesh shader reads both to
 compute per-vertex motion vectors for TAA and motion blur:
 
-```hlsl
+```glsl
 float3 curr_pos = skin(vertex, curr_palette);
 float3 prev_pos = skin(vertex, prev_palette);
 float2 motion = project(curr_pos) - project(prev_pos);

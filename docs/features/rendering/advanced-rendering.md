@@ -26,9 +26,9 @@
    post-build compaction to reduce memory. Top-level acceleration structure (TLAS) rebuilt or refit
    each frame for dynamic scenes.
    - **Deps:** F-2.1.1
-   - **Platform:** Mobile: disabled on most devices; Apple A17 Pro/M3+ support hardware RT via Metal
-     but with limited BLAS budget. Switch (original): no RT hardware. Switch 2: Ampere RT cores
-     available with limited BLAS budget. Desktop: full BLAS/TLAS with compaction. High-end:
+   - **Platform:** Mobile: disabled on most devices; Apple A17 Pro/M3+ support hardware RT via
+     Vulkan but with limited BLAS budget. Switch (original): no RT hardware. Switch 2: Ampere RT
+     cores available with limited BLAS budget. Desktop: full BLAS/TLAS with compaction. High-end:
      unlimited AS complexity.
 2. **F-2.5.2** — Hybrid reflection system combining screen-space ray marching (SSR) for nearby
    surfaces with hardware ray tracing for off-screen and rough reflections. A roughness threshold
@@ -109,8 +109,8 @@
     and improving GPU occupancy.
     - **Deps:** F-2.5.1
     - **Platform:** Mobile: disabled; no SER hardware. Switch: disabled. Desktop: enabled on Ada
-      Lovelace+ (NVIDIA) via VK_NV_ray_tracing_invocation_reorder or D3D12 SER API. High-end:
-      automatically enabled when RT is active.
+      Lovelace+ (NVIDIA) via VK_NV_ray_tracing_invocation_reorder or
+      VK_NV_ray_tracing_invocation_reorder. High-end: automatically enabled when RT is active.
 12. **F-2.5.12** — AI-trained neural network denoiser that replaces hand-tuned spatiotemporal
     denoisers for ray-traced and path-traced output. Operates on noisy per-pixel radiance with
     motion vectors and depth, producing temporally stable results with fewer artifacts than

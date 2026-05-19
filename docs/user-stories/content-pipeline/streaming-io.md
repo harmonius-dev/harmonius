@@ -106,8 +106,9 @@
 | US-12.5.19 | game player (P-23)         |
 
 1. **US-12.5.16** — **As an** engine developer (P-26), **I want** textures and meshes loaded
-   directly from disk into GPU memory via DirectStorage, Metal I/O, or io_uring staging, **so that**
-   streaming saturates NVMe bandwidth without consuming CPU memory bandwidth.
+   directly from disk into GPU memory via Vulkan staging buffers, Vulkan staging buffers, or
+   io_uring staging, **so that** streaming saturates NVMe bandwidth without consuming CPU memory
+   bandwidth.
 2. **US-12.5.17** — **As an** engine developer (P-26), **I want** GPU compute decompression of
    streamed assets in place, **so that** the CPU is free for gameplay and simulation during
    open-world traversal.

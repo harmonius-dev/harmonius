@@ -104,7 +104,7 @@ graph TB
     GEO -->|meshlets, LOD| RENDER
     GRID -->|fog, voxel GI| RENDER
     PHYS -.->|debug viz| RENDER
-    SCRIPT -->|HLSL shaders| RENDER
+    SCRIPT -->|GLSL shaders| RENDER
     UI -->|widget quads| RENDER
     VFX -->|particles, compute| RENDER
 
@@ -576,14 +576,14 @@ flowchart LR
 
     subgraph "Compilation"
         RC[Bundled rustc]
-        DXC[dxc CLI]
-        MSC[metal-shaderconverter]
+        glslc[glslc CLI]
+        glslc[glslc]
     end
 
     subgraph "Output"
         DY[middleman .dylib]
-        DXIL[DXIL / SPIR-V]
-        MSL[metallib]
+        SPIR-V[SPIR-V / SPIR-V]
+        SPIR-V[SPIR-V module]
     end
 
     LG --> CG
@@ -597,15 +597,15 @@ flowchart LR
 
     MG --> CG
     CG -->|.rs| RC
-    CG -->|.hlsl| DXC
+    CG -->|.glsl| glslc
     RC --> DY
-    DXC --> DXIL
-    DXC -->|DXIL| MSC
-    MSC --> MSL
+    glslc --> SPIR-V
+    glslc -->|SPIR-V| glslc
+    glslc --> SPIR-V
 
     style DY fill:#ffa94d,color:#000
-    style DXIL fill:#4a9eff,color:#fff
-    style MSL fill:#da77f2,color:#fff
+    style SPIR-V fill:#4a9eff,color:#fff
+    style SPIR-V fill:#da77f2,color:#fff
 ```
 
 ### What each editor contributes
@@ -613,10 +613,10 @@ flowchart LR
 | Editor | Codegen output | Target |
 |--------|---------------|--------|
 | Logic graphs | ECS systems, pure fns | .dylib |
-| Material graphs | HLSL fragment/vertex | DXIL, MSL |
+| Material graphs | GLSL fragment/vertex | SPIR-V, SPIR-V |
 | Behavior trees | BT tick fns, utility scores | .dylib |
 | Quest/dialogue | Condition eval, transitions | .dylib |
-| VFX effects | HLSL compute shaders | DXIL, MSL |
+| VFX effects | GLSL compute shaders | SPIR-V, SPIR-V |
 | Table schemas | Typed row structs, accessors | .dylib |
 | Components | Component structs, rkyv derives | .dylib |
 | Anim blends | Blend weight computation fns | .dylib |
@@ -890,6 +890,6 @@ Guidance details:
 | F15 | No reflection; codegen is sole registration | APPLIED | Codegen Compilation Surface |
 | F16 | No HashMap; index-based structures only | APPLIED | classDiagram, no map fields |
 | F17 | ECS-primary; documented exceptions only | APPLIED | Data ownership rule 2 |
-| F18 | HLSL via dxc + metal-shaderconverter CLI | APPLIED | Codegen flowchart |
+| F18 | GLSL via glslc CLI | APPLIED | Codegen flowchart |
 | F19 | Platform I/O assigned to main thread | APPLIED | Data ownership rule 1 |
 | F20 | classDiagram covers all referenced types | APPLIED | Integration data types |

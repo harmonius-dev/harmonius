@@ -30,8 +30,8 @@
 Constraints.md mandates platform-native I/O on the main thread. This document specifies the wire
 protocol: every subsystem that needs I/O sends an `IoRequest` via crossbeam-channel to the main
 thread; the main thread maps each request to its platform backend (io_uring / IOCP / GCD /
-Networking.framework / Metal I/O / DirectStorage); completions arrive via `IoResponse` on a reply
-channel. No subsystem calls OS I/O APIs directly.
+Networking.framework / Vulkan staging buffers / Vulkan staging buffers); completions arrive via
+`IoResponse` on a reply channel. No subsystem calls OS I/O APIs directly.
 
 ### Client Subsystems
 
@@ -435,9 +435,9 @@ sequenceDiagram
 
 | Platform | File backend       | Network backend          | GPU upload backend |
 |----------|--------------------|--------------------------|--------------------|
-| Windows  | IOCP + DirectStorage | MsQuic via windows-rs  | DirectStorage      |
-| macOS    | GCD dispatch_io    | Networking.framework     | Metal I/O          |
-| iOS      | GCD dispatch_io    | Networking.framework     | Metal I/O          |
+| Windows  | IOCP + Vulkan staging buffers | MsQuic via windows-rs  | Vulkan staging buffers      |
+| macOS    | GCD dispatch_io    | Networking.framework     | Vulkan staging buffers          |
+| iOS      | GCD dispatch_io    | Networking.framework     | Vulkan staging buffers          |
 | Linux    | io_uring           | quinn-proto + io_uring   | Vulkan + io_uring  |
 | Android  | io_uring (kernel >= 5.15) | quinn-proto      | Vulkan             |
 

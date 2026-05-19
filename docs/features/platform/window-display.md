@@ -58,18 +58,19 @@
    of the display refresh rate. Correct VSync behavior prevents tearing during MMO raids where
    consistent frame pacing is critical.
    - **Deps:** F-14.1.1
-   - **Platform:** Vulkan exposes `VK_PRESENT_MODE_*` directly. Metal uses
-     `CAMetalLayer.displaySyncEnabled` for VSync and manual frame pacing for mailbox-like behavior.
-     Console platforms have dedicated flip-queue APIs with platform-specific NDA documentation.
+   - **Platform:** Vulkan exposes `VK_PRESENT_MODE_*` directly. Vulkan uses
+     `Vulkan WSI swapchain.displaySyncEnabled` for VSync and manual frame pacing for mailbox-like
+     behavior. Console platforms have dedicated flip-queue APIs with platform-specific NDA
+     documentation.
 2. **F-14.1.6** — Enable HDR output when the display and OS support it, selecting the appropriate
    color space (scRGB on Windows, EDR on macOS) and signaling peak luminance to the compositor. The
    rendering pipeline hands off a linear HDR buffer; this feature handles swapchain format and
    metadata negotiation.
    - **Deps:** F-14.1.1, F-14.1.3
    - **Platform:** Windows uses `DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020` and
-     `DXGI_HDR_METADATA_HDR10`; macOS uses `CAMetalLayer` with `CGColorSpace` set to extended linear
-     sRGB and EDR headroom queries. Linux Wayland HDR is experimental via `wp_color_management_v1`.
-     Console platforms require platform-specific HDR calibration UIs.
+     `DXGI_HDR_METADATA_HDR10`; macOS uses `Vulkan WSI swapchain` with `CGColorSpace` set to
+     extended linear sRGB and EDR headroom queries. Linux Wayland HDR is experimental via
+     `wp_color_management_v1`. Console platforms require platform-specific HDR calibration UIs.
 
 ## GPU Integration
 
@@ -80,7 +81,7 @@
 1. **F-14.1.8** — Expose a `RawWindowHandle` enum from each window that provides the platform-native
    handle (HWND on Windows, NSView on macOS, xcb window or Wayland surface on Linux) required by GPU
    backends to create swapchains. The handle is compatible with the `raw-window-handle` crate
-   ecosystem so that Vulkan, Metal, and DX12 backends create surfaces without platform-specific
+   ecosystem so that Vulkan, and Vulkan backends create surfaces without platform-specific
    branching.
    - **Deps:** F-14.1.1
    - **Platform:** Windows returns `hwnd` and `hinstance` pointers; macOS returns an `ns_view`
@@ -190,5 +191,5 @@
    receives accurate HDR metadata each frame rather than a single static value at swapchain
    creation.
    - **Deps:** F-14.1.6
-   - **Platform:** DXGI HDR metadata on Windows, CAMetalLayer EDR headroom on Apple,
+   - **Platform:** DXGI HDR metadata on Windows, Vulkan WSI swapchain EDR headroom on Apple,
      `wp_color_management_v1` on Wayland.

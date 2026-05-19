@@ -164,8 +164,8 @@ This document covers four tightly coupled subsystems:
 4. **Stylized and advanced materials** -- Toon/cel, painterly, pixel art, outlines, highlights,
    glass, fabric, metal, clearcoat, wax, parallax, material graph system
 
-All state as ECS components. All logic as systems in the render graph. Static dispatch. HLSL via DXC
-to DXIL/SPIR-V/MSL.
+All state as ECS components. All logic as systems in the render graph. Static dispatch. GLSL via
+glslc to SPIR-V.
 
 ## Architecture
 
@@ -296,11 +296,11 @@ flowchart TD
     D --> E[Permutation Key Hash]
     E --> F{In Cache?}
     F -->|Yes| C
-    F -->|No| G[Generate HLSL]
-    G --> H[DXC Compile]
-    H --> I[DXIL + SPIR-V]
+    F -->|No| G[Generate GLSL]
+    G --> H[glslc Compile]
+    H --> I[SPIR-V + SPIR-V]
     I --> J{Metal?}
-    J -->|Yes| K[Metal Shader Converter]
+    J -->|Yes| K[glslc]
     K --> L[Store in Cache]
     J -->|No| L
     L --> M[Create Pipeline State]
@@ -313,7 +313,7 @@ flowchart TD
 shared `GraphRuntime<MaterialNode, TypedEdge, CompiledMaterial>` defined in
 [../core-runtime/graph-runtime.md](../core-runtime/graph-runtime.md). That module owns DAG
 validation, topological sort, cycle detection, pin-type inference, dead-code elimination, and editor
-diagnostics. This doc owns **only** the node palette and the HLSL codegen backend:
+diagnostics. This doc owns **only** the node palette and the GLSL codegen backend:
 
 | Concern                               | Owner                                          |
 |---------------------------------------|------------------------------------------------|
@@ -321,10 +321,10 @@ diagnostics. This doc owns **only** the node palette and the HLSL codegen backen
 | Cycle detection                       | `core-runtime/graph-runtime.md::CycleDetector` |
 | Pin-type inference                    | `core-runtime/graph-runtime.md::TypeInfer`     |
 | Hot-reload barrier                    | `core-runtime/hot-reload-protocol.md`          |
-| HLSL codegen backend                  | This doc (`HlslBackend`)                       |
+| GLSL codegen backend                  | This doc (`GlslBackend`)                       |
 | `MaterialNode` palette + semantics    | This doc                                       |
 
-`CompiledMaterial` is the output type produced by `HlslBackend::emit` and consumed by the `Material`
+`CompiledMaterial` is the output type produced by `GlslBackend::emit` and consumed by the `Material`
 struct in [rendering-core.md](rendering-core.md) Material System.
 
 ### PermutationKey Dimensions
@@ -1012,7 +1012,7 @@ Support three transparency modes with clear render graph ordering:
 For foliage, fences, hair cards, and GPU-driven meshlet rendering (which cannot depth-sort). Use
 blue noise dithered threshold:
 
-```hlsl
+```glsl
 // Pixel shader:
 float threshold = blue_noise(screen_pos, frame_index);
 if (alpha < threshold) discard;

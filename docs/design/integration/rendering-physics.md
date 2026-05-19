@@ -341,7 +341,7 @@ consumes `Res<InterpAlpha>` when snapshotting interpolated transforms.
 
 ## Platform Considerations
 
-| Concern | D3D12 | Metal | Vulkan |
+| Concern | Vulkan | Vulkan | Vulkan |
 |---------|-------|-------|--------|
 | Debug line pass | `DrawInstanced` | `MTLPrimitiveTypeLine` | `vkCmdDraw` lines |
 | Debug markers | PIX events | `MTLCaptureManager` | `VK_EXT_debug_utils` |
@@ -394,4 +394,4 @@ resolution applied.
 | 15 | `PhysicsDebugConfig` cfg-gated | cfg gating removed; runtime-toggleable `Res` |
 | 16 | Debug buffer ownership unclear | `DebugDrawBuffer` documented as owned `Vec`, no Arc |
 | 17 | `max_debug_lines` missing | Field added to `PhysicsDebugConfig` + failure mode |
-| 18 | Platform Considerations empty | Table of D3D12/Metal/Vulkan specifics added |
+| 18 | Platform Considerations empty | Table of Vulkan/Vulkan specifics added |

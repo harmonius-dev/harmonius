@@ -25,23 +25,23 @@
      on cloud or on-premise infrastructure.
 2. **F-15.24.2** — Docker/OCI container definitions for each target platform's toolchain. Each
    container bundles the complete build environment: macOS/Xcode (shader compiler, codesign,
-   notarization), Windows/MSVC+DXC (cl.exe, link.exe, DXC), Android/NDK+Gradle (NDK, SDK, Gradle,
-   apksigner), Linux/Clang (clang, lld, sysroot), and console-specific containers (under NDA, not
-   open-sourced). Container definitions for non-NDA platforms are maintained as open-source OCI
-   image definitions with pinned tool versions and reproducible builds. Containers are versioned and
-   tagged per engine release.
+   notarization), Windows/MSVC+glslc (cl.exe, link.exe, glslc), Android/NDK+Gradle (NDK, SDK,
+   Gradle, apksigner), Linux/Clang (clang, lld, sysroot), and console-specific containers (under
+   NDA, not open-sourced). Container definitions for non-NDA platforms are maintained as open-source
+   OCI image definitions with pinned tool versions and reproducible builds. Containers are versioned
+   and tagged per engine release.
    - **Deps:** F-15.24.1 (Cloud Build Service)
    - **Platform:** macOS containers require macOS hosts (Virtualization.framework or bare metal).
      Console containers require licensed SDK access per manufacturer agreement.
-3. **F-15.24.3** — Cloud service compiles HLSL shaders to all target bytecode formats without
-   requiring any shader toolchain locally. DXC compiles HLSL to DXIL (Windows/Xbox) and SPIR-V
-   (Vulkan/Linux). Metal Shader Converter translates DXIL to Metal IR (macOS/iOS). Console-specific
+3. **F-15.24.3** — Cloud service compiles GLSL shaders to all target bytecode formats without
+   requiring any shader toolchain locally. glslc compiles GLSL to SPIR-V (Windows/Xbox) and SPIR-V
+   (Vulkan/Linux). glslc compiles GLSL to SPIR-V
    shader compilers produce platform-native bytecode. Shader compilation output is identical whether
    compiled locally or on the cloud service. Compiled shaders are stored in the shared build cache
    (F-15.11.2) for reuse across developers and CI.
-   - **Deps:** F-12.2.9 (DXC and Metal Shader Converter Pipeline), F-15.11.2 (Shader Compilation
-     Cache), F-12.2.7 (HLSL Code Generation)
-   - **Platform:** Metal Shader Converter runs only on macOS. DXC is open source and runs on
+   - **Deps:** F-12.2.9 (glslc Pipeline), F-15.11.2 (Shader Compilation
+     Cache), F-12.2.7 (GLSL Code Generation)
+   - **Platform:** glslc runs only on macOS. glslc is open source and runs on
      Windows, macOS, and Linux. Console shader compilers require NDA toolchains.
 4. **F-15.24.4** — Cloud service handles platform code signing for all targets. Apple: codesign with
    Developer ID certificates and submit for notarization with ticket stapling. iOS: sign with
@@ -89,18 +89,18 @@
 
 | Toolchain                     | Platform Restriction                |
 |-------------------------------|-------------------------------------|
-| Metal Shader Converter        | macOS only                          |
-| Metal developer tools         | macOS only                          |
-| DXC (DirectX Shader Compiler) | Windows, macOS, Linux (open source) |
+| glslc        | macOS only                          |
+| Vulkan SDK tools         | macOS only                          |
+| glslc | Windows, macOS, Linux (open source) |
 | Xcode toolchain               | macOS only                          |
 | Android NDK + Gradle          | Any (complex setup)                 |
 | Console shader compilers      | NDA, licensed                       |
 | Platform code-signing         | Licensed                            |
 | MSVC (cl.exe, link.exe)       | Windows only                        |
 
-1. **Metal Shader Converter** — Shader compilation for iOS/macOS targets
-2. **Metal developer tools** — Metal validation, GPU profiling data
-3. **DXC (DirectX Shader Compiler)** — HLSL to DXIL and SPIR-V for Windows/Xbox/Vulkan
+1. **glslc** — Shader compilation for iOS/macOS targets
+2. **Vulkan SDK tools** — Vulkan validation layers, GPU profiling data
+3. **glslc** — GLSL to SPIR-V for Windows/Xbox/Vulkan
 4. **Xcode toolchain** — iOS/macOS app signing, notarization
 5. **Android NDK + Gradle** — Android APK/AAB builds
 6. **Console shader compilers** — Platform-specific shader compilation

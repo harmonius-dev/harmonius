@@ -1587,13 +1587,13 @@ boundary after `CameraBrainSystem` completes, consistent with the engine-wide pa
 
 | Platform | Notes |
 |----------|-------|
-| Windows | D3D12 VRS Tier 2 for foveated rendering |
-| macOS | Metal rasterization rate maps for foveated rendering |
+| Windows | Vulkan fragment shading rate Tier 2 for foveated rendering |
+| macOS | Vulkan fragment shading rate for foveated rendering |
 | Linux | Vulkan fragment shading rate for foveated rendering |
 | iOS | UIKit main thread owns event loop; camera eval on worker |
 | Android | Same threading model as desktop |
 | Nintendo Switch | 4-player split-screen capped at 2 brains per memory budget |
-| Xbox | D3D12 VRS; DirectStorage for camera-related asset streaming |
+| Xbox | Vulkan fragment shading rate; Vulkan staging buffers for camera-related asset streaming |
 | PlayStation | GNM VRS (PSVR2 foveated); DualSense gyro for FP shake |
 | Quest (Meta) | OpenXR; foveated via Vulkan; passthrough blend support |
 | SteamVR | OpenXR; Tobii/Vive eye tracking optional |
@@ -1947,8 +1947,8 @@ VR is not deferred. Design a full VR camera subsystem:
      (`XrEyeTrackerEXT`)
    - `FoveationMap` resource computed each frame: high-resolution center at gaze point, reduced
      resolution in periphery
-   - The render graph's rasterization passes apply VRS based on the foveation map via D3D12 VRS Tier
-     2 / Vulkan fragment shading rate / Metal rasterization rate maps
+   - The render graph's rasterization passes apply VRS based on the foveation map via Vulkan
+     fragment shading rate Tier 2 / Vulkan fragment shading rate / Vulkan fragment shading rate
    - Foveation parameters: inner radius (full res), transition region, outer region (quarter res).
      Configurable per quality tier.
 6. **Eye tracking** — beyond foveated rendering, eye tracking enables:
@@ -1973,8 +1973,8 @@ VR is not deferred. Design a full VR camera subsystem:
 | Quest | OpenXR | Quest Pro/3 | Yes | Vulkan |
 | SteamVR | OpenXR | Tobii/Vive | Yes | Vulkan |
 | PSVR2 | Platform SDK | Built-in | Yes | GNM |
-| Apple Vision | ARKit | Built-in | Yes | Metal |
-| Windows MR | OpenXR | Varies | Yes | D3D12 |
+| Apple Vision | ARKit | Built-in | Yes | Vulkan |
+| Windows MR | OpenXR | Varies | Yes | Vulkan |
 
 ### RF-7: Timeline/property animation integration
 

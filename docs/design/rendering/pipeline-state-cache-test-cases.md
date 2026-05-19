@@ -29,7 +29,7 @@ Test case IDs use `TC-2.3.9.Z.N` format.
 | TC-2.3.9.6.3  | `test_bad_magic_resets_directory`            | R-2.3.9.6 |
 | TC-2.3.9.8.1  | `test_infer_descriptor_layout_dxil`          | R-2.3.9.8 |
 | TC-2.3.9.8.2  | `test_infer_descriptor_layout_spirv`         | R-2.3.9.8 |
-| TC-2.3.9.8.3  | `test_infer_descriptor_layout_metal`         | R-2.3.9.8 |
+| TC-2.3.9.8.3  | `test_infer_descriptor_layout_vulkan`         | R-2.3.9.8 |
 
 1. **TC-2.3.9.2.1** `test_pso_key_deterministic_hash` -- Construct a key twice from the same inputs.
    Assert equal.
@@ -61,9 +61,9 @@ Test case IDs use `TC-2.3.9.Z.N` format.
     and rebuilds.
 19. **TC-2.3.9.6.3** `test_bad_magic_resets_directory` -- Wrong magic header. Directory reset.
 20. **TC-2.3.9.8.1** `test_infer_descriptor_layout_dxil` -- Reflection produces correct binding
-    count for a known DXIL fixture.
+    count for a known SPIR-V fixture.
 21. **TC-2.3.9.8.2** `test_infer_descriptor_layout_spirv` -- Same for SPIR-V.
-22. **TC-2.3.9.8.3** `test_infer_descriptor_layout_metal` -- Same for Metal library.
+22. **TC-2.3.9.8.3** `test_infer_descriptor_layout_vulkan` -- Same for Vulkan library.
 
 ## Integration Tests
 

@@ -81,12 +81,12 @@ graph TD
 
     subgraph "platform::windows"
         WT[Win32 Threads]
-        WI[IOCP + DirectStorage]
+        WI[IOCP + Vulkan staging buffers]
     end
 
     subgraph "platform::macos"
         MT[pthread + QoS]
-        MI["GCD dispatch_io + Metal I/O"]
+        MI["GCD dispatch_io + Vulkan staging buffers"]
     end
 
     subgraph "platform::linux"
@@ -126,12 +126,12 @@ harmonius_platform/
     ├── windows/
     │   ├── threads.rs   # CreateThread,
     │   │                # SetThreadAffinityMask
-    │   └── io.rs        # IOCP, DirectStorage
+    │   └── io.rs        # IOCP, Vulkan staging buffers
     ├── macos/
     │   ├── threads.rs   # pthread_create,
     │   │                # QoS classes
     │   └── io.rs        # GCD dispatch_io,
-    │                    # Metal I/O
+    │                    # Vulkan staging buffers
     └── linux/
         ├── threads.rs   # pthread_create,
         │                # pthread_setaffinity_np
@@ -577,9 +577,9 @@ extraction runs as scoped tasks on the worker pool. The compiled frame produces 
 to the render thread via `crossbeam-channel`. The render thread builds GPU commands and submits
 independently.
 
-**CPU work graph emulation.** D3D12 work graphs allow GPU-driven scheduling of variable-rate work.
-On platforms without native work graphs, the engine emulates them CPU-side by expanding work graph
-nodes into indirect dispatch chains within the task graph. The task graph handles the fan-out.
+**CPU work graph emulation.** Vulkan indirect dispatch allow GPU-driven scheduling of variable-rate
+work. On platforms without native work graphs, the engine emulates them CPU-side by expanding work
+graph nodes into indirect dispatch chains within the task graph. The task graph handles the fan-out.
 
 ### Compilation Pipeline
 
@@ -781,8 +781,8 @@ GPU I/O (disk-to-GPU DMA):
 | Platform | GPU I/O |
 |----------|---------|
 | Linux | N/A (staging buffer) |
-| Windows | DirectStorage (GPU decompression) |
-| Apple | Metal I/O (MTLIOCommandQueue) |
+| Windows | Vulkan staging buffers (GPU decompression) |
+| Apple | Vulkan staging buffers (VkQueue transfer) |
 
 ```rust
 /// Unique identifier for a submitted I/O request.
@@ -999,7 +999,7 @@ pool.scope(|scope| {
 | Hybrid detect | `cpuid` leaf 0x1A | Intel Thread Director |
 | File I/O | IOCP | Via `windows-rs`, overlapped I/O |
 | Network I/O | IOCP | Via `windows-rs` |
-| GPU I/O | DirectStorage | Disk-to-GPU DMA |
+| GPU I/O | Vulkan staging buffers | Disk-to-GPU DMA |
 
 ### macOS
 
@@ -1011,7 +1011,7 @@ pool.scope(|scope| {
 | Hybrid detect | `sysctl hw.nperflevels` |
 | File I/O | GCD `dispatch_io` via dispatch2 |
 | Network I/O | Networking.framework via objc2 |
-| GPU I/O | Metal I/O (`MTLIOCommandQueue`) |
+| GPU I/O | Vulkan staging buffers (`VkQueue transfer`) |
 
 1. **Threads** -- Via objc2
 2. **Affinity** -- `pthread_set_qos_class_self_np` (no direct core pinning)
@@ -1020,7 +1020,7 @@ pool.scope(|scope| {
 5. **File I/O** -- GCD `dispatch_io` via dispatch2. Main thread owns the CFRunLoop which integrates
    with GCD dispatch sources.
 6. **Network I/O** -- Networking.framework via objc2
-7. **GPU I/O** -- Metal I/O (`MTLIOCommandQueue`) for disk-to-GPU DMA
+7. **GPU I/O** -- Vulkan staging buffers (`VkQueue transfer`) for disk-to-GPU DMA
 
 ### Linux
 
@@ -1054,7 +1054,7 @@ pool.scope(|scope| {
 1. **iOS** -- QoS classes for thermal throttling. UIKit owns the OS main thread (`UIApplicationMain`
    / `CFRunLoop`), which also handles I/O polling via GCD dispatch sources. Input events (touch,
    accelerometer, keyboard) are forwarded to the worker pool via `crossbeam-channel`. The render
-   thread presents independently via Metal.
+   thread presents independently via Vulkan.
 2. **Android** -- Thread affinity respects big.LITTLE core topology. The main thread runs the
    `NativeActivity` event loop and I/O polling. Input events are forwarded via `crossbeam-channel`.
 3. **Consoles** -- Vendor-specific thread affinity and priority. NDA APIs.
@@ -1082,10 +1082,10 @@ a platform-specific scaling factor.
 | `crossbeam-channel` | Lock-free channels between threads |
 | `crossbeam-utils` | `CachePadded`, scoped threads, `Backoff` |
 | `dispatch2` | GCD dispatch_io, dispatch sources |
-| `objc2` | Apple framework bindings (Metal, AppKit) |
+| `objc2` | Apple framework bindings (Vulkan, AppKit) |
 | `rustix` | Linux syscalls (io_uring) |
 | `smallvec` | Inline small collections |
-| `windows-rs` | Windows APIs (IOCP, DirectStorage) |
+| `windows-rs` | Windows APIs (IOCP, Vulkan staging buffers) |
 
 ## Safety Invariants
 
@@ -1226,7 +1226,7 @@ dependencies (`crossbeam-deque`, `crossbeam-channel`, `crossbeam-utils`, `rustix
 3. **Channel backpressure** -- If the main thread's I/O completion channel fills up, should the main
    thread block or drop? Bounded channels prevent unbounded memory growth but risk stalling I/O.
 4. **GPU fence integration** -- GPU present/fence wait on the render thread. Need to define how GPU
-   completion events (Vulkan timeline semaphores, Metal command buffer completion handlers, D3D12
+   completion events (Vulkan timeline semaphores, Vulkan command buffer completion handlers, Vulkan
    fence) integrate with the render thread's event loop.
 5. **io_uring kernel version** -- io_uring requires Linux 5.1+. Some operations (non-blocking DNS,
    OPENAT) require 5.19+. Determine minimum kernel version and fallback strategy.
@@ -1264,9 +1264,9 @@ compio provides cross-platform completion-based I/O using the best backend per p
 compio handles both file I/O and network I/O through one API. It replaces Tokio, mio, and all
 platform-specific I/O code.
 
-**Future optimization**: DirectStorage (Windows) and Metal I/O (macOS) can be added later for
-disk-to-GPU DMA transfers, bypassing CPU memory for GPU assets (textures, mesh buffers). This is an
-optimization on top of compio, not a replacement.
+**Future optimization**: Vulkan staging buffers (Windows) and Vulkan staging buffers (macOS) can be
+added later for disk-to-GPU DMA transfers, bypassing CPU memory for GPU assets (textures, mesh
+buffers). This is an optimization on top of compio, not a replacement.
 
 #### Remove custom thread pool — use Rayon
 
@@ -1323,8 +1323,9 @@ Assets use a state machine that advances each frame:
 GPU assets flow: compio reads to CPU memory, game loop sends data in frame packet, render thread
 uploads to GPU.
 
-**Future optimization**: DirectStorage (Windows) and Metal I/O (macOS) add disk-to-GPU DMA, skipping
-the CPU memory hop for GPU assets. The asset pipeline would pre-split files:
+**Future optimization**: Vulkan staging buffers (Windows) and Vulkan staging buffers (macOS) add
+disk-to-GPU DMA, skipping the CPU memory hop for GPU assets. The asset pipeline would pre-split
+files:
 
 | File | Destination | Path |
 |------|-------------|------|
@@ -1340,13 +1341,13 @@ the CPU memory hop for GPU assets. The asset pipeline would pre-split files:
 | `rayon` | Work-stealing thread pool, data parallelism |
 | `compio` | All file and network I/O (io_uring/IOCP/kqueue) |
 | `windows-rs` | Win32 windowing, input |
-| `objc2` | Apple framework bindings (Metal, AppKit) |
+| `objc2` | Apple framework bindings (Vulkan, AppKit) |
 
 Removed: `tokio`, `mio`, `crossbeam-deque`, `crossbeam-utils`, `smallvec`.
 
-Future additions: `DirectStorage` (Windows) and Metal I/O (macOS) for disk-to-GPU DMA optimization.
-Target Metal 4 API when available (WWDC 2025) for explicit memory management, placement sparse
-resources, and improved shader compilation.
+Future additions: `Vulkan staging buffers` (Windows) and Vulkan staging buffers (macOS) for
+disk-to-GPU DMA optimization. Target Vulkan 1.4 API when available (WWDC 2025) for explicit memory
+management, placement sparse resources, and improved shader compilation.
 
 ### Open items from review
 
@@ -1395,8 +1396,8 @@ GPU I/O (disk-to-GPU DMA):
 | Platform | GPU I/O |
 |----------|---------|
 | Linux | N/A (staging buffer) |
-| Windows | DirectStorage (GPU decompression) |
-| Apple | Metal I/O (MTLIOCommandQueue) |
+| Windows | Vulkan staging buffers (GPU decompression) |
+| Apple | Vulkan staging buffers (VkQueue transfer) |
 
 The main thread owns the OS event loop AND I/O polling -- no separate I/O thread:
 
@@ -1440,7 +1441,7 @@ mutexes, no Arc.
 | crossbeam-channel | Lock-free channels between threads |
 | crossbeam-utils | CachePadded, scoped threads, Backoff |
 | rustix | Linux syscalls (io_uring) |
-| windows-rs | Windows APIs (IOCP, DirectStorage) |
-| objc2 + dispatch2 | Apple APIs (GCD, Metal I/O, Networking.framework) |
+| windows-rs | Windows APIs (IOCP, Vulkan staging buffers) |
+| objc2 + dispatch2 | Apple APIs (GCD, Vulkan staging buffers, Networking.framework) |
 
 Removed: rayon, compio. These are replaced by the custom job system and platform-native I/O.

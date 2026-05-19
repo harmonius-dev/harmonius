@@ -1947,10 +1947,10 @@ fn barycentric(
 }
 ```
 
-### GPU Morph Target Accumulation (HLSL)
+### GPU Morph Target Accumulation (GLSL)
 
-```hlsl
-// morph_accumulate.hlsl
+```glsl
+// morph_accumulate.glsl
 // Dispatched per-vertex, accumulates all active
 // morph target deltas weighted by CPU-provided
 // weights.
@@ -2112,9 +2112,9 @@ fn compose_layers(
 
 | Platform | Morph Compute API | Notes |
 |----------|-------------------|-------|
-| Windows | D3D12 compute / Vulkan compute | HLSL compiled via DXC to DXIL or SPIR-V |
-| macOS | Metal compute | HLSL compiled via DXC then Metal Shader Converter |
-| Linux | Vulkan compute | HLSL compiled via DXC to SPIR-V |
+| Windows | Vulkan compute / Vulkan compute | GLSL compiled via glslc to SPIR-V |
+| macOS | Vulkan compute | GLSL compiled via glslc then glslc |
+| Linux | Vulkan compute | GLSL compiled via glslc to SPIR-V |
 
 ### Morph Target Streaming I/O
 

@@ -437,20 +437,20 @@ it at the next frame boundary.
 
 ## Shader Interfaces
 
-All editor shaders are written in HLSL and compiled via the `dxc` CLI (to DXIL / SPIR-V) and
-`metal-shaderconverter` (to Metal IR) per the CLI shader tools decision. The interfaces below
-document the HLSL signatures; implementation lives in the rendering core.
+All editor shaders are written in GLSL and compiled via the `glslc` CLI (to SPIR-V / SPIR-V) and
+`glslc` (to SPIR-V) per the CLI shader tools decision. The interfaces below document the GLSL
+signatures; implementation lives in the rendering core.
 
 ### Selection outline (Sobel edge-detect)
 
-```hlsl
-// outline.hlsl -- Sobel edge detection on the
+```glsl
+// outline.glsl -- Sobel edge detection on the
 // selection stencil buffer.
 //
 // Reference: Sobel operator --
 // https://en.wikipedia.org/wiki/Sobel_operator
 // Standard 3x3 separable gradient kernel used for
-// edge detection; identical across D3D12, Metal,
+// edge detection; identical across Vulkan,
 // and Vulkan backends.
 
 struct OutlineParams {
@@ -470,8 +470,8 @@ void CsOutline(uint3 tid : SV_DispatchThreadID);
 
 ### Editor grid
 
-```hlsl
-// grid.hlsl -- infinite XZ-plane grid rendered as a
+```glsl
+// grid.glsl -- infinite XZ-plane grid rendered as a
 // full-screen pass with analytical line derivatives.
 //
 // Reference: "The Best Darn Grid Shader (Yet)" --
@@ -541,9 +541,9 @@ sequenceDiagram
     EXT->>RG: Phase 7 snapshot via MPSC (cap 3)
     RG->>RG: opaque + transparent pass
     RG->>RG: selection stencil write
-    RG->>RG: Sobel outline compute (outline.hlsl)
+    RG->>RG: Sobel outline compute (outline.glsl)
     RG->>RG: gizmo overlay pass
-    RG->>RG: editor grid pass (grid.hlsl)
+    RG->>RG: editor grid pass (grid.glsl)
     RG->>RG: debug overlay pass
     RG->>GPU: submit command buffers
 ```
@@ -684,11 +684,11 @@ Targets measured on the reference hardware profile defined in
 
 | Platform | Outline technique | Grid rendering | Shader IL |
 |----------|-------------------|----------------|-----------|
-| Windows (D3D12) | Stencil + Sobel compute | Infinite grid shader | DXIL via `dxc` |
-| macOS (Metal) | Stencil + Sobel compute | Infinite grid shader | Metal IR via CLI |
-| Linux (Vulkan) | Stencil + Sobel compute | Infinite grid shader | SPIR-V via `dxc` |
+| Windows (Vulkan) | Stencil + Sobel compute | Infinite grid shader | SPIR-V via `glslc` |
+| macOS (Vulkan) | Stencil + Sobel compute | Infinite grid shader | SPIR-V via CLI |
+| Linux (Vulkan) | Stencil + Sobel compute | Infinite grid shader | SPIR-V via `glslc` |
 
-All three backends share the same HLSL source, compiled via CLI tools. The render graph abstracts
+All three backends share the same GLSL source, compiled via CLI tools. The render graph abstracts
 the backend-specific command buffer APIs, so the editor integration sees a single interface.
 
 ### Algorithm references
@@ -730,7 +730,7 @@ None at this time. All review items have been resolved.
 | 12 | Platform Considerations expanded (shader IL per backend) | APPLIED |
 | 13 | `RenderLayers` `u32` bitmask added | APPLIED |
 | 14 | Test case coverage per IR including negative tests | APPLIED |
-| 15 | HLSL shader signatures for outline and grid | APPLIED |
+| 15 | GLSL shader signatures for outline and grid | APPLIED |
 | 16 | Rust pseudocode for all 5 remaining contract types | APPLIED |
 | 17 | No `HashMap` on hot path | APPLIED |
 | 18 | Gizmo depth behavior unified (depth test, no write) | APPLIED |
@@ -767,14 +767,14 @@ None at this time. All review items have been resolved.
 10. BVH rebuild runs on the worker thread during `PostUpdate` after transform edits. Documented in
     the BVH rebuild trigger subsection.
 11. `BufferVisMode` and `GizmoShape` and `RenderPath` and `RenderPhase` are `#[non_exhaustive]`.
-12. Platform Considerations table adds per-backend shader IL compilation (`dxc` for DXIL and SPIR-V,
-    `metal-shaderconverter` for Metal IR) and confirms the render graph abstraction.
+12. Platform Considerations table adds per-backend shader IL compilation (`glslc` for SPIR-V,
+    `glslc` for SPIR-V) and confirms the render graph abstraction.
 13. `RenderLayers` added as a `u32` bitmask with named constants for gameplay, gizmos, grid, and
     outline layers. `EditorViewport` and `EditorRenderView` both carry a `RenderLayers` field.
 14. Companion test cases file adds negative tests for all failure modes, IR coverage, and
     benchmarks. All tests are CI-runnable via `cargo test` / `cargo bench`.
-15. Shader Interfaces section adds HLSL function signatures and constant buffers for `outline.hlsl`
-    (Sobel) and `grid.hlsl` (infinite grid).
+15. Shader Interfaces section adds GLSL function signatures and constant buffers for `outline.glsl`
+    (Sobel) and `grid.glsl` (infinite grid).
 16. API Design adds Rust pseudocode for `RenderView`, `ProxyStore`, `DrawList`, `RenderPhase`, and
     `CameraSnapshot` in addition to the pre-existing types.
 17. No `HashMap`, `DashMap`, or other hash-based container usage on any hot path. Selection, gizmos,

@@ -2658,7 +2658,7 @@ stateDiagram-v2
 | Symbols    | PDB files           | dSYM bundles       | DWARF              |
 | Debug log  | `OutputDebugString` | `os_log`           | `sd_journal_sendv` |
 | Trace      | ETW `EventWrite`    | `os_signpost`      | `perf_event_open`  |
-| GPU crumbs | D3D12 DRED          | Shared `MTLBuffer` | Vulkan buf_marker  |
+| GPU crumbs | VkDevice fault reporting          | Shared `VkBuffer` | Vulkan buf_marker  |
 
 ### Filesystem APIs
 
@@ -2753,7 +2753,7 @@ See [constraints.md](../constraints.md).
 | `rustix`       | io_uring (Linux non-blocking I/O) |
 | `steamworks`   | Steamworks SDK Rust bindings     |
 | `toml`         | Preferences serialization        |
-| `windows-rs`   | Win32/COM/IOCP/DirectStorage     |
+| `windows-rs`   | Win32/COM/IOCP/Vulkan staging buffers     |
 | `xkbcommon`    | Linux keyboard layouts           |
 
 ## Test Plan
@@ -2920,8 +2920,9 @@ trivially meeting the < 1 ms requirement (R-14.5.11).
 All references to compio in platform services must be updated. Replace with:
 
 - Linux: io_uring for all async file/network operations
-- Windows: IOCP for non-blocking I/O, DirectStorage for GPU assets
-- Apple: GCD dispatch_io for files, Networking.framework for network, Metal I/O for GPU assets
+- Windows: IOCP for non-blocking I/O, Vulkan staging buffers for GPU assets
+- Apple: GCD dispatch_io for files, Networking.framework for network, Vulkan staging buffers for GPU
+  assets
 
 Platform services that perform I/O (FileSystem, Clipboard, PowerState, NetworkInfo) use the platform
 I/O layer. Main-thread-only OS calls remain cached as ECS resources.

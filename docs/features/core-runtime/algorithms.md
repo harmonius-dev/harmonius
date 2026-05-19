@@ -19,10 +19,10 @@
 |----------|---------------------------------------|
 | F-1.10.2 | Visual Node Graph to Shader Compiler |
 
-2. **F-1.10.2** — Compile visual node graphs into platform shader bytecode (DXIL, SPIR-V, MSL) via a
-   GraphCompiler. The compiler traverses the node graph, generates intermediate HLSL, and invokes
-   CLI shader tools (dxc, metal-shaderconverter) to produce final bytecode. Per-node error
-   diagnostics report type mismatches, missing connections, and invalid configurations.
+2. **F-1.10.2** — Compile visual node graphs into platform shader bytecode (SPIR-V, SPIR-V, SPIR-V)
+   via a GraphCompiler. The compiler traverses the node graph, generates intermediate GLSL, and
+   invokes CLI shader tools (glslc, glslc) to produce final bytecode. Per-node error diagnostics
+   report type mismatches, missing connections, and invalid configurations.
    - **Deps:** F-1.10.4 (Condition Expressions)
 
 ## Deterministic RNG

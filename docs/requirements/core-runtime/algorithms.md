@@ -12,7 +12,7 @@
 ## Graph Compilation
 
 2. **R-1.10.2** — The engine **SHALL** compile visual node graphs into platform shader bytecode
-   (DXIL, SPIR-V, MSL) via a GraphCompiler, producing CompiledShader output with per-node error
+   (SPIR-V, SPIR-V, SPIR-V) via a GraphCompiler, producing CompiledShader output with per-node error
    diagnostics.
    - **Rationale:** Visual node graphs are the primary authoring surface; compiling to native
      bytecode eliminates interpreter overhead.

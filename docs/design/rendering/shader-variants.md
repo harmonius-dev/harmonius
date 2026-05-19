@@ -33,7 +33,7 @@
 | Dependency        | Source      | Consumed API                     |
 |-------------------|-------------|----------------------------------|
 | PSO cache         | F-2.3.9     | `PsoCache::get_or_build`         |
-| Shader compiler   | F-12.2      | dxc + metal-shaderconverter CLI  |
+| Shader compiler   | F-12.2      | glslc CLI  |
 | Asset pipeline    | F-12.1      | Bundle packaging, pak format     |
 | Hot-reload proto  | F-1.12      | Shader reload invalidates cache  |
 | Material graph    | F-2.3.5     | Graph compile output             |
@@ -149,7 +149,7 @@ classDiagram
  16-31 reserved
 ```
 
-Each bit gates a `#ifdef` in HLSL source. The compiler produces one variant per unique bit set.
+Each bit gates a `#ifdef` in GLSL source. The compiler produces one variant per unique bit set.
 
 ### Variant Budget
 
@@ -253,8 +253,8 @@ flowchart LR
     MG[Material graphs] --> PK[Collect PermutationKeys]
     PK --> UM[Previous UsageMetrics]
     UM --> PL[Precompile List]
-    PL --> DXC[dxc compile]
-    DXC --> BUN[Bundle rkyv]
+    PL --> glslc[glslc compile]
+    glslc --> BUN[Bundle rkyv]
     BUN --> PAK[shaders.pak]
 ```
 
@@ -271,7 +271,7 @@ sequenceDiagram
     SR->>VB: lookup
     VB-->>SR: miss
     SR->>ODC: compile(key)
-    ODC->>ODC: dxc subprocess
+    ODC->>ODC: glslc subprocess
     ODC-->>SR: bytecode
     SR->>PC: get_or_build(desc)
     PC-->>RT: PsoHandle
@@ -283,7 +283,7 @@ sequenceDiagram
 shaders.pak
   header: HMNS_SHADER + format_version + bundle_hash
   index: rkyv SortedVec<PermutationKey, VariantRecord>
-  blobs: concatenated bytecode (DXIL/SPIRV/Metallib)
+  blobs: concatenated bytecode (SPIR-V)
   footer: size + crc32
 ```
 
@@ -295,9 +295,9 @@ The file is mmap'd at startup. Index lookups are O(log n) via binary search.
 
 | Platform | Bundle                                 |
 |----------|----------------------------------------|
-| Windows  | `shaders_d3d12.pak` containing DXIL    |
+| Windows  | `shaders_d3d12.pak` containing SPIR-V    |
 | Linux    | `shaders_vulkan.pak` containing SPIR-V |
-| macOS    | `shaders_metal.pak` containing Metallib|
+| macOS    | `shaders_vulkan.pak` containing SPIR-V|
 | iOS      | same as macOS                          |
 | Console  | console-specific bytecode per SDK      |
 

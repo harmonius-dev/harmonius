@@ -34,7 +34,7 @@
    small-triangle culling, discarding degenerate and sub-pixel triangles before rasterization. This
    two-level cull hierarchy minimizes wasted rasterizer work across massive open-world scenes.
    - **Deps:** F-3.1.2
-   - **Platform:** Task/mesh shader path on hardware with VK_EXT_mesh_shader, D3D12, or Metal mesh
+   - **Platform:** Task/mesh shader path on hardware with VK_EXT_mesh_shader, Vulkan, or Vulkan mesh
      shaders. Falls back to compute + vertex pipeline on mobile/older GPUs.
 
 ## Mesh Shaders / Indirect Draw Fallback
@@ -49,7 +49,7 @@
    multi-draw-indirect calls via a compute compaction pass. This fallback preserves GPU-driven
    culling benefits while using the traditional vertex pipeline.
    - **Deps:** F-3.1.1, F-3.1.3
-   - **Platform:** Mesh shader path requires VK_EXT_mesh_shader, D3D12, or Metal mesh shaders;
+   - **Platform:** Mesh shader path requires VK_EXT_mesh_shader, Vulkan, or Vulkan mesh shaders;
      indirect draw fallback used on older GPUs
 
 ## Meshlet LOD

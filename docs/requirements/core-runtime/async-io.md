@@ -145,8 +145,8 @@
 ## GPU DMA Asset Loading
 
 1. **R-1.8.16** — The engine **SHALL** support GPU DMA asset loading bypassing CPU memory where the
-   platform supports it (DirectStorage on Windows, Metal I/O on Apple), with CPU staging buffer
-   fallback on Linux.
+   platform supports it (Vulkan staging buffers on Windows, Vulkan staging buffers on Apple), with
+   CPU staging buffer fallback on Linux.
    - **Rationale:** GPU DMA eliminates CPU memory bandwidth consumption for large texture and mesh
      loads, reducing load times and freeing CPU memory for simulation.
    - **Verification:** Load a 256 MB texture via GPU DMA on Windows; verify no CPU staging buffer

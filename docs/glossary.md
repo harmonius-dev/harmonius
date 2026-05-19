@@ -52,7 +52,7 @@ documentation except competitive comparison tables in business docs.
     error
 14. **Sequence Track** — individual channel within the Cinematics Editor controlling one property
     over time
-15. **Shader Graph** — visual node graph for authoring material shaders, compiled to HLSL (same
+15. **Shader Graph** — visual node graph for authoring material shaders, compiled to GLSL (same
     name, not a third-party reference)
 16. **Transform Propagation** — system that propagates local-to-world transforms through the scene
     hierarchy

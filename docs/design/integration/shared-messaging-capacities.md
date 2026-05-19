@@ -160,7 +160,7 @@ generic knob.
    × 4.0 = 128, rounded to 256.
 9. **CH-9 Dialogue choice (cap=16)** -- UI confirms a single choice, quest system drains. Tiny
    channel, SafetyMargin=4.0 for reliability.
-10. **CH-10 Shader compile (cap=64)** -- async dxc subprocess jobs, 4 per worker per hot-reload
+10. **CH-10 Shader compile (cap=64)** -- async glslc subprocess jobs, 4 per worker per hot-reload
     burst, SafetyMargin=2.0. Computed 64 directly.
 11. **CH-11 Pipeline command (cap=128)** -- PSO cache lookups from render prep, 8/worker/frame,
     SafetyMargin=2.0. Computed 128.

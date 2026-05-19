@@ -1204,7 +1204,7 @@ All components below are **Backend services (async allowed)**, managed by the Ha
 | ZoneServer | K8s pod (engine-as-server) | Engine client (sync only) |
 | MeshController | K8s deployment | Backend (async allowed) |
 | AutoScaler | kube-rs controller | Backend (async allowed) |
-| LoadBalancer | K8s Service / MetalLB | Backend (async allowed) |
+| LoadBalancer | K8s Service / VulkanLB | Backend (async allowed) |
 | InterServerBus | K8s deployment | Backend (async allowed) |
 | Cross-shard services | K8s deployment | Backend (async allowed) |
 | GameDb | K8s deployment wrapping `tikv-client` | Backend (async allowed) |

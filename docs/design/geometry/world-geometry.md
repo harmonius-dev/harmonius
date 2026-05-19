@@ -193,7 +193,7 @@ hybrid resolver.
 Foliage, water, and sky/atmosphere render the natural world. All are ECS-primary (~90%) with
 GPU-driven compute pipelines.
 
-1. **GPU-driven.** Placement, culling, animation, and simulation run as HLSL compute shaders.
+1. **GPU-driven.** Placement, culling, animation, and simulation run as GLSL compute shaders.
 2. **Shared data.** Foliage reads the wind field (F-4.7.5). Water exposes wave heights for buoyancy
    (F-4.8.5). Sky provides the environment cubemap for IBL.
 3. **Tiered scaling.** Every GPU workload has per-platform quality tiers (mobile, Switch, desktop)
@@ -2069,12 +2069,12 @@ The meshlet pipeline applies four culling stages in order, from coarsest to fine
 
 ### GPU Backend Feature Matrix
 
-| Feature | Metal | D3D12 | Vulkan |
+| Feature | Vulkan | Vulkan | Vulkan |
 |---------|-------|-------|--------|
-| Mesh shaders | Metal 3 | SM 6.5 | VK_EXT_mesh_shader |
+| Mesh shaders | Vulkan | SM 6.5 | VK_EXT_mesh_shader |
 | 64-bit atomics | Apple7+ | SM 6.6 | shaderBufferInt64 |
 | Indirect draw | Yes | Yes | Yes |
-| Compute shaders | MSL 2.0+ | SM 5.0+ | 1.0+ |
+| Compute shaders | SPIR-V 2.0+ | SM 5.0+ | 1.0+ |
 
 ### Mesh Shader Fallback
 
@@ -2215,8 +2215,8 @@ node evaluation with the procedural generation graph (F-3.6.12) to avoid duplica
    per-tile editor flag?
 5. **Virtual texture eviction** -- LRU vs priority-weighted policy considering distance and mip
    level.
-6. **GPU decompression** -- DirectStorage/Metal I/O could bypass CPU staging. Depends on GPU Direct
-   Storage design.
+6. **GPU decompression** -- Vulkan staging buffers/Vulkan staging buffers could bypass CPU staging.
+   Depends on GPU Direct Storage design.
 7. **Multi-view culling** -- Per-view independent cull or single superset cull then per-view filter?
 8. **Ocean FFT precision** -- FP16 vs FP32 for FFT textures.
 9. **River-ocean estuary blending** -- UV-space, height, or both for smooth transition.
@@ -2379,7 +2379,7 @@ The universe is a lightweight top-level World containing planet entities with or
 
 **Vertex shader does two transforms:**
 
-```hlsl
+```glsl
 // 1. Local Cartesian → planet surface (curvature)
 float3 surface = curve_to_sphere(
     local_pos, chunk_origin, planet_radius);

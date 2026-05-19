@@ -26,9 +26,9 @@
 4. **F-12.2.4** -- Vertex cache and overdraw optimization
 5. **F-12.2.5** -- Lightmap UV atlas with uniform density
 6. **F-12.2.6** -- Audio encoding (Opus, ADPCM, PCM)
-7. **F-12.2.7** -- Shader graph to HLSL code generation
+7. **F-12.2.7** -- Shader graph to GLSL code generation
 8. **F-12.2.8** -- Asset dependency graph for rebuilds
-9. **F-12.2.9** -- `dxc` and `metal-shaderconverter` CLI pipeline
+9. **F-12.2.9** -- `glslc` and `glslc` CLI pipeline
 
 ### Asset Streaming (F-12.5)
 
@@ -47,7 +47,7 @@
 
 1. **F-12.5.1** -- VFS with unified namespace over loose/pak/CDN
 2. **F-12.5.2** -- Platform-native async I/O, no stdlib
-3. **F-12.5.3** -- GPU direct storage (DirectStorage / Metal IO)
+3. **F-12.5.3** -- GPU direct storage (Vulkan staging buffers / Vulkan staging buffers)
 4. **F-12.5.4** -- Texture mip streaming with residency manager
 5. **F-12.5.5** -- Mesh LOD streaming with dithered cross-fade
 6. **F-12.5.6** -- Priority queue by screen-size and distance
@@ -147,9 +147,8 @@ graph TD
         DL[DownloadManager]
     end
 
-    subgraph "External CLI / C ABI"
-        DXC["dxc CLI (subprocess)"]
-        MSC["metal-shaderconverter\nCLI (subprocess)"]
+    subgraph "External CLI"
+        glslc["glslc CLI (subprocess)"]
         MOP[meshoptimizer]
     end
 
@@ -157,7 +156,7 @@ graph TD
         TP[ThreadPool]
         RE[Tokio Runtime]
         BP[BufferPool]
-        DS[DirectStorageBackend]
+        DS[StagingBufferBackend]
     end
 
     PM --> PG
@@ -171,8 +170,7 @@ graph TD
     PRR --> AU
     PRR --> LM
 
-    SC -.-> DXC
-    SC -.-> MSC
+    SC -.-> glslc
     MO -.-> MOP
 
     PM --> TP
@@ -217,7 +215,7 @@ harmonius_content/
     ├── archive.rs        # PakArchive
     ├── compression.rs    # CompressionManager
     ├── download.rs       # DownloadManager
-    └── direct_storage.rs # DirectStorageBackend
+    └── direct_storage.rs # StagingBufferBackend
 ```
 
 ### Shader Compilation Pipeline
@@ -225,23 +223,15 @@ harmonius_content/
 ```mermaid
 flowchart LR
     SG["Shader Graph"]
-    HLSL["HLSL Source"]
-    DXC_D["dxc CLI\n(subprocess)"]
-    DXIL["DXIL D3D12"]
-    SPIRV["SPIR-V Vulkan"]
-    MSC["metal-shaderconverter\nCLI (subprocess)"]
-    MSL["metallib Metal"]
+    GLSL["GLSL Source"]
+    glslc["glslc CLI\n(subprocess)"]
+    SPIRV["SPIR-V"]
     CACHE["CAS Cache"]
 
-    SG -->|Code Gen| HLSL
-    HLSL -->|SM 6.0+| DXC_D
-    DXC_D -->|DXIL| DXIL
-    DXC_D -->|SPIR-V| SPIRV
-    DXIL -->|DXIL to metallib| MSC
-    MSC --> MSL
-    DXIL --> CACHE
+    SG -->|Code Gen| GLSL
+    GLSL --> glslc
+    glslc --> SPIRV
     SPIRV --> CACHE
-    MSL --> CACHE
 ```
 
 ### VFS Mount Resolution
@@ -540,13 +530,13 @@ impl ProcessingGraphBuilder {
     Hash, Reflect,
 )]
 pub enum PlatformTarget {
-    WindowsD3D12,
     WindowsVulkan,
-    MacOSMetal,
+    WindowsVulkan,
+    MacOSVulkan,
     LinuxVulkan,
-    IOSMetal,
+    IOSVulkan,
     AndroidVulkan,
-    XboxD3D12,
+    XboxVulkan,
     PlayStationGnm,
     SwitchVulkan,
 }
@@ -606,10 +596,10 @@ impl PlatformProfile {
 
 | Platform | Texture | Shader | LODs | Audio |
 |----------|---------|--------|------|-------|
-| WindowsD3D12 | BC7/BC6H | DXIL | 4 | Opus 128k |
-| MacOSMetal | ASTC 4x4 | MSL | 4 | Opus 128k |
+| WindowsVulkan | BC7/BC6H | SPIR-V | 4 | Opus 128k |
+| MacOSVulkan | ASTC 4x4 | SPIR-V | 4 | Opus 128k |
 | LinuxVulkan | BC7/BC6H | SPIR-V | 4 | Opus 128k |
-| IOSMetal | ASTC 6x6 | MSL | 3 | Opus 64k |
+| IOSVulkan | ASTC 6x6 | SPIR-V | 3 | Opus 64k |
 | AndroidVulkan | ASTC/ETC2 | SPIR-V | 3 | Opus 64k |
 
 ### Processing Manager
@@ -905,7 +895,7 @@ impl BudgetMonitor {
 ### GPU Direct Storage
 
 ```rust
-pub struct DirectStorageBackend { /* ... */ }
+pub struct StagingBufferBackend { /* ... */ }
 
 pub struct GpuTransferRequest {
     pub handle: RawHandle,
@@ -916,17 +906,17 @@ pub struct GpuTransferRequest {
     pub codec: CompressionCodec,
 }
 
-impl DirectStorageBackend {
+impl StagingBufferBackend {
     pub fn new(
-    ) -> Result<Self, DirectStorageError>;
-    // Synchronous submit. On Windows uses DirectStorage
-    // via windows-rs; on Apple uses Metal I/O; on Linux
+    ) -> Result<Self, StagingBufferError>;
+    // Synchronous submit. On Windows uses Vulkan staging buffers
+    // via windows-rs; on Apple uses Vulkan staging buffers; on Linux
     // submits via io_uring. Completion is polled from
     // the main thread and delivered via IoResponse.
     pub fn submit(
         &self,
         request: GpuTransferRequest,
-    ) -> Result<IoRequestId, DirectStorageError>;
+    ) -> Result<IoRequestId, StagingBufferError>;
     pub fn is_available(&self) -> bool;
 }
 ```
@@ -1052,21 +1042,18 @@ flowchart TD
 
 ### Shader Backend Matrix
 
-| Platform | Primary | Pipeline |
-|----------|---------|----------|
-| Windows D3D12 | DXIL | HLSL to `dxc` to DXIL |
-| Windows Vulkan | SPIR-V | HLSL to `dxc` to SPIR-V |
-| macOS Metal | metallib | HLSL to `dxc` to DXIL to `msc` |
-| Linux Vulkan | SPIR-V | HLSL to `dxc` to SPIR-V |
+| Platform | Output | Pipeline |
+|----------|--------|----------|
+| All targets | SPIR-V | GLSL → `glslc` → SPIR-V |
 
 ### I/O Backend Selection
 
 | Platform | Async I/O | GPU Direct Storage |
 |----------|-----------|-------------------|
-| Windows | Tokio (IOCP) | DirectStorage 1.2+ |
-| macOS | Tokio (kqueue) | Metal IO Queue |
-| Linux | Tokio (epoll) | CPU staging fallback |
-| iOS | Tokio (kqueue) | Metal IO Queue |
+| Windows | Tokio (IOCP) | io_uring staging |
+| macOS | Tokio (kqueue) | Vulkan staging buffers |
+| Linux | Tokio (epoll) | io_uring staging |
+| iOS | Tokio (kqueue) | Vulkan staging buffers |
 | Android | Tokio (epoll) | CPU staging fallback |
 
 ### Direct I/O Alignment
@@ -1089,8 +1076,8 @@ flowchart TD
 
 | Library | FFI Bridge |
 |---------|------------|
-| DXC | CLI subprocess (all platforms) |
-| Metal Shader Converter | CLI subprocess (macOS) |
+| glslc | CLI subprocess (all platforms) |
+| glslc | CLI subprocess (macOS) |
 | meshoptimizer | C ABI Rust crate |
 | blake3 | Native Rust crate |
 
@@ -1183,8 +1170,8 @@ Test cases are defined inline below.
 | BC7 compress 4K tex | < 100 ms |
 | LOD gen 100K tris | < 50 ms |
 | Meshlet build 100K tris | < 20 ms |
-| DXC HLSL to DXIL (cold) | < 500 ms |
-| MSC DXIL to MSL | < 200 ms |
+| glslc GLSL to SPIR-V (cold) | < 500 ms |
+| glslc GLSL to SPIR-V | < 200 ms |
 | Incremental rebuild (1 asset) | < 2 s |
 | Full build 10K assets (8 cores) | < 5 min |
 | Async I/O throughput (NVMe) | >= 80% BW |
@@ -1202,12 +1189,12 @@ Test cases are defined inline below.
    one C call?
 3. **Shader variant explosion.** On-demand compilation (compile at first use) vs full ahead-of-time
    for all permutations?
-4. **DXC version pinning.** Which version to pin; how to handle shader model availability across
+4. **glslc version pinning.** Which version to pin; how to handle shader model availability across
    versions?
 5. **Pak alignment granularity.** 512 B (sector) vs 4 KB (page) for mmap compatibility? Larger
    alignment wastes space for small assets.
-6. **GPU decompression codec.** GDeflate (native DirectStorage) vs Zstd (custom compute shader) vs
-   both?
+6. **GPU decompression codec.** GDeflate (native Vulkan staging buffers) vs Zstd (custom compute
+   shader) vs both?
 7. **Download chunk size.** 256 KB desktop, 64 KB mobile. Need adaptive sizing based on CDN latency.
 8. **Prefetch prediction.** Linear camera extrapolation vs navigation-mesh-aware path prediction?
 9. **Audio streaming unification.** Should audio ring-buffer streaming merge with the visual asset
@@ -1257,9 +1244,10 @@ All 15+ Tokio references and `async fn` signatures have been replaced with synch
 request/handle APIs backed by `IoChannel` and main-thread `IoRequest` drain. The `ProcessingContext`
 now carries `io: &IoChannel` instead of a Tokio handle. `AssetProcessor::process` returns
 `Result<ProcessResult, ProcessingError>` synchronously. Pak open/read, streaming tick/flush, and
-DirectStorage submit are all sync with `IoRequestId`-based completion. The platform I/O backend
-table maps to io_uring (Linux), IOCP / DirectStorage (Windows), and dispatch2 + Metal I/O (Apple).
-See [../core-runtime/io.md](../core-runtime/io.md) for the shared request/handle protocol.
+Vulkan staging buffers submit are all sync with `IoRequestId`-based completion. The platform I/O
+backend table maps to io_uring (Linux), IOCP / Vulkan staging buffers (Windows), and dispatch2 +
+Vulkan staging buffers (Apple). See [../core-runtime/io.md](../core-runtime/io.md) for the shared
+request/handle protocol.
 
 Historical notes (retained for audit):
 

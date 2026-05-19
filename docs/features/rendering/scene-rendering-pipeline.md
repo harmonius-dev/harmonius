@@ -64,7 +64,7 @@
    CPU dispatch overhead and enables rendering hundreds of thousands of meshlet instances with
    minimal draw calls.
    - **Deps:** F-2.10.6, F-2.1.7
-   - **Platform:** Mobile: requires indirect draw support (Vulkan 1.1+ / Metal GPU family 3+).
+   - **Platform:** Mobile: requires indirect draw support (Vulkan 1.1+ / Vulkan GPU family 3+).
      Compaction buffer sized for lower draw counts. Switch: full indirect compaction.
      Desktop/High-end: full quality with large compaction buffers.
 
@@ -79,7 +79,7 @@
    by index, eliminating descriptor set switching between draws and enabling material-agnostic
    batching.
    - **Deps:** F-2.10.6, F-2.1.7
-   - **Platform:** Metal uses argument buffers. D3D12 uses root descriptor tables or bindless SRV
+   - **Platform:** Vulkan uses descriptor sets. Vulkan uses root descriptor tables or bindless SRV
      heaps. Vulkan uses descriptor indexing with `VK_EXT_descriptor_indexing`.
 
 ## Debug Visualization

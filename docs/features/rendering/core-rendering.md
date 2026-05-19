@@ -49,7 +49,7 @@
 6. **F-2.3.6** — Perspective camera projection with reverse-Z and optional infinite far plane for
    maximum depth precision at distance.
    - **Platform:** All platforms: full quality. Reverse-Z requires clearing depth to 0 instead of 1,
-     supported on Metal, D3D12, and Vulkan. Older mobile Vulkan drivers may need viewport transform
+     supported on Vulkan. Older mobile Vulkan drivers may need viewport transform
      workaround.
 7. **F-2.3.7** — GPU-side instance compaction and indirect dispatch. After culling, surviving opaque
    meshlet instances are batched by shared material and material instance into contiguous draw
@@ -58,7 +58,7 @@
    transparent object is drawn individually in back-to-front sorted order (see F-2.4.5).
    - **Deps:** F-2.3.2, F-2.3.3, F-2.3.4
    - **Platform:** Mobile: instance buffer sized for lower object counts (~10k meshlets); indirect
-     draw requires Vulkan 1.1+ or Metal family GPU 3+. Switch: full indirect draw support; handheld
+     draw requires Vulkan 1.1+ or Vulkan subgroup 3+. Switch: full indirect draw support; handheld
      caps meshlet budget. Desktop/High-end: no limits.
 8. **F-2.3.8** — Ability to render any pass to an off-screen texture for use by subsequent passes.
    The render graph compiler automatically inserts barriers between write and read.

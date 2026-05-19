@@ -248,7 +248,7 @@ Companion test cases for [effects.md](effects.md).
 
 1. **#1** — Compile spawn kernel for each `SpawnShape` variant (Point, Sphere, Box, Cone,
    MeshSurface)
-   - **Expected:** Codegen emits distinct HLSL per variant, compile succeeds
+   - **Expected:** Codegen emits distinct GLSL per variant, compile succeeds
 2. **#2** — Dispatch 10,000-particle spawn with Sphere radius=1.0
    - **Expected:** All particle positions satisfy `length(pos - origin) <= 1.0`
 3. **#3** — Measure CPU readback during spawn frame
@@ -358,7 +358,7 @@ Companion test cases for [effects.md](effects.md).
 
 1. **#1** — Load middleman .dylib containing custom node with float input `strength` and vector
    output `force`, reference via `CustomNodeRef(7)`
-   - **Expected:** Node palette lists node, compile produces kernel calling custom HLSL function at
+   - **Expected:** Node palette lists node, compile produces kernel calling custom GLSL function at
      index 7
 
 ### TC-11.6.3.1 Parameter Override Per Instance
@@ -415,7 +415,7 @@ Companion test cases for [effects.md](effects.md).
 2. **#2** — Benchmark compiled graph vs hand Rust
    - **Expected:** Overhead under 5%
 
-### TC-15.8.5b.1 Shader Graph HLSL Compile
+### TC-15.8.5b.1 Shader Graph GLSL Compile
 
 | # | Requirement |
 |---|-------------|
@@ -424,9 +424,9 @@ Companion test cases for [effects.md](effects.md).
 
 1. **#1** — Author shader graph with PBR inputs (albedo, normal, roughness), invoke
    `EffectGraphCompiler` with `PlatformTier::Desktop`
-   - **Expected:** DXC produces DXIL bytecode, no errors
+   - **Expected:** glslc produces SPIR-V bytecode, no errors
 2. **#2** — Same graph with `PlatformTier::Apple`
-   - **Expected:** DXC -> MSC produces MSL bytecode, no errors
+   - **Expected:** glslc -> glslc produces SPIR-V bytecode, no errors
 
 ## Integration Tests
 

@@ -84,7 +84,7 @@
    instancing renders both eye views in one draw call where supported. Hand tracking integration
    positions viewmodel meshes at tracked hand transforms.
    - **Deps:** F-2.13.1, F-2.13.2, F-6.5.1 (VR Input)
-   - **Platform:** VR only. Requires stereo instancing support (Vulkan multiview / Metal layer
+   - **Platform:** VR only. Requires stereo instancing support (Vulkan multiview / Vulkan layer
      rendering).
 2. **F-2.13.9** — Stencil-based masking for viewmodel regions. Scope lenses render the magnified
    scene inside a stencil cutout on the viewmodel mesh. Looking down at the character body clips

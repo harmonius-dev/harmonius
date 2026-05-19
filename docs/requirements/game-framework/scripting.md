@@ -29,12 +29,12 @@
      second. Verify local variables retain their values. Make an incompatible change and verify the
      graph restarts with a warning.
 
-4. **R-13.4.4** — The engine **SHALL** compile logic graphs to Rust source (CPU targets) or HLSL
+4. **R-13.4.4** — The engine **SHALL** compile logic graphs to Rust source (CPU targets) or GLSL
    source (GPU targets) through a unified compiler with shared optimization passes.
    - **Rationale:** A unified compiler ensures consistent optimization and error reporting across
      CPU and GPU graph targets.
    - **Verification:** Compile a graph targeting CPU and verify Rust output. Compile a shader graph
-     targeting GPU and verify HLSL output. Verify both share the same constant-folding pass.
+     targeting GPU and verify GLSL output. Verify both share the same constant-folding pass.
 
 5. **R-13.4.5** — The engine **SHALL** enforce sandbox constraints on user-authored logic graphs,
    preventing unsafe code, raw pointers, and unbounded loops, with budget checks inserted at loop

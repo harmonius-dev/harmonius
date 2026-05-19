@@ -129,7 +129,7 @@ domain or complexity level.
 | **Rendering.AdvancedRendering** | F-2.5.x–F-2.9.x   |
 
 1. ****Rendering.GPUAbstraction**** — Backend trait, device, command buffers, memory, pipelines
-   (Metal first, then Vulkan)
+   (Vulkan-only GPU backend)
 2. ****Rendering.RenderGraph**** — Pass declaration, resource management, barrier insertion
 3. ****Rendering.CoreRendering**** — Culling, instancing, draw submission, ECS extraction, scene
    rendering pipeline
@@ -192,7 +192,7 @@ domain or complexity level.
 
 1. ****ContentPipeline.AssetImport**** — Native format ingestion, texture/mesh/audio import,
    validation
-2. ****ContentPipeline.AssetProcessing**** — Shader compilation (DXC + Metal Shader Converter),
+2. ****ContentPipeline.AssetProcessing**** — Shader compilation (glslc),
    texture compression, mesh optimization
 3. ****ContentPipeline.AssetDatabase**** — Content-addressable storage, metadata, dependency graph,
    incremental builds

@@ -2,10 +2,10 @@
 
 ## Engine Overview
 
-Harmonius is a cross-platform no-code game engine written in Rust (stable). It targets Metal 4,
-Direct3D 12, and Vulkan 1.4 with mesh shaders and ray tracing as minimum requirements. All
-simulation runs through a 100% ECS architecture with no separate data stores. Users build all
-gameplay by composing generic primitives in visual editors — no code required.
+Harmonius is a cross-platform no-code game engine written in Rust (stable). It targets Vulkan 1.4
+with mesh shaders and ray tracing as minimum requirements. All simulation runs through a 100% ECS
+architecture with no separate data stores. Users build all gameplay by composing generic primitives
+in visual editors — no code required.
 
 See [design/constraints.md](design/constraints.md) for the full constraint set.
 
@@ -318,8 +318,8 @@ flowchart LR
 | Logic graphs | Gameplay systems with ECS access |
 | AI behavior graphs | Behavior tree / utility AI tick fns |
 | Quest/dialogue graphs | Condition eval + transition fns |
-| Material graphs | HLSL shader source (not Rust) |
-| VFX effect graphs | HLSL compute shaders (not Rust) |
+| Material graphs | GLSL shader source (not Rust) |
+| VFX effect graphs | GLSL compute shaders (not Rust) |
 | Custom components | Component structs, rkyv derives |
 | Custom enums | Enum types with exhaustive match |
 | Custom widgets | WidgetKind variants, layout/paint fns |
@@ -1495,32 +1495,32 @@ graph TB
     subgraph "macOS"
         KQUEUE[kqueue]
         NSWIN[NSWindow]
-        METAL[Metal 4]
+        VKM[Vulkan 1.4]
     end
 
     subgraph "Windows"
         WIOCP[IOCP]
         WIN32[Win32 CreateWindowEx]
-        D3D12[Direct3D 12]
+        VKW[Vulkan 1.4]
     end
 
     subgraph "Linux"
         EPOLL[epoll]
         XCB[xcb / Wayland]
-        VK[Vulkan 1.4]
+        VKL[Vulkan 1.4]
     end
 
     PIO --> KQUEUE & WIOCP & EPOLL
     WINDOW --> NSWIN & WIN32 & XCB
-    GPUHAL --> METAL & D3D12 & VK
+    GPUHAL --> VKM & VKW & VKL
 ```
 
 | Platform | Platform I/O | Windowing | Graphics | FFI |
 |----------|--------------|-----------|----------|-----|
-| macOS | kqueue | NSWindow | Metal 4 | objc2 |
-| Windows | IOCP | Win32 (windows-rs) | D3D12 | windows-rs |
+| macOS | kqueue | NSWindow | Vulkan | objc2 |
+| Windows | IOCP | Win32 (windows-rs) | Vulkan | windows-rs |
 | Linux | epoll | x11rb / wayland | Vulkan 1.4 | ash |
-| iOS | kqueue | UIWindow | Metal 4 | objc2 |
+| iOS | kqueue | UIWindow | Vulkan | objc2 |
 | Android | epoll | ndk crate | Vulkan 1.4 | ash |
 
 ---

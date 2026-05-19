@@ -875,10 +875,10 @@ cross-compile for all platforms from a single runner:
 
 | Build target | Runner OS | Reason |
 |-------------|-----------|--------|
-| Windows (D3D12) | `windows-latest` | MSVC toolchain, D3D12 headers, DXC |
-| macOS (Metal) | `macos-latest` | Xcode, Metal SDK, MSC, XcodeGen |
-| Linux (Vulkan) | `ubuntu-latest` | Vulkan SDK, DXC, io_uring headers |
-| iOS (Metal) | `macos-latest` | Xcode + iOS SDK, code signing |
+| Windows (Vulkan) | `windows-latest` | MSVC toolchain, Vulkan SDK, glslc |
+| macOS (Vulkan) | `macos-latest` | Xcode, Vulkan SDK, glslc, XcodeGen |
+| Linux (Vulkan) | `ubuntu-latest` | Vulkan SDK, glslc, io_uring headers |
+| iOS (Vulkan) | `macos-latest` | Xcode + iOS SDK, code signing |
 | Android (Vulkan) | `ubuntu-latest` | Android NDK, Vulkan, cross-compile |
 | Switch | Self-hosted | NDA SDK, not available on GitHub |
 | Xbox | Self-hosted | GDK, not available on GitHub |
@@ -919,7 +919,7 @@ cross-compile for all platforms from a single runner:
    reduce build time.
 5. **Asset baking** — asset processing (texture compression, mesh LOD generation, shader
    compilation) runs in CI as part of the build. Platform-specific assets are baked on the matching
-   runner OS (Metal shaders on macOS, DXIL on Windows, SPIR-V on Linux).
+   runner OS (Vulkan shaders on all platforms, SPIR-V on Windows, SPIR-V on Linux).
 6. **Notifications** — build status posted as GitHub commit status checks. The editor's branch panel
    shows CI status badges (RF-17 item 31). Failed builds trigger notifications (editor-core.md RF-32
    item 4).

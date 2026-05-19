@@ -364,19 +364,19 @@ key become a single `SkinningDispatch`.
 
 | Platform | Consideration |
 |----------|---------------|
-| Windows (D3D12) | `ID3D12GraphicsCommandList::Dispatch` |
-| macOS (Metal) | `MTLComputeCommandEncoder::dispatch` |
+| Windows (Vulkan) | `VkCommandBuffer::Dispatch` |
+| macOS (Vulkan) | `vkCmdDispatch` |
 | Linux (Vulkan) | `vkCmdDispatch` |
 
-All three backends use the same `GpuSkinner` compute shader (HLSL compiled to DXIL / SPIR-V / Metal
-IR).
+All three backends use the same `GpuSkinner` compute shader (GLSL compiled to SPIR-V / SPIR-V /
+Vulkan IR).
 
 ### Platform-Specific Details
 
-- **Metal**: `MTLSharedEvent` polled for GPU completion. Dispatch threadgroup size tuned to Apple
+- **Vulkan**: `VkSemaphore` polled for GPU completion. Dispatch workgroup size tuned per device
   GPU SIMD width (32 threads).
-- **D3D12**: DirectStorage for GPU asset upload of skeleton and VAT data on Windows. Dispatch group
-  size 64 threads (AMD/NVIDIA default).
+- **Vulkan**: Vulkan staging buffers for GPU asset upload of skeleton and VAT data on Windows.
+  Dispatch group size 64 threads (AMD/NVIDIA default).
 - **Vulkan**: `vkCmdPipelineBarrier` for UAV sync. Dispatch group size queried from
   `VkPhysicalDeviceLimits::maxComputeWorkGroupSize`.
 
@@ -416,7 +416,7 @@ None at this time. All review items have been resolved.
 | 10 | Instanced skinning grouping uses sorted `Vec`, no `HashMap` | APPLIED |
 | 11 | Compute dispatch barriers between passes | APPLIED |
 | 12 | `RenderFrame` producer/consumer direction | APPLIED |
-| 13 | Platform Considerations expanded (MTLSharedEvent, DS, group) | APPLIED |
+| 13 | Platform Considerations expanded (VkSemaphore, DS, group) | APPLIED |
 | 14 | Failure mode test cases added | APPLIED |
 | 15 | LOD tier transition benchmark added for IR-1.4.3 | APPLIED |
 | 16 | Triple buffer mechanism specified precisely | APPLIED |
@@ -444,12 +444,12 @@ None at this time. All review items have been resolved.
 10. Instanced skinning grouping uses a sorted `Vec<(SkeletonId, ClipSetId, EntityId)>` keyed by
     `(SkeletonId, ClipSetId)` -- no `HashMap` on the hot path.
 11. Compute Dispatch Synchronization subsection documents UAV barriers between morph accumulation
-    and skinning passes, with per-backend barrier APIs (D3D12, Metal, Vulkan).
+    and skinning passes, with per-backend barrier APIs (Vulkan).
 12. `RenderFrame` is defined and owned by the rendering system. Animation contributes skinning data
     into it during Phase 7 snapshot via `AnimationRenderBridge`. The Data Flow table reflects the
     corrected direction.
-13. Platform Considerations expanded with `MTLSharedEvent` for Metal GPU completion polling,
-    DirectStorage for Windows GPU asset upload, and per-backend compute dispatch group sizing.
+13. Platform Considerations expanded with `VkSemaphore` for Vulkan GPU completion polling, Vulkan
+    staging buffers for Windows GPU asset upload, and per-backend compute dispatch group sizing.
 14. Failure modes table expanded. Companion test cases file adds failure mode tests for arena full,
     morph overflow, invalid LOD tier, GPU timeout, missing morph targets, and HalfRate staleness.
 15. Companion test cases file adds an LOD tier transition benchmark covering switching cost and

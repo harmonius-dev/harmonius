@@ -22,8 +22,8 @@
      verify no std::fs calls via static analysis; benchmark at 80%+ of raw sequential disk
      bandwidth.
 3. **R-12.5.3** — The engine **SHALL** transfer compressed asset data from SSD directly into GPU
-   memory via file-to-GPU DMA (DirectStorage on Windows, Metal I/O on macOS), with a compute shader
-   decompressing in place, bypassing CPU for bulk transfers.
+   memory via file-to-GPU DMA (Vulkan staging buffers on Windows, Vulkan staging buffers on macOS),
+   with a compute shader decompressing in place, bypassing CPU for bulk transfers.
    - **Rationale:** GPU direct storage saturates NVMe bandwidth for open-world streaming by
      eliminating CPU-side copies.
    - **Verification:** Load a 256 MB compressed texture pack via GPU direct storage; verify correct

@@ -61,9 +61,9 @@
    CPU minidumps.
    - **Deps:** F-14.4.1
    - **Platform:** Vulkan uses `VK_AMD_buffer_marker` or `VK_NV_device_diagnostic_checkpoints`;
-     Direct3D 12 uses DRED (Device Removed Extended Data) breadcrumbs via
-     `ID3D12DeviceRemovedExtendedDataSettings`. Metal has no native breadcrumb API — the engine
-     writes to a shared `MTLBuffer` and reads it back on command buffer error callback.
+     Vulkan uses DRED (Device Removed Extended Data) breadcrumbs via
+     `VkDevice fault reporting`. Vulkan has no native breadcrumb API — the engine
+     writes to a shared `VkBuffer` and reads it back on command buffer error callback.
 
 ## Out-of-Process Crash Capture
 

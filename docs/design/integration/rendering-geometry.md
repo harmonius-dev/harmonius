@@ -436,12 +436,12 @@ sequenceDiagram
 
 | Platform | Mesh shaders | V-buffer | Terrain | Tier |
 |----------|-------------|----------|---------|------|
-| macOS (Metal 4) | Required | 64-bit atomic | CDLOD | 0 |
-| Windows (D3D12) | Required | 64-bit atomic | CDLOD | 0 |
+| macOS (Vulkan) | Required | 64-bit atomic | CDLOD | 0 |
+| Windows (Vulkan) | Required | 64-bit atomic | CDLOD | 0 |
 | Linux (Vulkan 1.4) | Required | 64-bit atomic | CDLOD | 0 |
 | Mobile (iOS/Android) | Absent | 32-bit packed | Reduced LOD | 1 |
 
-1. **Tier 0 (desktop)** -- Mesh shaders are mandatory. Metal 4, D3D12 Shader Model 6.5+, and Vulkan
+1. **Tier 0 (desktop)** -- Mesh shaders are mandatory. Vulkan mesh shaders, and Vulkan
    1.4 all expose mesh/task shaders as a hard requirement of the engine.
 2. **Tier 1 (mobile)** -- Mesh shaders are absent on all current mobile GPUs; the engine uses the
    indirect-draw fallback path (IR-3.2.10) as a **first-class** supported tier. This is not a
@@ -525,7 +525,7 @@ share the meshlet, HZB, or V-buffer pipelines described here.
 
 ### Mobile tier-1 fallback rationale
 
-The "mesh shaders required" constraint applies to every *desktop* graphics API (Metal 4, D3D12,
-Vulkan 1.4). Mobile GPUs do not yet expose mesh shaders, so the engine ships a first-class
-indirect-draw path as Tier 1. Both tiers share the same culling compute shaders; only the final
-dispatch (mesh vs draw-indexed-indirect) and the V-buffer packing format differ.
+The "mesh shaders required" constraint applies to every *desktop* graphics API (Vulkan, Vulkan 1.4).
+Mobile GPUs do not yet expose mesh shaders, so the engine ships a first-class indirect-draw path as
+Tier 1. Both tiers share the same culling compute shaders; only the final dispatch (mesh vs
+draw-indexed-indirect) and the V-buffer packing format differ.

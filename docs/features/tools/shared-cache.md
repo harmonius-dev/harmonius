@@ -16,14 +16,15 @@
    project-scoped API tokens or SSO integration.
    - **Deps:** F-12.5.1 (Asset Database), F-12.6.1 (Content Pipeline)
    - **Platform:** The cache service exposes a REST API over HTTPS. Clients authenticate via
-2. **F-15.11.2** — Compiled shader variants (SPIR-V, MSL, DXIL) are cached by a composite key of
-   shader source hash, target platform, and feature permutation flags. A full shader rebuild that
+2. **F-15.11.2** — Compiled shader variants (SPIR-V, SPIR-V, SPIR-V) are cached by a composite key
+   of shader source hash, target platform, and feature permutation flags. A full shader rebuild that
    takes hours locally completes in minutes by downloading pre-compiled variants from the shared
    cache. The cache is populated by CI builds targeting all supported platforms, ensuring developers
    always have pre-compiled shaders available for their target. on macOS. Each platform's variants
    are cached independently.
    - **Deps:** F-15.11.1, F-15.8.5 (Shader Graphs), F-2.1.1 (GPU Abstraction)
-   - **Platform:** Shader output format varies by platform: DXIL on Windows, SPIR-V on Linux, MSL
+   - **Platform:** Shader output format varies by platform: SPIR-V on Windows, SPIR-V on Linux,
+     SPIR-V
 3. **F-15.11.3** — Compiled logic graph bytecode and AOT native code are cached by graph content
    hash and target platform. When a graph is unchanged since the last build, the compiled output is
    fetched from the shared cache instead of recompiling. Avoids recompiling thousands of gameplay,

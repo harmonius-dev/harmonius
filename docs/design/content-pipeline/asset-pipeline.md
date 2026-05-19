@@ -1393,8 +1393,8 @@ derives).
 
 Add a GPU asset loading path that bypasses CPU memory entirely:
 
-- Windows: DirectStorage with GPU decompression via compute queue
-- Apple: Metal I/O (MTLIOCommandQueue) for disk-to-GPU DMA
+- Windows: Vulkan staging buffers with GPU decompression via compute queue
+- Apple: Vulkan staging buffers (VkQueue transfer) for disk-to-GPU DMA
 - Linux: io_uring to CPU staging buffer, then Vulkan upload
 
 Add `GpuAssetLoader` with platform backends. Textures and meshes destined for GPU should skip CPU

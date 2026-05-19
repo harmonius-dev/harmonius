@@ -64,7 +64,7 @@ Plan file: [shader-variants.md](../rendering/shader-variants.md)
   `harmonius-worktrees/PLAN-rendering-shader-variants`.
 - 2026-04-14T12:00:00Z — plan-implementer — code complete: added `shader_variants` workspace crate
   (permutation keys, budgets, bundle mmap I/O, metrics, resolver, coverage helpers); unit +
-  integration tests map to `TC-2.3.10.*` matrix; DXC subprocess left for follow-up.
+  integration tests map to `TC-2.3.10.*` matrix; glslc subprocess left for follow-up.
 - 2026-04-14T12:15:00Z — plan-implementer — draft PR opened
   ([PR #57](https://github.com/cjhowe-us/harmonius/pull/57)).
 - 2026-04-14T12:15:00Z — plan-implementer — code complete, awaiting review (pr-reviewer).

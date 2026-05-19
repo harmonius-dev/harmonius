@@ -13,26 +13,26 @@
 
 | ID | Requirement | Systems |
 |----|-------------|---------|
-| IR-5.2.1 | Shader graph compiles to HLSL via codegen | Processing, Rendering |
-| IR-5.2.2 | dxc CLI produces DXIL/SPIR-V from HLSL | Processing, Render Pipeline |
-| IR-5.2.3 | metal-shaderconverter produces metallib | Processing, Render Pipeline |
+| IR-5.2.1 | Shader graph compiles to GLSL via codegen | Processing, Rendering |
+| IR-5.2.2 | glslc CLI produces SPIR-V from GLSL | Processing, Render Pipeline |
+| IR-5.2.3 | glslc produces SPIR-V module | Processing, Render Pipeline |
 | IR-5.2.4 | Texture processor outputs GPU-ready formats | Processing, Rendering |
 | IR-5.2.5 | Mesh processor outputs meshlet buffers | Processing, Rendering |
 | IR-5.2.6 | Shader hot-reload swaps pipeline state | Pipeline, Render Pipeline |
 | IR-5.2.7 | Streaming delivers mips/LODs to GPU memory | Pipeline, Rendering |
 
 This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
-only deviations are called out below. Shader compilation subprocess details (dxc invocation,
-metal-shaderconverter invocation, pipe polling, error capture) live in `tools/build-deploy.md` and
-`content-pipeline/asset-processing.md`. This integration defines only the HLSL source -> compiled
+only deviations are called out below. Shader compilation subprocess details (glslc invocation, glslc
+invocation, pipe polling, error capture) live in `tools/build-deploy.md` and
+`content-pipeline/asset-processing.md`. This integration defines only the GLSL source -> compiled
 bytecode contract and the CAS cache layout.
 
-1. **IR-5.2.1** -- The `ShaderGraphProcessor` emits one HLSL source file per shader stage (vertex,
+1. **IR-5.2.1** -- The `ShaderGraphProcessor` emits one GLSL source file per shader stage (vertex,
    pixel, compute, mesh). Output is a UTF-8 string buffer passed to the shader compiler service.
-2. **IR-5.2.2** -- The shader compiler service produces DXIL (D3D12) and SPIR-V (Vulkan) from HLSL.
-   Subprocess details live in `tools/build-deploy.md`.
-3. **IR-5.2.3** -- The shader compiler service produces `metallib` from DXIL for Apple platforms.
-   Subprocess details live in `tools/build-deploy.md`. Output is stored in CAS indexed by
+2. **IR-5.2.2** -- The shader compiler service produces SPIR-V (Vulkan) and SPIR-V (Vulkan) from
+   GLSL. Subprocess details live in `tools/build-deploy.md`.
+3. **IR-5.2.3** -- The shader compiler service produces `SPIR-V module` from SPIR-V for Apple
+   platforms. Subprocess details live in `tools/build-deploy.md`. Output is stored in CAS indexed by
    `(source_hash, TargetPlatform)`.
 4. **IR-5.2.4** -- `TextureProcessor` compresses source textures to GPU-ready block formats (BC7,
    ASTC, ETC2). Algorithm reference: ISPC Texture Compressor (`ispc_texcomp`) for BC7, `astcenc` for
@@ -115,11 +115,11 @@ frame. See [constraints.md](../constraints.md) for the "no `HashMap` on hot path
 classDiagram
     class TargetPlatform {
         <<enumeration>>
-        WindowsD3D12
+        WindowsVulkan
         LinuxVulkan
         AndroidVulkan
-        MacOsMetal
-        IosMetal
+        MacOsVulkan
+        IosVulkan
     }
 
     class ShaderStage {
@@ -261,11 +261,11 @@ classDiagram
 #[archive(check_bytes)]
 #[repr(u8)]
 pub enum TargetPlatform {
-    WindowsD3D12 = 0,
+    WindowsVulkan = 0,
     LinuxVulkan = 1,
     AndroidVulkan = 2,
-    MacOsMetal = 3,
-    IosMetal = 4,
+    MacOsVulkan = 3,
+    IosVulkan = 4,
 }
 
 /// Shader stage. Fully enumerated.
@@ -308,7 +308,7 @@ pub enum TextureDimension {
 /// Shader compilation output stored in CAS. One per
 /// platform target. Immutable after bake. Mmap'd via
 /// rkyv for zero-copy access -- bytecode is aligned
-/// to 16 bytes so DXIL/SPIR-V/metallib can be passed
+/// to 16 bytes so SPIR-V can be passed
 /// directly to the GPU driver without any copy.
 #[derive(rkyv::Archive, rkyv::Serialize)]
 #[archive(check_bytes)]
@@ -547,8 +547,8 @@ render thread picks up the new handle on the next frame.
 
 | Channel | Producer | Consumer | Kind | Capacity | Purpose |
 |---------|----------|----------|------|----------|---------|
-| `shader_compile_requests` | Worker | Main | MPSC | 64 | HLSL source to compile |
-| `shader_compile_results` | Main | Worker | MPSC | 64 | DXIL/SPIR-V/metallib bytes |
+| `shader_compile_requests` | Worker | Main | MPSC | 64 | GLSL source to compile |
+| `shader_compile_results` | Main | Worker | MPSC | 64 | SPIR-V bytes |
 | `pipeline_commands` | Worker | Render | MPSC | 128 | New `PipelineStateHandle` |
 | `stream_submit` | Worker | Main | MPSC | 256 | `StreamHandle` read request |
 | `stream_completions` | Main | Worker | MPSC | 256 | `StreamHandle` ready/failed |
@@ -573,21 +573,21 @@ sequenceDiagram
     participant W as Worker Thread [W]
     participant M as Main Thread [M]
     participant FW as File Watcher [M]
-    participant DXC as dxc CLI subprocess
-    participant MSC as metal-shaderconverter subprocess
+    participant glslc as glslc CLI subprocess
+    participant glslc as glslc subprocess
     participant CAS as CAS Cache
     participant R as Render Thread [Core-pinned]
     participant GPU as GPU
     participant UI as Editor Overlay [W]
 
     SG->>W: shader graph asset
-    W->>W: codegen HLSL source
+    W->>W: codegen GLSL source
     W->>M: compile request (MPSC, cap=64)
     Note over M: Main thread owns subprocess
-    M->>DXC: spawn subprocess (stdin: HLSL)
-    DXC-->>M: DXIL + SPIR-V (stdout, poll via OS loop)
-    M->>MSC: spawn subprocess (stdin: DXIL)
-    MSC-->>M: metallib (stdout, poll via OS loop)
+    M->>glslc: spawn subprocess (stdin: GLSL)
+    glslc-->>M: SPIR-V + SPIR-V (stdout, poll via OS loop)
+    M->>glslc: spawn subprocess (stdin: SPIR-V)
+    glslc-->>M: SPIR-V module (stdout, poll via OS loop)
     M->>W: compile result (MPSC, cap=64)
     W->>CAS: store all variants (rkyv mmap write)
     W->>R: pipeline command (MPSC, cap=128)
@@ -596,7 +596,7 @@ sequenceDiagram
     W->>UI: ShaderReloadStatus update (MPSC, cap=32)
     UI->>UI: render progress indicator
 
-    Note over FW,UI: Hot-reload: FW[M] detects change,<br/>then same flow from M->>DXC
+    Note over FW,UI: Hot-reload: FW[M] detects change,<br/>then same flow from M->>glslc
 ```
 
 ### Mip/LOD Streaming (IR-5.2.7)
@@ -658,8 +658,8 @@ sequenceDiagram
 
 | Data | Thread | Access |
 |------|--------|--------|
-| File watcher | Main | Detects HLSL changes |
-| dxc / MSC subprocess | Main | Spawns + polls stdout |
+| File watcher | Main | Detects GLSL changes |
+| glslc / glslc subprocess | Main | Spawns + polls stdout |
 | Platform I/O (io_uring/IOCP/GCD) | Main | Submits + polls |
 | `StreamRequestTable` | Main | Writes state transitions |
 | `ShaderReloadStatus` | Worker (ECS write) | ECS resource |
@@ -671,14 +671,15 @@ sequenceDiagram
 
 ### Hot-Reload Flow
 
-1. **Main thread** -- file watcher detects HLSL change. Publishes `ShaderReloadStatus::Compiling`
+1. **Main thread** -- file watcher detects GLSL change. Publishes `ShaderReloadStatus::Compiling`
    via `reload_status_updates` channel.
-2. **Main thread** -- spawns `dxc` subprocess (`std::process::Command`). Polls stdout/exit in the OS
-   event loop alongside all other platform I/O.
-3. **Main thread** -- on dxc success, sends compiled bytecode to worker via `shader_compile_results`
-   channel. On dxc failure, publishes `ShaderReloadStatus::Failed { error_count }`; the error is
-   read by the editor overlay system on its next tick. The previously published
-   `PipelineStateHandle` remains valid and is retained by the render thread.
+2. **Main thread** -- spawns `glslc` subprocess (`std::process::Command`). Polls stdout/exit in the
+   OS event loop alongside all other platform I/O.
+3. **Main thread** -- on glslc success, sends compiled bytecode to worker via
+   `shader_compile_results` channel. On glslc failure, publishes
+   `ShaderReloadStatus::Failed { error_count }`; the error is read by the editor overlay system on
+   its next tick. The previously published `PipelineStateHandle` remains valid and is retained by
+   the render thread.
 4. **Worker thread** -- receives bytecode, creates `PipelineStateDesc`, publishes it via
    `pipeline_commands` channel. Publishes `ShaderReloadStatus::PendingSwap { handle }`.
 5. **Render thread** -- on the next frame, drains `pipeline_commands`, inserts the descriptor into
@@ -709,8 +710,8 @@ All asset-pipeline rendering debug tools are runtime-toggleable via the debug to
 
 | Failure | Impact | Recovery |
 |---------|--------|----------|
-| dxc compile error | Shader variant missing | Keep old pipeline; emit `ShaderReloadUiEvent::Failed` |
-| MSC translation error | No metallib for variant | Fall back to previous metallib handle |
+| glslc compile error | Shader variant missing | Keep old pipeline; emit `ShaderReloadUiEvent::Failed` |
+| glslc translation error | No SPIR-V module for variant | Fall back to previous SPIR-V module handle |
 | Texture format unsupported | Black texture | Fall back to `Rgba8UnormFallback` |
 | Meshlet build fails | Mesh not renderable | Log error; exclude from draw list |
 | Streaming I/O error | Missing mip/LOD | Retry up to 3x; fall back to lowest resident mip |
@@ -719,10 +720,10 @@ All asset-pipeline rendering debug tools are runtime-toggleable via the debug to
 | CAS cache corruption | Variant miss | Recompile from source on next load |
 | mmap alignment check fails | Asset rejected | Emit load error; show red placeholder |
 
-### Error Propagation for dxc
+### Error Propagation for glslc
 
 The `ShaderReloadUiEvent` carries the compile error as a `SmolStr` message and an error count. The
-sequence is: main thread reads dxc stderr to a string, pushes
+sequence is: main thread reads glslc stderr to a string, pushes
 `ShaderReloadStatus::Failed { error_count }` plus the error string via the `reload_status_updates`
 MPSC channel, the worker ECS system writes the status to the ECS resource, and the editor overlay
 widget reads the resource on its next tick and displays the error icon with a hover tooltip
@@ -733,20 +734,20 @@ resource as a `SmolStr` (inline up to 22 bytes, heap for longer).
 
 | Platform | Shader backend | Preferred texture | Meshlet support |
 |----------|---------------|-------------------|-----------------|
-| Windows (D3D12) | DXIL via dxc | BC7 | Mesh shaders |
-| macOS (Metal) | metallib via MSC | ASTC 4x4 | Object shaders |
-| iOS (Metal) | metallib via MSC | ASTC 4x4 | Object shaders |
-| Linux (Vulkan) | SPIR-V via dxc | BC7 | Mesh shaders |
-| Android (Vulkan) | SPIR-V via dxc | ASTC 4x4 / ETC2 | Emulated (indirect draw) |
+| Windows (Vulkan) | SPIR-V via glslc | BC7 | Mesh shaders |
+| macOS (Vulkan) | SPIR-V via glslc | ASTC 4x4 | Object shaders |
+| iOS (Vulkan) | SPIR-V via glslc | ASTC 4x4 | Object shaders |
+| Linux (Vulkan) | SPIR-V via glslc | BC7 | Mesh shaders |
+| Android (Vulkan) | SPIR-V via glslc | ASTC 4x4 / ETC2 | Emulated (indirect draw) |
 
 ### Apple Platforms (macOS/iOS)
 
 ASTC 4x4 applies to **all** Apple platforms (macOS, iOS, iPadOS, tvOS). The encoder profile and
 block size are identical across Apple targets; only the `TargetPlatform` enum variant differs
-(`MacOsMetal` vs `IosMetal`). This is because Apple Silicon and modern Intel Macs with Metal 2+ both
-support ASTC LDR via the Metal pixel format `MTLPixelFormatASTC_4x4_LDR`. Separate variants exist to
-allow per-platform shader variants (e.g. iOS may use fewer texture binding slots) but the texture
-encoding path is shared.
+(`MacOsVulkan` vs `IosVulkan`). This is because Apple Silicon and modern Intel Macs with Vulkan 1.1+
+both support ASTC LDR via the Vulkan image format `MTLPixelFormatASTC_4x4_LDR`. Separate variants
+exist to allow per-platform shader variants (e.g. iOS may use fewer texture binding slots) but the
+texture encoding path is shared.
 
 ### Android Meshlet Emulation Fallback
 
@@ -766,7 +767,7 @@ for profiling via `debug.meshlet_emulation`.
 
 See companion [asset-pipeline-rendering-test-cases.md](asset-pipeline-rendering-test-cases.md). All
 integration tests are CI-runnable without hardware GPU requirements where possible -- GPU-dependent
-tests are marked and run on the GPU test runners. Negative tests cover dxc failure, texture format
+tests are marked and run on the GPU test runners. Negative tests cover glslc failure, texture format
 unsupported, meshlet build failure, streaming I/O error, mmap alignment failure, and stale
 generational handle access.
 
@@ -786,7 +787,7 @@ generational handle access.
 | 4 | `ShaderReflection` pseudocode defined | APPLIED |
 | 5 | `StreamHandle` + `StreamRequestTable` pseudocode defined | APPLIED |
 | 6 | `PipelineStateHandle` + `PipelineStateTable` pseudocode defined | APPLIED |
-| 7 | Hot-reload threading model explicit (main spawns dxc) | APPLIED |
+| 7 | Hot-reload threading model explicit (main spawns glslc) | APPLIED |
 | 8 | Sequence diagram annotates thread ownership `[M]`/`[W]` | APPLIED |
 | 9 | 2D/2.5D intentionally out of scope | ACKNOWLEDGED |
 | 10 | IR-5.2.7 streaming sequence diagram | APPLIED |
@@ -797,7 +798,7 @@ generational handle access.
 | 15 | Apple ASTC applies to all Apple platforms | APPLIED |
 | 16 | ECS request/handle pattern documented | APPLIED |
 | 17 | Per-IR detail descriptions expanded | APPLIED |
-| 18 | dxc error propagation to overlay UI documented | APPLIED |
+| 18 | glslc error propagation to overlay UI documented | APPLIED |
 
 1. Replaced `Vec<u8>` with `rkyv::vec::ArchivedVec<u8>` for `CompiledShader.bytecode`, with a
    16-byte aligned `archive_attr(repr(C, align(16)))` so the GPU driver can read the blob in place
@@ -815,9 +816,9 @@ generational handle access.
    main thread with `submit`, `poll`, `mark_ready`, `mark_failed`.
 6. `PipelineStateHandle` (generational index), `PipelineStateDesc`, and `PipelineStateTable`
    interface-level pseudocode are defined, showing `publish`, `resolve`, `lookup_by_variant`.
-7. Hot-reload section now names every thread. Main thread owns the file watcher, the dxc subprocess,
-   and the stdout poll. Worker thread receives bytecode via MPSC, builds the descriptor, and
-   publishes via a second MPSC channel to the render thread.
+7. Hot-reload section now names every thread. Main thread owns the file watcher, the glslc
+   subprocess, and the stdout poll. Worker thread receives bytecode via MPSC, builds the descriptor,
+   and publishes via a second MPSC channel to the render thread.
 8. The shader compilation sequence diagram annotates every participant with `[M]`, `[W]`, or
    `[Core-pinned]`, and explicitly calls out that main owns the subprocess spawn.
 9. Added a Scope subsection stating 2D/2.5D is out of scope and handled by a separate design.
@@ -839,5 +840,5 @@ generational handle access.
     resource, and how systems obtain generational `AssetHandle<T>` values synchronously.
 17. Added a numbered per-IR detail description list expanding each IR with algorithm references
     (`meshopt_buildMeshlets`, `ispc_texcomp`, `astcenc`) and explicit thread ownership.
-18. dxc error propagation section describes the full path from stderr capture to the editor overlay
-    `ShaderReloadUiEvent`, using a `SmolStr` error message copied into the ECS resource.
+18. glslc error propagation section describes the full path from stderr capture to the editor
+    overlay `ShaderReloadUiEvent`, using a `SmolStr` error message copied into the ECS resource.

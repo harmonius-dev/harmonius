@@ -63,15 +63,15 @@
 ## Shader Graph Compilation
 
 7. **R-12.2.7** — The engine **SHALL** compile visual shader graph assets into clean, human-readable
-   HLSL source files where each graph node emits an HLSL function. The compiler **SHALL** resolve
+   GLSL source files where each graph node emits an GLSL function. The compiler **SHALL** resolve
    input connections, generate typed local variables, and compose node functions into complete
-   shader entry points. Generated .hlsl files **SHALL** contain no template markers or non-standard
-   extensions and **SHALL** be fully compatible with HLSL Tools (IntelliSense, error squiggles,
+   shader entry points. Generated .glsl files **SHALL** contain no template markers or non-standard
+   extensions and **SHALL** be fully compatible with GLSL Tools (IntelliSense, error squiggles,
    go-to-definition). Only reachable shader variants identified through static analysis **SHALL** be
    generated.
-   - **Rationale:** Human-readable HLSL output enables debugging, manual inspection, and IDE tooling
+   - **Rationale:** Human-readable GLSL output enables debugging, manual inspection, and IDE tooling
      without template remnants.
-   - **Verification:** Generate HLSL from a shader graph with 20+ nodes; open in VS with HLSL Tools;
+   - **Verification:** Generate GLSL from a shader graph with 20+ nodes; open in VS with GLSL Tools;
      verify syntax highlighting and IntelliSense work; verify no template markers appear; verify
      comments trace each section to its graph node.
 
@@ -88,14 +88,13 @@
 
 ## Shader Bytecode Compilation
 
-9. **R-12.2.9** — The engine **SHALL** compile generated HLSL source files into platform-native
-   bytecode using DXC for HLSL-to-DXIL and HLSL-to-SPIR-V, and Metal Shader Converter for
-   DXIL-to-MSL. DXC **SHALL** perform validation, optimization (dead code elimination, constant
-   folding), and reflection (binding layouts, push constant ranges, workgroup sizes). Compiled
-   bytecode **SHALL** be cached by HLSL source hash in the shared build cache (F-15.11.2).
-   Compilation errors **SHALL** report the original HLSL line number and the graph node that
-   generated it.
-   - **Rationale:** DXC and Metal Shader Converter are industry-standard compilers producing
+9. **R-12.2.9** — The engine **SHALL** compile generated GLSL source files into platform-native
+   bytecode using glslc for GLSL-to-SPIR-V and GLSL-to-SPIR-V, and glslc for SPIR-V-to-SPIR-V. glslc
+   **SHALL** perform validation, optimization (dead code elimination, constant folding), and
+   reflection (binding layouts, push constant ranges, workgroup sizes). Compiled bytecode **SHALL**
+   be cached by GLSL source hash in the shared build cache (F-15.11.2). Compilation errors **SHALL**
+   report the original GLSL line number and the graph node that generated it.
+   - **Rationale:** glslc are industry-standard compilers producing
      optimized output with full reflection data for all target APIs.
    - **Verification:** Compile a shader with dead code and constants; confirm dead code is removed
      and constants are folded; confirm reflected binding layouts match the source; validate each

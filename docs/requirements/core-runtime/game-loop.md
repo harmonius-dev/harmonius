@@ -92,8 +92,8 @@
 ## Frame Pacing
 
 10. **R-1.11.10** — The engine **SHALL** support platform-specific frame pacing: VSync via swapchain
-    on desktop, CAMetalDisplayLink/Choreographer on mobile, and reprojection/timewarp with half-rate
-    fallback for VR.
+    on desktop, Vulkan WSI present timing/Vulkan WSI present timing on mobile, and
+    reprojection/timewarp with half-rate fallback for VR.
     - **Rationale:** Platform-native frame pacing prevents screen tearing and maintains smooth
       visual output on each target platform.
     - **Verification:** Enable VSync on desktop; verify frame times align with display refresh. On

@@ -265,7 +265,7 @@ harmonius_pcg/
 │   ├── value.rs          # Value noise
 │   ├── fractal.rs        # fBm, ridged, billowed
 │   ├── warp.rs           # Domain warping
-│   └── gpu_noise.hlsl    # HLSL compute kernels
+│   └── gpu_noise.glsl    # GLSL compute kernels
 ├── nodes/
 │   ├── point_gen.rs      # Surface, volume, grid,
 │   │                     # Poisson, spline samplers
@@ -1730,7 +1730,7 @@ world_seed
 ### GPU Generation Data Flow
 
 1. `GpuGenerator::generate_heightmap` allocates a UAV texture on the GPU.
-2. A compute shader dispatch fills the texture with noise. The HLSL noise kernels produce
+2. A compute shader dispatch fills the texture with noise. The GLSL noise kernels produce
    bit-identical results to the CPU `NoiseLibrary` for the same seed and parameters.
 3. The result is read back via a GPU-to-CPU copy. The job handle resolves when the main thread polls
    the GPU fence at the frame poll point.
@@ -1778,9 +1778,9 @@ world_seed
 | macOS    | GCD dispatch I/O via `IoRequest`  | Thread pool, scoped tasks |
 | Linux    | io_uring via `IoRequest`          | Thread pool, scoped tasks |
 
-1. **Windows** — D3D12 compute shaders via DXC
-2. **macOS** — Metal compute shaders (HLSL via Metal Shader Converter)
-3. **Linux** — Vulkan compute shaders (HLSL via DXC to SPIR-V)
+1. **Windows** — Vulkan compute shaders via glslc
+2. **macOS** — Vulkan compute shaders (GLSL via glslc)
+3. **Linux** — Vulkan compute shaders (GLSL via glslc to SPIR-V)
 
 ### Computation Distribution
 
@@ -2002,9 +2002,9 @@ world_seed
 
 | Backend | Compute Shaders | Mesh Shaders | Notes |
 |---------|----------------|-------------|-------|
-| D3D12 | Yes (SM 5.0+) | Yes (SM 6.5+, optional) | Full procgen compute support. |
+| Vulkan | Yes (SM 5.0+) | Yes (SM 6.5+, optional) | Full procgen compute support. |
 | Vulkan | Yes (1.0+) | Yes (task/mesh, optional) | Subgroup operations for reduction. |
-| Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
+| Vulkan | Yes (SPIR-V 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
 | Mobile | Limited dispatch size | No mesh shaders | Reduced procgen budgets. |
 
 **Note:** The procedural generation graph is a specialization of the universal logic graph runtime

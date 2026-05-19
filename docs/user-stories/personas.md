@@ -201,7 +201,7 @@ discipline.
 - **Goals:** Clean modular architecture, fast iteration (compile + test under 30 seconds),
   comprehensive test coverage, clear API boundaries between subsystems, documentation that stays in
   sync with code
-- **Pain points:** Cross-platform debugging (Metal vs Vulkan vs D3D12), unsafe FFI boundaries
+- **Pain points:** Vulkan validation-layer noise, unsafe FFI boundaries at the WSI boundary
   (objc2, FFI layers), ECS scheduling complexity, performance regressions from seemingly small
   changes, maintaining backward compatibility for plugins
 - **Engine touchpoints:** All source code, GPU backend implementations, ECS internals, render graph

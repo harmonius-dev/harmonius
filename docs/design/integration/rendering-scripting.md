@@ -11,21 +11,21 @@
 
 | ID | Requirement | Systems |
 |----|-------------|---------|
-| IR-3.5.1 | Material graphs codegen to HLSL source | Script, Ren |
-| IR-3.5.2 | HLSL compiles via dxc CLI subprocess | Script, Ren |
+| IR-3.5.1 | Material graphs codegen to GLSL source | Script, Ren |
+| IR-3.5.2 | GLSL compiles via glslc CLI subprocess | Script, Ren |
 | IR-3.5.3 | Shader permutations from material features | Script, Ren |
 | IR-3.5.4 | Hot reload patches shader binaries | Script, Ren |
-| IR-3.5.5 | Post-process graphs codegen compute HLSL | Script, Ren |
-| IR-3.5.6 | Effect graphs codegen particle HLSL | Script, Ren |
+| IR-3.5.5 | Post-process graphs codegen compute GLSL | Script, Ren |
+| IR-3.5.6 | Effect graphs codegen particle GLSL | Script, Ren |
 
-1. **IR-3.5.1** -- Material graphs authored in the visual editor compile via `CompileTarget::Hlsl`
-   in the `GraphCompiler`. The `codegen_hlsl` backend emits HLSL source implementing the material's
+1. **IR-3.5.1** -- Material graphs authored in the visual editor compile via `CompileTarget::Glsl`
+   in the `GraphCompiler`. The `codegen_glsl` backend emits GLSL source implementing the material's
    surface shader function. Output includes PBR params (albedo, metallic, roughness, normal,
    emissive). The middleman `.dylib` produced by codegen exposes per-material entry points and the
-   HLSL source is written to a CAS-backed arena rather than a heap `String`.
-2. **IR-3.5.2** -- Generated HLSL is compiled by `dxc` CLI as a subprocess during asset processing.
-   Output is DXIL and SPIR-V. `metal-shaderconverter` CLI translates DXIL to metallib. No runtime
-   shader compilation in shipping builds. The subprocess is spawned from the main thread and its
+   GLSL source is written to a CAS-backed arena rather than a heap `String`.
+2. **IR-3.5.2** -- Generated GLSL is compiled by `glslc` CLI as a subprocess during asset
+   processing. Output is SPIR-V. `glslc` CLI compiles GLSL to SPIR-V module. No runtime shader
+   compilation in shipping builds. The subprocess is spawned from the main thread and its
    stdout/stderr pipes are polled via the OS event loop alongside other platform I/O -- no async
    runtime is involved.
 3. **IR-3.5.3** -- `PermutationKey` combines `ShadingModel`, `ShaderFeatures`, and `RenderPath` to
@@ -33,15 +33,15 @@
    Asset processing pre-compiles all active permutations in parallel via the job system and stores
    the resulting `CompiledEffect` / `CompiledShader` entries in the CAS.
 4. **IR-3.5.4** -- During development, a main-thread file watcher observes material graph assets.
-   When an asset changes, a worker thread recompiles the graph to HLSL, the main thread runs `dxc`
+   When an asset changes, a worker thread recompiles the graph to GLSL, the main thread runs `glslc`
    as a subprocess, the worker archives the resulting bytecode via rkyv, and the render thread swaps
    the `PipelineStateHandle` on the next frame. All boundary crossings are crossbeam MPSC channels
    with documented buffer lengths (see [Channel Topology](#channel-topology)).
-5. **IR-3.5.5** -- Post-process graph nodes compile to HLSL compute shaders via the same
-   `codegen_hlsl` backend. Each post-process effect registers as a compute pass in the render graph
+5. **IR-3.5.5** -- Post-process graph nodes compile to GLSL compute shaders via the same
+   `codegen_glsl` backend. Each post-process effect registers as a compute pass in the render graph
    via an ECS component (`PostProcessPass`).
-6. **IR-3.5.6** -- Effect graph nodes (F-11.6.1) compile to HLSL compute shaders for particle spawn,
-   init, update, and output kernels via `codegen_hlsl`. The compiled kernels are packaged as a
+6. **IR-3.5.6** -- Effect graph nodes (F-11.6.1) compile to GLSL compute shaders for particle spawn,
+   init, update, and output kernels via `codegen_glsl`. The compiled kernels are packaged as a
    `CompiledEffect` stored in the CAS and loaded via zero-copy rkyv mmap at runtime.
 
 ### 2D / 2.5D Scope
@@ -54,16 +54,16 @@ target 3D surface and compute shaders only.
 
 | Type | Defined in | Consumed by | Purpose |
 |------|-----------|-------------|---------|
-| `GraphCompiler` | Scripting | Rendering | HLSL emit |
-| `CompileTarget` | Scripting | Rendering | Hlsl variant |
-| `codegen_hlsl` | Scripting | Rendering | Codegen entry |
+| `GraphCompiler` | Scripting | Rendering | GLSL emit |
+| `CompileTarget` | Scripting | Rendering | Glsl variant |
+| `codegen_glsl` | Scripting | Rendering | Codegen entry |
 | `PermutationKey` | Rendering | Scripting | Shader key |
 | `ShadingModel` | Rendering | Scripting | Surface type |
 | `ShaderFeatures` | Rendering | Scripting | Feature bits |
 | `RenderPath` | Rendering | Scripting | Fwd/deferred |
-| `MaterialShaderOutput` | Scripting | Asset Pipeline | HLSL + keys (rkyv) |
-| `ShaderCompileRequest` | Scripting | Asset Pipeline | Offline dxc input |
-| `ShaderProfile` | Scripting | Asset Pipeline | dxc target profile |
+| `MaterialShaderOutput` | Scripting | Asset Pipeline | GLSL + keys (rkyv) |
+| `ShaderCompileRequest` | Scripting | Asset Pipeline | Offline glslc input |
+| `ShaderProfile` | Scripting | Asset Pipeline | glslc target profile |
 | `CompiledEffect` | VFX | Scripting | Kernels (rkyv) |
 | `CompiledKernel` | VFX | Scripting | GPU bytecode (rkyv) |
 | `PipelineStateHandle` | Rendering | Hot reload | Generational GPU state |
@@ -82,7 +82,7 @@ components or resources. No `Arc` is held by any component -- every cross-thread
 | `PermutationKey` | Component | Current active variant per entity |
 | `PostProcessPass` | Component | Tagged entities in the render graph |
 | `EffectHandle` | Component | On VFX emitter entities |
-| `MaterialShaderCache` | Resource | Interned HLSL arena + permutation table |
+| `MaterialShaderCache` | Resource | Interned GLSL arena + permutation table |
 | `ShaderReloadStatus` | Resource | Hot-reload progress indicator |
 | `PipelineStateTable` | Resource | Render-thread-owned descriptor arena |
 
@@ -92,7 +92,7 @@ components or resources. No `Arc` is held by any component -- every cross-thread
 |--------|-----------|-----------|
 | Permutation -> pipeline | Sorted `Vec<(PermutationKey, u32)>` | Binary search, cache-friendly |
 | Pipeline by handle | Typed arena indexed by `u32` | O(1) generational access |
-| Shader source by handle | HLSL arena indexed by `u32` | Offline only; no runtime hit |
+| Shader source by handle | GLSL arena indexed by `u32` | Offline only; no runtime hit |
 | CAS cache (offline only) | `DashMap<[u8; 32], CasEntry>` | Cold path, parallel writes OK |
 
 No `HashMap` is used on the render-frame hot path. See [constraints.md](../constraints.md) for the
@@ -123,7 +123,7 @@ classDiagram
 
     class CompileTarget {
         <<enumeration>>
-        Hlsl
+        Glsl
         NativeDylib
     }
 
@@ -172,7 +172,7 @@ classDiagram
         +render_path RenderPath
     }
 
-    class HlslSourceHandle {
+    class GlslSourceHandle {
         +index u32
         +generation u32
     }
@@ -183,7 +183,7 @@ classDiagram
     }
 
     class MaterialShaderOutput {
-        +hlsl ArchivedHlslHandle
+        +glsl ArchivedGlslHandle
         +shading_model ShadingModel
         +features ShaderFeatures
         +permutations PermutationSpan
@@ -191,7 +191,7 @@ classDiagram
     }
 
     class ShaderCompileRequest {
-        +hlsl HlslSourceHandle
+        +glsl GlslSourceHandle
         +entry_point SmolStr
         +profile ShaderProfile
         +defines ArenaRef~DefinePair~
@@ -227,12 +227,12 @@ classDiagram
     }
 
     class MaterialShaderCache {
-        +hlsl_arena Arena~u8~
+        +glsl_arena Arena~u8~
         +permutations Arena~PermutationKey~
-        +sources Arena~HlslSourceHandle~
+        +sources Arena~GlslSourceHandle~
     }
 
-    class codegen_hlsl {
+    class codegen_glsl {
         <<function>>
         +emit(graph, target, arena) MaterialShaderOutput
     }
@@ -240,8 +240,8 @@ classDiagram
     MaterialShaderOutput --> ShadingModel
     MaterialShaderOutput --> ShaderFeatures
     MaterialShaderOutput --> PermutationSpan
-    MaterialShaderOutput --> HlslSourceHandle : arena index
-    ShaderCompileRequest --> HlslSourceHandle
+    MaterialShaderOutput --> GlslSourceHandle : arena index
+    ShaderCompileRequest --> GlslSourceHandle
     ShaderCompileRequest --> ShaderProfile
     PermutationKey --> ShadingModel
     PermutationKey --> ShaderFeatures
@@ -249,9 +249,9 @@ classDiagram
     CompiledEffect --> CompiledKernel
     CompiledEffect --> OutputMode
     PipelineStateTable --> PipelineStateHandle : owns
-    MaterialShaderCache --> HlslSourceHandle : arena stores
-    codegen_hlsl ..> MaterialShaderOutput : returns
-    codegen_hlsl ..> CompileTarget : targets
+    MaterialShaderCache --> GlslSourceHandle : arena stores
+    codegen_glsl ..> MaterialShaderOutput : returns
+    codegen_glsl ..> CompileTarget : targets
 ```
 
 ## API Design
@@ -261,8 +261,8 @@ classDiagram
 #[derive(Copy, Clone)]
 #[repr(u8)]
 pub enum CompileTarget {
-    /// Emit HLSL source for a shader graph.
-    Hlsl = 0,
+    /// Emit GLSL source for a shader graph.
+    Glsl = 0,
     /// Emit Rust source for a logic graph,
     /// compiled into the middleman .dylib.
     NativeDylib = 1,
@@ -297,7 +297,7 @@ pub enum RenderPath {
 }
 
 /// Bitflags for optional shader features. Each flag
-/// maps to an `#ifdef` block in generated HLSL.
+/// maps to an `#ifdef` block in generated GLSL.
 /// Fully enumerated (u32 bit positions documented).
 #[derive(rkyv::Archive, rkyv::Serialize, Copy, Clone, PartialEq, Eq, Hash)]
 #[archive(check_bytes)]
@@ -329,9 +329,9 @@ pub struct PermutationKey {
 }
 
 /// Generational handle into `MaterialShaderCache`
-/// HLSL arena. Copy, no `Arc`.
+/// GLSL arena. Copy, no `Arc`.
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
-pub struct HlslSourceHandle {
+pub struct GlslSourceHandle {
     pub index: u32,
     pub generation: u32,
 }
@@ -347,14 +347,14 @@ pub struct PermutationSpan {
 
 /// Material graph compilation output. Persisted to
 /// disk via rkyv and mmap'd at runtime (zero-copy).
-/// `hlsl` is an arena index into the CAS-backed HLSL
+/// `glsl` is an arena index into the CAS-backed GLSL
 /// byte arena; permutations are a span in the
 /// permutation arena. No `Arc`, no `String`, no `Vec`.
 #[derive(rkyv::Archive, rkyv::Serialize)]
 #[archive(check_bytes)]
 #[archive_attr(repr(C, align(16)))]
 pub struct MaterialShaderOutput {
-    pub hlsl: HlslSourceHandle,
+    pub glsl: GlslSourceHandle,
     pub shading_model: ShadingModel,
     pub features: ShaderFeatures,
     pub permutations: PermutationSpan,
@@ -362,13 +362,13 @@ pub struct MaterialShaderOutput {
 }
 
 /// Offline-only shader compilation request handed to
-/// the main thread for `dxc` subprocess invocation.
+/// the main thread for `glslc` subprocess invocation.
 /// MUST NOT be constructed on the render frame path.
 /// `entry_point` is a `SmolStr` (inline up to 22
 /// bytes); `defines` is an arena span rather than
 /// `Vec<(String, String)>`.
 pub struct ShaderCompileRequest {
-    pub hlsl: HlslSourceHandle,
+    pub glsl: GlslSourceHandle,
     pub entry_point: smol_str::SmolStr,
     pub profile: ShaderProfile,
     pub defines: ArenaRef<DefinePair>,
@@ -383,7 +383,7 @@ pub struct DefinePair {
     pub value: smol_str::SmolStr,
 }
 
-/// Shader profiles for dxc compilation.
+/// Shader profiles for glslc compilation.
 /// Only SM 6.6 variants are currently targeted;
 /// SM 6.0-6.5 are explicitly out of scope for the
 /// first release (see Open Questions).
@@ -435,11 +435,11 @@ pub struct CompiledKernel {
     pub param_layout: ParamBufferLayout,
 }
 
-/// HLSL codegen entry point. Pure function: no global
-/// state, no side effects. Writes HLSL bytes into the
+/// GLSL codegen entry point. Pure function: no global
+/// state, no side effects. Writes GLSL bytes into the
 /// provided arena and returns the handle + metadata.
 /// Called during asset processing on worker threads.
-pub fn codegen_hlsl(
+pub fn codegen_glsl(
     graph: &ShaderGraphIr,
     target: CompileTarget,
     arena: &mut MaterialShaderCache,
@@ -458,21 +458,21 @@ sequenceDiagram
     participant FW as File Watcher [M]
     participant W as Worker [W]
     participant M as Main [M]
-    participant DXC as dxc subprocess
-    participant MSC as MSC subprocess
+    participant glslc as glslc subprocess
+    participant glslc as glslc subprocess
     participant CAS as CAS Cache
     participant R as Render Thread [R]
     participant GPU as GPU
     participant UI as Editor Overlay [W]
 
     VE->>W: save material graph
-    W->>W: codegen_hlsl -> MaterialShaderOutput
+    W->>W: codegen_glsl -> MaterialShaderOutput
     W->>M: shader_compile_requests (MPSC, cap=64)
     Note over M: Main owns subprocess + I/O
-    M->>DXC: spawn (stdin: HLSL)
-    DXC-->>M: DXIL + SPIR-V (stdout, OS-loop poll)
-    M->>MSC: spawn (stdin: DXIL)
-    MSC-->>M: metallib (stdout, OS-loop poll)
+    M->>glslc: spawn (stdin: GLSL)
+    glslc-->>M: SPIR-V + SPIR-V (stdout, OS-loop poll)
+    M->>glslc: spawn (stdin: SPIR-V)
+    glslc-->>M: SPIR-V module (stdout, OS-loop poll)
     M->>W: shader_compile_results (MPSC, cap=64)
     W->>CAS: rkyv archive (mmap write)
     W->>R: pipeline_commands (MPSC, cap=128)
@@ -492,23 +492,23 @@ byte buffers.
 
 | Channel | Producer | Consumer | Kind | Capacity | Purpose |
 |---------|----------|----------|------|----------|---------|
-| `shader_compile_requests` | Worker | Main | MPSC | 64 | HLSL handle + profile |
-| `shader_compile_results` | Main | Worker | MPSC | 64 | DXIL/SPIR-V/metallib bytes |
+| `shader_compile_requests` | Worker | Main | MPSC | 64 | GLSL handle + profile |
+| `shader_compile_results` | Main | Worker | MPSC | 64 | SPIR-V bytes |
 | `pipeline_commands` | Worker | Render | MPSC | 128 | New `PipelineStateHandle` |
 | `reload_status_updates` | Worker | Main (ECS) | MPSC | 32 | `ShaderReloadStatus` writes |
 | `material_graph_events` | Main (FW) | Worker | MPSC | 32 | File watcher -> recompile |
 
 Back-pressure: critical paths (`pipeline_commands`) block the producer; non-critical paths
-(`reload_status_updates`) drop oldest. Hot-reload latency is dominated by the `dxc` subprocess, not
-channel throughput.
+(`reload_status_updates`) drop oldest. Hot-reload latency is dominated by the `glslc` subprocess,
+not channel throughput.
 
 ### Three-Thread Model
 
 | Data | Thread | Access |
 |------|--------|--------|
 | File watcher | Main | Detects material graph changes |
-| `dxc` / MSC subprocess | Main | Spawns + polls stdout via OS loop |
-| `MaterialShaderCache` | Worker | HLSL arena writes |
+| `glslc` / glslc subprocess | Main | Spawns + polls stdout via OS loop |
+| `MaterialShaderCache` | Worker | GLSL arena writes |
 | CAS cache | Worker | rkyv archive writes |
 | `PipelineStateTable` | Render (core-pinned) | Owner of descriptor arena |
 | `PipelineStateHandle` publish | Render | Drains `pipeline_commands` each frame |
@@ -516,8 +516,8 @@ channel throughput.
 
 Pipeline state objects are created on the render thread only. Worker threads build descriptors and
 publish them via the `pipeline_commands` MPSC channel; the render thread drains the channel during
-its per-frame setup pass and calls the GPU driver (D3D12/Vulkan/Metal) to materialize the PSO. This
-keeps GPU driver interaction on the core-pinned render thread and avoids cross-thread driver calls.
+its per-frame setup pass and calls the GPU driver (Vulkan) to materialize the PSO. This keeps GPU
+driver interaction on the core-pinned render thread and avoids cross-thread driver calls.
 
 ### rkyv Serialization Strategy
 
@@ -541,8 +541,8 @@ it does not need rkyv derives.
 | System | Game loop phase | Timestep | Order |
 |--------|----------------|----------|-------|
 | Graph compilation | Asset processing | Offline | First |
-| dxc subprocess | Asset processing (Main) | Offline | After codegen |
-| metal-shaderconverter | Asset processing (Main) | Offline | After dxc |
+| glslc subprocess | Asset processing (Main) | Offline | After codegen |
+| glslc | Asset processing (Main) | Offline | After glslc |
 | File watcher poll | Phase 8 Frame End | Variable | Background |
 | Hot-reload recompile | Worker, non-blocking | Variable | Channel-polled |
 | Pipeline publish | Phase 0 Frame Start (Render) | Variable | Before extract |
@@ -561,20 +561,20 @@ is required to hide or show any overlay.
 |------|--------|-------|
 | Shader reload overlay | `debug.shader_reload_overlay` | Editor viewport |
 | Permutation usage stats | `debug.permutation_stats` | Profiler overlay |
-| HLSL source preview | `debug.hlsl_preview` | Editor inspector |
+| GLSL source preview | `debug.glsl_preview` | Editor inspector |
 | Hot-reload trace | `debug.hot_reload_trace` | Profiler overlay |
-| dxc stderr tail | `debug.dxc_stderr` | Editor overlay |
+| glslc stderr tail | `debug.dxc_stderr` | Editor overlay |
 
 ## Failure Modes
 
 | Failure | Impact | Recovery |
 |---------|--------|----------|
-| HLSL codegen error | No shader | Emit error node; retain prior handle |
-| dxc compile failure | No binary | Fall back to error shader; publish `Failed` |
-| dxc binary missing | Build halt | Graceful error; asset build fails cleanly |
+| GLSL codegen error | No shader | Emit error node; retain prior handle |
+| glslc compile failure | No binary | Fall back to error shader; publish `Failed` |
+| glslc binary missing | Build halt | Graceful error; asset build fails cleanly |
 | Invalid permutation | Missing variant | Use default permutation (documented fallback) |
 | Hot reload conflict | Stale shader | Retry on next channel drain |
-| metallib convert fail | No macOS shader | Fall back to previous metallib handle |
+| SPIR-V module convert fail | No macOS shader | Fall back to previous SPIR-V module handle |
 | rkyv check_bytes fail | Corrupt artifact | Asset load fails; recompile from source |
 | Channel back-pressure (compile) | Slower dev loop | Producer blocks; no drops |
 
@@ -582,11 +582,11 @@ is required to hide or show any overlay.
 
 1. **Missing permutation** -- when a requested `PermutationKey` has no compiled variant, the
    renderer falls back to the `DefaultLit + ForwardPlus + NONE` permutation and logs a warning.
-2. **dxc failure** -- the previous `PipelineStateHandle` is retained by the render thread; the
+2. **glslc failure** -- the previous `PipelineStateHandle` is retained by the render thread; the
    editor overlay shows `ShaderReloadStatus::Failed { error_count }` until the next successful
    compile.
-3. **metallib failure** -- the previous metallib handle is retained; cross-platform fallback is
-   disabled (no SPIR-V on Metal).
+3. **SPIR-V module failure** -- the previous SPIR-V module handle is retained; cross-platform
+   fallback is disabled (no SPIR-V on Vulkan).
 4. **Error shader** -- a magenta/black checker shader is compiled at engine boot and always
    resident. Any unresolved pipeline handle resolves to this shader rather than crashing.
 
@@ -594,11 +594,11 @@ is required to hide or show any overlay.
 
 | Platform | Compiler | Output | Runtime compile |
 |----------|---------|--------|-----------------|
-| Windows (D3D12) | dxc | DXIL | Dev-only |
-| macOS (Metal) | dxc + MSC | metallib | Dev-only |
-| iOS (Metal) | dxc + MSC | metallib | Dev-only |
-| Linux (Vulkan) | dxc | SPIR-V | Dev-only |
-| Android (Vulkan) | dxc | SPIR-V | Dev-only |
+| Windows (Vulkan) | glslc | SPIR-V | Dev-only |
+| macOS (Vulkan) | glslc | SPIR-V module | Dev-only |
+| iOS (Vulkan) | glslc | SPIR-V module | Dev-only |
+| Linux (Vulkan) | glslc | SPIR-V | Dev-only |
+| Android (Vulkan) | glslc | SPIR-V | Dev-only |
 | Shipping | Pre-compiled | All formats | Never |
 
 ### Dev-Mode Subprocess Execution
@@ -621,9 +621,9 @@ pipeline handle.
 ### VR / Mobile Shader Profiles
 
 VR and mobile shader profile handling is **explicitly deferred**. The initial release targets
-desktop D3D12/Vulkan and Apple Metal only. VR stereo rendering (single-pass instanced, multiview)
-and mobile-specific permutations (tiled deferred, framebuffer fetch) will be added in a follow-up
-integration design once the base pipeline is in place (see Open Questions).
+desktop Vulkan only. VR stereo rendering (single-pass instanced, multiview) and mobile-specific
+permutations (tiled deferred, framebuffer fetch) will be added in a follow-up integration design
+once the base pipeline is in place (see Open Questions).
 
 ### 2D / 2.5D
 
@@ -634,13 +634,13 @@ pipeline and are not produced by this codegen path.
 
 See companion [rendering-scripting-test-cases.md](rendering-scripting-test-cases.md). All
 integration tests are CI-runnable without hardware GPU requirements where possible -- GPU-dependent
-tests are marked `[GPU]` and run on the GPU test runners. Negative tests cover HLSL codegen failure,
-dxc compile failure, dxc missing binary, metallib failure, missing permutation fallback, rkyv
-alignment failure, and channel back-pressure.
+tests are marked `[GPU]` and run on the GPU test runners. Negative tests cover GLSL codegen failure,
+glslc compile failure, glslc missing binary, SPIR-V module failure, missing permutation fallback,
+rkyv alignment failure, and channel back-pressure.
 
 ## Open Questions
 
-1. Should the compiled HLSL arena be persisted across editor sessions or recomputed at startup?
+1. Should the compiled GLSL arena be persisted across editor sessions or recomputed at startup?
 2. Should SM 6.0-6.5 profiles be added for compatibility with older drivers, or is SM 6.6 the
    minimum target forever?
 3. When should the VR/mobile permutation expansion land -- as a follow-up to this integration or as
@@ -660,7 +660,7 @@ alignment failure, and channel back-pressure.
 | 6 | `PermutationKey` pseudocode added (no `HashMap` on hot path) | APPLIED |
 | 7 | `ShadingModel` enum defined with full variants | APPLIED |
 | 8 | `ShaderFeatures` defined as `#[repr(transparent)]` bitflags | APPLIED |
-| 9 | `codegen_hlsl` function signature added to API section | APPLIED |
+| 9 | `codegen_glsl` function signature added to API section | APPLIED |
 | 10 | 2D/2.5D explicitly out of scope with 1-line note | APPLIED |
 | 11 | rkyv strategy documented for persistent artifacts | APPLIED |
 | 12 | ECS residency table added for materials / pipelines / handles | APPLIED |

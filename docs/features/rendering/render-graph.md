@@ -30,7 +30,7 @@
    The graph compiler maps virtual handles to physical allocations, allowing resources that do not
    overlap in lifetime to share the same backing memory.
    - **Deps:** F-2.2.1, F-2.1.7
-   - **Platform:** Mobile: transient resources use memoryless storage on Metal
+   - **Platform:** Mobile: transient resources use memoryless storage on Vulkan
      (MTLStorageModeMemoryless) and lazily-allocated memory on Vulkan
      (VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) for zero-bandwidth tile-local attachments. All
      platforms: full quality.
@@ -38,8 +38,8 @@
    within a frame. The compiler builds an interference graph from pass execution order and assigns
    non-overlapping resources to the same physical memory block, reducing peak VRAM consumption.
    - **Deps:** F-2.2.3
-   - **Platform:** D3D12 uses placed resources in heaps. Vulkan uses memory aliasing with explicit
-     invalidation. Metal relies on MTLHeap makeAliasable.
+   - **Platform:** Vulkan uses placed resources in heaps. Vulkan uses memory aliasing with explicit
+     invalidation. Vulkan uses MTLHeap makeAliasable.
 
 ## Barriers and Synchronization
 
@@ -51,7 +51,7 @@
    minimal set of barriers required for correct execution. Barriers are placed at the latest
    possible point and split across passes when the backend supports split barriers.
    - **Deps:** F-2.2.3, F-2.1.9
-   - **Platform:** Metal relies on driver-level hazard tracking; the compiler emits fences only at
+   - **Platform:** Vulkan uses driver-level hazard tracking; the compiler emits fences only at
      queue boundaries.
 
 ## Queue Assignment and Scheduling
@@ -66,8 +66,8 @@
    workload type and dependency constraints. Cross-queue synchronization fences are inserted
    automatically. Async compute passes overlap with graphics work to maximize GPU utilization.
    - **Deps:** F-2.2.1, F-2.2.5
-   - **Platform:** Queue family selection is backend-specific. Metal uses shared and private command
-     queues. D3D12 and Vulkan use explicit queue families.
+   - **Platform:** Queue family selection is backend-specific. Vulkan uses shared and private
+     command queues. Vulkan use explicit queue families.
 2. **F-2.2.7** — Passes are topologically sorted by resource dependencies to determine execution
    order. Passes with no data dependency between them are candidates for parallel encoding or async
    queue assignment. Stable ordering is maintained across frames to avoid GPU pipeline bubbles.
@@ -100,7 +100,7 @@
    secondary command buffers. The graph compiler identifies parallelism from the dependency graph
    and distributes encoding work across a thread pool, reducing CPU submission latency.
    - **Deps:** F-2.2.7, F-2.1.2
-   - **Platform:** D3D12 uses command list bundles. Vulkan uses secondary command buffers. Metal
+   - **Platform:** Vulkan uses secondary command buffers for parallel encoding.
      uses parallel render command encoders.
 3. **F-2.2.11** — Passes that depend on streamed resources (textures, meshes, acceleration
    structures) declare fallback behavior for unavailable assets. The graph compiler substitutes
@@ -130,7 +130,7 @@
    frame graphs can be exported for offline analysis.
    - **Deps:** F-2.2.12
    - **Platform:** All platforms: full quality. Debug overlay disabled in shipping builds. Mobile
-     profiling uses Metal GPU Capture or Vulkan validation layers.
+     profiling uses Vulkan GPU Capture or Vulkan validation layers.
 
 ## Unified Game Loop Integration
 

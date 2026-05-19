@@ -1083,13 +1083,13 @@ Algorithm reference: Parallel prefix sum / stencil sweep for grid propagation â€
 
 ```rust
 /// GPU compute propagation kernel. Compiled from
-/// an HLSL compute shader via dxc. The grid lives
+/// an GLSL compute shader via glslc. The grid lives
 /// in a GpuGrid<T> structured buffer (UAV).
 ///
 /// Use for grids > 256x256. Below that threshold,
 /// PropagationKernel<T> (CPU) is preferred.
 pub struct GpuPropagationKernel {
-    /// Compiled HLSL shader handle.
+    /// Compiled GLSL shader handle.
     pub shader: ShaderHandle,
     /// Neighbor pattern (Cardinal, Diagonal, All).
     pub pattern: NeighborPattern,
@@ -1381,8 +1381,8 @@ GPU-resident `GpuGrid<T>` resources are tracked as render graph nodes with read/
 | Mobile (iOS/Android) | Mobile     | Reduce grid capacity via config; no GPU compute on old GPUs |
 | Switch         | Console          | Max 256Ã—256 grid; 4 MB voxel world budget       |
 | VR (Quest/PSVR2) | VR             | Propagation in FixedUpdate; fog latency < 1 frame |
-| Windows        | PC               | DirectStorage for GPU asset streaming           |
-| macOS / iOS    | Apple            | Metal 4; `MTLSharedEvent` for GPU sync          |
+| Windows        | PC               | Vulkan staging buffers for GPU asset streaming           |
+| macOS / iOS    | Apple            | Vulkan; `VkSemaphore` for GPU sync          |
 | Linux          | PC               | Vulkan (`ash`); io_uring for asset I/O          |
 
 ### Memory Budget
@@ -1592,7 +1592,7 @@ Label Phase 2 (Simulation) in the System Execution Order diagram as FixedUpdate.
 ### RF-9: GPU compute propagation
 
 For grids larger than 256x256, propagation should run as GPU compute dispatches. Add a
-`GpuPropagationKernel` that runs as an HLSL compute shader, with the grid living in a structured
+`GpuPropagationKernel` that runs as an GLSL compute shader, with the grid living in a structured
 buffer. The CPU propagation path remains for small grids and gameplay queries. Both paths produce
 identical results.
 

@@ -202,12 +202,12 @@
 
 ## Platform GPU Upload
 
-29. **R-10.5.6a** — The engine **SHALL** upload tilemap chunk GPU buffers via DirectStorage
-    (Windows) and Metal I/O (Apple) for reduced CPU overhead on chunk streaming.
+29. **R-10.5.6a** — The engine **SHALL** upload tilemap chunk GPU buffers via Vulkan staging buffers
+    (Windows) and Vulkan staging buffers (Apple) for reduced CPU overhead on chunk streaming.
     - **Rationale:** Platform-native GPU upload paths bypass CPU copies for faster tilemap chunk
       loading.
-    - **Verification:** Stream 16 tilemap chunks. Assert GPU upload uses DirectStorage on Windows
-      and Metal I/O on Apple. Assert no CPU staging copies.
+    - **Verification:** Stream 16 tilemap chunks. Assert GPU upload uses Vulkan staging buffers on
+      Windows and Vulkan staging buffers on Apple. Assert no CPU staging copies.
 
 ## Viewport Composition
 

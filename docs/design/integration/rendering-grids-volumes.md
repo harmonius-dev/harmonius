@@ -573,9 +573,9 @@ All grid-upload debug tools are runtime-toggleable from the debug tools panel:
 
 | Platform | Fog texture | 3D volume | SDF shadows | Upload path |
 |----------|------------|-----------|-------------|-------------|
-| Desktop (D3D12) | R8, full res | 128^3 R16F | Enabled | Upload heap + `CopyTextureRegion` |
+| Desktop (Vulkan) | R8, full res | 128^3 R16F | Enabled | Upload heap + `vkCmdCopyBufferToImage` |
 | Desktop (Vulkan) | R8, full res | 128^3 R16F | Enabled | Staging + `vkCmdCopyBufferToImage` |
-| Apple (Metal) | R8, full res | 128^3 R16F | Enabled | `MTLBuffer` managed + `blitEncoder` |
+| Apple (Vulkan) | R8, full res | 128^3 R16F | Enabled | `VkBuffer` managed + `blitEncoder` |
 | Console | R8, full res | 128^3 R16F | Enabled | Platform-native DMA |
 | Mobile | R8, half res | 64^3 R16F | Disabled | Staging buffer + small batches |
 | Switch | R8, full res | 64^3 R16F | Disabled | Platform-native DMA |
@@ -585,14 +585,14 @@ All grid-upload debug tools are runtime-toggleable from the debug tools panel:
 Partial texture uploads use the platform-native transfer path. No cross-platform abstraction is
 imposed on top:
 
-1. **D3D12 (Windows/Xbox).** The render thread allocates an upload heap (`ID3D12Resource` with
-   `D3D12_HEAP_TYPE_UPLOAD`), writes dirty tile data into the mapped pointer, then issues
-   `CopyTextureRegion` per tile into the default-heap texture.
+1. **Vulkan (Windows/Xbox).** The render thread allocates an upload heap (`VkBuffer` with
+   `VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT`), writes dirty tile data into the mapped pointer, then
+   issues `vkCmdCopyBufferToImage` per tile into the default-heap texture.
 2. **Vulkan (Linux/Android).** The render thread uses a host-visible, host-coherent staging buffer
    and records `vkCmdCopyBufferToImage` with one `VkBufferImageCopy` per dirty tile.
-3. **Metal (macOS/iOS).** The render thread uses a shared-storage `MTLBuffer` and a
+3. **Vulkan (macOS/iOS).** The render thread uses a shared-storage `VkBuffer` and a
    `blitCommandEncoder.copy(from:to:)` per tile. The Apple build uses GCD dispatch queues owned by
-   Metal; no worker touches a Metal object.
+   Vulkan; no worker touches a Vulkan object.
 4. **Mobile (Android Vulkan).** Same as desktop Vulkan but upload batches are sized to respect 4 MB
    staging buffers and per-frame bandwidth budgets.
 5. **Switch.** Uses the platform SDK's native texture DMA path. Implementation is confined behind a
@@ -664,8 +664,8 @@ in SDF data. Benchmarks cover both full and worst-case partial upload paths.
 10. Added a `GridTransform` ECS component carrying `world_origin`, `voxel_size`, and rotation.
     Removed these fields from `VolumeGpuTexture`. The GPU struct now holds only a generational
     handle plus format metadata.
-11. Platform Considerations now includes a dedicated upload-strategy subsection covering D3D12
-    upload heaps, Vulkan staging buffers, Metal shared `MTLBuffer` + blit encoder, mobile batch
+11. Platform Considerations now includes a dedicated upload-strategy subsection covering Vulkan
+    upload heaps, Vulkan staging buffers, Vulkan shared `VkBuffer` + blit encoder, mobile batch
     sizing, and Switch DMA.
 12. Companion test file now includes a 2D-scope acknowledgement note.
 13. Companion test file now contains one negative test case per failure mode (upload budget

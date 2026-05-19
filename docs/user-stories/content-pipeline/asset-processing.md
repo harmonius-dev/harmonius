@@ -75,13 +75,13 @@
 | US-12.2.12 | technical artist (P-13)    |
 
 1. **US-12.2.10** — **As a** technical artist (P-13), **I want** shader graphs compiled into clean,
-   human-readable HLSL with comments tracing each section to its graph node, **so that** I can
+   human-readable GLSL with comments tracing each section to its graph node, **so that** I can
    inspect and debug generated shaders in any IDE.
 2. **US-12.2.11** — **As an** engine developer (P-26), **I want** only reachable shader variants
    compiled via static analysis, **so that** permutation explosion does not waste build time on dead
    code paths.
-3. **US-12.2.12** — **As a** technical artist (P-13), **I want** generated HLSL fully compatible
-   with HLSL Tools features like IntelliSense and go-to-definition, **so that** I can use standard
+3. **US-12.2.12** — **As a** technical artist (P-13), **I want** generated GLSL fully compatible
+   with GLSL Tools features like IntelliSense and go-to-definition, **so that** I can use standard
    IDE tooling on shader output.
 
 ## Dependency Tracking
@@ -106,14 +106,14 @@
 | US-12.2.16 | technical artist (P-13)    |
 | US-12.2.17 | build engineer (P-16)      |
 
-1. **US-12.2.15** — **As an** engine developer (P-26), **I want** generated HLSL compiled to DXIL,
-   SPIR-V, and MSL via DXC and Metal Shader Converter with full reflection data, **so that** binding
+1. **US-12.2.15** — **As an** engine developer (P-26), **I want** generated GLSL compiled to SPIR-V,
+   SPIR-V, and SPIR-V via glslc with full reflection data, **so that** binding
    layouts and push constant ranges are extracted automatically.
 2. **US-12.2.16** — **As a** technical artist (P-13), **I want** shader compilation errors to report
-   both the HLSL line number and the originating graph node, **so that** I can click through from an
+   both the GLSL line number and the originating graph node, **so that** I can click through from an
    error to the visual node that caused it.
 3. **US-12.2.17** — **As a** build engineer (P-16), **I want** compiled shader bytecode cached by
-   HLSL source hash in the shared build cache, **so that** unchanged shaders are not recompiled
+   GLSL source hash in the shared build cache, **so that** unchanged shaders are not recompiled
    across CI runs.
 
 ## Collision Shape Generation

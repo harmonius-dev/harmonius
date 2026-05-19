@@ -90,7 +90,7 @@
     a defined reactor poll point in the game loop, **so that** I/O events never cause mid-frame
     latency spikes.
 16. **US-14.3.16** — **As an** engine developer (P-26), **I want** GCD dispatch blocks for fiber
-    scheduling and Metal GPU sync routed to a serial queue and drained at a controlled poll point,
+    scheduling and Vulkan GPU sync routed to a serial queue and drained at a controlled poll point,
     **so that** macOS fiber and GPU completion timing is deterministic and does not interrupt frame
     work.
 17. **US-14.3.17** — **As an** engine developer (P-26), **I want** a safe game loop graph that
@@ -133,6 +133,7 @@
 28. **US-14.3.28** — **As an** engine developer (P-26), **I want** a pre-allocated aligned buffer
     pool for I/O operations where slots are acquired and released without allocation, **so that**
     file reads and writes avoid per-operation allocation overhead under streaming load.
-29. **US-14.3.29** — **As an** engine developer (P-26), **I want** GPU I/O via DirectStorage on
-    Windows and Metal I/O on Apple with a staging-buffer fallback on Linux, **so that** asset
-    loading bypasses the CPU staging path and reduces load times for large open-world levels.
+29. **US-14.3.29** — **As an** engine developer (P-26), **I want** GPU I/O via Vulkan staging
+    buffers on Windows and Vulkan staging buffers on Apple with a staging-buffer fallback on Linux,
+    **so that** asset loading bypasses the CPU staging path and reduces load times for large
+    open-world levels.

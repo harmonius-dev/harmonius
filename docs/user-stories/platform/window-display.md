@@ -84,8 +84,8 @@
     platform-native handle compatible with `raw-window-handle`, **so that** GPU backends create
     swapchains without platform branching.
 16. **US-14.1.16** — **As an** engine developer (P-26), **I want** HDR swapchain format and metadata
-    negotiation to use DXGI on Windows, CAMetalLayer with EDR on macOS, and `wp_color_management_v1`
-    on Wayland, **so that** HDR output is correct on each platform.
+    negotiation to use DXGI on Windows, Vulkan WSI swapchain with EDR on macOS, and
+    `wp_color_management_v1` on Wayland, **so that** HDR output is correct on each platform.
 17. **US-14.1.17** — **As an** engine developer (P-26), **I want** a single unified event poller
     that receives all OS events (window, input, display) and translates them into engine event
     types, **so that** there are no race conditions between separate polling loops.

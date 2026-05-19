@@ -31,7 +31,8 @@
    resource read/write analysis, using split barriers when transitions overlap independent work.
    - **Rationale:** Minimal barriers reduce GPU stalls while guaranteeing correctness.
    - **Verification:** Compile a graph with three sequential passes sharing a resource. Verify
-     barrier count equals the theoretical minimum. On Metal, verify fences only at queue boundaries.
+     barrier count equals the theoretical minimum. On Vulkan, verify fences only at queue
+     boundaries.
 
 5. **R-2.2.5** — The engine **SHALL** assign passes to graphics, compute, and copy queues with
    automatic cross-queue fence insertion and topological ordering stable across frames.

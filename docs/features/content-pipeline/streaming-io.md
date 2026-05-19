@@ -29,7 +29,8 @@
    bulk asset transfers, saturating NVMe bandwidth for open-world streaming. Tokio with CPU-side
    staging.
    - **Deps:** F-12.5.2
-   - **Platform:** Uses DirectStorage on Windows, Metal I/O on macOS. Linux falls back to
+   - **Platform:** Uses Vulkan staging buffers on Windows, Vulkan staging buffers on macOS. Linux
+     falls back to
 
 ## Streaming LOD
 
@@ -45,7 +46,7 @@
    residency budgets (256 MB vs 1+ GB on desktop) and streams fewer mip levels concurrently due to
    slower storage throughput.
    - **Deps:** F-12.5.2, F-12.5.6
-   - **Platform:** Sparse texture binding required (Vulkan sparse resources, Metal sparse
+   - **Platform:** Sparse texture binding required (Vulkan sparse resources, Vulkan sparse
 2. **F-12.5.5** — Stream mesh LOD levels and meshlet groups on demand based on screen-space
    projected size and camera velocity. Coarse LODs are resident at all times; fine LODs stream in
    asynchronously as the camera approaches. LOD transitions use dithered cross-fade to avoid popping
@@ -115,13 +116,13 @@
 | F-12.5.12 | Resource Residency Manager      |
 
 1. **F-12.5.11** — Disk-to-GPU asset loading that bypasses CPU memory entirely for textures and
-   meshes. Uses DirectStorage on Windows, Metal I/O on Apple platforms, and io_uring staging buffers
-   on Linux to transfer compressed payloads from NVMe straight into GPU-visible memory where
-   decompression runs on a compute shader. Saturates NVMe bandwidth during open-world streaming
-   while leaving CPU bandwidth free for gameplay and simulation.
+   meshes. Uses Vulkan staging buffers on Windows, Vulkan staging buffers on Apple platforms, and
+   io_uring staging buffers on Linux to transfer compressed payloads from NVMe straight into
+   GPU-visible memory where decompression runs on a compute shader. Saturates NVMe bandwidth during
+   open-world streaming while leaving CPU bandwidth free for gameplay and simulation.
    - **Deps:** F-12.5.2, F-12.5.9
-   - **Platform:** Windows uses DirectStorage 1.2+. Apple platforms use Metal I/O via
-     `MTLIOCommandQueue`. Linux uses io_uring with GPU-visible staging buffers. Mobile tiers fall
+   - **Platform:** Windows uses io_uring staging. Apple platforms use Vulkan staging buffers via
+     `VkQueue transfer`. Linux uses io_uring with GPU-visible staging buffers. Mobile tiers fall
      back to CPU staging when GPU DMA is unavailable.
 2. **F-12.5.12** — Central residency manager tracking per-asset-type memory budgets (textures,
    meshes, audio, animations) with LRU eviction, predictive prefetching driven by camera position

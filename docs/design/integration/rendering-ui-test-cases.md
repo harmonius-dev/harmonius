@@ -2,8 +2,8 @@
 
 All tests are CI-runnable against the real `RenderGraph`, `QuadBatcher`, `SdfAtlas`, and
 `NameplateSystem` implementations. No mocks are used — fakes only where an interface has no real
-implementation yet (e.g. a headless `GpuDevice` fake that implements the same trait as the Metal /
-Vulkan / D3D12 backends).
+implementation yet (e.g. a headless `GpuDevice` fake that implements the same trait as the Vulkan /
+Vulkan / Vulkan backends).
 
 ## Integration Tests
 

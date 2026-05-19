@@ -35,7 +35,7 @@
    per engine release, **so that** toolchain versions match the engine version.
 
 5. **US-15.24.3.1** — **As a** technical artist (P-13), **I want** cloud shader compilation to all
-   target bytecode formats without local toolchains, **so that** I do not install DXC or Metal
+   target bytecode formats without local toolchains, **so that** I do not install glslc or Vulkan
    Shader Converter.
 
 6. **US-15.24.3.2** — **As a** build engineer (P-16), **I want** cloud-compiled shaders stored in

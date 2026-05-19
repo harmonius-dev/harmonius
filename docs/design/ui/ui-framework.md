@@ -1890,21 +1890,21 @@ atlases are generated at asset build time.
 | macOS | `backingScaleFactor` | `NSWorkspace` |
 | Linux | `Xft.dpi` / `wl_output.scale` | GTK / portal |
 
-### HLSL Shader Pipeline
+### GLSL Shader Pipeline
 
-All UI shaders are authored in HLSL and compiled via the standard DXC + Metal Shader Converter CLI
-pipeline (constraints.md). No embedded shader compilation at runtime.
+All UI shaders are authored in GLSL and compiled via the standard glslc CLI pipeline
+(constraints.md). No embedded shader compilation at runtime.
 
 | Shader | File | Notes |
 |--------|------|-------|
-| Quad rendering | `ui_quad.hlsl` | Instanced quads, atlas UV, tint |
-| MSDF text | `ui_msdf.hlsl` | Signed-distance field glyph rendering |
-| SDF clip | `ui_sdf_clip.hlsl` | Stencil-based anti-aliased clipping |
-| CVD post-process | `ui_cvd.hlsl` | Colorblind deficiency color matrix |
-| Vector path | `ui_vector.hlsl` | SDF distance field vector shapes |
+| Quad rendering | `ui_quad.glsl` | Instanced quads, atlas UV, tint |
+| MSDF text | `ui_msdf.glsl` | Signed-distance field glyph rendering |
+| SDF clip | `ui_sdf_clip.glsl` | Stencil-based anti-aliased clipping |
+| CVD post-process | `ui_cvd.glsl` | Colorblind deficiency color matrix |
+| Vector path | `ui_vector.glsl` | SDF distance field vector shapes |
 
-All shaders are compiled offline by the content pipeline. Hot-reload invokes `dxc` and
-`metal-shaderconverter` as subprocesses (constraints.md Shader Pipeline).
+All shaders are compiled offline by the content pipeline. Hot-reload invokes `glslc` and `glslc` as
+subprocesses (constraints.md Shader Pipeline).
 
 ### Algorithm References
 
@@ -2234,11 +2234,11 @@ The IME table covers only Windows, macOS, Linux. Add iOS (`UITextInputMode`, `UI
 Android (`InputMethodManager`), and console on-screen keyboards. Clarify which platforms "Mobile"
 and "Console" cover. Add Switch-specific considerations (touch screen when undocked).
 
-### RF-13: HLSL shader pipeline for UI shaders [APPLIED]
+### RF-13: GLSL shader pipeline for UI shaders [APPLIED]
 
-Neither document mentions HLSL, DXC, or Metal Shader Converter. All UI shaders (quad rendering, MSDF
-text, SDF clipping, CVD post-process, vector path) are authored in HLSL and compiled via the
-standard DXC + MSC CLI pipeline. Add a brief note.
+Neither document mentions GLSL, glslc, or glslc. All UI shaders (quad rendering, MSDF text, SDF
+clipping, CVD post-process, vector path) are authored in GLSL and compiled via the standard glslc
+CLI pipeline. Add a brief note.
 
 ### RF-14: Codegen for plugin-extensible enums [APPLIED]
 

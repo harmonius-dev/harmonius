@@ -55,7 +55,7 @@
    creation without a display. On Windows, uses WDDM headless mode. Multi-GPU assignment uses Vulkan
    device groups on Linux and DXGI adapter enumeration on Windows.
    - **Deps:** F-15.12.1, F-15.12.2
-   - **Platform:** Headless mode requires EGL on Linux or headless Metal on macOS for GPU context
+   - **Platform:** Headless mode requires EGL on Linux or headless Vulkan on macOS for GPU context
 
 ## Session Management
 

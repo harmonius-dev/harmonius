@@ -284,7 +284,7 @@ design.
 | Performance budget reference | Budget partitioning per entity |
 
 Per the integration layer review (design-review.md §3.8), several existing integration docs violate
-this rule (`ai-grids-volumes.md` has drain loop pseudocode; `asset-pipeline-rendering.md` has dxc
+this rule (`ai-grids-volumes.md` has drain loop pseudocode; `asset-pipeline-rendering.md` has glslc
 subprocess launch). Task P2-35 tracks moving that code out.
 
 ## Integration Documents That Reference This File

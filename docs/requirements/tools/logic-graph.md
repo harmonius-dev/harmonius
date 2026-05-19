@@ -27,11 +27,11 @@
      correctly.
 
 5. **R-15.8.5** — The engine **SHALL** support visual shader graph authoring compiling through the
-   DXC/Metal Shader Converter pipeline to DXIL, SPIR-V, and MSL, with a material graph variant
+   glslc/glslc pipeline to SPIR-V, with a material graph variant
    providing PBR inputs and live preview.
    - **Rationale:** Shader authoring must be visual and produce shaders for all GPU backends.
-   - **Verification:** Create a shader graph, compile it, and verify correct rendering on Metal,
-     Vulkan, and D3D12.
+   - **Verification:** Create a shader graph, compile it, and verify correct rendering on Vulkan,
+     Vulkan, and Vulkan.
 
 6. **R-15.8.6** — The engine **SHALL** support visual render graph configuration with automatic
    barrier insertion and resource aliasing.

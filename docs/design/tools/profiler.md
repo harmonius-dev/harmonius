@@ -1545,22 +1545,22 @@ RF-32. The shared path is:
 
 | Platform | Timer              | GPU queries             | Remote transport        |
 |----------|--------------------|-------------------------|-------------------------|
-| Windows  | QPC                | D3D12 timestamp         | MsQuic                  |
-| macOS    | `mach_absolute_time` | Metal timestamp       | Networking.framework    |
+| Windows  | QPC                | Vulkan timestamp         | MsQuic                  |
+| macOS    | `mach_absolute_time` | Vulkan timestamp       | Networking.framework    |
 | Linux    | `clock_gettime`    | Vulkan timestamp        | quinn-proto             |
-| iOS      | `mach_absolute_time` | Metal timestamp       | Networking.framework    |
+| iOS      | `mach_absolute_time` | Vulkan timestamp       | Networking.framework    |
 | Android  | `clock_gettime`    | Vulkan timestamp        | quinn-proto             |
 | Consoles | Platform SDK       | Platform SDK            | Platform SDK            |
 
 1. **Windows** — CPU: `QueryPerformanceCounter`. Thread scheduling: ETW `CSwitch` events. Stack:
-   `CaptureStackBackTrace`. GPU: D3D12 timestamp queries. Vendor: AMD AGS, NVIDIA NVAPI.
+   `CaptureStackBackTrace`. GPU: Vulkan timestamp queries. Vendor: AMD AGS, NVIDIA NVAPI.
 2. **macOS** — CPU: `mach_absolute_time`, calibrated via `mach_timebase_info`. Thread scheduling:
-   `os_signpost_emit_with_type` (Instruments compatible). Stack: `backtrace` (libunwind). GPU: Metal
-   timestamp queries via `objc2-metal`. Vendor: Metal GPU counters API.
+   `os_signpost_emit_with_type` (Instruments compatible). Stack: `backtrace` (libunwind). GPU:
+   Vulkan timestamp queries via `ash`. Vendor: Vulkan GPU counters API.
 3. **Linux** — CPU: `clock_gettime(CLOCK_MONOTONIC)` or `rdtsc`. Thread scheduling: perf
    `sched:sched_switch`. Stack: `backtrace` (libunwind). GPU: Vulkan timestamp queries. Vendor:
    Vulkan pipeline statistics.
-4. **iOS** — CPU: `mach_absolute_time`. GPU: Metal timestamp queries. Thermal state: monitor via
+4. **iOS** — CPU: `mach_absolute_time`. GPU: Vulkan timestamp queries. Thermal state: monitor via
    `NSProcessInfo.thermalState` (`objc2-foundation`); expose as a profiler counter. Additional:
    `os_signpost` for Instruments integration on device.
 5. **Android** — CPU: `clock_gettime`. GPU: Vulkan timestamp queries. Additional: Android Simpleperf
@@ -1594,8 +1594,8 @@ At 300 FPS with 1000 CPU events per frame, total overhead is ~20 us per frame ou
 | Flame graphs | Brendan Gregg, "The Flame Graph" (CACM 2016) — <https://www.brendangregg.com/flamegraphs.html> |
 | Squarified treemaps | Bruls, Huizing, van Wijk, "Squarified Treemaps" (2000) — <https://www.win.tue.nl/~vanwijk/stm.pdf> |
 | GPU timestamp calibration | Vulkan spec §43.3 "Timestamp Queries" — <https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#queries-timestamps> |
-| GPU timestamp calibration | D3D12 — <https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-getclockcalibration> |
-| GPU timestamp calibration | Metal — <https://developer.apple.com/documentation/metal/mtlcountersamplebuffer> |
+| GPU timestamp calibration | Vulkan — <https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-getclockcalibration> |
+| GPU timestamp calibration | Vulkan — <https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkCmdWriteTimestamp.html> |
 
 ## Test Plan
 
@@ -1820,10 +1820,10 @@ Add dedicated trackers:
 
 | Platform | Timer | GPU queries | Remote transport |
 |----------|-------|------------|-----------------|
-| Windows | QPC | D3D12 timestamp | MsQuic |
-| macOS | mach_absolute_time | Metal timestamp | Networking.framework |
+| Windows | QPC | Vulkan timestamp | MsQuic |
+| macOS | mach_absolute_time | Vulkan timestamp | Networking.framework |
 | Linux | clock_gettime | Vulkan timestamp | quinn-proto |
-| iOS | mach_absolute_time | Metal timestamp | Networking.framework |
+| iOS | mach_absolute_time | Vulkan timestamp | Networking.framework |
 | Android | clock_gettime | Vulkan timestamp | quinn-proto |
 | Consoles | Platform SDK | Platform SDK | Platform SDK |
 
@@ -1890,14 +1890,14 @@ The file tree duplicates information from the module boundaries diagram.
    Click any pass to see: draw call count, triangle count, meshlet count, pixel fill rate, texture
    bandwidth.
 2. **GPU utilization** — query GPU vendor counters (AMD GPUPerfAPI, NVIDIA Nsight, Intel Metrics
-   Discovery, Metal GPU counters via objc2) for: shader unit occupancy, compute unit utilization,
+   Discovery, Vulkan GPU counters via objc2) for: shader unit occupancy, compute unit utilization,
    ALU utilization, texture unit utilization, memory bandwidth utilization. Display as per-frame
    percentages alongside the GPU timeline.
 3. **Shader profiling** — per-shader execution time. Identify the most expensive shaders by total
    GPU time across all draw calls. Display shader complexity heat map in the viewport: each pixel
    colored by the shader execution cost at that pixel (from GPU timestamp per-draw or hardware
    shader profiling counters).
-4. **Custom shader debugging** — for user-authored material graph shaders (codegen'd HLSL): inject
+4. **Custom shader debugging** — for user-authored material graph shaders (codegen'd GLSL): inject
    debug outputs into the shader at authoring time. A "Debug" pin on any material graph node writes
    its value to a debug render target. The profiler displays the debug target as a viewport overlay.
    No shader recompilation needed — debug outputs are compiled in at codegen time, activated by a
@@ -1939,8 +1939,8 @@ The profiler's "Logic Graph Health" panel lists all graphs sorted by execution c
    mispredictions via `perf` / ETW / Instruments) alongside GPU counters. Display in synchronized
    columns per frame.
 4. **Platform counter APIs:**
-   - Windows: ETW (Event Tracing for Windows) + D3D12 PIX markers
-   - macOS: Instruments + Metal GPU counters via objc2
+   - Windows: ETW (Event Tracing for Windows) + Vulkan debug markers markers
+   - macOS: Instruments + Vulkan GPU counters via objc2
    - Linux: `perf_event_open` + Vulkan timestamp queries
    - Consoles: platform SDK profiling APIs
 5. **Bottleneck identification** — automated analysis: if GPU is 100% utilized and CPU is idle, the

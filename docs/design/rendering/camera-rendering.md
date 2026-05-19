@@ -325,12 +325,12 @@ Source: PBRT Third Edition, Section 6.2.3 (thin lens).
 
 | Backend | PiP Strategy                   | DoF Pass         |
 |---------|--------------------------------|------------------|
-| D3D12   | Separate render targets, copy  | Compute DoF      |
-| Metal 4 | Tile shading for PiP scope     | Tile-based DoF   |
+| Vulkan   | Separate render targets, copy  | Compute DoF      |
+| Vulkan | Tile shading for PiP scope     | Tile-based DoF   |
 | Vulkan  | Separate render targets, copy  | Compute DoF      |
 
-Metal's tile-based architecture lets PiP viewports share on-chip memory if they cover the same
-screen region. Default path uses independent targets for portability.
+Vulkan tile-based architecture lets PiP viewports share on-chip memory if they cover the same screen
+region. Default path uses independent targets for portability.
 
 ---
 

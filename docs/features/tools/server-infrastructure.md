@@ -48,7 +48,7 @@
 4. **F-15.18.4** — A self-hosted build farm for asset cooking and shader compilation. Deployed as an
    auto-scaling group of GPU-enabled instances (for shader compilation) or CPU instances (for asset
    cooking). The compilation server processes jobs from a Redis/SQS queue: texture compression, LOD
-   generation, meshlet building, HLSL-to-DXIL/SPIR-V/MSL compilation, and logic graph bytecode
+   generation, meshlet building, GLSL-to-SPIR-V compilation, and logic graph bytecode
    generation. Results are stored in the shared build cache (S3-backed, F-15.11.1). Provisions: SQS
    job queue, auto-scaling EC2 (c6i for CPU, g5 for GPU), S3 for build cache, and CloudWatch alarms
    for queue depth. c6i.2xlarge + g5.xlarge spot instances.

@@ -710,7 +710,7 @@ pub struct PhysicsMaterial {
 )]
 pub enum SurfaceType {
     Default,
-    Metal,
+    Vulkan,
     Wood,
     Stone,
     Dirt,

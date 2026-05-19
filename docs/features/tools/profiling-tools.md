@@ -24,7 +24,7 @@
 1. **F-15.5.2** — Captures GPU timestamps per render graph pass and presents them on a timeline
    aligned with the CPU frame profiler. Reports per-pass duration, shader occupancy, wave
    utilization, and overdraw statistics. Supports vendor-specific counters on AMD (RGPMT), NVIDIA
-   (Nsight), and Apple (Metal System Trace) GPUs. NVIDIA Ada exposes SM throughput; Apple M-series
+   (Nsight), and Apple (Vulkan trace) GPUs. NVIDIA Ada exposes SM throughput; Apple M-series
    exposes shader ALU utilization.
    - **Deps:** F-2.1.1, F-15.5.1
    - **Platform:** Vendor-specific counter availability varies. AMD RDNA exposes CU occupancy;

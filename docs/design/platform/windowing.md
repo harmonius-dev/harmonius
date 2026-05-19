@@ -1138,7 +1138,7 @@ channel:
 1. The main thread calls `Window::new(config)` and creates the native window.
 2. The main thread calls `window.surface_handle()` to obtain a `SurfaceHandle` and sends it to the
    render thread.
-3. The render thread creates a swapchain (Vulkan `VkSurfaceKHR`, Metal `CAMetalLayer`, DX12
+3. The render thread creates a swapchain (Vulkan `VkSurfaceKHR`, Vulkan WSI swapchain`, Vulkan
    `IDXGISwapChain`) using the `HasRawWindowHandle` and `HasRawDisplayHandle` traits on the
    `SurfaceHandle`.
 4. On `SurfaceEvent::Resized`, the render thread recreates swapchain buffers at the new resolution
@@ -1242,7 +1242,7 @@ input design, not here. Windowing depends on those types to construct events.
 1. **Windows** — `DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020`
    - **Metadata API:** `DXGI_HDR_METADATA_HDR10` via `IDXGISwapChain4::SetHDRMetaData`
 2. **macOS** — Extended linear sRGB via `CGColorSpace`
-   - **Metadata API:** `CAMetalLayer.edrMetadata` +
+   - **Metadata API:** `Vulkan WSI swapchain.edrMetadata` +
      `NSScreen.maximumExtendedDynamicRangeColorComponentValue`
 3. **Linux Wayland** — BT.2020 PQ via `wp_color_management_v1`
    - **Metadata API:** Experimental — limited compositor support (KDE 6.0+, GNOME WIP)
@@ -1252,17 +1252,17 @@ input design, not here. Windowing depends on those types to construct events.
 | Platform         | FIFO                        |
 |------------------|-----------------------------|
 | Windows (Vulkan) | `VK_PRESENT_MODE_FIFO_KHR`  |
-| Windows (DX12)   | `SyncInterval=1`            |
-| macOS (Metal)    | `displaySyncEnabled = true` |
+| Windows (Vulkan)   | `SyncInterval=1`            |
+| macOS (Vulkan)    | `displaySyncEnabled = true` |
 | Linux (Vulkan)   | `VK_PRESENT_MODE_FIFO_KHR`  |
 
 1. **Windows (Vulkan)** — `VK_PRESENT_MODE_IMMEDIATE_KHR`
    - **Mailbox:** `VK_PRESENT_MODE_MAILBOX_KHR`
-2. **Windows (DX12)** — `DXGI_SWAP_EFFECT_FLIP_DISCARD` + `SyncInterval=0`
+2. **Windows (Vulkan)** — `DXGI_SWAP_EFFECT_FLIP_DISCARD` + `SyncInterval=0`
    - **Mailbox:** `DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT` + `SyncInterval=0` + 3
      buffers
-3. **macOS (Metal)** — `CAMetalLayer.displaySyncEnabled = false`
-   - **Mailbox:** Manual frame pacing with `CAMetalLayer.maximumDrawableCount = 3`
+3. **macOS (Vulkan)** — `Vulkan WSI swapchain.displaySyncEnabled = false`
+   - **Mailbox:** Manual frame pacing with `Vulkan WSI swapchain.maximumDrawableCount = 3`
 4. **Linux (Vulkan)** — `VK_PRESENT_MODE_IMMEDIATE_KHR`
    - **Mailbox:** `VK_PRESENT_MODE_MAILBOX_KHR`
 
@@ -1438,16 +1438,15 @@ transparency would enable always-on-top FPS counters and performance overlays (U
 **Q5. Is this design cohesive with the overall engine?**
 
 The `SurfaceHandle` implements the `raw-window-handle` crate traits (`HasRawWindowHandle`,
-`HasRawDisplayHandle`), ensuring GPU backends (Vulkan, Metal, DX12) create swapchains without
-platform branching -- consistent with the rendering design's backend abstraction. The `DpiPolicy`
-per-window setting integrates with the UI system's layout engine for correct fractional scaling. The
-3-thread model (main thread for OS event loop and platform I/O, worker threads for the job system,
-render thread for GPU) cleanly separates concerns: the main thread produces `WindowEvent`s and
-`SurfaceEvent`s, worker threads consume window events for game logic, and the render thread consumes
-surface events for swapchain management. Platform backend selection via `cfg` attributes follows the
-same pattern as threading, transport, and filesystem modules. The `LogicalSize` and `PhysicalSize`
-types enforce type-safe coordinate handling that prevents the DPI bugs common in engines using raw
-pixel values.
+`HasRawDisplayHandle`), ensuring GPU backends (Vulkan) create swapchains without platform branching
+-- consistent with the rendering design's backend abstraction. The `DpiPolicy` per-window setting
+integrates with the UI system's layout engine for correct fractional scaling. The 3-thread model
+(main thread for OS event loop and platform I/O, worker threads for the job system, render thread
+for GPU) cleanly separates concerns: the main thread produces `WindowEvent`s and `SurfaceEvent`s,
+worker threads consume window events for game logic, and the render thread consumes surface events
+for swapchain management. Platform backend selection via `cfg` attributes follows the same pattern
+as threading, transport, and filesystem modules. The `LogicalSize` and `PhysicalSize` types enforce
+type-safe coordinate handling that prevents the DPI bugs common in engines using raw pixel values.
 
 ## Open Questions
 
@@ -1515,7 +1514,7 @@ flow diagrams to reflect:
 
 #### Move `PresentController` to render pipeline
 
-Presentation is a GPU queue operation (Metal `present(drawable)`, D3D12 `Present()`, Vulkan
+Presentation is a GPU queue operation (`vkQueuePresentKHR` on all platforms via Vulkan WSI;
 `vkQueuePresentKHR`). Remove from windowing design. The render pipeline design owns:
 
 - Swapchain/drawable management
@@ -1606,8 +1605,8 @@ Note platform asymmetry:
 
 | Platform | Surface resize behavior |
 |----------|----------------------|
-| macOS (Metal 4) | `CAMetalLayer` auto-resizes with view |
-| Windows (D3D12) | Manual `ResizeBuffers()` on swapchain |
+| macOS (Vulkan) | `Vulkan WSI swapchain` auto-resizes with view |
+| Windows (Vulkan) | Manual `vkCreateSwapchainKHR` on swapchain |
 | Linux (Vulkan) | Manual swapchain recreation |
 
 ### Open items

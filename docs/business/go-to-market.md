@@ -430,8 +430,9 @@ AI-assisted development, and planet-scale procedural worlds — without writing 
 7. **7** — Rust compile times frustrate users
    - **Mitigation:** Invest in incremental compilation. Use dynamic linking in dev mode. Hot reload
      for gameplay logic. Logic graphs bypass Rust compilation entirely.
-8. **8** — GPU backend complexity (Metal + Vulkan + D3D12)
-   - **Mitigation:** Start with Metal only (macOS development). Add Vulkan second. D3D12 third.
+8. **8** — GPU backend complexity (Vulkan)
+   - **Mitigation:** Vulkan-only from day one on all platforms via `ash` and GLSL→SPIR-V via
+     `glslc`.
 9. **9** — No-code logic graphs are too slow for real games
    - **Mitigation:** Compile logic graphs to native Rust at build time. Interpret only in the editor
      for hot reload.

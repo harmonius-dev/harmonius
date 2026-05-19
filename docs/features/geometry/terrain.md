@@ -26,7 +26,7 @@
    are visible, and missing pages are transcoded and uploaded asynchronously. This bounds VRAM usage
    regardless of world size.
    - **Deps:** F-3.2.1
-   - **Platform:** Requires sparse/virtual texture support (VK_EXT_sparse_residency, D3D12 tiled
+   - **Platform:** Requires sparse/virtual texture support (VK_EXT_sparse_residency, Vulkan sparse
      resources)
 
 ## Terrain LOD

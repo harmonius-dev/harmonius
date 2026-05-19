@@ -110,16 +110,16 @@
    - **Deps:** F-14.3.1, F-14.3.7
    - **Platform:** None. Event dispatch is platform-agnostic. Async handlers use the same thread
      pool and Tokio runtime as all other async tasks.
-7. **F-14.3.12** — On macOS, GCD is used exclusively for fiber scheduling (F-14.3.4) and Metal
+7. **F-14.3.12** — On macOS, GCD is used exclusively for fiber scheduling (F-14.3.4) and Vulkan
    command buffer completion handlers — NOT for file or network I/O, which Tokio handles (F-14.3.5).
-   Fiber dispatch blocks and Metal completion callbacks are routed to a dedicated serial dispatch
+   Fiber dispatch blocks and Vulkan completion callbacks are routed to a dedicated serial dispatch
    queue. At the frame poll point, the engine drains this queue synchronously via `dispatch_sync`,
    executing all pending callbacks on the calling thread in a controlled manner. This ensures the
    engine controls exactly when GCD callbacks execute, preventing asynchronous callback firing that
    would violate the deterministic poll model.
    - **Deps:** F-14.3.6, F-14.3.4
    - **Platform:** macOS only. Uses `dispatch_queue_create` for the serial queue and `dispatch_sync`
-     at the poll point to drain fiber resumption and Metal completion handlers. GCD/Dispatch is
+     at the poll point to drain fiber resumption and Vulkan completion handlers. GCD/Dispatch is
      accessed through `objc2`. No direct core pinning; thread scheduling is delegated to macOS via
      QoS classes.
 8. **F-14.3.13** — Coroutines and async tasks that need to spread work across multiple frames call
@@ -200,12 +200,13 @@
    - **Platform:** Alignment matches platform direct I/O requirements: Windows 4 KiB for unbuffered
      I/O, Linux 512 B or filesystem block size, macOS 4 KiB.
 2. **F-14.3.20** — Direct disk-to-GPU DMA for asset loading, bypassing the CPU staging path. Uses
-   DirectStorage on Windows, Metal I/O (`MTLIOCommandQueue`) on Apple platforms, and a staging
-   buffer fallback on Linux (BAR memory or compute-queue upload). Integrated with the platform I/O
-   driver so asset loads go directly to GPU resources without CPU copies.
+   Vulkan staging buffers on Windows, Vulkan staging buffers (`VkQueue transfer`) on Apple
+   platforms, and a staging buffer fallback on Linux (BAR memory or compute-queue upload).
+   Integrated with the platform I/O driver so asset loads go directly to GPU resources without CPU
+   copies.
    - **Deps:** F-14.3.5, F-14.3.19
-   - **Platform:** Windows DirectStorage 1.2+, Apple Metal I/O on macOS 13+, iOS 16+, tvOS 16+.
-     Linux falls back to the staging buffer path.
+   - **Platform:** Windows io_uring staging, Apple Vulkan staging buffers on macOS 13+, iOS 16+,
+     tvOS 16+. Linux falls back to the staging buffer path.
 
 ## Work Graph Emulation
 
@@ -213,9 +214,9 @@
 |-----------|------------------------------------|
 | F-14.3.21 | CPU-Side GPU Work Graph Emulation  |
 
-1. **F-14.3.21** — Emulate GPU work graphs (D3D12 work graphs) CPU-side on platforms without native
-   hardware support by expanding work graph nodes into indirect dispatch chains within the task
-   graph. This lets the same work graph authoring model apply to Metal, Vulkan without work graph
-   extensions, and older D3D12 drivers, producing equivalent (though lower-bandwidth) execution.
+1. **F-14.3.21** — Emulate GPU work graphs (Vulkan indirect dispatch) CPU-side on platforms without
+   native hardware support by expanding work graph nodes into indirect dispatch chains within the
+   task graph. This lets the same work graph authoring model apply to Vulkan without work graph
+   extensions, and older Vulkan drivers, producing equivalent (though lower-bandwidth) execution.
    - **Deps:** F-14.3.3, F-14.3.14
    - **Platform:** All platforms without native work graph support.

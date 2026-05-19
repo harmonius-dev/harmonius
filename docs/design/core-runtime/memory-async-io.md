@@ -84,7 +84,8 @@ owns the OS I/O reactor on the main thread. Each platform uses its native comple
 io_uring via rustix (Linux), IOCP via windows-rs (Windows), GCD dispatch_io via dispatch2 (Apple).
 The facade exposes the canonical request/response protocol defined in [io.md](io.md), plus
 cooperative cancellation via `IoRequestId`, a virtual file system (VFS) for path resolution, typed
-buffer pools, and GPU DMA asset loading via DirectStorage (Windows), Metal I/O (Apple), and io_uring
+buffer pools, and GPU DMA asset loading via Vulkan staging buffers (Windows), Vulkan staging buffers
+(Apple), and io_uring
 
 - Vulkan upload (Linux). All I/O is non-blocking via platform APIs.
 **No `async fn`, no `.await`, no `Future<_>`, no tokio, no blocking thread pool** — every operation
@@ -140,8 +141,8 @@ graph TD
         IU[io_uring via rustix - Linux]
         IOCP[IOCP via windows-rs - Windows]
         GCD[dispatch_io via dispatch2 - Apple]
-        DS[DirectStorage - Windows]
-        MIO[Metal I/O - Apple]
+        DS[Vulkan staging buffers - Windows]
+        MIO[Vulkan staging buffers - Apple]
     end
 
     PTA -->|owns per worker| FA
@@ -187,7 +188,7 @@ harmonius_core/
     │                     # windows-rs
     ├── backend_gcd.rs    # Apple: GCD dispatch_io
     │                     # via dispatch2
-    ├── gpu_dma.rs        # DirectStorage, Metal I/O,
+    ├── gpu_dma.rs        # Vulkan staging buffers, Vulkan staging buffers,
     │                     # io_uring + Vulkan upload
     ├── vfs.rs            # VirtualFileSystem,
     │                     # MountPoint, VfsHandle
@@ -333,8 +334,8 @@ classDiagram
 
     class GpuDmaBackend {
         <<enum>>
-        DirectStorage
-        MetalIo
+        Vulkan staging buffers
+        VulkanIo
         IoUringVulkanUpload
     }
 
@@ -804,17 +805,18 @@ impl PlatformIo {
 
 ### GPU DMA Asset Loading
 
-GPU assets bypass CPU memory on Windows and Apple via DirectStorage and Metal I/O respectively. On
-Linux, io_uring reads to a CPU staging buffer, then Vulkan uploads to GPU memory.
+GPU assets bypass CPU memory on Windows and Apple via Vulkan staging buffers and Vulkan staging
+buffers respectively. On Linux, io_uring reads to a CPU staging buffer, then Vulkan uploads to GPU
+memory.
 
 ```rust
 /// GPU DMA backend selected at compile time.
 pub enum GpuDmaBackend {
-    /// Windows: DirectStorage (disk-to-GPU DMA with
+    /// Windows: Vulkan staging buffers (disk-to-GPU DMA with
     /// GPU-side decompression).
-    DirectStorage,
-    /// Apple: Metal I/O (disk-to-GPU DMA).
-    MetalIo,
+    Vulkan staging buffers,
+    /// Apple: Vulkan staging buffers (disk-to-GPU DMA).
+    VulkanIo,
     /// Linux: io_uring to CPU staging buffer, then
     /// Vulkan buffer upload.
     IoUringVulkanUpload,
@@ -1076,8 +1078,8 @@ and no async runtime is present in any configuration.
 | Platform | I/O API | GPU DMA |
 |----------|---------|---------|
 | Linux | io_uring via rustix | io_uring + Vulkan upload |
-| Windows | IOCP via windows-rs | DirectStorage |
-| Apple | GCD dispatch_io via dispatch2 | Metal I/O |
+| Windows | IOCP via windows-rs | Vulkan staging buffers |
+| Apple | GCD dispatch_io via dispatch2 | Vulkan staging buffers |
 
 All operations (DNS, file stat, file open, directory listing) use non-blocking platform APIs. I/O
 completions are posted as jobs to the compute worker pool via crossbeam-channel.
@@ -1250,7 +1252,7 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 10. **`test_platform_backend_init`** — Initialize platform I/O backend (io_uring / IOCP / GCD).
     Verify it initializes and shuts down cleanly.
 11. **`test_gpu_dma_load`** — Submit a GPU DMA load via `GpuDmaLoader`. Verify completion on each
-    platform (DirectStorage / Metal I/O / io_uring + Vulkan).
+    platform (Vulkan staging buffers / Vulkan staging buffers / io_uring + Vulkan).
 
 ### Integration Tests
 
@@ -1313,7 +1315,7 @@ annotations in the API would mitigate these weaknesses.
 **Q3. Is there a better approach?** If we are not taking it, why not?
 
 A third-party async runtime (Tokio, compio) (both rejected) would reduce platform code but adds
-threads, removes control over poll timing, and prevents GPU DMA integration (DirectStorage, Metal
+threads, removes control over poll timing, and prevents GPU DMA integration (Vulkan staging buffers
 I/O). We chose platform-native APIs because they give direct control over buffer registration,
 completion ordering, and disk-to-GPU DMA paths with zero extra threads.
 
@@ -1472,8 +1474,8 @@ doubled the thread count when combined with the compute job system. Replace with
 APIs:
 
 - Linux: io_uring via rustix (zero userspace threads for I/O)
-- Windows: IOCP via windows-rs + DirectStorage for GPU assets
-- Apple: GCD dispatch_io via dispatch2 + Metal I/O for GPU assets
+- Windows: IOCP via windows-rs + Vulkan staging buffers for GPU assets
+- Apple: GCD dispatch_io via dispatch2 + Vulkan staging buffers for GPU assets
 
 The main thread owns the OS event loop AND polls I/O completions. I/O completions are posted as jobs
 to the compute worker pool via crossbeam-channel.
@@ -1488,9 +1490,9 @@ directory listing) has a non-blocking platform alternative through io_uring, IOC
 
 ### RF-NEW: GPU DMA asset loading [APPLIED]
 
-Add DirectStorage (Windows) and Metal I/O (Apple) as primary GPU asset loading paths. These bypass
-CPU memory entirely — disk-to-GPU DMA with GPU-side decompression. Linux uses io_uring to CPU
-staging buffer, then Vulkan upload.
+Add Vulkan staging buffers (Windows) and Vulkan staging buffers (Apple) as primary GPU asset loading
+paths. These bypass CPU memory entirely — disk-to-GPU DMA with GPU-side decompression. Linux uses
+io_uring to CPU staging buffer, then Vulkan upload.
 
 This affects the asset loading state machine: GPU assets skip the CPU processing stage entirely on
 Windows/Apple.

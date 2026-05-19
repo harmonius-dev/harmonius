@@ -91,7 +91,7 @@
    display. The headless layer exposes the same tool interface as the interactive assistant
    (F-15.9.2) plus low-level UI automation primitives for widget interaction (opening panels,
    clicking buttons, entering values, navigating viewports). without a display, a virtual
-   framebuffer (EGL on Linux, headless Metal on macOS) is used.
+   framebuffer (EGL on Linux, headless Vulkan on macOS) is used.
    - **Deps:** F-15.9.2, F-15.1.8
    - **Platform:** Headless mode requires a GPU context for viewport operations. On CI servers
 2. **F-15.9.6b** — Multiple concurrent AI agents are supported with isolated command contexts. Each
@@ -104,7 +104,7 @@
    API operations. Agents can run unattended on build servers, producing build artifacts and test
    reports without human interaction. macOS).
    - **Deps:** F-15.9.6a, F-15.9.6b
-   - **Platform:** Requires headless GPU context on CI servers (EGL on Linux, headless Metal on
+   - **Platform:** Requires headless GPU context on CI servers (EGL on Linux, headless Vulkan on
 4. **F-15.9.7** — The assistant can capture screenshots and screen recordings of the editor
    viewport, individual panels, or the full editor window. Captures are fed into the AI's visual
    understanding pipeline for context-aware assistance — for example, analyzing a screenshot to

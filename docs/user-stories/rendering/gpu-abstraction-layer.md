@@ -58,25 +58,25 @@
    load time on mobile, **so that** shader variant hitches do not occur during gameplay on
    tile-based GPUs.
 
-7. **US-2.1.4.1** — **As a** engine developer (P-26), **I want** a Metal backend implemented in Rust
-   via `objc2-metal`, **so that** I get first-class Metal API access with the entire backend in
-   Rust.
+7. **US-2.1.4.1** — **As a** engine developer (P-26), **I want** a Vulkan backend implemented in
+   Rust via `ash`, **so that** I get first-class Vulkan API access with the entire backend in Rust.
 
-8. **US-2.1.4.2** — **As a** engine developer (P-26), **I want** the Metal backend compiled only on
-   macOS and iOS targets, **so that** Windows and Linux builds exclude platform-irrelevant code.
+8. **US-2.1.4.2** — **As a** engine developer (P-26), **I want** the Vulkan backend built on every
+   shipping platform via `ash`, **so that** rendering code is identical across Windows, macOS,
+   Linux, iOS, and Android.
 
-9. **US-2.1.5.1** — **As a** engine developer (P-26), **I want** a D3D12 backend in pure Rust using
-   COM bindings, **so that** the Windows rendering path has no C++ dependency.
+9. **US-2.1.5.1** — **As a** engine developer (P-26), **I want** RAII wrappers around all Vulkan
+   handles, **so that** devices, queues, and resources are destroyed in the correct order.
 
-10. **US-2.1.5.2** — **As a** engine developer (P-26), **I want** safe Rust wrappers managing COM
-    reference counting, **so that** GPU resource leaks from incorrect AddRef/Release are impossible.
-
-11. **US-2.1.6.1** — **As a** engine developer (P-26), **I want** a Vulkan backend using ash with
-    RAII lifetime management, **so that** all Vulkan handles are destroyed before instance
-    destruction.
-
-12. **US-2.1.6.2** — **As a** engine developer (P-26), **I want** validation layers enabled
+10. **US-2.1.5.2** — **As a** engine developer (P-26), **I want** validation layers enabled
     automatically in debug builds, **so that** Vulkan API misuse is caught during development.
+
+11. **US-2.1.6.1** — **As a** engine developer (P-26), **I want** SPIR-V shaders loaded from
+    offline `glslc` output, **so that** shipping builds never invoke a shader compiler at runtime.
+
+12. **US-2.1.6.2** — **As a** engine developer (P-26), **I want** shader hot-reload to re-run
+    `glslc` as a subprocess when GLSL sources change, **so that** iteration does not require a full
+    rebuild.
 
 13. **US-2.1.7.1** — **As a** engine developer (P-26), **I want** a GPU heap sub-allocator that
     carves regions from pre-allocated memory blocks, **so that** thousands of per-draw uploads use
@@ -107,7 +107,7 @@
 
 20. **US-2.1.10.2** — **As a** engine developer (P-26), **I want** compute-based work graph
     emulation on backends lacking native support, **so that** GPU-driven pipelines work consistently
-    across Metal, Vulkan, and D3D12.
+    across Vulkan.
 
 21. **US-2.1.11.1** — **As a** engine developer (P-26), **I want** a feature emulation layer that
     selects emulated paths at device creation time, **so that** the hot path contains no runtime

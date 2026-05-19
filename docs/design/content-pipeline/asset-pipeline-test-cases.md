@@ -191,7 +191,7 @@ Test case IDs use `TC-12.{group}.Z.N` format. Every row links to a specific R-X.
 
 27. **TC-12.4.3.2** `test_shader_error_overlay` — Recompile shader with syntax error. Assert overlay
     event emitted, previous PSO unchanged.
-    - Input: invalid HLSL `float4 main() { return; }`
+    - Input: invalid GLSL `float4 main() { return; }`
     - Expected: `ShaderCompileError` event, `pso_table[id]` unchanged from previous good
 
 28. **TC-12.4.4.1** `test_logic_graph_state_preserve` — Hot reload graph with same variable layout.
@@ -339,7 +339,7 @@ Test case IDs use `TC-12.{group}.Z.N` format. Every row links to a specific R-X.
 6. **TC-12.4.I.2** `test_shader_hot_reload_overlay` — Load mesh with custom shader. Introduce syntax
    error in shader source. Assert overlay event emitted, previous PSO still bound, then fix shader
    and assert new PSO swapped within one frame boundary.
-   - Input: shader source modified to invalid HLSL, then to valid v2
+   - Input: shader source modified to invalid GLSL, then to valid v2
    - Expected: overlay event after invalid; after valid, `shader.pso == v2`, overlay cleared
 
 7. **TC-12.4.I.3** `test_editor_sync_roundtrip` — Editor and runtime connected. Editor changes

@@ -8,8 +8,8 @@ files. Benchmarks run on the perf CI lane.
 
 | ID | Test | Input | Expected | Req |
 |----|------|-------|----------|-----|
-| TC-IR-5.2.1.U1 | HLSL codegen sort | 3-node PBR graph | Topological order emitted | IR-5.2.1 |
-| TC-IR-5.2.1.U2 | Codegen is pure | Same graph, 1000 runs | Byte-identical HLSL output | IR-5.2.1 |
+| TC-IR-5.2.1.U1 | GLSL codegen sort | 3-node PBR graph | Topological order emitted | IR-5.2.1 |
+| TC-IR-5.2.1.U2 | Codegen is pure | Same graph, 1000 runs | Byte-identical GLSL output | IR-5.2.1 |
 | TC-IR-5.2.4.U1 | Texture profile select | Win + PNG RGBA8 | `Bc7Unorm` chosen | IR-5.2.4 |
 | TC-IR-5.2.4.U2 | Texture profile select | iOS + PNG RGBA8 | `Astc4x4Unorm` chosen | IR-5.2.4 |
 | TC-IR-5.2.4.U3 | Texture profile select | macOS + PNG RGBA8 | `Astc4x4Unorm` chosen | IR-5.2.4 |
@@ -27,19 +27,19 @@ files. Benchmarks run on the perf CI lane.
 
 | ID | Test | Input | Expected | Req |
 |----|------|-------|----------|-----|
-| TC-IR-5.2.1.I1 | Shader graph to HLSL codegen | PBR material graph | Valid HLSL source, dxc accepts | IR-5.2.1 |
-| TC-IR-5.2.1.I2 | Shader graph custom nodes | User-defined nodes | HLSL with monomorphized functions | IR-5.2.1 |
-| TC-IR-5.2.2.I1 | dxc produces valid DXIL | HLSL SM 6.0 | DXIL passes validation | IR-5.2.2 |
-| TC-IR-5.2.2.I2 | dxc produces valid SPIR-V | HLSL SM 6.0 | SPIR-V passes spirv-val | IR-5.2.2 |
+| TC-IR-5.2.1.I1 | Shader graph to GLSL codegen | PBR material graph | Valid GLSL source, glslc accepts | IR-5.2.1 |
+| TC-IR-5.2.1.I2 | Shader graph custom nodes | User-defined nodes | GLSL with monomorphized functions | IR-5.2.1 |
+| TC-IR-5.2.2.I1 | glslc produces valid SPIR-V | GLSL SM 6.0 | SPIR-V passes validation | IR-5.2.2 |
+| TC-IR-5.2.2.I2 | glslc produces valid SPIR-V | GLSL SM 6.0 | SPIR-V passes spirv-val | IR-5.2.2 |
 | TC-IR-5.2.2.I3 | Main-thread subprocess ownership | Compile request | Worker never touches pipe | IR-5.2.2 |
-| TC-IR-5.2.3.I1 | MSC produces valid metallib | DXIL from dxc | metallib loads on Metal device `[GPU]` | IR-5.2.3 |
+| TC-IR-5.2.3.I1 | glslc produces valid SPIR-V module | SPIR-V from glslc | SPIR-V module loads on Vulkan device `[GPU]` | IR-5.2.3 |
 | TC-IR-5.2.4.I1 | BC7 texture loads to GPU | PNG, Windows profile | BC7 bound in draw call `[GPU]` | IR-5.2.4 |
 | TC-IR-5.2.4.I2 | ASTC texture loads on iOS | PNG, iOS profile | ASTC bound `[GPU]` | IR-5.2.4 |
 | TC-IR-5.2.4.I3 | ASTC texture loads on macOS | PNG, macOS profile | Same ASTC blob as iOS | IR-5.2.4 |
 | TC-IR-5.2.5.I1 | Meshlet buffer GPU upload | glTF, 10K tris | 64v/124t clusters `[GPU]` | IR-5.2.5 |
 | TC-IR-5.2.5.I2 | Meshlet bounds correct | glTF with known AABB | Cluster bounds within source AABB | IR-5.2.5 |
 | TC-IR-5.2.5.I3 | Android meshlet emulation | glTF on Vulkan w/o ext | Indirect draw path renders | IR-5.2.5 |
-| TC-IR-5.2.6.I1 | Shader hot-reload swap | Modified HLSL | New pipeline next frame `[GPU]` | IR-5.2.6 |
+| TC-IR-5.2.6.I1 | Shader hot-reload swap | Modified GLSL | New pipeline next frame `[GPU]` | IR-5.2.6 |
 | TC-IR-5.2.6.I2 | MPSC channel back-pressure | 200 compile reqs, cap 64 | Producer blocks, none dropped | IR-5.2.6 |
 | TC-IR-5.2.6.I3 | `ShaderReloadUiEvent` emit | Success + failure path | Overlay receives both events | IR-5.2.6 |
 | TC-IR-5.2.7.I1 | Mip streaming delivers | 4K texture, mips 0-3 | Mips resident in <= 500 ms `[GPU]` | IR-5.2.7 |
@@ -51,15 +51,15 @@ files. Benchmarks run on the perf CI lane.
 
 | ID | Test | Input | Expected | Req |
 |----|------|-------|----------|-----|
-| TC-IR-5.2.2.N1 | `[NEG]` dxc compile error | Syntactically invalid HLSL | Exit != 0; stderr captured; old PSO kept | IR-5.2.2 |
-| TC-IR-5.2.2.N2 | `[NEG]` dxc missing binary | CLI not installed | Graceful error; asset build fails cleanly | IR-5.2.2 |
-| TC-IR-5.2.3.N1 | `[NEG]` MSC translation error | Malformed DXIL | Error path; previous metallib retained | IR-5.2.3 |
+| TC-IR-5.2.2.N1 | `[NEG]` glslc compile error | Syntactically invalid GLSL | Exit != 0; stderr captured; old PSO kept | IR-5.2.2 |
+| TC-IR-5.2.2.N2 | `[NEG]` glslc missing binary | CLI not installed | Graceful error; asset build fails cleanly | IR-5.2.2 |
+| TC-IR-5.2.3.N1 | `[NEG]` glslc translation error | Malformed SPIR-V | Error path; previous SPIR-V module retained | IR-5.2.3 |
 | TC-IR-5.2.4.N1 | `[NEG]` Unsupported format | 10-bit HDR on ETC2 target | Falls back to `Rgba8UnormFallback` | IR-5.2.4 |
 | TC-IR-5.2.4.N2 | `[NEG]` Corrupt PNG | Truncated file | Load error; red placeholder shown | IR-5.2.4 |
 | TC-IR-5.2.5.N1 | `[NEG]` Meshlet build fails | Degenerate triangles | Logged; excluded from draw list | IR-5.2.5 |
-| TC-IR-5.2.6.N1 | `[NEG]` Shader error keeps old | Invalid HLSL edit | Previous pipeline still renders | IR-5.2.6 |
+| TC-IR-5.2.6.N1 | `[NEG]` Shader error keeps old | Invalid GLSL edit | Previous pipeline still renders | IR-5.2.6 |
 | TC-IR-5.2.6.N2 | `[NEG]` Stale handle resolve | Freed + reused slot | `resolve` returns `None` via generation | IR-5.2.6 |
-| TC-IR-5.2.6.N3 | `[NEG]` dxc stderr to overlay | Compile error, 3 diagnostics | `ShaderReloadStatus::Failed{3}` in ECS resource | IR-5.2.6 |
+| TC-IR-5.2.6.N3 | `[NEG]` glslc stderr to overlay | Compile error, 3 diagnostics | `ShaderReloadStatus::Failed{3}` in ECS resource | IR-5.2.6 |
 | TC-IR-5.2.7.N1 | `[NEG]` Streaming I/O error | Truncated asset file | Retries 3x; falls back to lowest resident mip | IR-5.2.7 |
 | TC-IR-5.2.7.N2 | `[NEG]` Streaming timeout | Slow disk fixture | Marked `Failed` after budget; render continues | IR-5.2.7 |
 | TC-IR-5.2.U.N1 | `[NEG]` mmap alignment fail | Misaligned fixture | rkyv `check_bytes` rejects; asset load fails | IR-5.2.4 |
@@ -69,9 +69,9 @@ files. Benchmarks run on the perf CI lane.
 
 | ID | Benchmark | Target | Req |
 |----|-----------|--------|-----|
-| TC-IR-5.2.2.B1 | Cold shader compile (dxc) | < 500 ms | IR-5.2.2 |
+| TC-IR-5.2.2.B1 | Cold shader compile (glslc) | < 500 ms | IR-5.2.2 |
 | TC-IR-5.2.2.B2 | Cached shader compile | < 1 ms | IR-5.2.2 |
-| TC-IR-5.2.3.B1 | MSC DXIL -> metallib | < 200 ms | IR-5.2.3 |
+| TC-IR-5.2.3.B1 | glslc SPIR-V -> SPIR-V module | < 200 ms | IR-5.2.3 |
 | TC-IR-5.2.4.B1 | BC7 compression, 1K texture | 100+ tex/s | IR-5.2.4 |
 | TC-IR-5.2.4.B2 | ASTC 4x4 compression, 1K texture | 80+ tex/s | IR-5.2.4 |
 | TC-IR-5.2.5.B1 | Meshlet build, 50K triangles | < 50 ms | IR-5.2.5 |

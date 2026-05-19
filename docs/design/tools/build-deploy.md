@@ -245,14 +245,14 @@ sequenceDiagram
 
 ### Shader Baking Pipeline
 
-HLSL is the sole shader intermediate language. All shaders are compiled offline via CLI tools.
+GLSL is the sole shader intermediate language. All shaders are compiled offline via CLI tools.
 
 | Source | Tool | Output | Platforms |
 |--------|------|--------|-----------|
-| `.hlsl` | DXC | DXIL | Windows, Xbox |
-| `.hlsl` | DXC | SPIR-V | Linux, Android |
-| `.hlsl` | DXC → `metal-shaderconverter` | MSL IR | macOS, iOS |
-| `.hlsl` | Platform SDK | Console format | Switch, PlayStation |
+| `.glsl` | glslc | SPIR-V | Windows, Xbox |
+| `.glsl` | glslc | SPIR-V | Linux, Android |
+| `.glsl` | glslc → `glslc` | SPIR-V | macOS, iOS |
+| `.glsl` | Platform SDK | Console format | Switch, PlayStation |
 
 **Variant handling:** each material graph emits a permutation matrix from its feature flags. A
 per-platform variant cache stores compiled bytecode keyed by
@@ -703,13 +703,13 @@ pub struct BakedBundle {
 
 | Platform | Packaging | Shader format | Texture format | Signing |
 |----------|-----------|---------------|----------------|---------|
-| Windows | MSI / MSIX | DXIL | BC7 | Authenticode (`signtool`) |
-| macOS | `.app` / DMG via XcodeGen + xcodebuild | MSL IR | BC7 | Apple notarization |
+| Windows | MSI / MSIX | SPIR-V | BC7 | Authenticode (`signtool`) |
+| macOS | `.app` / DMG via XcodeGen + xcodebuild | SPIR-V | BC7 | Apple notarization |
 | Linux | AppImage / Flatpak | SPIR-V | BC7 | GPG |
-| iOS | `.ipa` via XcodeGen + xcodebuild | MSL IR | ASTC | Apple code sign |
+| iOS | `.ipa` via XcodeGen + xcodebuild | SPIR-V | ASTC | Apple code sign |
 | Android | APK / AAB via Gradle | SPIR-V | ASTC / ETC2 | APK signing |
 | Switch | NSP via NX SDK | Console binary | ASTC | Nintendo Lotcheck |
-| Xbox | XVC via GDK | DXIL | BC7 | Xbox certification |
+| Xbox | XVC via GDK | SPIR-V | BC7 | Xbox certification |
 | PlayStation | `.pkg` via PS SDK | Console binary | BC7 | Sony TRC |
 
 ### Desktop Platform Details
@@ -730,7 +730,7 @@ pub struct BakedBundle {
 | Packaging | `.ipa` | APK / AAB |
 | Code signing | Apple code sign profile | APK keystore signing |
 | Windowing | UIKit owns main thread; game loop on separate thread | NativeActivity |
-| GPU | Metal via `objc2-metal` | Vulkan via `ash` |
+| GPU | Vulkan via `ash` | Vulkan via `ash` |
 
 ### Per-Platform Asset Baking
 
@@ -740,7 +740,7 @@ Each platform target requires a distinct bake pass. The asset cooker runs per-pl
 | Asset type | Windows / Xbox | macOS / iOS | Linux / Android | Switch |
 |------------|----------------|-------------|-----------------|--------|
 | Textures | BC7 | BC7 (macOS) / ASTC (iOS) | BC7 (desktop) / ASTC (mobile) | ASTC |
-| Shaders | DXIL | MSL IR | SPIR-V | Console binary |
+| Shaders | SPIR-V | SPIR-V | SPIR-V | Console binary |
 | Audio | Opus | AAC | Opus | ADPCM |
 | Meshes | Meshlet (full) | Meshlet (full) | Meshlet (full) | Meshlet (reduced) |
 
@@ -754,7 +754,7 @@ Console targets are never built on developer machines.
 | SDK | NX SDK | GDK | PS SDK |
 | Package | NSP | XVC | `.pkg` |
 | Certification | Nintendo Lotcheck | Xbox cert | Sony TRC |
-| Shader | Console binary (NX shader compiler) | DXIL via GDK DXC | Console binary |
+| Shader | Console binary (NX shader compiler) | SPIR-V via GDK glslc | Console binary |
 
 ## Test Plan
 
@@ -807,16 +807,16 @@ Add a "Compilation pipeline" section — this is the central build operation:
 5. **Platform linkers:** MSVC link.exe (Windows), ld64 (macOS/iOS), lld (Linux/Android), platform
    SDK linker (consoles)
 
-### RF-3: HLSL shader baking pipeline
+### RF-3: GLSL shader baking pipeline
 
 Add a "Shader baking" subsection:
 
 | Source | Tool | Output | Platform |
 |--------|------|--------|----------|
-| HLSL | DXC | DXIL | Windows, Xbox |
-| HLSL | DXC | SPIR-V | Linux, Android |
-| HLSL | DXC → MSC | MSL IR | macOS, iOS |
-| HLSL | Platform SDK | Console format | Switch, PS |
+| GLSL | glslc | SPIR-V | Windows, Xbox |
+| GLSL | glslc | SPIR-V | Linux, Android |
+| GLSL | glslc → glslc | SPIR-V | macOS, iOS |
+| GLSL | Platform SDK | Console format | Switch, PS |
 
 Shader variant handling: permutation matrix from material graph feature flags. Per-platform variant
 cache. Parallel shader compilation via the job system. Shader cache shared via team-tools build
@@ -837,13 +837,13 @@ textures, audio) are never embedded in the binary.
 
 | Platform | Packaging | Shader | Texture | Signing |
 |----------|----------|--------|---------|---------|
-| Windows | MSI/MSIX | DXIL | BC7 | Authenticode |
-| macOS | .app/DMG via XcodeGen+xcodebuild | MSL | BC7 | Apple notarization |
+| Windows | MSI/MSIX | SPIR-V | BC7 | Authenticode |
+| macOS | .app/DMG via XcodeGen+xcodebuild | SPIR-V | BC7 | Apple notarization |
 | Linux | AppImage/Flatpak | SPIR-V | BC7 | GPG |
-| iOS | .ipa via XcodeGen+xcodebuild | MSL | ASTC | Apple code sign |
+| iOS | .ipa via XcodeGen+xcodebuild | SPIR-V | ASTC | Apple code sign |
 | Android | APK/AAB via Gradle | SPIR-V | ASTC/ETC2 | APK signing |
 | Switch | NSP via NX SDK | Console | ASTC | Nintendo Lotcheck |
-| Xbox | XVC via GDK | DXIL | BC7 | Xbox cert |
+| Xbox | XVC via GDK | SPIR-V | BC7 | Xbox cert |
 | PlayStation | pkg via PS SDK | Console | BC7 | Sony TRC |
 
 ### RF-7: XcodeGen + xcodebuild
@@ -856,7 +856,7 @@ macOS and iOS builds: XcodeGen generates Xcode project from a spec → xcodebuil
 | Asset | Windows/Xbox | macOS/iOS | Linux/Android | Switch |
 |-------|-------------|-----------|---------------|--------|
 | Textures | BC7 | BC7 (macOS) / ASTC (iOS) | BC7 (desktop) / ASTC (mobile) | ASTC |
-| Shaders | DXIL | MSL IR | SPIR-V | Console |
+| Shaders | SPIR-V | SPIR-V | SPIR-V | Console |
 | Audio | Opus | AAC | Opus | ADPCM |
 | Meshes | Meshlet (full) | Meshlet (full) | Meshlet (full) | Meshlet (reduced) |
 
@@ -896,7 +896,7 @@ drain-then-swap point (scripting.md RF-27 item 6).
 |-----------|-----------|------|-----------|
 | Asset pipeline | consumes | source assets | AssetDatabase API |
 | Codegen pipeline | consumes | .rs source from graphs | Codegen emitter |
-| Shader pipeline | produces | compiled shaders | DXC + MSC CLI |
+| Shader pipeline | produces | compiled shaders | glslc CLI |
 | Team tools | bidirectional | CI/CD, shared cache | GitHub Actions |
 | Editor | bidirectional | build triggers, progress | Channel + UI |
 | Platform I/O | consumes | file writes | Platform-native I/O |
@@ -951,7 +951,7 @@ The complete pipeline from editor project to shippable game:
    - **Codegen** — all logic graphs, table schemas, custom components emit `.rs` source
    - **Compile** — bundled rustc compiles middleman; for shipping, `cargo build --release` with LTO
      static-links everything
-   - **Shader bake** — HLSL → DXC/MSC per platform (RF-3)
+   - **Shader bake** — GLSL → glslc/glslc per platform (RF-3)
    - **Asset bake** — textures compressed, meshes optimized, audio transcoded per platform (RF-8)
    - **Bundle** — assets packaged into rkyv bundle files (RF-4)
    - **Package** — platform-native installer (RF-6)
@@ -1128,7 +1128,7 @@ rebuild the same assets independently.
 | Artifact | Cache key inputs | Typical size |
 |----------|-----------------|-------------|
 | Middleman .dylib | All .rs source + rustc version + platform | 10-100 MB |
-| Compiled shaders (per variant) | HLSL source + DXC version + platform | 1-50 KB each |
+| Compiled shaders (per variant) | GLSL source + glslc version + platform | 1-50 KB each |
 | Baked texture (per platform) | Source image + compression settings + platform | 100 KB - 10 MB |
 | Baked mesh (per platform) | Source mesh + LOD settings + meshlet config | 100 KB - 50 MB |
 | Baked audio | Source audio + codec + quality settings | 100 KB - 10 MB |
@@ -1164,9 +1164,9 @@ rebuild the same assets independently.
 9. **Eviction** — L1 cache: LRU eviction when disk usage exceeds configurable budget (default 5 GB).
    L2 cache: LRU eviction per project with configurable budget (default 50 GB). CI artifacts pinned
    for N days (configurable, default 30).
-10. **Invalidation** — when the engine version changes (rustc version, DXC version, codegen pipeline
-    version), ALL cached artifacts are invalidated. The first build after an engine update rebuilds
-    everything. Subsequent builds are fast (L2 populated by CI).
+10. **Invalidation** — when the engine version changes (rustc version, glslc version, codegen
+    pipeline version), ALL cached artifacts are invalidated. The first build after an engine update
+    rebuilds everything. Subsequent builds are fast (L2 populated by CI).
 11. **Cache warming** — `harmonius cache warm` CLI command pre-builds all assets for all configured
     platforms and uploads to L2. Run once after an engine update or major project change to seed the
     cache for the whole team.

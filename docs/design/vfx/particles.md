@@ -166,13 +166,13 @@ harmonius_vfx/
 │   │                     # registration and ordering
 │   └── error.rs          # ParticleError variants
 ├── shaders/
-│   ├── emit_particles.hlsl
-│   ├── simulate_particles.hlsl
-│   ├── sub_emit_particles.hlsl
-│   ├── radix_sort.hlsl
-│   ├── build_indirect_args.hlsl
-│   ├── ribbon_geometry.hlsl
-│   └── particle_common.hlsl
+│   ├── emit_particles.glsl
+│   ├── simulate_particles.glsl
+│   ├── sub_emit_particles.glsl
+│   ├── radix_sort.glsl
+│   ├── build_indirect_args.glsl
+│   ├── ribbon_geometry.glsl
+│   └── particle_common.glsl
 ```
 
 ### GPU Simulation Pipeline
@@ -192,20 +192,20 @@ sequenceDiagram
     EM->>LOD: query LOD tier per emitter
     LOD-->>EM: LOD tiers and budget allocation
 
-    EM->>GPU: dispatch emit_particles.hlsl
+    EM->>GPU: dispatch emit_particles.glsl
     Note over GPU: Allocate from free-list<br/>and write initial state
 
-    EM->>GPU: dispatch simulate_particles.hlsl
+    EM->>GPU: dispatch simulate_particles.glsl
     Note over GPU: Fused module chain for<br/>lifetime, velocity, noise,<br/>color, size, collision
 
     GPU-->>SE: append to event buffer
-    SE->>GPU: dispatch sub_emit_particles.hlsl
+    SE->>GPU: dispatch sub_emit_particles.glsl
     Note over GPU: Spawn child particles<br/>at parent positions
 
-    EM->>SORT: dispatch radix_sort.hlsl
+    EM->>SORT: dispatch radix_sort.glsl
     Note over SORT: Sort by camera distance<br/>for alpha blending
 
-    EM->>GPU: dispatch build_indirect_args.hlsl
+    EM->>GPU: dispatch build_indirect_args.glsl
     Note over GPU: Write DrawIndirect and<br/>DispatchIndirect args
 
     REN->>RG: register particle render pass
@@ -1275,7 +1275,7 @@ render graph can track barriers, buffer reuse, and timing per pass.
 ```rust
 /// Describes one radix-sort dispatch for a list
 /// of particle indices. `key_extract_fn` is a
-/// compile-time-known HLSL function name that
+/// compile-time-known GLSL function name that
 /// extracts a u32 sort key from a particle
 /// record (typically view-space depth quantized
 /// to u32). The render graph compiles this into
@@ -1288,7 +1288,7 @@ pub struct RadixSortDispatch {
     pub output_buffer: BufferHandle,
     /// Input count (live particles only).
     pub count_buffer: BufferHandle,
-    /// HLSL function name that extracts a u32
+    /// GLSL function name that extracts a u32
     /// key from a particle record.
     pub key_extract_fn: &'static str,
     /// Max key width in bits. 32 for depth keys,
@@ -1862,18 +1862,18 @@ graph LR
 
 ### GPU Backend Mapping
 
-| Operation        | D3D12                              | Vulkan                            |
+| Operation        | Vulkan                              | Vulkan                            |
 |------------------|------------------------------------|-----------------------------------|
 | Compute dispatch | `Dispatch` on compute command list | `vkCmdDispatch` on compute queue  |
 | Indirect draw    | `ExecuteIndirect`                  | `vkCmdDrawIndirect`               |
 | Buffer barriers  | `ResourceBarrier` UAV              | `vkCmdPipelineBarrier`            |
-| Atomic counters  | `InterlockedAdd` in HLSL           | `atomicAdd` in SPIR-V (from HLSL) |
+| Atomic counters  | `InterlockedAdd` in GLSL           | `atomicAdd` in SPIR-V (from GLSL) |
 | Async compute    | Separate compute queue             | Separate queue family             |
 
 1. **Compute dispatch** — `dispatchThreadgroups` on compute encoder
 2. **Indirect draw** — `drawPrimitives(indirectBuffer:)`
 3. **Buffer barriers** — Automatic hazard tracking
-4. **Atomic counters** — `atomic_fetch_add` (from MSL via shader converter)
+4. **Atomic counters** — `atomic_fetch_add` (from SPIR-V via shader converter)
 5. **Async compute** — Shared or private command queue
 
 ### Platform-Specific Behavior
@@ -1916,19 +1916,19 @@ gantt
 
 ### Shader Pipeline
 
-All particle shaders are authored in HLSL (the project's sole shader IL). The build pipeline
+All particle shaders are authored in GLSL (the project's sole shader IL). The build pipeline
 compiles them:
 
-1. **HLSL source** authored per-module.
-2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V (Vulkan) via C ABI.
-3. **Metal Shader Converter** transpiles DXIL to MSL (Metal) via CLI subprocess.
-4. Effect graph compiler generates specialized HLSL by concatenating selected module functions into
+1. **GLSL source** authored per-module.
+2. **glslc** compiles GLSL to SPIR-V (Vulkan) and SPIR-V (Vulkan) via C ABI.
+3. **glslc** transpiles GLSL to SPIR-V (Vulkan) via CLI subprocess.
+4. Effect graph compiler generates specialized GLSL by concatenating selected module functions into
    a single entry point.
 
 ### Module Fusion
 
 The effect graph compiler fuses selected simulation modules into a single compute shader entry point
-per emitter. This eliminates per-module dispatch overhead and enables the HLSL compiler to optimize
+per emitter. This eliminates per-module dispatch overhead and enables the GLSL compiler to optimize
 across module boundaries.
 
 ```text
@@ -2106,14 +2106,14 @@ void SimulateParticles(uint3 id : SV_DispatchThreadID) {
 
 | Backend | Compute Shaders       | Mesh Shaders                      |
 |---------|-----------------------|-----------------------------------|
-| D3D12   | Yes (SM 5.0+)         | Yes (SM 6.5+, optional)           |
+| Vulkan   | Yes (SM 5.0+)         | Yes (SM 6.5+, optional)           |
 | Vulkan  | Yes (1.0+)            | Yes (task/mesh, optional)         |
-| Metal   | Yes (MSL 2.0+)        | Object/mesh (Apple GPU family 7+) |
+| Vulkan  | Yes (`VK_EXT_mesh_shader`) | Object/mesh shaders optional |
 | Mobile  | Limited dispatch size | No mesh shaders                   |
 
-1. **D3D12** — Full compute particle support.
+1. **Vulkan** — Full compute particle support.
 2. **Vulkan** — Subgroup operations for reduction.
-3. **Metal** — Threadgroup memory for local sort.
+3. **Vulkan** — Threadgroup memory for local sort.
 4. **Mobile** — Reduced particle budgets (PlatformTier::Mobile).
 
 The VFX effect graph editor (see [effects.md](effects.md)) is the visual authoring surface for
@@ -2204,7 +2204,7 @@ post-processing) when making culling decisions.
 
 Use codegen-generated metadata via middleman .dylib.
 
-### RF-2: Fix DXC to CLI subprocess
+### RF-2: Fix glslc to CLI subprocess
 
 Line 1825: "via C ABI" must be "via CLI subprocess."
 

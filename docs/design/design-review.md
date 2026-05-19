@@ -65,7 +65,7 @@ file-level actions.
 - **Performance budget is complete.** Every phase, subsystem, thread, and platform tier has numbers
   that add up, with headroom called out explicitly.
 - **Codegen-first discipline.** Zero runtime reflection; every user-authored thing becomes real Rust
-  or HLSL in the middleman `.dylib`. This removes a large class of dispatch, versioning, and
+  or GLSL in the middleman `.dylib`. This removes a large class of dispatch, versioning, and
   hot-reload bugs that plague engines with interpreters or reflection-based serialization.
 
 ## 2. Cross-cutting design flaws
@@ -80,10 +80,10 @@ topological sort, codegen, hot-reload, and editor integration:
 | Logic / scripting     | `game-framework/scripting.md`               | Rust source |
 | Directed graph (data) | `data-systems/directed-graphs.md`           | Rust source |
 | Behavior tree         | `ai/behavior.md`                            | Rust source |
-| Material graph        | `rendering/render-styles.md`                | HLSL        |
-| VFX effect graph      | `vfx/effects.md`                            | HLSL        |
+| Material graph        | `rendering/render-styles.md`                | GLSL        |
+| VFX effect graph      | `vfx/effects.md`                            | GLSL        |
 | Animation state mach. | `animation/state-machine.md`                | Rust source |
-| Procedural generation | `geometry/procedural-generation.md`         | Rust + HLSL |
+| Procedural generation | `geometry/procedural-generation.md`         | Rust + GLSL |
 | Timeline track        | `simulation/timelines.md`                   | Rust source |
 
 Each reinvents: cycle detection, topological sort, DAG validation, pin-type inference, constant
@@ -100,7 +100,7 @@ the output, surface errors back into the editor" — is written eight times.
 - `trait GraphNode { type Output; }`, `trait GraphEdge`, `trait GraphValidator`
 - `DagValidator`, `TopologicalSorter`, `CycleDetector` as concrete shared types
 - `trait CodegenBackend { fn emit(&self, ir: &GraphIr) -> Result<String, CodegenError>; }` with
-  concrete `RustBackend`, `HlslBackend`, `TypeDescriptorBackend` implementations
+  concrete `RustBackend`, `GlslBackend`, `TypeDescriptorBackend` implementations
 - A shared `HotReloadBarrier` type in `core-runtime/hot-reload-protocol.md`
 - A shared `GraphEditor<N, E>` widget in `tools/visual-editors.md`
 
@@ -307,7 +307,7 @@ Scene transforms and spatial index are cleanly separated.
 
 ### 3.2 Rendering
 
-**Strengths:** Render graph, GPU abstraction, and HLSL-first shader pipeline are well thought out.
+**Strengths:** Render graph, GPU abstraction, and GLSL-first shader pipeline are well thought out.
 Material layer stack, bindless model, and GPU-driven culling are architecturally right.
 
 **Gaps (mostly missing designs, not wrong designs):**
@@ -485,7 +485,7 @@ editor-as-plugin-host architecture are all sound choices.
   `EventBridge`. Concurrent play-in-editor will race.
 - Save system is codegen-coupled: if codegen changes a component layout, saves break, and the
   migration is *also* codegen, producing a chicken/egg problem.
-- Shader compilation (dxc + metal-shaderconverter) is described independently in
+- Shader compilation (glslc) is described independently in
   `asset-processing.md`, `visual-editors.md`, and `build-deploy.md`. Three call sites, one canonical
   service needed.
 - Codegen ownership: `scripting.md` and `visual-editors.md` both claim parts of the codegen
@@ -502,7 +502,7 @@ is ~90%. The high-level doc is an actually-useful glue layer.
   sequence diagrams, MPSC specs, and fallbacks like the other pairs.
 - Several integration docs overspecify implementation (e.g., `ai-grids-volumes.md` contains
   `enqueue_influence_write()` pseudocode that belongs in grids-volumes itself;
-  `asset-pipeline-rendering.md` contains dxc subprocess launch code that belongs in tools). Move
+  `asset-pipeline-rendering.md` contains glslc subprocess launch code that belongs in tools). Move
   implementation into subsystem designs; integration docs should carry the **contract**, not the
   implementation.
 - Missing pairs (present in high-level but not fully documented): `audio-physics`, `ai-physics`,
@@ -623,7 +623,7 @@ file(s) to touch and a one-sentence "done when" criterion.
 35. **Move implementation pseudocode out of integration docs** into subsystem designs:
     `ai-grids-volumes` (drain loop → grids-volumes), `animation-rendering` (GpuSkinner dispatch →
     rendering), `attributes-effects-*` (sync loops → attributes/effects), `asset-pipeline-rendering`
-    (dxc subprocess → tools/build-deploy).
+    (glslc subprocess → tools/build-deploy).
 36. **Specify skinning weight format** (`[u8;4]` bones + quantized weights, palette layout) in
     `animation/skeletal.md`.
 37. **Specify cloth constraint types and fracture pattern format** in `physics/advanced.md`.

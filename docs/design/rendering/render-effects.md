@@ -121,7 +121,7 @@ the render graph.
 Principles:
 
 1. **ECS-primary (~90%)-based** -- All parameters are components
-2. **Compute-only** -- Every effect is an HLSL compute shader
+2. **Compute-only** -- Every effect is an GLSL compute shader
 3. **Volume blending** -- Overlapping volumes blend by priority
 4. **Platform-adaptive** -- Effects declare quality tiers
 5. **Static dispatch** -- No vtables in the hot path
@@ -732,7 +732,7 @@ See companion file [render-effects-test-cases.md](./render-effects-test-cases.md
 2. **Neural denoiser inference** -- Requires ML infrastructure and tensor cores. Optional path with
    NRD fallback.
 3. **Volume blending edge cases** -- Nested volumes with equal priority need tie-breaking strategy.
-4. **Post-process graph compilation** -- Node-based editor (F-2.9.14) needs compilation to HLSL
+4. **Post-process graph compilation** -- Node-based editor (F-2.9.14) needs compilation to GLSL
    compute. Define the intermediate representation.
 5. **RT lens flare** -- Physical lens element tracing (F-2.5.13) is expensive. Evaluate hybrid
    approach with image-based fallback.

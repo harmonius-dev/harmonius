@@ -93,12 +93,12 @@
       execution. Register async handler with mock I/O `.await`, assert it runs on thread pool
       worker. Run under ThreadSanitizer.
 
-11. **R-14.3.12** — On macOS, GCD dispatch blocks for fiber scheduling and Metal GPU command buffer
+11. **R-14.3.12** — On macOS, GCD dispatch blocks for fiber scheduling and Vulkan GPU command buffer
     completion handlers **SHALL** be routed to a serial dispatch queue drained synchronously at the
     game loop poll point. The engine **SHALL** control when GCD callbacks execute.
     - **Rationale:** GCD normally delivers callbacks on arbitrary threads. Routing to a serial queue
       and draining at the poll point ensures deterministic processing aligned with the game loop.
-    - **Verification:** Integration test (macOS): submit fiber resume and Metal command buffer
+    - **Verification:** Integration test (macOS): submit fiber resume and Vulkan command buffer
       completion via GCD, assert no callbacks fire until the poll point. Assert all callbacks
       execute within the poll call stack. Assert serial (not concurrent) execution.
 

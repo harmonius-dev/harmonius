@@ -269,12 +269,12 @@ harmonius_animation/
 │   ├── hair_sim_system.rs  # Strand physics
 │   ├── hair_render.rs      # Marschner, OIT
 │   └── shaders/
-│       ├── cloth_pbd.hlsl
-│       ├── cloth_collision.hlsl
-│       ├── hair_strand_sim.hlsl
-│       ├── hair_interpolate.hlsl
-│       ├── hair_marschner.hlsl
-│       └── hair_oit.hlsl
+│       ├── cloth_pbd.glsl
+│       ├── cloth_collision.glsl
+│       ├── hair_strand_sim.glsl
+│       ├── hair_interpolate.glsl
+│       ├── hair_marschner.glsl
+│       └── hair_oit.glsl
 ```
 
 ### Post-Process Pipeline Ordering
@@ -1387,7 +1387,7 @@ pub struct HairMarschnerParams {
 ### GPU Shader Interfaces
 
 ```rust
-/// Cloth PBD constant buffer (HLSL).
+/// Cloth PBD constant buffer (GLSL).
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct ClothPbdConstants {
@@ -1401,7 +1401,7 @@ pub struct ClothPbdConstants {
     pub wind_strength: f32,
 }
 
-/// Hair strand sim constant buffer (HLSL).
+/// Hair strand sim constant buffer (GLSL).
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct HairStrandSimConstants {
@@ -1418,7 +1418,7 @@ pub struct HairStrandSimConstants {
     pub _pad: [f32; 2],
 }
 
-/// Hair interpolation constant buffer (HLSL).
+/// Hair interpolation constant buffer (GLSL).
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct HairInterpolateConstants {
@@ -1428,7 +1428,7 @@ pub struct HairInterpolateConstants {
     pub strand_width: f32,
 }
 
-/// Marschner BSDF constant buffer (HLSL).
+/// Marschner BSDF constant buffer (GLSL).
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct MarschnerConstants {
@@ -2171,7 +2171,7 @@ Test cases are in the companion file [procedural-test-cases.md](procedural-test-
 
 The static dispatch policy (no trait objects) forces all IK solver selection through the
 `IkSolverType` enum. Adding a new solver requires modifying the enum and every match arm. The
-GPU-first mandate for cloth/hair forces all simulation into HLSL compute, preventing mid-solve CPU
+GPU-first mandate for cloth/hair forces all simulation into GLSL compute, preventing mid-solve CPU
 inspection. If either were lifted, a solver registry with dynamic dispatch on init and monomorphized
 dispatch on the hot path would be ideal. The trade-off is extensibility versus compile-time
 guarantees and GPU scalability (16+ panels, 256 strands on desktop).

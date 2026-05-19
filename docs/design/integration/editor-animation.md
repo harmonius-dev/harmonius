@@ -237,7 +237,7 @@ are issued -- no one-frame delay for pose evaluation. The one-frame latency appl
 ## Platform Considerations
 
 None -- identical across all platforms. The animation preview uses the same GPU compute skinning
-pipeline on all backends (Metal, D3D12, Vulkan).
+pipeline on all backends (Vulkan).
 
 ## Scope Notes
 

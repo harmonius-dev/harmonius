@@ -5,8 +5,8 @@ Work plan for the Harmonius game engine. Maps every feature-group from the
 implementation status. Organized by wave to show what can proceed in parallel at each stage.
 
 **Current state:** Requirements and features are fully specified (1,501 requirements, 1,204 features
-across 15 domains). Build system is configured (Rust stable, XcodeGen for macOS/iOS,
-Metal/Vulkan/D3D12 backend selection). No source code exists. No designs exist.
+across 15 domains). Build system is configured (Rust stable, XcodeGen for macOS/iOS, Vulkan backend
+selection). No source code exists. No designs exist.
 
 ---
 
@@ -228,9 +228,9 @@ Requires specific Wave 2 nodes. 12 feature-groups can proceed concurrently.
 1. **Render graph pass API** — How to declare passes, read/write resources, submit commands
 
 **Exit criteria:** Render graph executes passes with automatic barriers, shaders compile via
-DXC/MSC, assets stream from disk, input actions map to gameplay, spatial audio occludes, animation
-state machines transition, joints constrain bodies, NavMesh generates and pathfinds, components
-replicate over network, meshlets render, widget tree lays out, particles simulate on GPU.
+glslc/glslc, assets stream from disk, input actions map to gameplay, spatial audio occludes,
+animation state machines transition, joints constrain bodies, NavMesh generates and pathfinds,
+components replicate over network, meshlets render, widget tree lays out, particles simulate on GPU.
 
 ---
 

@@ -8,24 +8,21 @@ engine.
 | Constraint | Detail |
 |------------|--------|
 | Primary language | Rust (stable only — no nightly features) |
-| Windows APIs | `windows-rs` for all Windows APIs (Win32, COM, D3D12) |
+| Windows APIs | `windows-rs` for all Windows APIs (Win32, COM) |
 | Apple APIs | `objc2` crate for Objective-C runtime bindings |
 | Linux APIs | Rust crates (`ash`, `x11rb`, `wayland-client`) |
 | App packaging | XcodeGen + xcodebuild for macOS/iOS app packaging |
 | No C/C++ source | No `.c`, `.cpp`, `.h` files anywhere in the project |
 | No Obj-C/Obj-C++ | No Objective-C or Objective-C++ source anywhere |
 | No Swift | No Swift source anywhere in the project |
-| No metal-cpp | Metal is accessed via `objc2-metal` |
+| GPU API | Vulkan via `ash` on all platforms |
 
 ### Backend Language Matrix
 
 | Backend | Language | FFI Surface |
 |---------|----------|-------------|
-| Direct3D 12 | Rust | `windows-rs` COM bindings |
-| Metal | Rust | `objc2-metal` bindings |
 | Vulkan | Rust | `ash` (thin Vulkan bindings) |
-| DXC | CLI | `dxc` subprocess (offline + hot-reload) |
-| Metal Shader Converter | CLI | `metal-shaderconverter` subprocess |
+| glslc | CLI | `glslc` subprocess (offline + hot-reload) |
 | Win32 | Rust | `windows-rs` |
 | NSWindow / AppKit | Rust | `objc2-app-kit` bindings |
 | X11 | Rust | `x11rb` |
@@ -35,12 +32,11 @@ engine.
 
 | Constraint | Detail |
 |------------|--------|
-| Shader IL | HLSL is the sole shader intermediate language |
-| HLSL → DXIL/SPIR-V | `dxc` CLI invoked as subprocess |
-| DXIL → MSL | `metal-shaderconverter` CLI invoked as subprocess |
+| Shader IL | GLSL is the sole shader intermediate language |
+| GLSL → SPIR-V | `glslc` CLI invoked as subprocess |
 
-No embedded DXC or Metal Shader Converter libraries. All shader compilation is offline (asset
-processing time) or via subprocess calls for hot-reload.
+No embedded shader compiler libraries. All shader compilation is offline (asset processing time) or
+via subprocess calls for hot-reload.
 
 ## Threading Model
 
@@ -65,8 +61,9 @@ Three thread roles communicate via crossbeam-channel. No shared mutable state.
 
 - **Platform-native I/O.** Each platform uses its optimal I/O framework:
   - Linux: io_uring via rustix
-  - Windows: IOCP via windows-rs, DirectStorage for GPU assets
-  - Apple: GCD dispatch_io via dispatch2, Metal I/O for GPU assets, Networking.framework
+  - Windows: IOCP via windows-rs, Vulkan staging buffers for GPU assets
+  - Apple: GCD dispatch_io via dispatch2, Vulkan staging buffers for GPU assets,
+    Networking.framework
 - **Main thread polls I/O.** The main thread owns the OS event loop and polls I/O completions as
   part of that loop. No separate I/O thread.
 - **Zero blocking operations.** All I/O is non-blocking via platform async APIs.
@@ -104,17 +101,17 @@ Three thread roles communicate via crossbeam-channel. No shared mutable state.
 
 ## macOS and Apple Platforms
 
-- **GCD for Apple I/O.** GCD dispatch_io for file I/O, Networking.framework for networking, Metal
-  I/O for GPU assets. Accessed from Rust via dispatch2 and objc2.
-- **Metal GPU sync via `MTLSharedEvent`.** GPU completion is detected by polling
-  `MTLSharedEvent.signaledValue`. No GCD dispatch blocks needed for GPU synchronization.
-- **Target Metal 4.** Use Metal 4 API when available for explicit memory management, placement
+- **GCD for Apple I/O.** GCD dispatch_io for file I/O, Networking.framework for networking, Vulkan
+  staging I/O for GPU assets. Accessed from Rust via dispatch2 and objc2.
+- **Vulkan GPU sync via `VkSemaphore`.** GPU completion is detected by polling
+  `VkSemaphore.signaledValue`. No GCD dispatch blocks needed for GPU synchronization.
+- **Target Vulkan.** Use Vulkan API when available for explicit memory management, placement
   sparse resources, and improved shader compilation.
-- **Metal via `objc2-metal`.** Metal is accessed from Rust via the `objc2-metal` crate. No
-  metal-cpp, no Swift, no manual C ABI.
+- **Vulkan via `ash`.** Vulkan is accessed from Rust via the `ash` crate. No Swift, no manual C ABI.
 - **iOS: UIKit owns the OS main thread.** `UIApplicationMain` runs the `CFRunLoop` on thread 0. The
   game loop runs on a dedicated thread. UIKit input events (touch, accelerometer, keyboard) are
-  forwarded to the game loop thread via channel. The render thread presents independently via Metal.
+  forwarded to the game loop thread via channel. The render thread presents independently via
+  Vulkan.
 
 ## Architecture
 
@@ -295,8 +292,8 @@ Three thread roles communicate via crossbeam-channel. No shared mutable state.
 | `crossbeam-channel` | Lock-free channels between threads |
 | `crossbeam-utils` | CachePadded, scoped threads, Backoff |
 | `rustix` | Linux syscalls (io_uring) |
-| `windows-rs` | Win32 windowing, input, IOCP, DirectStorage |
-| `objc2` + `dispatch2` | Apple APIs (GCD, Metal I/O, Networking.framework) |
+| `windows-rs` | Win32 windowing, input, IOCP, Vulkan staging buffers |
+| `objc2` + `dispatch2` | Apple APIs (GCD, Networking.framework) |
 | `ash` | Thin Vulkan bindings |
 | `x11rb` | X11 windowing (Linux) |
 | `wayland-client` | Wayland windowing (Linux) |

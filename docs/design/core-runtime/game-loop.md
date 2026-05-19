@@ -710,7 +710,7 @@ sequenceDiagram
 
 | Platform | Main Thread | I/O Backend | Notes |
 |----------|-------------|-------------|-------|
-| macOS | NSApplication | GCD | Metal sync via GCD |
+| macOS | NSApplication | GCD | Vulkan fence sync |
 | Windows | Win32 msg loop | IOCP | Worker drives game loop |
 | Linux | xcb/Wayland | io_uring | Worker drives game loop |
 | iOS | UIApplication | GCD | OS mandates main thread |
@@ -724,8 +724,8 @@ SPSC queue; I/O completions are posted via crossbeam-channel.
 
 - **Desktop:** VSync-driven via swapchain present. Render thread paces to display refresh. Game loop
   runs freely ahead by one frame.
-- **Mobile:** Frame pacing API (Metal `CAMetalDisplayLink`, Android `Choreographer`). Render thread
-  syncs to display.
+- **Mobile:** Frame pacing API (Vulkan WSI present timing`, Android `Vulkan WSI present timing`).
+  Render thread syncs to display.
 - **VR:** Reprojection/timewarp on the render thread. Game loop targets half-rate if simulation
   cannot sustain 90 Hz.
 

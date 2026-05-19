@@ -46,13 +46,13 @@
 
 The logic graph system is the **universal extensibility layer for the entire engine**. Users never
 write code. All logic — gameplay, AI, shaders, asset processing, editor tools, plugins — is authored
-in the visual logic graph editor (F-15.8.4) and compiled to native Rust or HLSL by the graph
+in the visual logic graph editor (F-15.8.4) and compiled to native Rust or GLSL by the graph
 compiler (F-15.8.12). This document covers the full scope: compiler pipeline, codegen backends,
 runtime, ECS integration, and editor tooling.
 
 Key architectural choices:
 
-1. **Native codegen, not interpreted.** Visual graphs compile to Rust source (CPU targets) or HLSL
+1. **Native codegen, not interpreted.** Visual graphs compile to Rust source (CPU targets) or GLSL
    source (GPU targets). The bundled `rustc` compiles generated Rust into the middleman `.dylib`. No
    bytecode interpreter, no VM. This is the same codegen pipeline used for components and systems.
 2. **ECS-primary (~90%).** Codegen'd graphs attach to entities as `GraphInstance` components. A
@@ -71,7 +71,7 @@ Key architectural choices:
 6. **Hot reload.** The runtime hot-reloads the middleman `.dylib` when graphs change, patching
    running `GraphInstance` state using a drain-then-swap protocol.
 7. **Dual backend.** The graph compiler supports `CompileTarget::Rust` (CPU: gameplay, ECS,
-   formulas, asset processing) and `CompileTarget::Hlsl` (GPU: shaders, compute, post-process). Math
+   formulas, asset processing) and `CompileTarget::Glsl` (GPU: shaders, compute, post-process). Math
    nodes work in both; ECS-access nodes are CPU-only; texture-sample nodes are GPU-only.
 
 > **Authoring model.** The visual logic graph editor uses a Game Maker style keyboard-first
@@ -89,7 +89,7 @@ harmonius_scripting/
 │   ├── passes.rs      # Constant folding, DCE, CSE, inlining
 │   ├── typecheck.rs   # Type inference and validation
 │   ├── codegen_rust.rs  # IR → Rust source (CPU target)
-│   ├── codegen_hlsl.rs  # IR → HLSL source (GPU target)
+│   ├── codegen_glsl.rs  # IR → GLSL source (GPU target)
 │   └── validator.rs   # Sandbox and semantic validation
 ├── runtime/
 │   ├── program.rs     # GraphProgram: fn-pointer table loaded from .dylib
@@ -190,7 +190,7 @@ graph TD
 ### Compilation pipeline
 
 The visual editor produces a serialized graph asset. The compiler transforms it through several
-stages into generated Rust or HLSL source, which `rustc` or `dxc` compiles into the middleman
+stages into generated Rust or GLSL source, which `rustc` or `glslc` compiles into the middleman
 `.dylib` or shader binary. `GraphProgram` is a function-pointer table loaded from the `.dylib`.
 
 ```mermaid
@@ -201,9 +201,9 @@ flowchart LR
     D --> E[Sandbox check]
     E --> F{Target}
     F -->|CompileTarget::Rust| G[Rust source emit]
-    F -->|CompileTarget::Hlsl| H[HLSL source emit]
+    F -->|CompileTarget::Glsl| H[GLSL source emit]
     G --> I[rustc → middleman .dylib]
-    H --> J[dxc → DXIL / SPIR-V]
+    H --> J[glslc → SPIR-V / SPIR-V]
     I --> K[GraphProgram fn-ptr table]
     J --> L[Shader binary]
 
@@ -1143,7 +1143,7 @@ impl GraphProfiler {
 ### Logic graph compiler
 
 The `LogicGraphCompiler` (distinct from the shader `GraphCompiler` in algorithms.md) transforms
-visual graph assets into Rust or HLSL source, then invokes `rustc` or `dxc` to produce the final
+visual graph assets into Rust or GLSL source, then invokes `rustc` or `glslc` to produce the final
 artifact. `IrNodeKind` is a codegen'd enum in the middleman — plugin node types are added by
 recompiling the middleman (RF-14). No `TypeRegistry` — type descriptors come from codegen'd
 `TypeDescriptors` in the middleman (RF-3).
@@ -1182,11 +1182,11 @@ pub enum CompileTarget {
     /// asset processing. Emits Rust source.
     Rust,
     /// GPU shaders: materials, VFX compute,
-    /// post-process. Emits HLSL source.
-    Hlsl,
+    /// post-process. Emits GLSL source.
+    Glsl,
     /// Mixed: render graph pass = shader + Rust
     /// registration code. Emits both.
-    RustAndHlsl,
+    RustAndGlsl,
 }
 
 /// The logic graph compiler. Named
@@ -1207,8 +1207,8 @@ impl LogicGraphCompiler {
     /// 7. Loop hoisting (RF-26)
     /// 8. Sandbox validation (RF-27)
     /// 9. Target-specific validation (RF-26)
-    /// 10. Rust or HLSL source emit (RF-2)
-    /// 11. rustc / dxc invocation
+    /// 10. Rust or GLSL source emit (RF-2)
+    /// 11. rustc / glslc invocation
     /// 12. Load fn-ptr table from .dylib
     /// 13. Debug info emission (if enabled)
     pub fn compile(
@@ -1245,7 +1245,7 @@ pub enum CompileError {
         node: NodeId,
         type_name: String,
     },
-    /// rustc or dxc invocation failed.
+    /// rustc or glslc invocation failed.
     CodegenFailed { stderr: String },
 }
 ```
@@ -1313,22 +1313,22 @@ RF-13 for the full integration table.
 ### Universal extensibility
 
 The logic graph system is the universal extensibility layer for the entire engine. The compilation
-target selector (`CompileTarget`) determines whether a graph produces Rust (CPU) or HLSL (GPU). See
+target selector (`CompileTarget`) determines whether a graph produces Rust (CPU) or GLSL (GPU). See
 RF-20 for the full scope.
 
 | Graph type | Target | Output |
 |------------|--------|--------|
 | Gameplay logic | Rust | System fn in middleman .dylib |
 | Formula | Rust | Pure fn in middleman .dylib |
-| Material expression | HLSL | Pixel/vertex shader |
-| VFX compute | HLSL | Compute shader |
-| Post-process | HLSL + Rust | Shader + render graph node |
-| Custom render pass | HLSL + Rust | Shader + render graph node |
+| Material expression | GLSL | Pixel/vertex shader |
+| VFX compute | GLSL | Compute shader |
+| Post-process | GLSL + Rust | Shader + render graph node |
+| Custom render pass | GLSL + Rust | Shader + render graph node |
 | Asset processor | Rust | Pipeline fn in middleman .dylib |
 | Editor extension | Rust | Editor panel/tool in middleman |
 | Component definition | Rust | Struct in middleman .dylib |
 | Behavior tree | Rust | `tick()` fn in middleman .dylib |
-| Plugin package | Rust + HLSL | Full middleman contribution |
+| Plugin package | Rust + GLSL | Full middleman contribution |
 
 ### AI integration
 
@@ -1395,7 +1395,7 @@ The compiler validates correctness before codegen. See RF-25 and RF-26.
    readers of the same component; event types match at emit/observe pairs; no hidden global state.
 4. **Optimization passes** (IR level before codegen): constant folding, dead code elimination,
    common subexpression elimination, loop hoisting, subgraph inlining.
-5. **Target-specific validation** — Rust target rejects GPU-only nodes; HLSL target rejects CPU-only
+5. **Target-specific validation** — Rust target rejects GPU-only nodes; GLSL target rejects CPU-only
    nodes; mixed target validates CPU/GPU boundary type compatibility.
 
 ### Algorithm references
@@ -2036,28 +2036,28 @@ Convert title-case headings to sentence case throughout.
 The current design scopes scripting to "gameplay logic." This is far too narrow. The logic graph
 system is the **universal extensibility layer for the entire engine** — it is how users do
 everything they would otherwise need code for. Since everything compiles to Rust, logic graphs can
-target ANY compilation domain: Rust code for CPU logic, HLSL for GPU shaders, or both. This RF
+target ANY compilation domain: Rust code for CPU logic, GLSL for GPU shaders, or both. This RF
 expands the scope to cover every use case.
 
 #### 1. Custom shaders via logic graphs
 
-Users build custom shading effects and post-process effects as logic graphs that codegen to HLSL:
+Users build custom shading effects and post-process effects as logic graphs that codegen to GLSL:
 
 - **Material expression graphs** — already exist conceptually in the material editor, but they
   should use the SAME logic graph node system with the SAME node palette (math, case analysis,
-  let-binding) targeting HLSL output instead of Rust output.
+  let-binding) targeting GLSL output instead of Rust output.
 - **Custom render graph passes** — users create custom compute/raster passes as logic graphs. The
-  codegen pipeline produces: (a) an HLSL compute/pixel shader from the graph, (b) a Rust render
-  graph node registration function that declares inputs/outputs/barriers. The user never writes HLSL
+  codegen pipeline produces: (a) an GLSL compute/pixel shader from the graph, (b) a Rust render
+  graph node registration function that declares inputs/outputs/barriers. The user never writes GLSL
   or Rust — they compose nodes.
-- **VFX compute kernels** — particle simulation custom behaviors as logic graphs targeting HLSL
+- **VFX compute kernels** — particle simulation custom behaviors as logic graphs targeting GLSL
   compute. Same node palette, different compilation target.
 - **Post-process effects** — screen-space effects (custom bloom, color grading, edge detection) as
-  logic graphs producing HLSL pixel shaders + render graph pass registration.
+  logic graphs producing GLSL pixel shaders + render graph pass registration.
 
-The graph compiler has a **target selector**: `CompileTarget::Rust` or `CompileTarget::Hlsl`. The
+The graph compiler has a **target selector**: `CompileTarget::Rust` or `CompileTarget::Glsl`. The
 node palette is shared; the codegen backend differs. Nodes that are CPU-only (ECS access, events)
-are unavailable in HLSL target. Nodes that are GPU-only (texture sample, SV_Position) are
+are unavailable in GLSL target. Nodes that are GPU-only (texture sample, SV_Position) are
 unavailable in Rust target. Math nodes work in both.
 
 #### 2. High-performance asset processing
@@ -2068,7 +2068,7 @@ Logic graphs that process assets in the content pipeline:
   generate LOD meshes, compute tangent space) as logic graphs compiled to Rust. Run on the job
   system during asset import.
 - **Bake processors** — custom bake-time computation (e.g., generate lightmap UVs, compute SDF from
-  mesh, build navigation data) as logic graphs. These can be GPU-accelerated (compile to HLSL
+  mesh, build navigation data) as logic graphs. These can be GPU-accelerated (compile to GLSL
   compute) for heavy processing.
 - **Validation processors** — custom validation rules (e.g., check texture resolution constraints,
   verify naming conventions, validate mesh triangle budgets) as logic graphs.
@@ -2197,14 +2197,14 @@ The logic graph IS the plugin authoring system:
 |------------|---------------|--------|
 | Gameplay logic | Rust | System fn in middleman .dylib |
 | Formula | Rust | Pure fn in middleman .dylib |
-| Material expression | HLSL | Pixel/vertex shader |
-| VFX compute | HLSL | Compute shader |
-| Post-process | HLSL + Rust | Shader + render graph node |
-| Custom render pass | HLSL + Rust | Shader + render graph node |
+| Material expression | GLSL | Pixel/vertex shader |
+| VFX compute | GLSL | Compute shader |
+| Post-process | GLSL + Rust | Shader + render graph node |
+| Custom render pass | GLSL + Rust | Shader + render graph node |
 | Asset processor | Rust | Pipeline fn in middleman .dylib |
 | Editor extension | Rust | Editor panel/tool in middleman |
 | Component definition | Rust | Struct in middleman .dylib |
-| Plugin package | Rust + HLSL | Full middleman contribution |
+| Plugin package | Rust + GLSL | Full middleman contribution |
 
 #### 12. Design implications
 
@@ -2216,7 +2216,7 @@ This RF fundamentally changes the scope of the scripting design:
   primitive, not a game framework feature
 - The node palette must be much larger — covering ECS, rendering, physics, audio, input, UI,
   networking, and editor operations
-- The graph compiler must support two backends (Rust + HLSL) with a shared IR
+- The graph compiler must support two backends (Rust + GLSL) with a shared IR
 - The design must document how the graph compiler integrates with the content pipeline for asset
   processing graphs
 - Performance requirements must cover both gameplay graphs (1000 instances < 4 ms) and asset
@@ -2305,7 +2305,7 @@ Power users can provide Rust code templates for advanced codegen:
    - Custom derive macros (user defines how a type serializes)
    - Custom system templates (user defines a system pattern and instantiates it for different
      component types)
-   - Custom render pass templates (HLSL + Rust boilerplate for a specific rendering technique)
+   - Custom render pass templates (GLSL + Rust boilerplate for a specific rendering technique)
    - Custom asset importer templates (file parsing logic)
 3. **Template invocation** — in the editor, the user selects a template, provides input data (via a
    form or logic graph), and triggers codegen. The output is Rust source compiled into the
@@ -2357,11 +2357,11 @@ The graph compiler operates on an intermediate AST that enables transformations 
    - Inlining (expand subgraph references into the caller graph)
 3. **Target translation:**
    - `IR → Rust source` (for CPU targets: gameplay, ECS, formulas)
-   - `IR → HLSL source` (for GPU targets: shaders, compute)
-   - `IR → both` (for mixed targets: render graph pass = HLSL shader + Rust registration code)
+   - `IR → GLSL source` (for GPU targets: shaders, compute)
+   - `IR → both` (for mixed targets: render graph pass = GLSL shader + Rust registration code)
 4. **Validation passes** on the IR (target-specific):
    - Rust target: verify no GPU-only nodes used (texture sample)
-   - HLSL target: verify no CPU-only nodes used (ECS query, events)
+   - GLSL target: verify no CPU-only nodes used (ECS query, events)
    - Both: verify type compatibility across CPU/GPU boundary (data types that cross must be
      layout-compatible)
 5. **Migration passes** — when the engine updates and node types change, the IR can be migrated

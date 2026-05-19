@@ -29,8 +29,8 @@ See those files for the full test case definitions until migration is complete.
 | TC-15.8.12.2 | R-15.8.12 | Constant folding |
 | TC-15.8.12.3 | R-15.8.12 | Subgraph inlining |
 | TC-15.8.12.4 | R-15.8.12 | Monomorphization |
-| TC-15.8.5.1 | R-15.8.5a | Shader graph HLSL emit |
-| TC-15.8.5.2 | R-15.8.5b | Shader compile DXC |
+| TC-15.8.5.1 | R-15.8.5a | Shader graph GLSL emit |
+| TC-15.8.5.2 | R-15.8.5b | Shader compile glslc |
 | TC-15.8.5.3 | R-15.8.5c | Material PBR template |
 | TC-15.8.13.1 | R-15.8.13 | Graph two-way diff |
 | TC-15.8.13.2 | R-15.8.13 | Graph three-way merge |
@@ -89,5 +89,5 @@ See those files for the full test case definitions until migration is complete.
 | TC-15.8.B.1 | R-15.8.12 | 500-node compile time |
 | TC-15.8.B.2 | R-15.8.2 | Type inference latency |
 | TC-15.3.B.1 | R-15.3.4 | Parameter update latency |
-| TC-15.3.B.2 | R-15.3.1 | HLSL generation throughput |
+| TC-15.3.B.2 | R-15.3.1 | GLSL generation throughput |
 | TC-15.4.B.1 | R-15.4.2 | Curve evaluate throughput |

@@ -61,8 +61,8 @@
     - **Verification:** Modify a codegen'd type, trigger hot-reload, and verify the change takes
       effect without restart. Build a shipping binary and verify LTO is applied.
 
-11. **R-15.14.11** — The engine **SHALL** compile HLSL shaders offline via DXC and
-    metal-shaderconverter CLI to DXIL, SPIR-V, and MSL IR with parallel variant compilation via the
+11. **R-15.14.11** — The engine **SHALL** compile GLSL shaders offline via glslc and
+    glslc CLI to SPIR-V with parallel variant compilation via the
     job system and per-platform variant caching keyed by BLAKE3(source + flags + tool version +
     platform).
     - **Rationale:** Offline shader compilation eliminates runtime stalls and enables per-platform
@@ -83,7 +83,7 @@
       binary.
 
 14. **R-15.14.14** — The engine **SHALL** bake platform-specific asset variants (BC7/ASTC textures,
-    DXIL/SPIR-V/MSL shaders, Opus/AAC/ADPCM audio, full/reduced meshlets) via parallel per-asset
+    SPIR-V shaders, Opus/AAC/ADPCM audio, full/reduced meshlets) via parallel per-asset
     cooking using the job system.
     - **Rationale:** Per-platform variants ensure optimal format on each target.
     - **Verification:** Bake a texture for Windows (BC7) and iOS (ASTC) and verify both are valid
