@@ -187,3 +187,39 @@ not manually rewrap prose — let rumdl handle it.
 | `docs/design/constraints.md` | Design constraints |
 | `Cargo.toml` | Rust workspace definition |
 | `.rumdl.toml` | Markdown lint config |
+
+## Cursor Cloud specific instructions
+
+### System dependencies
+
+The update script installs these via `apt-get`:
+
+- `libvulkan-dev` — Vulkan headers for `ash` crate
+- `glslang-tools` — `glslangValidator` for GLSL→SPIR-V
+  shader compilation in `crates/harmonius_app/build.rs`
+- `mesa-vulkan-drivers` — lavapipe software Vulkan ICD
+  for headless rendering (no GPU required)
+
+### Running the triangle demo
+
+The demo binary (`harmonius_app`) requires a Vulkan ICD and a display server. In Cloud VMs use
+lavapipe:
+
+```bash
+VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json \
+  cargo run -p harmonius_app
+```
+
+The `scripts/run-linux.sh` script runs it in release mode.
+
+### Crate build status
+
+`harmonius_core` and `harmonius_gpu_runtime` compile and pass tests independently. The remaining
+crates (`harmonius_platform`, `harmonius_gpu`, `harmonius_app`) depend on `harmonius_platform`,
+which may have compilation errors during active development. Build individual crates with
+`cargo build -p <crate>` to isolate failures.
+
+### Linting
+
+See the Commands table above. Run `rumdl check .` for Markdown and `taplo check` for TOML
+formatting.
