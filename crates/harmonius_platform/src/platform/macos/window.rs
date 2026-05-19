@@ -22,7 +22,7 @@ use crate::windowing::{PhysicalSize, SurfaceHandle, SurfaceNativeExt, WindowConf
 pub struct NativeWindow {
     #[allow(dead_code)]
     app: Retained<NSApplication>,
-    window: Retained<NSWindow>,
+    _window: Retained<NSWindow>,
     _content_view: Retained<NSView>,
     metal_layer: Retained<CAMetalLayer>,
     ns_view: NonNull<AnyObject>,
@@ -87,7 +87,7 @@ impl NativeWindow {
 
         Ok(Self {
             app,
-            window,
+            _window: window,
             _content_view: content_view,
             metal_layer,
             ns_view,
