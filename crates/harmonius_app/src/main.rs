@@ -70,18 +70,26 @@ fn render_loop(
     resize_rx: Receiver<SurfaceEvent>,
     running: Arc<AtomicBool>,
 ) -> Result<(), EngineError> {
+    let mut last_size = surface.initial_size;
     let mut gpu = GpuDevice::new(surface, vert_spirv, frag_spirv)
         .map_err(|e| EngineError::Gpu(e.to_string()))?;
+    let mut pending_size = None;
     while running.load(Ordering::Relaxed) {
         while let Ok(event) = resize_rx.try_recv() {
             if let SurfaceEvent::Resized(size) = event {
-                gpu.resize(size.width, size.height)
-                    .map_err(|e| EngineError::Gpu(e.to_string()))?;
+                pending_size = Some(size);
             }
+        }
+        if let Some(size) = pending_size.take() {
+            last_size = size;
+            gpu.resize(size.width, size.height)
+                .map_err(|e| EngineError::Gpu(e.to_string()))?;
         }
         if let Err(err) = gpu.draw_triangle_frame() {
             let msg = err.to_string();
             if msg.contains("out of date") {
+                gpu.resize(last_size.width, last_size.height)
+                    .map_err(|e| EngineError::Gpu(e.to_string()))?;
                 continue;
             }
             return Err(EngineError::Gpu(msg));

@@ -82,11 +82,8 @@ impl VulkanRenderer {
 
     /// Recreate swapchain after resize.
     pub fn resize(&mut self, width: u32, height: u32) -> Result<(), VulkanError> {
-        unsafe {
-            self.context
-                .device()
-                .device_wait_idle()
-                .map_err(|e| VulkanError::Api(e.to_string()))?;
+        if width == 0 || height == 0 {
+            return Ok(());
         }
         for &fb in &self.framebuffers {
             unsafe {
@@ -94,11 +91,7 @@ impl VulkanRenderer {
             }
         }
         self.framebuffers.clear();
-        // Old swapchain is destroyed in `Drop` when replaced; do not call
-        // `destroy_swapchain_only` here or Vulkan handles are freed twice.
-        self.swapchain = VulkanSwapchain::new(
-            self.context.instance(),
-            self.context.device(),
+        self.swapchain.recreate(
             self.context.physical_device(),
             self.context.surface(),
             self.context.surface_loader(),

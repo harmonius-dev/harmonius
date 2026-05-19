@@ -22,6 +22,17 @@ pub struct VulkanSwapchain {
     current_image: u32,
 }
 
+struct SwapchainCreateParams<'a> {
+    surface_loader: &'a khr::surface::Instance,
+    physical_device: vk::PhysicalDevice,
+    surface: vk::SurfaceKHR,
+    width: u32,
+    height: u32,
+    graphics_family: u32,
+    present_family: u32,
+    old_swapchain: vk::SwapchainKHR,
+}
+
 impl VulkanSwapchain {
     /// Create a swapchain for `surface` at `width` x `height`.
     #[allow(clippy::too_many_arguments)]
@@ -37,107 +48,20 @@ impl VulkanSwapchain {
         present_family: u32,
     ) -> Result<Self, VulkanError> {
         let swapchain_loader = khr::swapchain::Device::new(instance, device);
-        let capabilities = unsafe {
-            surface_loader
-                .get_physical_device_surface_capabilities(physical_device, surface)
-                .map_err(|e| VulkanError::Api(e.to_string()))?
-        };
-        let formats = unsafe {
-            surface_loader
-                .get_physical_device_surface_formats(physical_device, surface)
-                .map_err(|e| VulkanError::Api(e.to_string()))?
-        };
-        let present_modes = unsafe {
-            surface_loader
-                .get_physical_device_surface_present_modes(physical_device, surface)
-                .map_err(|e| VulkanError::Api(e.to_string()))?
-        };
-        let surface_format = formats
-            .iter()
-            .find(|f| {
-                f.format == vk::Format::B8G8R8A8_SRGB
-                    && f.color_space == vk::ColorSpaceKHR::SRGB_NONLINEAR
-            })
-            .or_else(|| formats.first())
-            .ok_or_else(|| VulkanError::Api("no surface formats".into()))?;
-        let format = surface_format.format;
-        let present_mode = present_modes
-            .iter()
-            .copied()
-            .find(|m| *m == vk::PresentModeKHR::FIFO)
-            .unwrap_or(vk::PresentModeKHR::FIFO);
-        let extent = if capabilities.current_extent.width != u32::MAX {
-            capabilities.current_extent
-        } else {
-            vk::Extent2D {
-                width: width.clamp(
-                    capabilities.min_image_extent.width,
-                    capabilities.max_image_extent.width,
-                ),
-                height: height.clamp(
-                    capabilities.min_image_extent.height,
-                    capabilities.max_image_extent.height,
-                ),
-            }
-        };
-        let image_count =
-            (capabilities.min_image_count + 1).min(if capabilities.max_image_count > 0 {
-                capabilities.max_image_count
-            } else {
-                u32::MAX
-            });
-        let queue_family_indices = [graphics_family, present_family];
-        let sharing = if graphics_family != present_family {
-            vk::SharingMode::CONCURRENT
-        } else {
-            vk::SharingMode::EXCLUSIVE
-        };
-        let create_info = vk::SwapchainCreateInfoKHR::default()
-            .surface(surface)
-            .min_image_count(image_count)
-            .image_format(format)
-            .image_color_space(surface_format.color_space)
-            .image_extent(extent)
-            .image_array_layers(1)
-            .image_usage(vk::ImageUsageFlags::COLOR_ATTACHMENT)
-            .image_sharing_mode(sharing)
-            .queue_family_indices(&queue_family_indices)
-            .pre_transform(capabilities.current_transform)
-            .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE)
-            .present_mode(present_mode)
-            .clipped(true);
-        let swapchain = unsafe {
-            swapchain_loader
-                .create_swapchain(&create_info, None)
-                .map_err(|e| VulkanError::Api(e.to_string()))?
-        };
-        let images = unsafe {
-            swapchain_loader
-                .get_swapchain_images(swapchain)
-                .map_err(|e| VulkanError::Api(e.to_string()))?
-        };
-        let image_views: Result<Vec<_>, VulkanError> = images
-            .iter()
-            .map(|image| {
-                let view_info = vk::ImageViewCreateInfo::default()
-                    .image(*image)
-                    .view_type(vk::ImageViewType::TYPE_2D)
-                    .format(format)
-                    .subresource_range(vk::ImageSubresourceRange {
-                        aspect_mask: vk::ImageAspectFlags::COLOR,
-                        base_mip_level: 0,
-                        level_count: 1,
-                        base_array_layer: 0,
-                        layer_count: 1,
-                    });
-                unsafe {
-                    device
-                        .create_image_view(&view_info, None)
-                        .map_err(|e| VulkanError::Api(e.to_string()))
-                }
-            })
-            .collect();
-        let image_views = image_views?;
+        let (format, extent, swapchain, images, image_views) = create_swapchain_images(
+            device,
+            &swapchain_loader,
+            SwapchainCreateParams {
+                surface_loader,
+                physical_device,
+                surface,
+                width,
+                height,
+                graphics_family,
+                present_family,
+                old_swapchain: vk::SwapchainKHR::null(),
+            },
+        )?;
         let max_frames = 2;
         let mut image_available = Vec::with_capacity(max_frames);
         let mut render_finished = Vec::with_capacity(max_frames);
@@ -176,6 +100,64 @@ impl VulkanSwapchain {
             max_frames,
             current_image: 0,
         })
+    }
+
+    /// Recreate swapchain images after resize, retiring the current swapchain.
+    #[allow(clippy::too_many_arguments)]
+    pub fn recreate(
+        &mut self,
+        physical_device: vk::PhysicalDevice,
+        surface: vk::SurfaceKHR,
+        surface_loader: &khr::surface::Instance,
+        width: u32,
+        height: u32,
+        graphics_family: u32,
+        present_family: u32,
+    ) -> Result<(), VulkanError> {
+        if width == 0 || height == 0 {
+            return Ok(());
+        }
+        unsafe {
+            self.device
+                .wait_for_fences(&self.in_flight, true, u64::MAX)
+                .map_err(|e| VulkanError::Api(e.to_string()))?;
+            for &fence in &self.in_flight {
+                self.device
+                    .reset_fences(&[fence])
+                    .map_err(|e| VulkanError::Api(e.to_string()))?;
+            }
+            for &view in &self.image_views {
+                self.device.destroy_image_view(view, None);
+            }
+        }
+        self.image_views.clear();
+        self.images.clear();
+        let old_swapchain = self.swapchain;
+        let (format, extent, swapchain, images, image_views) = create_swapchain_images(
+            &self.device,
+            &self.swapchain_loader,
+            SwapchainCreateParams {
+                surface_loader,
+                physical_device,
+                surface,
+                width,
+                height,
+                graphics_family,
+                present_family,
+                old_swapchain,
+            },
+        )?;
+        unsafe {
+            self.swapchain_loader.destroy_swapchain(old_swapchain, None);
+        }
+        self.format = format;
+        self.extent = extent;
+        self.swapchain = swapchain;
+        self.images = images;
+        self.image_views = image_views;
+        self.frame_index = 0;
+        self.current_image = 0;
+        Ok(())
     }
 
     #[must_use]
@@ -283,12 +265,135 @@ impl VulkanSwapchain {
             for &view in &self.image_views {
                 self.device.destroy_image_view(view, None);
             }
-            self.swapchain_loader
-                .destroy_swapchain(self.swapchain, None);
+            if self.swapchain != vk::SwapchainKHR::null() {
+                self.swapchain_loader
+                    .destroy_swapchain(self.swapchain, None);
+                self.swapchain = vk::SwapchainKHR::null();
+            }
         }
         self.image_views.clear();
         self.images.clear();
     }
+}
+
+fn create_swapchain_images(
+    device: &Device,
+    swapchain_loader: &khr::swapchain::Device,
+    params: SwapchainCreateParams<'_>,
+) -> Result<
+    (
+        vk::Format,
+        vk::Extent2D,
+        vk::SwapchainKHR,
+        Vec<vk::Image>,
+        Vec<vk::ImageView>,
+    ),
+    VulkanError,
+> {
+    let capabilities = unsafe {
+        params
+            .surface_loader
+            .get_physical_device_surface_capabilities(params.physical_device, params.surface)
+            .map_err(|e| VulkanError::Api(e.to_string()))?
+    };
+    let formats = unsafe {
+        params
+            .surface_loader
+            .get_physical_device_surface_formats(params.physical_device, params.surface)
+            .map_err(|e| VulkanError::Api(e.to_string()))?
+    };
+    let present_modes = unsafe {
+        params
+            .surface_loader
+            .get_physical_device_surface_present_modes(params.physical_device, params.surface)
+            .map_err(|e| VulkanError::Api(e.to_string()))?
+    };
+    let surface_format = formats
+        .iter()
+        .find(|f| {
+            f.format == vk::Format::B8G8R8A8_SRGB
+                && f.color_space == vk::ColorSpaceKHR::SRGB_NONLINEAR
+        })
+        .or_else(|| formats.first())
+        .ok_or_else(|| VulkanError::Api("no surface formats".into()))?;
+    let format = surface_format.format;
+    let present_mode = present_modes
+        .iter()
+        .copied()
+        .find(|m| *m == vk::PresentModeKHR::FIFO)
+        .unwrap_or(vk::PresentModeKHR::FIFO);
+    let extent = if capabilities.current_extent.width != u32::MAX {
+        capabilities.current_extent
+    } else {
+        vk::Extent2D {
+            width: params.width.clamp(
+                capabilities.min_image_extent.width,
+                capabilities.max_image_extent.width,
+            ),
+            height: params.height.clamp(
+                capabilities.min_image_extent.height,
+                capabilities.max_image_extent.height,
+            ),
+        }
+    };
+    let image_count = (capabilities.min_image_count + 1).min(if capabilities.max_image_count > 0 {
+        capabilities.max_image_count
+    } else {
+        u32::MAX
+    });
+    let queue_family_indices = [params.graphics_family, params.present_family];
+    let sharing = if params.graphics_family != params.present_family {
+        vk::SharingMode::CONCURRENT
+    } else {
+        vk::SharingMode::EXCLUSIVE
+    };
+    let create_info = vk::SwapchainCreateInfoKHR::default()
+        .surface(params.surface)
+        .min_image_count(image_count)
+        .image_format(format)
+        .image_color_space(surface_format.color_space)
+        .image_extent(extent)
+        .image_array_layers(1)
+        .image_usage(vk::ImageUsageFlags::COLOR_ATTACHMENT)
+        .image_sharing_mode(sharing)
+        .queue_family_indices(&queue_family_indices)
+        .pre_transform(capabilities.current_transform)
+        .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE)
+        .present_mode(present_mode)
+        .clipped(true)
+        .old_swapchain(params.old_swapchain);
+    let swapchain = unsafe {
+        swapchain_loader
+            .create_swapchain(&create_info, None)
+            .map_err(|e| VulkanError::Api(e.to_string()))?
+    };
+    let images = unsafe {
+        swapchain_loader
+            .get_swapchain_images(swapchain)
+            .map_err(|e| VulkanError::Api(e.to_string()))?
+    };
+    let image_views: Result<Vec<_>, VulkanError> = images
+        .iter()
+        .map(|image| {
+            let view_info = vk::ImageViewCreateInfo::default()
+                .image(*image)
+                .view_type(vk::ImageViewType::TYPE_2D)
+                .format(format)
+                .subresource_range(vk::ImageSubresourceRange {
+                    aspect_mask: vk::ImageAspectFlags::COLOR,
+                    base_mip_level: 0,
+                    level_count: 1,
+                    base_array_layer: 0,
+                    layer_count: 1,
+                });
+            unsafe {
+                device
+                    .create_image_view(&view_info, None)
+                    .map_err(|e| VulkanError::Api(e.to_string()))
+            }
+        })
+        .collect();
+    Ok((format, extent, swapchain, images, image_views?))
 }
 
 impl Drop for VulkanSwapchain {
