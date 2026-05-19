@@ -1,0 +1,65 @@
+name: Harmonius
+options:
+  bundleIdPrefix: com.harmonius
+  deploymentTarget:
+    macOS: "13.0"
+  createIntermediateGroups: true
+
+targets:
+  Harmonius:
+    type: application
+    platform: macOS
+    sources:
+      - path: Info.plist
+        buildPhase: none
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.harmonius.app
+      INFOPLIST_FILE: Info.plist
+      CODE_SIGN_IDENTITY: "-"
+      MACOSX_DEPLOYMENT_TARGET: "13.0"
+    preBuildScripts:
+      - name: Cargo Build
+        shell: /bin/bash
+        basedOnDependencyAnalysis: false
+        script: |
+          set -euo pipefail
+          cd "${SRCROOT}/.."
+          cargo build --release -p harmonius_app
+    postBuildScripts:
+      - name: Install Binary and MoltenVK
+        shell: /bin/bash
+        basedOnDependencyAnalysis: false
+        script: |
+          set -euo pipefail
+          APP="${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app"
+          MACOS="${APP}/Contents/MacOS"
+          RES="${APP}/Contents/Resources"
+          mkdir -p "${MACOS}" "${RES}/vulkan/icd.d"
+          cp "${SRCROOT}/../target/release/harmonius_app" "${MACOS}/Harmonius"
+          chmod +x "${MACOS}/Harmonius"
+          MOLTEN="${VULKAN_SDK:-/usr/local/share/vulkan}"/../../MoltenVK
+          if [ -d "/opt/homebrew/Cellar/molten-vk" ]; then
+            MOLTEN_LIB="$(find /opt/homebrew/Cellar/molten-vk -name libMoltenVK.dylib | head -1)"
+            MOLTEN_ICD="$(find /opt/homebrew/Cellar/molten-vk -name MoltenVK_icd.json | head -1)"
+          elif [ -n "${VULKAN_SDK:-}" ] && [ -f "${VULKAN_SDK}/../MoltenVK/dylib/macOS/libMoltenVK.dylib" ]; then
+            MOLTEN_LIB="${VULKAN_SDK}/../MoltenVK/dylib/macOS/libMoltenVK.dylib"
+            MOLTEN_ICD="${VULKAN_SDK}/../MoltenVK/icd/MoltenVK_icd.json"
+          fi
+          if [ -n "${MOLTEN_LIB:-}" ] && [ -f "${MOLTEN_LIB}" ]; then
+            cp "${MOLTEN_LIB}" "${RES}/"
+            install_name_tool -add_rpath "@executable_path/../Resources" "${MACOS}/Harmonius" || true
+          fi
+          if [ -n "${MOLTEN_ICD:-}" ] && [ -f "${MOLTEN_ICD}" ]; then
+            cp "${MOLTEN_ICD}" "${RES}/vulkan/icd.d/"
+            sed -i '' "s|\"library_path\".*|\"library_path\": \"../libMoltenVK.dylib\",|" \
+              "${RES}/vulkan/icd.d/$(basename "${MOLTEN_ICD}")" || true
+          fi
+
+schemes:
+  Harmonius:
+    build:
+      targets:
+        Harmonius: all
+    run:
+      environmentVariables:
+        VK_ICD_FILENAMES: $(SRCROOT)/build/Debug/Harmonius.app/Contents/Resources/vulkan/icd.d/MoltenVK_icd.json

@@ -1,0 +1,24 @@
+[package]
+name = "harmonius_platform"
+description = "Platform windowing and threading for the Harmonius engine"
+publish = false
+
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+crossbeam-utils.workspace = true
+harmonius_core.workspace = true
+raw-window-handle.workspace = true
+thiserror.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+x11rb.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2.workspace = true
+objc2-app-kit.workspace = true
+objc2-foundation.workspace = true
+objc2-quartz-core.workspace = true
