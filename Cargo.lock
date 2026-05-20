@@ -836,6 +836,13 @@ name = "harmonius_integration"
 version = "0.1.0"
 
 [[package]]
+name = "harmonius_integration_animation_rendering"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
 name = "harmonius_integration_editor_physics"
 version = "0.1.0"
 
