@@ -1,152 +1,133 @@
-# AI Non-Functional User Stories
+# Networking Non-Functional User Stories
 
-## US-7.NFR.1
+Non-functional stories for the Networking domain (X = 8). Latency, throughput, capacity, and
+operational targets that drive matching requirements in
+[`requirements/networking/transport-layer.md`](../../requirements/networking/transport-layer.md),
+[`requirements/networking/state-replication.md`](../../requirements/networking/state-replication.md),
+and [`requirements/networking/mmo-infrastructure.md`](../../requirements/networking/mmo-infrastructure.md).
 
-| ID           | Persona              | Features | Requirements |
-|--------------|----------------------|----------|--------------|
-| US-7.NFR.1.1 | engine dev (P-26)    |          | R-7.NFR.1    |
-| US-7.NFR.1.2 | engine dev (P-26)    |          | R-7.NFR.1    |
-| US-7.NFR.1.3 | server admin (P-22)  |          | R-7.NFR.1    |
-| US-7.NFR.1.4 | engine tester (P-27) |          | R-7.NFR.1    |
+Folder rules: stories use the `As a {persona} (P-N), I want {action}, so that {benefit}` form
+with no acceptance criteria, no feature links, and no requirement links inline. Persona
+definitions live in [`personas.md`](../personas.md).
 
-1. **US-7.NFR.1.1** — I want all AI processing within the 1ms frame budget
-   - **Acceptance:** AI does not cause frame-time spikes
-2. **US-7.NFR.1.2** — I want the LOD system to demote agents when budget is exceeded
-   - **Acceptance:** frame rate stability is maintained automatically
-3. **US-7.NFR.1.3** — I want configurable AI frame budgets per platform
-   - **Acceptance:** mobile and desktop have appropriate AI cost limits
-4. **US-7.NFR.1.4** — I want to verify 5,000 agents stay within 1ms at 60fps
-   - **Acceptance:** frame budget enforcement is regression-tested
+## Transport Latency
 
-## US-7.NFR.2
+| ID           | Persona              |
+|--------------|----------------------|
+| US-8.NFR.1.1 | gamer (P-23)         |
+| US-8.NFR.1.2 | engine dev (P-26)    |
+| US-8.NFR.1.3 | engine tester (P-27) |
 
-| ID           | Persona              | Features | Requirements |
-|--------------|----------------------|----------|--------------|
-| US-7.NFR.2.1 | engine dev (P-26)    |          | R-7.NFR.2    |
-| US-7.NFR.2.2 | server admin (P-22)  |          | R-7.NFR.2    |
-| US-7.NFR.2.3 | engine tester (P-27) |          | R-7.NFR.2    |
+1. **US-8.NFR.1.1** — As a gamer (P-23), I want my actions to register on the server within
+   one server tick, so that the game feels responsive.
+2. **US-8.NFR.1.2** — As an engine dev (P-26), I want QUIC handshake completion under 200 ms
+   on a 100 ms RTT path, so that join latency is short.
+3. **US-8.NFR.1.3** — As an engine tester (P-27), I want to verify p99 RPC RTT under 250 ms on
+   a 100 ms baseline, so that latency regressions are caught.
 
-1. **US-7.NFR.2.1** — I want at least 500 A* queries per tick sustained
-   - **Acceptance:** MMO servers handle mass NPC pathfinding
-2. **US-7.NFR.2.2** — I want 95th percentile per-query latency below 0.1ms
-   - **Acceptance:** pathfinding does not spike individual frames
-3. **US-7.NFR.2.3** — I want to verify 500 queries/tick on a 50-tile NavMesh with p95 under 0.1ms
-   - **Acceptance:** pathfinding throughput is regression-tested
+## Replication Throughput
 
-## US-7.NFR.3
+| ID           | Persona              |
+|--------------|----------------------|
+| US-8.NFR.2.1 | server admin (P-22)  |
+| US-8.NFR.2.2 | engine dev (P-26)    |
+| US-8.NFR.2.3 | engine tester (P-27) |
 
-| ID           | Persona              | Features | Requirements |
-|--------------|----------------------|----------|--------------|
-| US-7.NFR.3.1 | engine dev (P-26)    |          | R-7.NFR.3    |
-| US-7.NFR.3.2 | engine dev (P-26)    |          | R-7.NFR.3    |
-| US-7.NFR.3.3 | engine tester (P-27) |          | R-7.NFR.3    |
+1. **US-8.NFR.2.1** — As a server admin (P-22), I want a single zone server to push state for
+   500 active entities at 30 Hz, so that crowded battlegrounds remain playable.
+2. **US-8.NFR.2.2** — As an engine dev (P-26), I want delta compression to keep average per-
+   client uplink under 100 KB/s on a typical battle, so that broadband isn't required.
+3. **US-8.NFR.2.3** — As an engine tester (P-27), I want to verify 500-entity scenes consume
+   under 100 KB/s per client at 30 Hz, so that bandwidth budgets are regression-tested.
 
-1. **US-7.NFR.3.1** — I want perception for 1,000 high-LOD agents per tick
-   - **Acceptance:** sight and hearing evaluation scales to MMO density
-2. **US-7.NFR.3.2** — I want mid-LOD perception deferred to alternating ticks
-   - **Acceptance:** perception cost is distributed across frames
-3. **US-7.NFR.3.3** — I want to verify 1,000 high-LOD evaluations complete within perception budget
-   - **Acceptance:** perception throughput is regression-tested
+## Area-of-Interest Scaling
 
-## US-7.NFR.4
+| ID           | Persona              |
+|--------------|----------------------|
+| US-8.NFR.3.1 | server admin (P-22)  |
+| US-8.NFR.3.2 | engine dev (P-26)    |
+| US-8.NFR.3.3 | engine tester (P-27) |
 
-| ID           | Persona              | Features | Requirements |
-|--------------|----------------------|----------|--------------|
-| US-7.NFR.4.1 | engine dev (P-26)    |          | R-7.NFR.4    |
-| US-7.NFR.4.2 | engine tester (P-27) |          | R-7.NFR.4    |
+1. **US-8.NFR.3.1** — As a server admin (P-22), I want AOI updates per tick capped to 100
+   entities per client, so that worst-case crowding cannot saturate uplinks.
+2. **US-8.NFR.3.2** — As an engine dev (P-26), I want AOI lookups to be O(log N) over the
+   spatial index, so that worst-case query cost stays bounded.
+3. **US-8.NFR.3.3** — As an engine tester (P-27), I want to verify p95 AOI lookup latency
+   under 50 µs at 50 000 entities, so that AOI scaling is regression-tested.
 
-1. **US-7.NFR.4.1** — I want at least 2,000 BT ticks per frame for 20-node trees
-   - **Acceptance:** behavior tree processing scales to MMO agent counts
-2. **US-7.NFR.4.2** — I want to verify 2,000 tree ticks complete within 0.4ms
-   - **Acceptance:** BT performance budget is regression-tested
+## Server-Mesh Handoff
 
-## US-7.NFR.5
+| ID           | Persona              |
+|--------------|----------------------|
+| US-8.NFR.4.1 | gamer (P-23)         |
+| US-8.NFR.4.2 | engine dev (P-26)    |
+| US-8.NFR.4.3 | engine tester (P-27) |
 
-| ID           | Persona              | Features | Requirements |
-|--------------|----------------------|----------|--------------|
-| US-7.NFR.5.1 | server admin (P-22)  |          | R-7.NFR.5    |
-| US-7.NFR.5.2 | engine dev (P-26)    |          | R-7.NFR.5    |
-| US-7.NFR.5.3 | engine tester (P-27) |          | R-7.NFR.5    |
+1. **US-8.NFR.4.1** — As a gamer (P-23), I want zone transitions with no loading screen and
+   no perceived hitch, so that the world feels continuous.
+2. **US-8.NFR.4.2** — As an engine dev (P-26), I want the handoff of authoritative state to
+   complete in under 100 ms, so that the client never observes a discontinuity.
+3. **US-8.NFR.4.3** — As an engine tester (P-27), I want to verify mid-combat handoffs under
+   100 ms preserve buffs, cooldowns, and pending RPCs, so that handoff is regression-tested.
 
-1. **US-7.NFR.5.1** — I want at least 50,000 concurrent AI agents per server process
-   - **Acceptance:** MMO cities have dense populations
-2. **US-7.NFR.5.2** — I want tiered distribution (500 high, 2000 mid, rest low)
-   - **Acceptance:** full AI only runs on gameplay-critical agents
-3. **US-7.NFR.5.3** — I want to verify 50,000 agents maintain target tick rate
-   - **Acceptance:** agent count scalability is regression-tested
+## Auto-Scaling
 
-## US-7.NFR.6
+| ID           | Persona              |
+|--------------|----------------------|
+| US-8.NFR.5.1 | server admin (P-22)  |
+| US-8.NFR.5.2 | engine dev (P-26)    |
+| US-8.NFR.5.3 | engine tester (P-27) |
 
-| ID           | Persona              | Features | Requirements |
-|--------------|----------------------|----------|--------------|
-| US-7.NFR.6.1 | engine dev (P-26)    |          | R-7.NFR.6    |
-| US-7.NFR.6.2 | engine tester (P-27) |          | R-7.NFR.6    |
+1. **US-8.NFR.5.1** — As a server admin (P-22), I want a 5× population surge handled by new
+   server processes within 30 seconds, so that demand spikes don't cause queues.
+2. **US-8.NFR.5.2** — As an engine dev (P-26), I want graceful drain before pod termination,
+   so that scale-down never disconnects players abruptly.
+3. **US-8.NFR.5.3** — As an engine tester (P-27), I want to verify auto-scale-up within 30 s
+   and drain within 60 s on simulated population swings, so that auto-scaling is regression
+   tested.
 
-1. **US-7.NFR.6.1** — I want O(1) per-agent flow field sampling
-   - **Acceptance:** crowd navigation scales linearly with agent count
-2. **US-7.NFR.6.2** — I want to verify per-agent cost is constant at 1K, 5K, and 10K agents
-   - **Acceptance:** O(1) scaling is regression-tested
+## Replay Storage
 
-## US-7.NFR.7
+| ID           | Persona              |
+|--------------|----------------------|
+| US-8.NFR.6.1 | server admin (P-22)  |
+| US-8.NFR.6.2 | engine dev (P-26)    |
+| US-8.NFR.6.3 | engine tester (P-27) |
 
-| ID           | Persona             | Features | Requirements |
-|--------------|---------------------|----------|--------------|
-| US-7.NFR.7.1 | server admin (P-22) |          | R-7.NFR.7    |
-| US-7.NFR.7.2 | engine dev (P-26)   |          | R-7.NFR.7    |
-| US-7.NFR.7.3 | unknown             |          | R-7.NFR.7    |
+1. **US-8.NFR.6.1** — As a server admin (P-22), I want replay files compressed to ≤ 5 MB per
+   minute of gameplay, so that long-term storage stays affordable.
+2. **US-8.NFR.6.2** — As an engine dev (P-26), I want replay seeking to land any frame within
+   100 ms, so that the replay viewer is responsive.
+3. **US-8.NFR.6.3** — As an engine tester (P-27), I want to verify a 60-minute replay
+   compresses under 300 MB and seeks any frame in p95 under 100 ms, so that storage and seek
+   targets are regression-tested.
 
-1. **US-7.NFR.7.1** — I want NavMesh memory bounded to a configurable budget (default 256 MB)
-   - **Acceptance:** server memory usage is predictable
-2. **US-7.NFR.7.2** — I want distant tiles evicted when the budget is exceeded
-   - **Acceptance:** memory stays within bounds automatically
-3. **US-7.NFR.7.3** — As an engine tester (P-27), I want to verify tile eviction triggers at the 256
-   MB boundary so that memory budget enforcement is regression-tested.
+## Anti-Cheat Overhead
 
-## US-7.NFR.8
+| ID           | Persona              |
+|--------------|----------------------|
+| US-8.NFR.7.1 | server admin (P-22)  |
+| US-8.NFR.7.2 | engine dev (P-26)    |
+| US-8.NFR.7.3 | engine tester (P-27) |
 
-| ID           | Persona           | Features | Requirements |
-|--------------|-------------------|----------|--------------|
-| US-7.NFR.8.1 | engine dev (P-26) |          | R-7.NFR.8    |
-| US-7.NFR.8.2 | engine dev (P-26) |          | R-7.NFR.8    |
-| US-7.NFR.8.3 | unknown           |          | R-7.NFR.8    |
+1. **US-8.NFR.7.1** — As a server admin (P-22), I want anti-cheat validators to add no more
+   than 5% to server CPU time, so that anti-cheat doesn't shrink server capacity.
+2. **US-8.NFR.7.2** — As an engine dev (P-26), I want movement and damage validators to run
+   in under 10 µs per validation, so that hot-path overhead stays bounded.
+3. **US-8.NFR.7.3** — As an engine tester (P-27), I want to verify validator overhead stays
+   under 5% server CPU at peak load, so that anti-cheat overhead is regression-tested.
 
-1. **US-7.NFR.8.1** — I want high-LOD agents under 4 KB memory overhead
-   - **Acceptance:** per-agent cost is bounded
-2. **US-7.NFR.8.2** — I want low-LOD crowd entities under 64 bytes overhead
-   - **Acceptance:** 50,000 entities fit within a reasonable memory footprint
-3. **US-7.NFR.8.3** — As an engine tester (P-27), I want to verify measured per-agent memory matches
-   budget targets so that memory overhead is regression-tested.
+## Persistence Throughput
 
-## US-7.NFR.9
+| ID           | Persona              |
+|--------------|----------------------|
+| US-8.NFR.8.1 | server admin (P-22)  |
+| US-8.NFR.8.2 | engine dev (P-26)    |
+| US-8.NFR.8.3 | engine tester (P-27) |
 
-| ID           | Persona              | Features | Requirements |
-|--------------|----------------------|----------|--------------|
-| US-7.NFR.9.1 | engine dev (P-26)    |          | R-7.NFR.9    |
-| US-7.NFR.9.2 | engine dev (P-26)    |          | R-7.NFR.9    |
-| US-7.NFR.9.3 | engine dev (P-26)    |          | R-7.NFR.9    |
-| US-7.NFR.9.4 | engine tester (P-27) |          | R-7.NFR.9    |
-
-1. **US-7.NFR.9.1** — I want all paths valid (no segment exits NavMesh)
-   - **Acceptance:** agents never move through walls or terrain
-2. **US-7.NFR.9.2** — I want paths optimal within 5% of true shortest
-   - **Acceptance:** navigation quality is consistently high
-3. **US-7.NFR.9.3** — I want path smoothing to reduce waypoints by at least 30%
-   - **Acceptance:** smoothed paths are visibly more natural
-4. **US-7.NFR.9.4** — I want to verify 1,000 random paths are all valid and within 5% of optimal
-   - **Acceptance:** path quality is regression-tested
-
-## US-7.NFR.10
-
-| ID            | Persona              | Features | Requirements |
-|---------------|----------------------|----------|--------------|
-| US-7.NFR.10.1 | engine dev (P-26)    |          | R-7.NFR.10   |
-| US-7.NFR.10.2 | player (P-23)        |          | R-7.NFR.10   |
-| US-7.NFR.10.3 | engine tester (P-27) |          | R-7.NFR.10   |
-
-1. **US-7.NFR.10.1** — I want high-LOD agents to react to high-priority events within 2 ticks
-   - **Acceptance:** AI response time meets quality expectations
-2. **US-7.NFR.10.2** — I want enemies to react immediately when I hit them
-   - **Acceptance:** combat AI feels responsive
-3. **US-7.NFR.10.3** — I want to verify conditional aborts fire within 1 tick of the triggering
-   condition
-   - **Acceptance:** abort response time is regression-tested
+1. **US-8.NFR.8.1** — As a server admin (P-22), I want sustained 10 000 transactions per
+   second to TiKV, so that persistence keeps up with peak gameplay.
+2. **US-8.NFR.8.2** — As an engine dev (P-26), I want database access to never block the
+   simulation tick, so that backend latency cannot degrade gameplay.
+3. **US-8.NFR.8.3** — As an engine tester (P-27), I want to verify a 10 000-write soak with
+   p99 simulation tick under 16 ms, so that persistence isolation is regression-tested.

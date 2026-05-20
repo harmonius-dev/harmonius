@@ -7,13 +7,13 @@ Functional and non-functional requirements for all engine subsystems. Each requi
 
 | # | Domain | Files | Requirements |
 |---|--------|------:|-----------:|
-| 1 | Core Runtime | 9 | 122 |
-| 2 | Rendering | 14 | 131 |
+| 1 | Core Runtime | 11 | 143 |
+| 2 | Rendering | 14 | 167 |
 | 3 | Geometry & World | 6 | 55 |
 | 4 | Physics | 8 | 65 |
 | 5 | Audio | 5 | 58 |
 | 6 | Input | 5 | 75 |
-| 7 | AI | 8 | 67 |
+| 7 | AI | 9 | 77 |
 | 8 | Networking | 9 | 84 |
 | 9 | Animation | 7 | 56 |
 | 10 | UI & 2D | 6 | 75 |
@@ -25,7 +25,7 @@ Functional and non-functional requirements for all engine subsystems. Each requi
 | 16 | Data Systems | 4 | 45 |
 | 17 | Simulation | 4 | 42 |
 | X | Cross-Cutting | 1 | 33 |
-| | **Total** | **157** | **1,581** |
+| | **Total** | **160** | **1,648** |
 
 ## 1. Core Runtime
 
@@ -36,7 +36,9 @@ Functional and non-functional requirements for all engine subsystems. Each requi
 | [serialization.md](core-runtime/serialization.md) | 12 |
 | [reflection-and-type-system.md](core-runtime/reflection-and-type-system.md) | 11 |
 | [spatial-indexing.md](core-runtime/spatial-indexing.md) | 11 |
+| [algorithms.md](core-runtime/algorithms.md) | 11 |
 | [memory-management.md](core-runtime/memory-management.md) | 10 |
+| [game-loop.md](core-runtime/game-loop.md) | 10 |
 | [events-and-messaging.md](core-runtime/events-and-messaging.md) | 9 |
 | [plugin-system.md](core-runtime/plugin-system.md) | 8 |
 | [scene-and-transforms.md](core-runtime/scene-and-transforms.md) | 8 |
@@ -56,9 +58,9 @@ Functional and non-functional requirements for all engine subsystems. Each requi
 | [character-rendering.md](rendering/character-rendering.md) | 8 |
 | [environment.md](rendering/environment.md) | 8 |
 | [first-person-rendering.md](rendering/first-person-rendering.md) | 8 |
+| [gpu-runtime.md](rendering/gpu-runtime.md) | 36 |
 | [scene-rendering-pipeline.md](rendering/scene-rendering-pipeline.md) | 6 |
 | [stylized-effects.md](rendering/stylized-effects.md) | 5 |
-| [gpu-abstraction.md](rendering/gpu-abstraction.md) | 0 |
 
 ## 3. Geometry & World
 
@@ -111,6 +113,7 @@ Functional and non-functional requirements for all engine subsystems. Each requi
 | [navigation.md](ai/navigation.md) | 15 |
 | [crowd-simulation.md](ai/crowd-simulation.md) | 11 |
 | [perception.md](ai/perception.md) | 11 |
+| [non-functional.md](ai/non-functional.md) | 10 |
 | [behavior-trees.md](ai/behavior-trees.md) | 7 |
 | [goap.md](ai/goap.md) | 6 |
 | [steering-avoidance.md](ai/steering-avoidance.md) | 6 |

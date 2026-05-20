@@ -33,13 +33,13 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
 | TC-2.2.10.1   | `test_graph_recompile_on_change`     | R-2.2.10  |
 | TC-2.2.10.2   | `test_graph_no_recompile_param_only` | R-2.2.10  |
 | TC-2.2.13.1   | `test_command_buffer_scope_lifetime` | R-2.2.13  |
-| TC-2.1.1.1    | `test_unified_alloc_o1`              | GR-1.2    |
-| TC-2.1.1.2    | `test_dedicated_heap_alloc`          | GR-1.3    |
-| TC-2.1.1.3    | `test_ring_buffer_no_heap_alloc`     | GR-1.5    |
-| TC-2.1.2.1    | `test_state_cache_skip_redundant`    | GR-2.1    |
-| TC-2.1.2.2    | `test_pipeline_bind_cache`           | GR-2.2    |
-| TC-2.1.4.1    | `test_barrier_elide_same_state`      | GR-4.4    |
-| TC-2.1.4.2    | `test_traceray_compute_fallback`     | GR-4.6    |
+| TC-2.1.1.1    | `test_unified_alloc_o1`              | R-2.14.1.2 |
+| TC-2.1.1.2    | `test_dedicated_heap_alloc`          | R-2.14.1.3 |
+| TC-2.1.1.3    | `test_ring_buffer_no_heap_alloc`     | R-2.14.1.5 |
+| TC-2.1.2.1    | `test_state_cache_skip_redundant`    | R-2.14.2.1 |
+| TC-2.1.2.2    | `test_pipeline_bind_cache`           | R-2.14.2.2 |
+| TC-2.1.4.1    | `test_barrier_elide_same_state`      | R-2.14.4.4 |
+| TC-2.1.4.2    | `test_traceray_compute_fallback`     | R-2.14.4.6 |
 | TC-2.1.1.4    | `test_static_dispatch_no_vtable`     | R-2.1.1   |
 | TC-2.1.2.3    | `test_cmd_buf_graphics_compute_copy` | R-2.1.2   |
 | TC-2.1.3.1    | `test_pso_invalid_combination`       | R-2.1.3   |
@@ -241,8 +241,8 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
 | TC-2.2.I.3  | `test_streaming_world_traverse` | R-2.2.9  |
 | TC-2.2.I.4  | `test_async_compute_overlap`    | R-2.2.5  |
 | TC-2.2.I.5  | `test_diagnostic_overlay`       | R-2.2.11 |
-| TC-2.1.I.1  | `test_vulkan_backend_parity`       | GR-3.3   |
-| TC-2.1.I.2  | `test_dedicated_alloc_24h`      | GR-1.6   |
+| TC-2.1.I.1  | `test_vulkan_backend_parity`       | R-2.14.3.3 |
+| TC-2.1.I.2  | `test_dedicated_alloc_24h`      | R-2.14.1.6 |
 
 1. **TC-2.2.I.1** `test_full_graph_compile` — Compile a 30-pass production graph with shadows,
    GBuffer, lighting, post-processing, and UI. Assert no errors and order is valid.
@@ -287,8 +287,8 @@ R-2.1.Z, or GR-X.Z (GPU runtime).
 | TC-2.2.B.2  | Barrier compute (30 passes)     | < 0.5 ms  | R-2.2.4 |
 | TC-2.2.B.3  | Aliasing color (50 resources)   | < 1 ms    | R-2.2.3a |
 | TC-2.2.B.4  | Parallel encode (16 passes)     | < 1.5 ms  | R-2.2.8 |
-| TC-2.1.B.1  | Allocator alloc (4 KB)          | < 200 ns  | GR-1.2  |
-| TC-2.1.B.2  | State cache miss check          | < 50 ns   | GR-2.1  |
+| TC-2.1.B.1  | Allocator alloc (4 KB)          | < 200 ns  | R-2.14.1.2 |
+| TC-2.1.B.2  | State cache miss check          | < 50 ns   | R-2.14.2.1 |
 
 1. **TC-2.2.B.1** — Compile a 30-pass production graph from cold (no cache). Wall time for
    topological sort + barrier insertion + aliasing.

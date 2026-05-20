@@ -10,14 +10,14 @@ See [personas.md](personas.md) for the complete persona catalog.
 
 | # | Domain | Files | Stories |
 |---|--------|------:|-------:|
-| 1 | Core Runtime | 9 | 178 |
+| 1 | Core Runtime | 11 | 198 |
 | 2 | Rendering | 13 | 277 |
 | 3 | Geometry & World | 6 | 196 |
 | 4 | Physics | 8 | 141 |
 | 5 | Audio | 5 | 167 |
 | 6 | Input | 5 | 93 |
-| 7 | AI | 8 | 200 |
-| 8 | Networking | 10 | 165 |
+| 7 | AI | 9 | 230 |
+| 8 | Networking | 10 | 159 |
 | 9 | Animation | 7 | 104 |
 | 10 | UI & 2D | 6 | 76 |
 | 11 | VFX | 6 | 119 |
@@ -27,7 +27,7 @@ See [personas.md](personas.md) for the complete persona catalog.
 | 15 | Tools & Editor | 24 | 411 |
 | 16 | Data Systems | 4 | 45 |
 | 17 | Simulation | 4 | 42 |
-| | **Total** | **156** | **3,162** |
+| | **Total** | **159** | **3,206** |
 
 ## 1. Core Runtime
 
@@ -42,6 +42,8 @@ See [personas.md](personas.md) for the complete persona catalog.
 | [spatial-indexing.md](core-runtime/spatial-indexing.md) | 15 |
 | [plugin-system.md](core-runtime/plugin-system.md) | 13 |
 | [scene-and-transforms.md](core-runtime/scene-and-transforms.md) | 12 |
+| [game-loop.md](core-runtime/game-loop.md) | 10 |
+| [algorithms.md](core-runtime/algorithms.md) | 10 |
 
 ## 2. Rendering
 
@@ -110,6 +112,7 @@ See [personas.md](personas.md) for the complete persona catalog.
 | File | Stories |
 |------|-------:|
 | [behavior-trees.md](ai/behavior-trees.md) | 34 |
+| [non-functional.md](ai/non-functional.md) | 30 |
 | [navigation.md](ai/navigation.md) | 30 |
 | [perception.md](ai/perception.md) | 26 |
 | [crowd-simulation.md](ai/crowd-simulation.md) | 24 |
@@ -122,8 +125,8 @@ See [personas.md](personas.md) for the complete persona catalog.
 
 | File | Stories |
 |------|-------:|
-| [non-functional.md](networking/non-functional.md) | 30 |
 | [communication.md](networking/communication.md) | 29 |
+| [non-functional.md](networking/non-functional.md) | 24 |
 | [session-management.md](networking/session-management.md) | 18 |
 | [transport-layer.md](networking/transport-layer.md) | 16 |
 | [mmo-infrastructure.md](networking/mmo-infrastructure.md) | 15 |

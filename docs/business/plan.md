@@ -116,7 +116,7 @@ Requires specific Wave 1 nodes. 9 feature-groups can proceed concurrently.
 | 18 | Networking.Transport          | Not started | Not started |
 
 1. **10** — [gpu-abstraction-layer](../requirements/rendering/gpu-abstraction-layer.md),
-   [gpu-abstraction](../requirements/rendering/gpu-abstraction.md)
+   [gpu-runtime](../requirements/rendering/gpu-runtime.md)
    - **Features:** [gpu-abstraction-layer](../features/rendering/gpu-abstraction-layer.md)
    - **Prereqs:** Platform.Windowing, CoreRuntime.ECS
 2. **11** — [asset-import](../requirements/content-pipeline/asset-import.md)
@@ -578,7 +578,7 @@ above. They should be folded into existing groups or promoted to new groups.
 | 19 | ui/common-widgets | (see below) |
 | 20 | ai/non-functional | (see below) |
 | 21 | networking/non-functional | (see below) |
-| 22 | rendering/gpu-abstraction | (see below) |
+| 22 | rendering/gpu-runtime | (see below) |
 
 Candidate feature-group mappings:
 
@@ -619,8 +619,8 @@ Candidate feature-group mappings:
 19. [ui/common-widgets](../requirements/ui/common-widgets.md) — UI2D.WidgetFramework.
 20. AI non-functional requirements — integrated into individual AI topic files.
 21. Networking non-functional requirements — integrated into individual Networking topic files.
-22. [rendering/gpu-abstraction](../requirements/rendering/gpu-abstraction.md) —
-    Rendering.GPUAbstraction (possibly duplicate of gpu-abstraction-layer).
+22. [rendering/gpu-runtime](../requirements/rendering/gpu-runtime.md) —
+    Rendering.GPUAbstraction (R-2.14, the GPU runtime layer above the GPU abstraction layer).
 
 ### Unmapped Features
 

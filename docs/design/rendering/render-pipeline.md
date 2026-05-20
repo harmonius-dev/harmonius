@@ -41,19 +41,24 @@ rendering subsystems.
 5. **F-2.1.11** -- Cross-backend feature emulation
 6. **F-2.1.12** -- GPU performance queries and profiling
 
-### GPU Runtime Requirements (GR)
+### GPU Runtime Requirements
 
-| Requirement             |
-|-------------------------|
-| GR-1.1 through GR-1.11 |
-| GR-2.1 through GR-2.7  |
-| GR-3.1 through GR-3.9  |
-| GR-4.1 through GR-4.9  |
+GPU Runtime requirements moved to canonical `R-2.14.*` IDs in
+[requirements/rendering/gpu-runtime.md](../../requirements/rendering/gpu-runtime.md). The
+legacy `GR-*` prefix is retired; the requirements file's Legacy ID Mapping table preserves
+trace continuity.
 
-1. **GR-1.x** -- Memory: unified allocator, sub-alloc, ring, defrag, budgets, sparse
-2. **GR-2.x** -- State tracking: pipeline/descriptor/dynamic/push caches, reset
-3. **GR-3.x** -- Work graph: native/emulated, sync fidelity
-4. **GR-4.x** -- Feature emulation: barriers, RT, mesh shaders
+| Requirement                  |
+|------------------------------|
+| R-2.14.1.1 through R-2.14.1.11 |
+| R-2.14.2.1 through R-2.14.2.7  |
+| R-2.14.3.1 through R-2.14.3.9  |
+| R-2.14.4.1 through R-2.14.4.9  |
+
+1. **R-2.14.1.x** -- Memory: unified allocator, sub-alloc, ring, defrag, budgets, sparse
+2. **R-2.14.2.x** -- State tracking: pipeline/descriptor/dynamic/push caches, reset
+3. **R-2.14.3.x** -- Work graph: native/emulated, sync fidelity
+4. **R-2.14.4.x** -- Feature emulation: barriers, RT, mesh shaders
 
 ### Render Graph (2.2)
 
@@ -924,18 +929,15 @@ Test cases are defined inline below.
 | `test_vulkan_ffi_ash` | R-2.1.4 |
 | `test_vulkan_no_cpp` | R-2.1.4 |
 | `test_vulkan_validation_zero_errors` | R-2.1.4 |
-| `test_suballoc_alignment_d3d12` | R-2.1.7, GR-1.2 |
-| `test_suballoc_alignment_vulkan` | R-2.1.7, GR-1.2 |
-| `test_suballoc_alignment_metal` | R-2.1.7, GR-1.2 |
-| `test_state_tracker_redundant_bind` | R-2.1.8, GR-2.2 |
+| `test_suballoc_alignment_vulkan` | R-2.1.7, R-2.14.1.2 |
+| `test_state_tracker_redundant_bind` | R-2.1.8, R-2.14.2.2 |
 | `test_barrier_merge` | R-2.1.9 |
-| `test_barrier_noop_metal` | R-2.1.9 |
-| `test_split_barrier_overlap` | R-2.1.9, GR-4.2 |
-| `test_work_graph_native_d3d12` | R-2.1.10, GR-3.2 |
-| `test_work_graph_emulated` | R-2.1.10, GR-3.3 |
-| `test_emulation_no_runtime_branch` | R-2.1.11, GR-4.1 |
+| `test_split_barrier_overlap` | R-2.1.9, R-2.14.4.2 |
+| `test_work_graph_native_vulkan` | R-2.1.10, R-2.14.3.2 |
+| `test_work_graph_emulated` | R-2.1.10, R-2.14.3.3 |
+| `test_emulation_no_runtime_branch` | R-2.1.11, R-2.14.4.1 |
 | `test_timestamp_query_readback` | R-2.1.12 |
-| `test_ring_buffer_zero_alloc` | GR-1.5 |
+| `test_ring_buffer_zero_alloc` | R-2.14.1.5 |
 | `test_fence_async_no_spin` | constraints |
 
 ### Unit Tests (Render Graph)

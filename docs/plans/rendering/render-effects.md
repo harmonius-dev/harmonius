@@ -152,7 +152,7 @@ worktree_branch: plan/rendering-render-effects
 
 - [advanced-rendering.md](../../requirements/rendering/advanced-rendering.md) — covers `R-2.5.1`,
   `R-2.5.10`, `R-2.5.2`, `R-2.5.3`, `R-2.5.4`, `R-2.5.5`, `R-2.5.6`, `R-2.5.7`...
-- [gpu-abstraction.md](../../requirements/rendering/gpu-abstraction.md) — covers `R-2.5.1`,
+- [gpu-runtime.md](../../requirements/rendering/gpu-runtime.md) — covers `R-2.5.1`,
   `R-2.5.2`
 - [lighting.md](../../requirements/rendering/lighting.md) — covers `R-2.4.1`, `R-2.4.10`,
   `R-2.4.11`, `R-2.4.13`, `R-2.4.3`, `R-2.4.8`
