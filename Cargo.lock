@@ -815,6 +815,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_crash_reporting"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "memmap2",
+ "serde",
+ "serde_json",
+ "smallvec",
+ "tempfile",
+ "thiserror",
+ "url",
+]
+
+[[package]]
 name = "harmonius_data_systems"
 version = "0.1.0"
 dependencies = [
