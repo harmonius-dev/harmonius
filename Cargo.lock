@@ -91,6 +91,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "asset_pipeline_rendering"
+version = "0.0.1"
+dependencies = [
+ "rkyv 0.8.16",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
