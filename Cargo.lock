@@ -833,11 +833,7 @@ dependencies = [
 
 [[package]]
 name = "harmonius_core"
-version = "0.1.0"
-dependencies = [
- "glam 0.29.3",
- "smallvec",
-]
+version = "0.0.1"
 
 [[package]]
 name = "harmonius_crash_reporting"
