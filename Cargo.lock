@@ -1273,6 +1273,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration_physics_geometry"
+version = "0.1.0"
+dependencies = [
+ "glam 0.29.3",
+]
+
+[[package]]
 name = "integration_physics_spatial"
 version = "0.1.0"
 dependencies = [
