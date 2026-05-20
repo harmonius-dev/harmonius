@@ -740,6 +740,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_camera"
+version = "0.1.0"
+dependencies = [
+ "glam 0.29.3",
+]
+
+[[package]]
 name = "harmonius_containers"
 version = "0.1.0"
 dependencies = [
