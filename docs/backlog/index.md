@@ -5,18 +5,19 @@ documentation work items. See [AGENTS.md](AGENTS.md) for issue file format,
 [labels.md](labels.md) for the label taxonomy, and [projects.md](projects.md) for the
 GitHub Projects board model.
 
-## Counts (snapshot)
+## Counts (snapshot 2026-05-20)
 
 | Status       | Count |
 |--------------|------:|
-| Triage       | tbd   |
-| Ready        | tbd   |
+| Triage       | 55    |
+| Ready        | 0     |
 | In Progress  | 0     |
 | Review       | 0     |
-| Blocked      | tbd   |
+| Blocked      | 0     |
 | Done         | 0     |
 
-Counts refresh when [docs/coverage/audits/](../coverage/audits/) is regenerated.
+55 issues seeded by the 2026-05 deslop pass. Counts refresh when
+[docs/coverage/audits/](../coverage/audits/) is regenerated.
 
 ## How to find issues
 
