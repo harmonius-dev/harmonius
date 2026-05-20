@@ -1013,6 +1013,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_primitives"
+version = "0.1.0"
+dependencies = [
+ "fixedbitset",
+ "glam 0.29.3",
+ "rkyv 0.8.16",
+ "rkyv_derive 0.8.16",
+ "smallvec",
+ "trybuild",
+]
+
+[[package]]
 name = "harmonius_profiler"
 version = "0.1.0"
 
