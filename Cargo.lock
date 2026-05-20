@@ -1003,6 +1003,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_serialize"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "lz4_flex",
+ "rkyv 0.8.16",
+ "rkyv_derive 0.8.16",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "harmonius_shared_messaging_capacities"
 version = "0.1.0"
 
