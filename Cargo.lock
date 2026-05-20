@@ -837,6 +837,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_editor_core_runtime"
+version = "0.1.0"
+
+[[package]]
 name = "harmonius_event_logs"
 version = "0.0.0"
 dependencies = [
