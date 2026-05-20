@@ -6,8 +6,16 @@ started_at: null
 
 # Plan Progress
 
-Per-subsystem rollup of plan work across the Harmonius project. Updated by the phase orchestrator on
-every pass; read by the harmonize master agent to compute the next ready set.
+> **Status banner (2026-05-20).** This rollup was originally driven by the retired `harmonize`
+> master and `plan-orchestrator` workflow described in the event log below. Those orchestrators
+> are no longer in use (see root [AGENTS.md](../../../AGENTS.md)). The current cadence runs
+> through the `workflow` and `artifact` marketplace plugins. The historical event log below is
+> preserved as audit trail; new entries should record actions taken under the current
+> workflow plugin.
+
+Per-subsystem rollup of plan work across the Harmonius project. The current source of truth
+for execution state is the per-plan progress stub in this directory; this rollup summarizes
+those stubs.
 
 ## Subsystems
 

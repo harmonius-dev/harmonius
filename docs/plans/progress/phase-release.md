@@ -6,8 +6,12 @@ started_at: null
 
 # Release Progress
 
-Per-subsystem rollup of release work across the Harmonius project. Updated by the phase orchestrator
-on every pass; read by the harmonize master agent to compute the next ready set.
+> **Status banner (2026-05-20).** This rollup was originally driven by retired `harmonize` and
+> phase-orchestrator agents. The current cadence runs through the `workflow` and `artifact`
+> marketplace plugins (see root [AGENTS.md](../../../AGENTS.md)). The event log below is
+> preserved as audit trail; per-plan progress stubs in this directory are the source of truth.
+
+Per-subsystem rollup of release work across the Harmonius project.
 
 ## Subsystems
 

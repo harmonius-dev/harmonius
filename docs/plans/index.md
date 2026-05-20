@@ -2,18 +2,25 @@
 
 This tree mirrors every primary subsystem design under `docs/design/` (141 plan files) plus
 cross-cutting backlog plans driven by [design-review.md](../design/design-review.md),
-[constraints.md](../design/constraints.md), and
+[constraints.md](../design/constraints.md),
+[canonical-owners.md](../design/canonical-owners.md), and
 [performance-budget.md](../design/performance-budget.md).
 
 Excluded from one-to-one mapping (no code plan): [AGENTS.md](../design/AGENTS.md) (authoring guide),
 [game-framework/test-link.md](../design/game-framework/test-link.md),
 [integration/PROMPT.md](../design/integration/PROMPT.md) (integration prompt template).
 
+See [AGENTS.md](AGENTS.md) for the plan and progress format. Per that guide, plan-body
+`status` describes intent and `progress/PLAN-{slug}.md` is the source of truth for execution
+state. Coverage matrices in [docs/coverage/](../coverage/index.md) read the progress files.
+
 ## How to use
 
 1. Pick a plan ID below; open its progress file first.
 2. Prefer foundation tiers before domain work (see diagram).
 3. Keep transforms pure; push side effects to phase boundaries (Rust + FP discipline).
+4. New work that does not yet have a design lands as a [backlog issue](../backlog/index.md)
+   first; promote to a plan once the design exists.
 
 ## Topological tiers (cornerstones)
 
