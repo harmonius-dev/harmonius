@@ -1083,7 +1083,7 @@ Algorithm reference: Parallel prefix sum / stencil sweep for grid propagation â€
 
 ```rust
 /// GPU compute propagation kernel. Compiled from
-/// an GLSL compute shader via glslc. The grid lives
+/// an GLSL compute shader via naga. The grid lives
 /// in a GpuGrid<T> structured buffer (UAV).
 ///
 /// Use for grids > 256x256. Below that threshold,

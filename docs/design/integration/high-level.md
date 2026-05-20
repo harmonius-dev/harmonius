@@ -576,8 +576,8 @@ flowchart LR
 
     subgraph "Compilation"
         RC[Bundled rustc]
-        glslc[glslc CLI]
-        glslc[glslc]
+        naga[naga in-process]
+        naga[naga]
     end
 
     subgraph "Output"
@@ -597,11 +597,11 @@ flowchart LR
 
     MG --> CG
     CG -->|.rs| RC
-    CG -->|.glsl| glslc
+    CG -->|.glsl| naga
     RC --> DY
-    glslc --> SPIR-V
-    glslc -->|SPIR-V| glslc
-    glslc --> SPIR-V
+    naga --> SPIR-V
+    naga -->|SPIR-V| naga
+    naga --> SPIR-V
 
     style DY fill:#ffa94d,color:#000
     style SPIR-V fill:#4a9eff,color:#fff
@@ -890,6 +890,6 @@ Guidance details:
 | F15 | No reflection; codegen is sole registration | APPLIED | Codegen Compilation Surface |
 | F16 | No HashMap; index-based structures only | APPLIED | classDiagram, no map fields |
 | F17 | ECS-primary; documented exceptions only | APPLIED | Data ownership rule 2 |
-| F18 | GLSL via glslc CLI | APPLIED | Codegen flowchart |
+| F18 | GLSL via in-process `naga` | APPLIED | Codegen flowchart |
 | F19 | Platform I/O assigned to main thread | APPLIED | Data ownership rule 1 |
 | F20 | classDiagram covers all referenced types | APPLIED | Integration data types |

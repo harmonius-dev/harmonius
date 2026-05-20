@@ -432,7 +432,7 @@ AI-assisted development, and planet-scale procedural worlds — without writing 
      for gameplay logic. Logic graphs bypass Rust compilation entirely.
 8. **8** — GPU backend complexity (Vulkan)
    - **Mitigation:** Vulkan-only from day one on all platforms via `ash` and GLSL→SPIR-V via
-     `glslc`.
+     `naga`.
 9. **9** — No-code logic graphs are too slow for real games
    - **Mitigation:** Compile logic graphs to native Rust at build time. Interpret only in the editor
      for hot reload.

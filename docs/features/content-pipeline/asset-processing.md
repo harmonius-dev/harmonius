@@ -91,10 +91,10 @@
 
 | ID       | Feature                                 |
 |----------|-----------------------------------------|
-| F-12.2.9 | glslc Pipeline |
+| F-12.2.9 | naga Pipeline |
 
 1. **F-12.2.9** — Compile the generated GLSL source files (F-12.2.7) into SPIR-V bytecode via the
-   `glslc` CLI subprocess on every platform. `glslc` performs validation, optimization passes
+   `naga` in-process on every platform. `naga` performs validation, optimization passes
    (dead code elimination, constant folding), and reflection (binding layouts, push constant ranges,
    workgroup sizes). Compiled SPIR-V is cached in the shared build cache (F-15.11.2) keyed by the
    GLSL source hash. Compilation errors report the original GLSL line number and the graph node that

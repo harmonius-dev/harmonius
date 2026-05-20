@@ -424,9 +424,9 @@ Companion test cases for [effects.md](effects.md).
 
 1. **#1** — Author shader graph with PBR inputs (albedo, normal, roughness), invoke
    `EffectGraphCompiler` with `PlatformTier::Desktop`
-   - **Expected:** glslc produces SPIR-V bytecode, no errors
+   - **Expected:** naga produces SPIR-V bytecode, no errors
 2. **#2** — Same graph with `PlatformTier::Apple`
-   - **Expected:** glslc -> glslc produces SPIR-V bytecode, no errors
+   - **Expected:** naga -> naga produces SPIR-V bytecode, no errors
 
 ## Integration Tests
 

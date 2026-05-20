@@ -192,7 +192,7 @@ domain or complexity level.
 
 1. ****ContentPipeline.AssetImport**** — Native format ingestion, texture/mesh/audio import,
    validation
-2. ****ContentPipeline.AssetProcessing**** — Shader compilation (glslc),
+2. ****ContentPipeline.AssetProcessing**** — Shader compilation (naga),
    texture compression, mesh optimization
 3. ****ContentPipeline.AssetDatabase**** — Content-addressable storage, metadata, dependency graph,
    incremental builds

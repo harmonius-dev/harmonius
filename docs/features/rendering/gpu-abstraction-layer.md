@@ -106,10 +106,10 @@
    - **Deps:** F-2.1.1, F-2.1.7
    - **Platform:** Generational handles are a Rust-side abstraction. The Vulkan backend translates
      handles to `VkBuffer`, `VkImage`, and related Vulkan types internally.
-3. **F-2.1.15** — GLSL shader sources are compiled to SPIR-V artifacts via the `glslc` CLI
+3. **F-2.1.15** — GLSL shader sources are compiled to SPIR-V artifacts via the `naga` CLI
    subprocess during asset processing. Compiled artifacts are cached keyed by source hash, include
    set, and target profile. Shipping builds ship precompiled SPIR-V and never invoke shader
    compilers at runtime.
    - **Deps:** F-2.1.1, F-2.1.3
-   - **Platform:** All platforms consume SPIR-V produced by `glslc`. Compilers run as CLI
+   - **Platform:** All platforms consume SPIR-V produced by `naga`. Compilers run as CLI
      subprocesses; no runtime compilation in shipping builds.

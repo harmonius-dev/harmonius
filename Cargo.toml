@@ -24,6 +24,7 @@ harmonius_core = { path = "crates/harmonius_core" }
 harmonius_gpu = { path = "crates/harmonius_gpu" }
 harmonius_gpu_runtime = { path = "crates/harmonius_gpu_runtime" }
 harmonius_platform = { path = "crates/harmonius_platform" }
+naga = { version = "24", features = ["glsl-in", "spv-out"] }
 objc2 = "0.6"
 objc2-app-kit = { version = "0.3", features = [
   "NSApplication",

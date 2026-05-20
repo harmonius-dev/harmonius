@@ -33,7 +33,7 @@
 | Dependency        | Source      | Consumed API                     |
 |-------------------|-------------|----------------------------------|
 | PSO cache         | F-2.3.9     | `PsoCache::get_or_build`         |
-| Shader compiler   | F-12.2      | glslc CLI  |
+| Shader compiler   | F-12.2      | naga  |
 | Asset pipeline    | F-12.1      | Bundle packaging, pak format     |
 | Hot-reload proto  | F-1.12      | Shader reload invalidates cache  |
 | Material graph    | F-2.3.5     | Graph compile output             |
@@ -253,8 +253,8 @@ flowchart LR
     MG[Material graphs] --> PK[Collect PermutationKeys]
     PK --> UM[Previous UsageMetrics]
     UM --> PL[Precompile List]
-    PL --> glslc[glslc compile]
-    glslc --> BUN[Bundle rkyv]
+    PL --> naga[naga compile]
+    naga --> BUN[Bundle rkyv]
     BUN --> PAK[shaders.pak]
 ```
 
@@ -271,7 +271,7 @@ sequenceDiagram
     SR->>VB: lookup
     VB-->>SR: miss
     SR->>ODC: compile(key)
-    ODC->>ODC: glslc subprocess
+    ODC->>ODC: naga in-process compilation
     ODC-->>SR: bytecode
     SR->>PC: get_or_build(desc)
     PC-->>RT: PsoHandle

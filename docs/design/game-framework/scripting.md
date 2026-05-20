@@ -190,7 +190,7 @@ graph TD
 ### Compilation pipeline
 
 The visual editor produces a serialized graph asset. The compiler transforms it through several
-stages into generated Rust or GLSL source, which `rustc` or `glslc` compiles into the middleman
+stages into generated Rust or GLSL source, which `rustc` or `naga` compiles into the middleman
 `.dylib` or shader binary. `GraphProgram` is a function-pointer table loaded from the `.dylib`.
 
 ```mermaid
@@ -203,7 +203,7 @@ flowchart LR
     F -->|CompileTarget::Rust| G[Rust source emit]
     F -->|CompileTarget::Glsl| H[GLSL source emit]
     G --> I[rustc → middleman .dylib]
-    H --> J[glslc → SPIR-V / SPIR-V]
+    H --> J[naga → SPIR-V / SPIR-V]
     I --> K[GraphProgram fn-ptr table]
     J --> L[Shader binary]
 
@@ -1143,7 +1143,7 @@ impl GraphProfiler {
 ### Logic graph compiler
 
 The `LogicGraphCompiler` (distinct from the shader `GraphCompiler` in algorithms.md) transforms
-visual graph assets into Rust or GLSL source, then invokes `rustc` or `glslc` to produce the final
+visual graph assets into Rust or GLSL source, then invokes `rustc` or `naga` to produce the final
 artifact. `IrNodeKind` is a codegen'd enum in the middleman — plugin node types are added by
 recompiling the middleman (RF-14). No `TypeRegistry` — type descriptors come from codegen'd
 `TypeDescriptors` in the middleman (RF-3).
@@ -1208,7 +1208,7 @@ impl LogicGraphCompiler {
     /// 8. Sandbox validation (RF-27)
     /// 9. Target-specific validation (RF-26)
     /// 10. Rust or GLSL source emit (RF-2)
-    /// 11. rustc / glslc invocation
+    /// 11. rustc / naga invocation
     /// 12. Load fn-ptr table from .dylib
     /// 13. Debug info emission (if enabled)
     pub fn compile(
@@ -1245,7 +1245,7 @@ pub enum CompileError {
         node: NodeId,
         type_name: String,
     },
-    /// rustc or glslc invocation failed.
+    /// rustc or naga invocation failed.
     CodegenFailed { stderr: String },
 }
 ```

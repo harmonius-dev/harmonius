@@ -195,8 +195,6 @@ not manually rewrap prose — let rumdl handle it.
 The update script installs these via `apt-get`:
 
 - `libvulkan-dev` — Vulkan headers for `ash` crate
-- `glslang-tools` — `glslangValidator` for GLSL→SPIR-V
-  shader compilation in `crates/harmonius_app/build.rs`
 - `mesa-vulkan-drivers` — lavapipe software Vulkan ICD
   for headless rendering (no GPU required)
 

@@ -30,7 +30,7 @@ See those files for the full test case definitions until migration is complete.
 | TC-15.8.12.3 | R-15.8.12 | Subgraph inlining |
 | TC-15.8.12.4 | R-15.8.12 | Monomorphization |
 | TC-15.8.5.1 | R-15.8.5a | Shader graph GLSL emit |
-| TC-15.8.5.2 | R-15.8.5b | Shader compile glslc |
+| TC-15.8.5.2 | R-15.8.5b | Shader compile naga |
 | TC-15.8.5.3 | R-15.8.5c | Material PBR template |
 | TC-15.8.13.1 | R-15.8.13 | Graph two-way diff |
 | TC-15.8.13.2 | R-15.8.13 | Graph three-way merge |

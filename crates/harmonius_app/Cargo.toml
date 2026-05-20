@@ -19,3 +19,4 @@ harmonius_gpu.workspace = true
 harmonius_platform.workspace = true
 
 [build-dependencies]
+naga.workspace = true

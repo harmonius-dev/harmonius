@@ -36,7 +36,7 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-12.2.8.3   | `test_dep_graph_impact_analysis`    | R-12.2.8  |
 | TC-12.2.9.1   | `test_dxc_dxil_compile`             | R-12.2.9  |
 | TC-12.2.9.2   | `test_dxc_spirv_compile`            | R-12.2.9  |
-| TC-12.2.9.3   | `test_glslc_spirv`    | R-12.2.9  |
+| TC-12.2.9.3   | `test_naga_spirv`    | R-12.2.9  |
 | TC-12.2.9.4   | `test_dxc_dead_code_elimination`    | R-12.2.9  |
 | TC-12.2.9.5   | `test_dxc_error_line_mapping`       | R-12.2.9  |
 | TC-12.5.1.1   | `test_vfs_unified_namespace`        | R-12.5.1  |
@@ -148,7 +148,7 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
 20. **TC-12.2.7.1** `test_shader_graph_to_hlsl` — Compile a 3-node graph (texture sample → tint →
     output). Assert generated GLSL contains a `main()` entry point and a `Texture2D` declaration.
     - Input: graph `{ TextureSample("Albedo") → Multiply([1,0,0,1]) → Output }`
-    - Expected: GLSL string contains `Texture2D Albedo`, contains `float4 main`, compiles via glslc
+    - Expected: GLSL string contains `Texture2D Albedo`, contains `float4 main`, compiles via naga
 
 21. **TC-12.2.7.2** `test_shader_graph_no_template_marker` — Generated GLSL must not contain `{{`,
     `}}`, `<%`, `%>`, or any other template marker.
@@ -180,20 +180,20 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Input: 4-node DAG
     - Expected: returned set equals `{Mat1, Mat2, Scn}`
 
-27. **TC-12.2.9.1** `test_dxc_dxil_compile` — Run glslc CLI on a trivial pixel shader. Assert output
+27. **TC-12.2.9.1** `test_dxc_dxil_compile` — Run naga on a trivial pixel shader. Assert output
     is SPIR-V bytecode beginning with magic `BC\xC0\xDE`.
     - Input: `float4 main() : SV_Target { return float4(1,0,0,1); }`, target `ps_6_0`
-    - Expected: glslc subprocess exit 0, output starts with SPIR-V magic bytes
+    - Expected: naga in-process compilation exit 0, output starts with SPIR-V magic bytes
 
 28. **TC-12.2.9.2** `test_dxc_spirv_compile` — Same shader, target SPIR-V. Assert output starts with
     magic `0x07230203`.
-    - Input: same shader, glslc flag `-spirv`
+    - Input: same shader, naga flag `-spirv`
     - Expected: first u32 of output == `0x07230203`
 
-29. **TC-12.2.9.3** `test_glslc_spirv` — Run glslc on a SPIR-V blob.
-    Assert output is a valid SPIR-V module (header magic `MTLB`).
+29. **TC-12.2.9.3** `test_naga_spirv` — Compile GLSL to SPIR-V via naga. Assert output starts with
+    SPIR-V magic `0x07230203`.
     - Input: SPIR-V bytes from TC-12.2.9.1
-    - Expected: subprocess exit 0, output bytes contain `b"MTLB"` near start
+    - Expected: valid SPIR-V header `0x07230203` near start
 
 30. **TC-12.2.9.4** `test_dxc_dead_code_elimination` — Compile a shader with an unreachable branch.
     Reflect the bytecode; assert the dead branch's instructions are absent.
@@ -330,10 +330,10 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
 
 3. **TC-12.2.I.3** `test_shader_graph_full_pipeline` — Compile a 20-node shader graph end-to-end:
    graph → GLSL → SPIR-V → SPIR-V. Assert the final SPIR-V module loads on Vulkan and the GLSL
-   roundtrips through glslc with no warnings.
+   roundtrips through naga with no warnings.
    - Input: 20-node PBR shader graph
    - Expected: all 3 outputs present in CAS, GLSL passes IDE-compatible parse, no template markers,
-     glslc warnings == 0
+     naga warnings == 0
 
 4. **TC-12.2.I.4** `test_texture_processor_per_target` — Process a single 1K texture with three
    `PlatformProfile` targets. Assert three distinct `ArtifactKey`s are produced.
@@ -459,7 +459,7 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
 24. **TC-12.2.I.24** `us_eng_shader_reflection_all_backs` — As an engine developer, compile one GLSL
     source through the pipeline to SPIR-V. Assert reflection data extracted from each
     backend reports identical binding layouts and push-constant ranges.
-    - Input: single PBR GLSL source, glslc → SPIR-V, glslc → SPIR-V, glslc → SPIR-V
+    - Input: single PBR GLSL source, naga → SPIR-V, naga → SPIR-V, naga → SPIR-V
     - Expected: all three reflections contain the same descriptor-set/binding tuples and
       push-constant ranges; no mismatches
 
@@ -575,8 +575,9 @@ Test case IDs use `TC-12.2.Z.N` format. Every row links to a specific R-X.Y.Z or
 3. **TC-12.2.B.3** — Partition a 50k-triangle LOD0 mesh into meshlets (64v/124t bounds) and compute
    per-meshlet AABB and normal cones. Wall time end-to-end.
 
-4. **TC-12.2.B.4** — Cold compile of a 20-node shader graph: graph → GLSL → glslc subprocess →
-   SPIR-V. Wall time from `process()` to artifact stored in CAS. Excludes glslc compile stage.
+4. **TC-12.2.B.4** — Cold compile of a 20-node shader graph: graph → GLSL → naga in-process
+   compilation → SPIR-V. Wall time from `process()` to artifact stored in CAS. Excludes naga compile
+   stage.
 
 5. **TC-12.2.B.5** — Re-process the same shader graph with cache populated. Wall time should be
    bounded by cache lookup + metadata load only.

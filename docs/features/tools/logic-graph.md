@@ -64,9 +64,9 @@
    utility, flow control). Shader graphs validate stage-specific constraints (e.g., vertex outputs
    must include position).
    - **Deps:** F-15.8.1, F-15.8.2, F-2.1.1 (GPU Abstraction)
-2. **F-15.8.5b** — The shader graph compiles to GLSL, which `glslc` compiles to SPIR-V via CLI
-   subprocess on every platform. GLSL is the sole shader intermediate language. Compilation errors
-   map back to the originating graph node.
+2. **F-15.8.5b** — The shader graph compiles to GLSL, which `naga` compiles to SPIR-V in-process on
+   every platform. GLSL is the sole shader intermediate language. Compilation errors map back to the
+   originating graph node.
    - **Deps:** F-15.8.5a
    - **Platform:** SPIR-V output on all targets (Vulkan 1.4+)
 3. **F-15.8.5c** — Material graphs are a specialized shader graph variant with PBR inputs (base

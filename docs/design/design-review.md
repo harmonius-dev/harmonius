@@ -485,7 +485,7 @@ editor-as-plugin-host architecture are all sound choices.
   `EventBridge`. Concurrent play-in-editor will race.
 - Save system is codegen-coupled: if codegen changes a component layout, saves break, and the
   migration is *also* codegen, producing a chicken/egg problem.
-- Shader compilation (glslc) is described independently in
+- Shader compilation (naga) is described independently in
   `asset-processing.md`, `visual-editors.md`, and `build-deploy.md`. Three call sites, one canonical
   service needed.
 - Codegen ownership: `scripting.md` and `visual-editors.md` both claim parts of the codegen
@@ -502,9 +502,9 @@ is ~90%. The high-level doc is an actually-useful glue layer.
   sequence diagrams, MPSC specs, and fallbacks like the other pairs.
 - Several integration docs overspecify implementation (e.g., `ai-grids-volumes.md` contains
   `enqueue_influence_write()` pseudocode that belongs in grids-volumes itself;
-  `asset-pipeline-rendering.md` contains glslc subprocess launch code that belongs in tools). Move
-  implementation into subsystem designs; integration docs should carry the **contract**, not the
-  implementation.
+  `asset-pipeline-rendering.md` contains naga in-process compilation launch code that belongs in
+  tools). Move implementation into subsystem designs; integration docs should carry the
+  **contract**, not the implementation.
 - Missing pairs (present in high-level but not fully documented): `audio-physics`, `ai-physics`,
   `ui-physics`, `save-system-profiler`, `vfx-audio`, `geometry-vfx`, `attributes-rendering`,
   `event-logs-animation`, `editor-core-runtime`, `editor-asset-pipeline`, `localization-*` (per
@@ -623,7 +623,7 @@ file(s) to touch and a one-sentence "done when" criterion.
 35. **Move implementation pseudocode out of integration docs** into subsystem designs:
     `ai-grids-volumes` (drain loop → grids-volumes), `animation-rendering` (GpuSkinner dispatch →
     rendering), `attributes-effects-*` (sync loops → attributes/effects), `asset-pipeline-rendering`
-    (glslc subprocess → tools/build-deploy).
+    (naga in-process compilation → tools/build-deploy).
 36. **Specify skinning weight format** (`[u8;4]` bones + quantized weights, palette layout) in
     `animation/skeletal.md`.
 37. **Specify cloth constraint types and fracture pattern format** in `physics/advanced.md`.

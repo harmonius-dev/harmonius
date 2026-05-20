@@ -14,18 +14,18 @@
 | ID | Requirement | Systems |
 |----|-------------|---------|
 | IR-5.2.1 | Shader graph compiles to GLSL via codegen | Processing, Rendering |
-| IR-5.2.2 | glslc CLI produces SPIR-V from GLSL | Processing, Render Pipeline |
-| IR-5.2.3 | glslc produces SPIR-V module | Processing, Render Pipeline |
+| IR-5.2.2 | naga produces SPIR-V from GLSL | Processing, Render Pipeline |
+| IR-5.2.3 | naga produces SPIR-V module | Processing, Render Pipeline |
 | IR-5.2.4 | Texture processor outputs GPU-ready formats | Processing, Rendering |
 | IR-5.2.5 | Mesh processor outputs meshlet buffers | Processing, Rendering |
 | IR-5.2.6 | Shader hot-reload swaps pipeline state | Pipeline, Render Pipeline |
 | IR-5.2.7 | Streaming delivers mips/LODs to GPU memory | Pipeline, Rendering |
 
 This design follows the cross-cutting conventions in [shared-conventions.md](shared-conventions.md);
-only deviations are called out below. Shader compilation subprocess details (glslc invocation, glslc
-invocation, pipe polling, error capture) live in `tools/build-deploy.md` and
-`content-pipeline/asset-processing.md`. This integration defines only the GLSL source -> compiled
-bytecode contract and the CAS cache layout.
+only deviations are called out below. Shader compilation details (naga invocation invocation, pipe
+polling, error capture) live in `tools/build-deploy.md` and `content-pipeline/asset-processing.md`.
+This integration defines only the GLSL source -> compiled bytecode contract and the CAS cache
+layout.
 
 1. **IR-5.2.1** -- The `ShaderGraphProcessor` emits one GLSL source file per shader stage (vertex,
    pixel, compute, mesh). Output is a UTF-8 string buffer passed to the shader compiler service.
@@ -573,8 +573,8 @@ sequenceDiagram
     participant W as Worker Thread [W]
     participant M as Main Thread [M]
     participant FW as File Watcher [M]
-    participant glslc as glslc CLI subprocess
-    participant glslc as glslc subprocess
+    participant Naga as naga in-process compilation
+    participant Naga as naga in-process compilation
     participant CAS as CAS Cache
     participant R as Render Thread [Core-pinned]
     participant GPU as GPU
@@ -584,10 +584,10 @@ sequenceDiagram
     W->>W: codegen GLSL source
     W->>M: compile request (MPSC, cap=64)
     Note over M: Main thread owns subprocess
-    M->>glslc: spawn subprocess (stdin: GLSL)
-    glslc-->>M: SPIR-V + SPIR-V (stdout, poll via OS loop)
-    M->>glslc: spawn subprocess (stdin: SPIR-V)
-    glslc-->>M: SPIR-V module (stdout, poll via OS loop)
+    M->>Naga: compile in-process (GLSL)
+    Naga-->>M: SPIR-V + SPIR-V (stdout, poll via OS loop)
+    M->>Naga: spawn subprocess (stdin: SPIR-V)
+    Naga-->>M: SPIR-V module (stdout, poll via OS loop)
     M->>W: compile result (MPSC, cap=64)
     W->>CAS: store all variants (rkyv mmap write)
     W->>R: pipeline command (MPSC, cap=128)
@@ -596,7 +596,7 @@ sequenceDiagram
     W->>UI: ShaderReloadStatus update (MPSC, cap=32)
     UI->>UI: render progress indicator
 
-    Note over FW,UI: Hot-reload: FW[M] detects change,<br/>then same flow from M->>glslc
+    Note over FW,UI: Hot-reload: FW[M] detects change,<br/>then same flow from M->>Naga
 ```
 
 ### Mip/LOD Streaming (IR-5.2.7)
@@ -659,7 +659,7 @@ sequenceDiagram
 | Data | Thread | Access |
 |------|--------|--------|
 | File watcher | Main | Detects GLSL changes |
-| glslc / glslc subprocess | Main | Spawns + polls stdout |
+| naga / naga in-process compilation | Main | Compiles in-process |
 | Platform I/O (io_uring/IOCP/GCD) | Main | Submits + polls |
 | `StreamRequestTable` | Main | Writes state transitions |
 | `ShaderReloadStatus` | Worker (ECS write) | ECS resource |
@@ -673,10 +673,10 @@ sequenceDiagram
 
 1. **Main thread** -- file watcher detects GLSL change. Publishes `ShaderReloadStatus::Compiling`
    via `reload_status_updates` channel.
-2. **Main thread** -- spawns `glslc` subprocess (`std::process::Command`). Polls stdout/exit in the
+2. **Main thread** -- invokes `naga` in-process (`std::process::Command`). Polls stdout/exit in the
    OS event loop alongside all other platform I/O.
-3. **Main thread** -- on glslc success, sends compiled bytecode to worker via
-   `shader_compile_results` channel. On glslc failure, publishes
+3. **Main thread** -- on naga success, sends compiled bytecode to worker via
+   `shader_compile_results` channel. On naga failure, publishes
    `ShaderReloadStatus::Failed { error_count }`; the error is read by the editor overlay system on
    its next tick. The previously published `PipelineStateHandle` remains valid and is retained by
    the render thread.
@@ -710,8 +710,8 @@ All asset-pipeline rendering debug tools are runtime-toggleable via the debug to
 
 | Failure | Impact | Recovery |
 |---------|--------|----------|
-| glslc compile error | Shader variant missing | Keep old pipeline; emit `ShaderReloadUiEvent::Failed` |
-| glslc translation error | No SPIR-V module for variant | Fall back to previous SPIR-V module handle |
+| naga compile error | Shader variant missing | Keep old pipeline; emit `ShaderReloadUiEvent::Failed` |
+| naga compile error | No SPIR-V module for variant | Fall back to previous SPIR-V module handle |
 | Texture format unsupported | Black texture | Fall back to `Rgba8UnormFallback` |
 | Meshlet build fails | Mesh not renderable | Log error; exclude from draw list |
 | Streaming I/O error | Missing mip/LOD | Retry up to 3x; fall back to lowest resident mip |
@@ -720,10 +720,10 @@ All asset-pipeline rendering debug tools are runtime-toggleable via the debug to
 | CAS cache corruption | Variant miss | Recompile from source on next load |
 | mmap alignment check fails | Asset rejected | Emit load error; show red placeholder |
 
-### Error Propagation for glslc
+### Error Propagation for naga
 
 The `ShaderReloadUiEvent` carries the compile error as a `SmolStr` message and an error count. The
-sequence is: main thread reads glslc stderr to a string, pushes
+sequence is: main thread reads naga diagnostics to a string, pushes
 `ShaderReloadStatus::Failed { error_count }` plus the error string via the `reload_status_updates`
 MPSC channel, the worker ECS system writes the status to the ECS resource, and the editor overlay
 widget reads the resource on its next tick and displays the error icon with a hover tooltip
@@ -734,11 +734,11 @@ resource as a `SmolStr` (inline up to 22 bytes, heap for longer).
 
 | Platform | Shader backend | Preferred texture | Meshlet support |
 |----------|---------------|-------------------|-----------------|
-| Windows (Vulkan) | SPIR-V via glslc | BC7 | Mesh shaders |
-| macOS (Vulkan) | SPIR-V via glslc | ASTC 4x4 | Object shaders |
-| iOS (Vulkan) | SPIR-V via glslc | ASTC 4x4 | Object shaders |
-| Linux (Vulkan) | SPIR-V via glslc | BC7 | Mesh shaders |
-| Android (Vulkan) | SPIR-V via glslc | ASTC 4x4 / ETC2 | Emulated (indirect draw) |
+| Windows (Vulkan) | SPIR-V via naga | BC7 | Mesh shaders |
+| macOS (Vulkan) | SPIR-V via naga | ASTC 4x4 | Object shaders |
+| iOS (Vulkan) | SPIR-V via naga | ASTC 4x4 | Object shaders |
+| Linux (Vulkan) | SPIR-V via naga | BC7 | Mesh shaders |
+| Android (Vulkan) | SPIR-V via naga | ASTC 4x4 / ETC2 | Emulated (indirect draw) |
 
 ### Apple Platforms (macOS/iOS)
 
@@ -767,7 +767,7 @@ for profiling via `debug.meshlet_emulation`.
 
 See companion [asset-pipeline-rendering-test-cases.md](asset-pipeline-rendering-test-cases.md). All
 integration tests are CI-runnable without hardware GPU requirements where possible -- GPU-dependent
-tests are marked and run on the GPU test runners. Negative tests cover glslc failure, texture format
+tests are marked and run on the GPU test runners. Negative tests cover naga failure, texture format
 unsupported, meshlet build failure, streaming I/O error, mmap alignment failure, and stale
 generational handle access.
 
@@ -787,7 +787,7 @@ generational handle access.
 | 4 | `ShaderReflection` pseudocode defined | APPLIED |
 | 5 | `StreamHandle` + `StreamRequestTable` pseudocode defined | APPLIED |
 | 6 | `PipelineStateHandle` + `PipelineStateTable` pseudocode defined | APPLIED |
-| 7 | Hot-reload threading model explicit (main spawns glslc) | APPLIED |
+| 7 | Hot-reload threading model explicit (main spawns naga) | APPLIED |
 | 8 | Sequence diagram annotates thread ownership `[M]`/`[W]` | APPLIED |
 | 9 | 2D/2.5D intentionally out of scope | ACKNOWLEDGED |
 | 10 | IR-5.2.7 streaming sequence diagram | APPLIED |
@@ -798,7 +798,7 @@ generational handle access.
 | 15 | Apple ASTC applies to all Apple platforms | APPLIED |
 | 16 | ECS request/handle pattern documented | APPLIED |
 | 17 | Per-IR detail descriptions expanded | APPLIED |
-| 18 | glslc error propagation to overlay UI documented | APPLIED |
+| 18 | naga error propagation to overlay UI documented | APPLIED |
 
 1. Replaced `Vec<u8>` with `rkyv::vec::ArchivedVec<u8>` for `CompiledShader.bytecode`, with a
    16-byte aligned `archive_attr(repr(C, align(16)))` so the GPU driver can read the blob in place
@@ -816,7 +816,7 @@ generational handle access.
    main thread with `submit`, `poll`, `mark_ready`, `mark_failed`.
 6. `PipelineStateHandle` (generational index), `PipelineStateDesc`, and `PipelineStateTable`
    interface-level pseudocode are defined, showing `publish`, `resolve`, `lookup_by_variant`.
-7. Hot-reload section now names every thread. Main thread owns the file watcher, the glslc
+7. Hot-reload section now names every thread. Main thread owns the file watcher, the naga
    subprocess, and the stdout poll. Worker thread receives bytecode via MPSC, builds the descriptor,
    and publishes via a second MPSC channel to the render thread.
 8. The shader compilation sequence diagram annotates every participant with `[M]`, `[W]`, or
@@ -840,5 +840,5 @@ generational handle access.
     resource, and how systems obtain generational `AssetHandle<T>` values synchronously.
 17. Added a numbered per-IR detail description list expanding each IR with algorithm references
     (`meshopt_buildMeshlets`, `ispc_texcomp`, `astcenc`) and explicit thread ownership.
-18. glslc error propagation section describes the full path from stderr capture to the editor
+18. naga error propagation section describes the full path from stderr capture to the editor
     overlay `ShaderReloadUiEvent`, using a `SmolStr` error message copied into the ECS resource.

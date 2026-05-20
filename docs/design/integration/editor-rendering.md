@@ -437,8 +437,8 @@ it at the next frame boundary.
 
 ## Shader Interfaces
 
-All editor shaders are written in GLSL and compiled via the `glslc` CLI (to SPIR-V / SPIR-V) and
-`glslc` (to SPIR-V) per the CLI shader tools decision. The interfaces below document the GLSL
+All editor shaders are written in GLSL and compiled via the `naga` CLI (to SPIR-V / SPIR-V) and
+`naga` (to SPIR-V) per the bundled `naga` decision. The interfaces below document the GLSL
 signatures; implementation lives in the rendering core.
 
 ### Selection outline (Sobel edge-detect)
@@ -684,9 +684,9 @@ Targets measured on the reference hardware profile defined in
 
 | Platform | Outline technique | Grid rendering | Shader IL |
 |----------|-------------------|----------------|-----------|
-| Windows (Vulkan) | Stencil + Sobel compute | Infinite grid shader | SPIR-V via `glslc` |
+| Windows (Vulkan) | Stencil + Sobel compute | Infinite grid shader | SPIR-V via `naga` |
 | macOS (Vulkan) | Stencil + Sobel compute | Infinite grid shader | SPIR-V via CLI |
-| Linux (Vulkan) | Stencil + Sobel compute | Infinite grid shader | SPIR-V via `glslc` |
+| Linux (Vulkan) | Stencil + Sobel compute | Infinite grid shader | SPIR-V via `naga` |
 
 All three backends share the same GLSL source, compiled via CLI tools. The render graph abstracts
 the backend-specific command buffer APIs, so the editor integration sees a single interface.
@@ -767,8 +767,8 @@ None at this time. All review items have been resolved.
 10. BVH rebuild runs on the worker thread during `PostUpdate` after transform edits. Documented in
     the BVH rebuild trigger subsection.
 11. `BufferVisMode` and `GizmoShape` and `RenderPath` and `RenderPhase` are `#[non_exhaustive]`.
-12. Platform Considerations table adds per-backend shader IL compilation (`glslc` for SPIR-V,
-    `glslc` for SPIR-V) and confirms the render graph abstraction.
+12. Platform Considerations table adds per-backend shader IL compilation (`naga` for SPIR-V,
+    `naga` for SPIR-V) and confirms the render graph abstraction.
 13. `RenderLayers` added as a `u32` bitmask with named constants for gameplay, gizmos, grid, and
     outline layers. `EditorViewport` and `EditorRenderView` both carry a `RenderLayers` field.
 14. Companion test cases file adds negative tests for all failure modes, IR coverage, and

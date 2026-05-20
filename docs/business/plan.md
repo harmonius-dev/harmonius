@@ -227,10 +227,10 @@ Requires specific Wave 2 nodes. 12 feature-groups can proceed concurrently.
 
 1. **Render graph pass API** — How to declare passes, read/write resources, submit commands
 
-**Exit criteria:** Render graph executes passes with automatic barriers, shaders compile via
-glslc/glslc, assets stream from disk, input actions map to gameplay, spatial audio occludes,
-animation state machines transition, joints constrain bodies, NavMesh generates and pathfinds,
-components replicate over network, meshlets render, widget tree lays out, particles simulate on GPU.
+**Exit criteria:** Render graph executes passes with automatic barriers, shaders compile via naga,
+assets stream from disk, input actions map to gameplay, spatial audio occludes, animation state
+machines transition, joints constrain bodies, NavMesh generates and pathfinds, components replicate
+over network, meshlets render, widget tree lays out, particles simulate on GPU.
 
 ---
 

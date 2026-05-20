@@ -88,14 +88,13 @@
 
 ## Shader Bytecode Compilation
 
-9. **R-12.2.9** — The engine **SHALL** compile generated GLSL source files into platform-native
-   bytecode using glslc for GLSL-to-SPIR-V and GLSL-to-SPIR-V, and glslc for SPIR-V-to-SPIR-V. glslc
-   **SHALL** perform validation, optimization (dead code elimination, constant folding), and
-   reflection (binding layouts, push constant ranges, workgroup sizes). Compiled bytecode **SHALL**
-   be cached by GLSL source hash in the shared build cache (F-15.11.2). Compilation errors **SHALL**
-   report the original GLSL line number and the graph node that generated it.
-   - **Rationale:** glslc are industry-standard compilers producing
-     optimized output with full reflection data for all target APIs.
+9. **R-12.2.9** — The engine **SHALL** compile generated GLSL source files to SPIR-V via the bundled
+   `naga` crate (`glsl-in`, `spv-out`). `naga` **SHALL** validate modules before SPIR-V emission.
+   Compiled bytecode **SHALL** be cached by GLSL source hash in the shared build cache (F-15.11.2).
+   Compilation errors **SHALL** report the original GLSL line number and the graph node that
+   generated it.
+   - **Rationale:** `naga` is the bundled compiler producing SPIR-V for the Vulkan backend without
+     external toolchain dependencies.
    - **Verification:** Compile a shader with dead code and constants; confirm dead code is removed
      and constants are folded; confirm reflected binding layouts match the source; validate each
      output on its target API.

@@ -962,7 +962,7 @@ can exploit.
    CPU. Our test suite catches regressions via benchmark targets with automated CI.
 
 6. **Shader iteration speed** — UE5 has painful shader compilation cycles. Our hot-reload (file
-   watch → glslc subprocess → PSO swap) targets < 2 s shader iteration.
+   watch → naga in-process compilation → PSO swap) targets < 2 s shader iteration.
 
 7. **Nanite overhead on simple meshes** — Nanite adds overhead on low-poly assets. Our meshlet
    system only activates on meshes with sufficient triangle density; simple meshes use standard

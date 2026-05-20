@@ -107,7 +107,7 @@
 | US-12.2.17 | build engineer (P-16)      |
 
 1. **US-12.2.15** — **As an** engine developer (P-26), **I want** generated GLSL compiled to SPIR-V,
-   SPIR-V, and SPIR-V via glslc with full reflection data, **so that** binding
+   SPIR-V, and SPIR-V via naga with full reflection data, **so that** binding
    layouts and push constant ranges are extracted automatically.
 2. **US-12.2.16** — **As a** technical artist (P-13), **I want** shader compilation errors to report
    both the GLSL line number and the originating graph node, **so that** I can click through from an

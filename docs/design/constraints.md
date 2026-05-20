@@ -22,7 +22,7 @@ engine.
 | Backend | Language | FFI Surface |
 |---------|----------|-------------|
 | Vulkan | Rust | `ash` (thin Vulkan bindings) |
-| glslc | CLI | `glslc` subprocess (offline + hot-reload) |
+| naga | Rust | bundled crate (build, asset cook, hot-reload) |
 | Win32 | Rust | `windows-rs` |
 | NSWindow / AppKit | Rust | `objc2-app-kit` bindings |
 | X11 | Rust | `x11rb` |
@@ -33,10 +33,10 @@ engine.
 | Constraint | Detail |
 |------------|--------|
 | Shader IL | GLSL is the sole shader intermediate language |
-| GLSL → SPIR-V | `glslc` CLI invoked as subprocess |
+| GLSL → SPIR-V | `naga` (`glsl-in`, `spv-out`) in-process |
 
-No embedded shader compiler libraries. All shader compilation is offline (asset processing time) or
-via subprocess calls for hot-reload.
+`naga` is the bundled GLSL→SPIR-V compiler. Shader compilation is offline (asset processing, build
+scripts) or in-process on the main thread for hot-reload. No external shader compiler executables.
 
 ## Threading Model
 
@@ -129,7 +129,7 @@ Three thread roles communicate via crossbeam-channel. No shared mutable state.
     internally by the rendering backend.
   - **Windowing and platform event loops.** OS event loops are not ECS systems but forward events
     into ECS.
-  - **Shader compilation pipeline.** CLI subprocess invocations are not ECS systems.
+  - **Shader compilation pipeline.** In-process `naga` compilation is not an ECS system.
   - **Asset processing internals.** Import and processing pipelines manage internal state but expose
     results as ECS components.
 - **Spatial indices.** Three spatial structures serve different subsystems:

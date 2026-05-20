@@ -137,7 +137,7 @@
    implement any shading model — procedural wood grain, animated lava, holographic displays, energy
    shields, magic effects, terrain blend materials — without engine source modification. Material
    functions (reusable sub-graphs) compose into complex materials. The graph compiles to GLSL, which
-   glslc compiles to SPIR-V, and glslc compiles GLSL to SPIR-V
+   naga compiles to SPIR-V, and naga compiles GLSL to SPIR-V
    This provides Unreal Engine Material Editor-level flexibility within the no-code visual authoring
    workflow. F-2.10.5 (Material Parameter Binding)
    - **Deps:** F-15.8.5 (Shader and Material Graphs), F-12.2.9 (Shader Compilation Pipeline),

@@ -68,7 +68,7 @@
    vertex, fragment, and compute stages, **so that** I create GPU shaders without writing GLSL.
 
 10. **US-15.8.5.2** — **As a** technical artist (P-13), **I want** shader graphs to compile through
-    the glslc/glslc pipeline producing SPIR-V, **so that** shaders
+    the naga pipeline producing SPIR-V, **so that** shaders
     work on all GPU backends.
 
 11. **US-15.8.5.3** — **As a** technical artist (P-13), **I want** a material graph variant with PBR

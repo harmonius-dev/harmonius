@@ -72,10 +72,10 @@
     automatically in debug builds, **so that** Vulkan API misuse is caught during development.
 
 11. **US-2.1.6.1** — **As a** engine developer (P-26), **I want** SPIR-V shaders loaded from
-    offline `glslc` output, **so that** shipping builds never invoke a shader compiler at runtime.
+    offline `naga` output, **so that** shipping builds never invoke a shader compiler at runtime.
 
 12. **US-2.1.6.2** — **As a** engine developer (P-26), **I want** shader hot-reload to re-run
-    `glslc` as a subprocess when GLSL sources change, **so that** iteration does not require a full
+    `naga` as a subprocess when GLSL sources change, **so that** iteration does not require a full
     rebuild.
 
 13. **US-2.1.7.1** — **As a** engine developer (P-26), **I want** a GPU heap sub-allocator that

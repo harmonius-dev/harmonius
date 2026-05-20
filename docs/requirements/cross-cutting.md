@@ -298,14 +298,14 @@ threading, error handling, determinism, and other concerns that no single domain
      adaptation algorithms.
    - **Verification:** Integration test: send voice packets over a simulated 100ms jitter link;
      verify packets pass through exactly one buffer (audio) and arrive with latency under 200ms.
-4. **R-X.9.4** — The shader graph system **SHALL** compile material and shader graphs to GLSL, which
-   the `glslc` CLI compiles to SPIR-V. GLSL is the sole shader intermediate language. WGSL **SHALL
-   NOT** be generated as web is not a target platform. All shader compilation paths **SHALL** use
-   `glslc` invoked as a CLI subprocess on every platform.
-   - **Rationale:** GLSL is the universal shader source format. `glslc` provides industry-standard
-     compilation to SPIR-V for the Vulkan backend.
+4. **R-X.9.4** — The shader graph system **SHALL** compile material and shader graphs to GLSL,
+   which the bundled `naga` crate (`glsl-in`, `spv-out`) compiles to SPIR-V in-process. GLSL is the
+   sole shader intermediate language. WGSL **SHALL NOT** be generated as web is not a target
+   platform. No external shader compiler executables **SHALL** be required on PATH.
+   - **Rationale:** GLSL is the universal shader source format. `naga` provides bundled
+     GLSL→SPIR-V compilation for the Vulkan backend on every platform.
    - **Verification:** Build test: compile all engine shaders; verify GLSL is the sole intermediate
-     format and `glslc` produces valid SPIR-V for every target.
+     format and `naga` produces valid SPIR-V for every target.
 5. **R-X.9.5** — All user-facing authoring surfaces — gameplay logic, material graphs, animation
    state machines, VFX effect graphs, audio mixing, AI behavior trees, UI layout, quest/dialogue
    trees, formula definitions, and gesture recognition — **SHALL** be authored exclusively through

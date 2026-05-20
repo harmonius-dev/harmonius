@@ -1892,8 +1892,8 @@ atlases are generated at asset build time.
 
 ### GLSL Shader Pipeline
 
-All UI shaders are authored in GLSL and compiled via the standard glslc CLI pipeline
-(constraints.md). No embedded shader compilation at runtime.
+All UI shaders are authored in GLSL and compiled via the standard naga pipeline (constraints.md). No
+embedded shader compilation at runtime.
 
 | Shader | File | Notes |
 |--------|------|-------|
@@ -1903,8 +1903,8 @@ All UI shaders are authored in GLSL and compiled via the standard glslc CLI pipe
 | CVD post-process | `ui_cvd.glsl` | Colorblind deficiency color matrix |
 | Vector path | `ui_vector.glsl` | SDF distance field vector shapes |
 
-All shaders are compiled offline by the content pipeline. Hot-reload invokes `glslc` and `glslc` as
-subprocesses (constraints.md Shader Pipeline).
+All shaders are compiled offline by the content pipeline. Hot-reload invokes `naga` and `naga` as
+in-process compilation (constraints.md Shader Pipeline).
 
 ### Algorithm References
 
@@ -2236,9 +2236,9 @@ and "Console" cover. Add Switch-specific considerations (touch screen when undoc
 
 ### RF-13: GLSL shader pipeline for UI shaders [APPLIED]
 
-Neither document mentions GLSL, glslc, or glslc. All UI shaders (quad rendering, MSDF text, SDF
-clipping, CVD post-process, vector path) are authored in GLSL and compiled via the standard glslc
-CLI pipeline. Add a brief note.
+Neither document mentions GLSL, naga, or naga. All UI shaders (quad rendering, MSDF text, SDF
+clipping, CVD post-process, vector path) are authored in GLSL and compiled via the standard naga CLI
+pipeline. Add a brief note.
 
 ### RF-14: Codegen for plugin-extensible enums [APPLIED]
 

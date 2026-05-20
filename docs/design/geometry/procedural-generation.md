@@ -1778,9 +1778,9 @@ world_seed
 | macOS    | GCD dispatch I/O via `IoRequest`  | Thread pool, scoped tasks |
 | Linux    | io_uring via `IoRequest`          | Thread pool, scoped tasks |
 
-1. **Windows** — Vulkan compute shaders via glslc
-2. **macOS** — Vulkan compute shaders (GLSL via glslc)
-3. **Linux** — Vulkan compute shaders (GLSL via glslc to SPIR-V)
+1. **Windows** — Vulkan compute shaders via naga
+2. **macOS** — Vulkan compute shaders (GLSL via naga)
+3. **Linux** — Vulkan compute shaders (GLSL via naga to SPIR-V)
 
 ### Computation Distribution
 

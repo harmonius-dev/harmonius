@@ -2112,9 +2112,9 @@ fn compose_layers(
 
 | Platform | Morph Compute API | Notes |
 |----------|-------------------|-------|
-| Windows | Vulkan compute / Vulkan compute | GLSL compiled via glslc to SPIR-V |
-| macOS | Vulkan compute | GLSL compiled via glslc then glslc |
-| Linux | Vulkan compute | GLSL compiled via glslc to SPIR-V |
+| Windows | Vulkan compute / Vulkan compute | GLSL compiled via naga to SPIR-V |
+| macOS | Vulkan compute | GLSL compiled via naga then naga |
+| Linux | Vulkan compute | GLSL compiled via naga to SPIR-V |
 
 ### Morph Target Streaming I/O
 

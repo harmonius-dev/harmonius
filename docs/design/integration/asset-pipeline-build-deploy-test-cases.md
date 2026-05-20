@@ -30,7 +30,7 @@
    BC7-compressed textures and SPIR-V shader variants, all entries stored in the CAS with valid
    `blake3` keys.
 2. **TC-IR-5.1.1.2** — Input: same 100 assets, macOS profile. Expected: `CookedManifest` with ASTC
-   textures and `.SPIR-V module` shader variants produced via the `glslc` -> `glslc`
+   textures and `.SPIR-V module` shader variants produced via the `naga` -> `naga`
    subprocess pipeline.
 3. **TC-IR-5.1.2.1** — Input: one texture asset, Windows target. Expected: BC7-compressed output
    stored in the CAS under a stable content-addressed key.
@@ -47,7 +47,7 @@
 9. **TC-IR-5.1.5.1** — Input: 1 shader graph, 3 target platforms. Expected: 3 distinct bytecode
    artifacts (SPIR-V, SPIR-V, SPIR-V module) stored under separate CAS keys.
 10. **TC-IR-5.1.5.2** — Input: same shader compiled in a second build. Expected: cache hit, zero
-    `glslc` subprocess invocations.
+    `naga` subprocess invocations.
 11. **TC-IR-5.1.6.1** — Input: v1 and v2 bundles that share most content. Expected: patch bundle
     strictly smaller than v2, verified by byte-size comparison.
 12. **TC-IR-5.1.6.2** — Input: v1 and v2 with identical content. Expected: patch size is exactly 0
@@ -72,9 +72,8 @@
 All integration tests run via `cargo test -p harmonius-integration-tests` with no external services.
 CI hosts invoke the same command; there is no GitHub Actions dependency and no external credentials
 are required. Fakes emulate platform I/O behavior (io_uring, GCD `dispatch_io`, IOCP) so the tests
-run on any host that can build the workspace. Shader-pipeline tests spawn real `glslc` and `glslc`
-subprocesses when the binaries are present; otherwise they skip and log a `shader-tools-missing`
-warning.
+run on any host that can build the workspace. Shader-pipeline tests invoke bundled `naga`
+in-process; no external shader compiler binaries are required.
 
 ## Benchmarks
 

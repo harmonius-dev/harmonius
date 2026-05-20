@@ -28,7 +28,7 @@
 3. **F-15.8.3** -- Strict validation before save/compile
 4. **F-15.8.4** -- Gameplay graphs with yield lowering
 5. **F-15.8.5a** -- Shader graph core (vertex, fragment, compute)
-6. **F-15.8.5b** -- Shader graph to GLSL via glslc
+6. **F-15.8.5b** -- Shader graph to GLSL via naga
 7. **F-15.8.5c** -- Material graph variant with PBR and live preview
 8. **F-15.8.6** -- Render graph configuration
 9. **F-15.8.7** -- Animation logic graphs
@@ -175,8 +175,8 @@ pub struct MacroGroup {
 | Domain | Compiles To | Runtime |
 |--------|-------------|---------|
 | Gameplay | ECS systems | ECS scheduler |
-| Shader | GLSL source | glslc / glslc |
-| Material | GLSL (PBR) | glslc / glslc |
+| Shader | GLSL source | naga / naga |
+| Material | GLSL (PBR) | naga / naga |
 | Animation | Controller data | Animation system |
 | Audio | Audio graph desc | Audio engine |
 | Render pipeline | Frame graph desc | Render graph executor |
@@ -327,8 +327,8 @@ All compiled graph output flows through the codegen pipeline into the middleman 
 1. **Visual graph → Rust source** — `EcsCompiler` emits `.rs` files (systems, suspend-state
    machines, query closures). Bundled `rustc` compiles them. Output is linked into the middleman
    `.dylib`.
-2. **Material graph → GLSL source** — `GlslEmitter` emits `.glsl` source. `glslc` CLI produces
-   SPIR-V. On Apple, `glslc` CLI produces SPIR-V.
+2. **Material graph → GLSL source** — `GlslEmitter` emits `.glsl` source. `naga` CLI produces
+   SPIR-V. On Apple, `naga` CLI produces SPIR-V.
 3. **Custom enum variants → codegen'd in middleman** — extensible enums (`GraphDomain`, `NodeKind`,
    `PinType`, `ColumnType`) have plugin-contributed variants generated into the middleman.
    Engine-fixed enums (`TickPhase`, `SystemTrigger`, `TangentMode`, `Severity`) live in the engine
@@ -341,7 +341,7 @@ All compiled graph output flows through the codegen pipeline into the middleman 
 | Graph compile | `.logicgraph` | `.rs` source | `EcsCompiler` |
 | Rust compile | `.rs` source | `.dylib` | bundled `rustc` |
 | Hot-reload | `.dylib` | live systems | `libloading` |
-| Shader compile | `.glsl` | SPIR-V | `glslc` CLI |
+| Shader compile | `.glsl` | SPIR-V | `naga` CLI |
 
 ### Enum Codegen Classification
 
@@ -375,15 +375,15 @@ sequenceDiagram
     participant A as Artist
     participant MG as MaterialGraph
     participant CG as CodeGenerator
-    participant glslc as glslc Compiler
-    participant glslc as glslc
+    participant Naga as naga Compiler
+    participant Naga as naga
 
     A->>MG: edit node connections
     MG->>MG: validate pin types
     MG->>CG: compile graph to GLSL
-    CG->>glslc: compile GLSL to SPIR-V
+    CG->>naga: compile GLSL to SPIR-V
     opt macOS
-        CG->>glslc: convert GLSL to SPIR-V
+        CG->>naga: convert GLSL to SPIR-V
     end
     CG-->>A: preview updates
 ```
@@ -866,7 +866,7 @@ Each graph editor domain provides:
 | Editor | Domain | Compilation target |
 |--------|--------|--------------------|
 | Logic graph | Gameplay, AI, formulas | Rust → middleman `.dylib` |
-| Material graph | Shading | GLSL → glslc |
+| Material graph | Shading | GLSL → naga |
 | VFX graph | Particle compute | GLSL → compute shaders |
 | Animation state machine | State transitions | Rust → middleman `.dylib` |
 | Animation blend tree | Blend weights | Rust → middleman `.dylib` |
@@ -1025,9 +1025,9 @@ Non-trivial algorithms used in the compiler and editor, with authoritative sourc
 
 ### Material Graph
 
-`MaterialGraph::compile()` produces `GlslSource`. The GLSL is compiled via `glslc` CLI (SPIR-V for
-Vulkan, SPIR-V for Vulkan) and `glslc` CLI (SPIR-V). See the GLSL coding standard skill for GLSL
-style rules and the `glsl` skill for glslc invocation conventions.
+`MaterialGraph::compile()` produces `GlslSource`. The GLSL is compiled via `naga` CLI (SPIR-V for
+Vulkan, SPIR-V for Vulkan) and `naga` CLI (SPIR-V). See the GLSL coding standard skill for GLSL
+style rules and the `glsl` skill for naga invocation conventions.
 
 ```rust
 pub struct MaterialGraph {
@@ -1216,7 +1216,7 @@ results are committed at well-defined frame boundaries:
 | Validation (type check, lint) | Worker | Triggered by edit; job dispatch |
 | Incremental graph compile | Worker | Triggered by edit; job dispatch |
 | Commit compiled systems | Main | `PreUpdate` of next frame |
-| Shader compile (glslc/glslc) | Worker | Triggered by save; job dispatch |
+| Shader compile (naga) | Worker | Triggered by save; job dispatch |
 | Material preview update | Render | Sync with render extraction |
 | `.dylib` hot-reload | Main | `PreUpdate` of next frame |
 
@@ -1516,11 +1516,11 @@ preview, and install marketplace assets alongside project assets.
 
 | Platform | Shader target | AOT target | Notes |
 |----------|---------------|------------|-------|
-| Windows | SPIR-V via `glslc` | x86_64 | Full editor + runtime |
-| macOS | SPIR-V via `glslc` | arm64/x86_64 | Full editor + runtime |
-| Linux | SPIR-V via `glslc` | x86_64 | Full editor + runtime |
-| iOS | SPIR-V via `glslc` | arm64 | Runtime only; AOT compiled on desktop |
-| Android | SPIR-V via `glslc` | arm64 | Runtime only; AOT compiled on desktop |
+| Windows | SPIR-V via `naga` | x86_64 | Full editor + runtime |
+| macOS | SPIR-V via `naga` | arm64/x86_64 | Full editor + runtime |
+| Linux | SPIR-V via `naga` | x86_64 | Full editor + runtime |
+| iOS | SPIR-V via `naga` | arm64 | Runtime only; AOT compiled on desktop |
+| Android | SPIR-V via `naga` | arm64 | Runtime only; AOT compiled on desktop |
 | Consoles | Platform SDK | Platform SDK | Cross-compiled from desktop editor |
 
 Editor-only features (live preview, node debugging, incremental compilation) run on desktop only.
@@ -1580,7 +1580,7 @@ Add an "Architecture — codegen pipeline" subsection:
 
 1. Visual graph -> codegen emits `.rs` source -> bundled rustc compiles -> middleman .dylib ->
    engine hot-reloads
-2. Material graph -> codegen emits GLSL source -> glslc CLI
+2. Material graph -> codegen emits GLSL source -> naga
 3. Custom enum variants -> codegen'd in middleman
 4. Resolve open question #1: compiled graphs produce Rust code in the middleman .dylib, not
    relocatable object files
@@ -1644,11 +1644,11 @@ compilation order.
 
 | Platform | Shader target | AOT target | Notes |
 |----------|--------------|------------|-------|
-| Windows | SPIR-V via glslc | x86_64 | Full editor + runtime |
-| macOS | SPIR-V via glslc | arm64/x86_64 | Full editor + runtime |
-| Linux | SPIR-V via glslc | x86_64 | Full editor + runtime |
-| iOS | SPIR-V via glslc | arm64 | Runtime only, AOT compile on desktop |
-| Android | SPIR-V via glslc | arm64 | Runtime only, AOT compile on desktop |
+| Windows | SPIR-V via naga | x86_64 | Full editor + runtime |
+| macOS | SPIR-V via naga | arm64/x86_64 | Full editor + runtime |
+| Linux | SPIR-V via naga | x86_64 | Full editor + runtime |
+| iOS | SPIR-V via naga | arm64 | Runtime only, AOT compile on desktop |
+| Android | SPIR-V via naga | arm64 | Runtime only, AOT compile on desktop |
 | Consoles | Platform SDK | Platform SDK | Cross-compile from desktop editor |
 
 Editor-only features (live preview, debugging) are desktop-only. Compiled outputs must target all
@@ -1750,8 +1750,8 @@ PreUpdate. Material preview updates sync with render extraction.
 
 ### RF-19: GLSL pipeline cross-reference [APPLIED]
 
-Material editor's `compile() -> GlslSource` feeds into glslc (SPIR-V for Vulkan via SPIR-V) and
-glslc (SPIR-V) as CLI subprocesses. Cross-reference the GLSL coding standard skill.
+Material editor's `compile() -> GlslSource` feeds into naga (SPIR-V for Vulkan via SPIR-V) and naga
+(SPIR-V) as CLI subprocesses. Cross-reference the GLSL coding standard skill.
 
 ### RF-20: State engine UI framework dependency [APPLIED]
 
@@ -1830,7 +1830,7 @@ adds visual editing capabilities:
 | Editor | Domain | Compilation target |
 |--------|--------|-------------------|
 | Logic graph | Gameplay, AI, formulas | Rust -> middleman .dylib |
-| Material graph | Shading | GLSL -> glslc |
+| Material graph | Shading | GLSL -> naga |
 | VFX graph | Particle compute | GLSL -> compute shaders |
 | Animation state machine | State transitions | Rust -> middleman .dylib |
 | Animation blend tree | Blend weights | Rust -> middleman .dylib |

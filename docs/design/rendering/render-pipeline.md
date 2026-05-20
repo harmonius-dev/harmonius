@@ -107,7 +107,7 @@ The GPU abstraction provides a unified, type-safe Vulkan interface on all platfo
 2. **`harmonius_gpu_runtime`** -- Shared services: memory sub-allocation, state tracking, barrier
    optimization, descriptor binding, work graphs, feature emulation, profiling.
 
-GLSL is the sole shader language. The `glslc` CLI compiles GLSL to SPIR-V as a subprocess during
+GLSL is the sole shader language. The bundled `naga` crate compiles GLSL to SPIR-V in-process during
 asset processing. No runtime shader compilation in shipping builds.
 
 ### Render Graph
@@ -195,8 +195,9 @@ graph TD
 
 ```mermaid
 flowchart LR
-    GLSL["GLSL Source"] --> glslc["glslc CLI\n(subprocess)"]
-    glslc --> SPIRV["SPIR-V"]
+    GLSL["GLSL Source"] --> naga["naga
+(in-process)"]
+    naga --> SPIRV["SPIR-V"]
     SPIRV --> VKP["Vulkan Pipeline"]
 ```
 
@@ -803,7 +804,7 @@ snapshot.
 
 ### Descriptor Layout Inference
 
-`ShaderCompiler::compile` reads glslc SPIR-V bytecode metadata via SPIR-V reflection and produces a
+`ShaderCompiler::compile` reads naga SPIR-V bytecode metadata via SPIR-V reflection and produces a
 `DescriptorLayout`. The `DescriptorBinder` then allocates descriptor sets per layout and caches them
 next to the PSO in the `PsoCache`.
 
@@ -1134,7 +1135,7 @@ Document the shader hot-reload flow:
 
 1. FileWatcher detects GLSL change on main thread
 2. Main thread posts recompile job via channel
-3. Worker runs glslc/msc subprocess
+3. Worker runs naga/msc subprocess
 4. New shader bytecode sent to render thread via channel
 5. Render thread invalidates affected PSOs
 6. PSO recompiled on next use (lazy) or eagerly in background

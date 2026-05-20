@@ -1920,8 +1920,8 @@ All particle shaders are authored in GLSL (the project's sole shader IL). The bu
 compiles them:
 
 1. **GLSL source** authored per-module.
-2. **glslc** compiles GLSL to SPIR-V (Vulkan) and SPIR-V (Vulkan) via C ABI.
-3. **glslc** transpiles GLSL to SPIR-V (Vulkan) via CLI subprocess.
+2. **naga** compiles GLSL to SPIR-V (Vulkan) and SPIR-V (Vulkan) via C ABI.
+3. **naga** transpiles GLSL to SPIR-V (Vulkan) via CLI subprocess.
 4. Effect graph compiler generates specialized GLSL by concatenating selected module functions into
    a single entry point.
 
@@ -2204,7 +2204,7 @@ post-processing) when making culling decisions.
 
 Use codegen-generated metadata via middleman .dylib.
 
-### RF-2: Fix glslc to CLI subprocess
+### RF-2: Fix naga to CLI subprocess
 
 Line 1825: "via C ABI" must be "via CLI subprocess."
 

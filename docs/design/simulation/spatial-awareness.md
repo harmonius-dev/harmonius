@@ -1238,7 +1238,7 @@ GPU compute pipeline for spatial awareness:
    massive parallel workload ideal for GPU — millions of pair tests per dispatch.
 2. **GPU scoring** — a second compute pass applies falloff curves and scoring functions to the
    candidate list. Output: per-source sorted result buffer with final scores. Scoring functions are
-   GLSL compute kernels compiled via glslc.
+   GLSL compute kernels compiled via naga.
 3. **GPU→CPU readback** — only the top-N results per source are read back to the CPU (typically 8-32
    per source). The full candidate list stays GPU-side. Readback uses a ring-buffered staging buffer
    with one-frame latency.

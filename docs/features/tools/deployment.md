@@ -107,13 +107,13 @@
 
 1. **F-15.14.9** — Document which host OS can build for which target platforms locally and via the
    cloud build service. Includes local build matrix (host-to-target compatibility), cloud build
-   service matrix (worker-to-target coverage), shader compilation matrix (glslc
+   service matrix (worker-to-target coverage), shader compilation matrix (naga
    Converter host restrictions), engine developer toolchain requirements per GPU backend and
    platform layer, and game developer minimal requirements showing local vs. cloud alternatives. The
    cloud build service handles ALL target platforms from ANY host OS.
    - **Deps:** F-15.24.1 (Cloud Build Service), F-15.24.3 (Cross-Platform Shader Compilation),
-     F-15.24.6 (Local Development Mode), F-12.2.9 (glslc Pipeline)
-   - **Platform:** glslc is macOS-only. Console SDKs require licensed workers.
+     F-15.24.6 (Local Development Mode), F-12.2.9 (naga Pipeline)
+   - **Platform:** naga is macOS-only. Console SDKs require licensed workers.
 
 ## Compilation Pipeline
 
@@ -131,12 +131,12 @@
    editor or game.
    - **Deps:** F-15.8.12 (Graph Compilation), F-15.11.1 (Shared Build Cache)
    - **Platform:** Requires bundled rustc. Platform-specific linkers per target OS.
-2. **F-15.14.11** — Compiles GLSL shaders offline via glslc CLI to SPIR-V,
+2. **F-15.14.11** — Compiles GLSL shaders offline via in-process `naga` to SPIR-V,
    SPIR-V, and SPIR-V. Generates all permutation variants from a shader feature matrix. Compilation
    runs in parallel via the job system. Results are cached per-platform keyed by BLAKE3(source +
    flags + tool version + platform). Shader errors map back to the originating graph node.
    - **Deps:** F-15.8.5b (Shader Graph to GLSL), F-15.11.2 (Shader Cache)
-   - **Platform:** glslc on Windows/Linux, glslc on macOS.
+   - **Platform:** naga on Windows/Linux, naga on macOS.
 3. **F-15.14.12** — A CLI interface (`harmonius build`, `harmonius test`, `harmonius validate`,
    `harmonius package`) for headless build operations in CI/CD pipelines. All commands return
    structured JSON exit status for pipeline integration. Supports all build configurations and

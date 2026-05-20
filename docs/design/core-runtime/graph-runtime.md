@@ -554,9 +554,9 @@ sequenceDiagram
 
 | Platform   | Backend subprocess         | Notes                                  |
 |------------|----------------------------|----------------------------------------|
-| Windows    | rustc.exe, glslc.exe         | Launched via main-thread I/O requests  |
-| macOS      | rustc, glslc, msl-converter  | dispatch2 child process                |
-| Linux      | rustc, glslc                 | io_uring spawned process               |
+| Windows    | rustc.exe, naga         | Launched via main-thread I/O requests  |
+| macOS      | rustc, naga, msl-converter  | dispatch2 child process                |
+| Linux      | rustc, naga                 | io_uring spawned process               |
 | iOS        | No runtime codegen         | Compiled offline only                  |
 | Android    | No runtime codegen         | Compiled offline only                  |
 

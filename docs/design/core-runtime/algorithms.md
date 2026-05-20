@@ -1296,9 +1296,9 @@ impl<K: Eq + Hash, V> TaggedLookupTable<K, V> {
 #### 15. `GraphCompiler`
 
 Shared framework for compiling visual node graphs to GLSL shader code. Performs topological sort,
-type checking, dead code elimination, GLSL emission, glslc compilation, and glslc (glslc)
-translation. Each graph domain (material, effect, shader) supplies node type definitions; the
-compiler provides the shared pipeline.
+type checking, dead code elimination, GLSL emission, naga compilation, and naga (naga) translation.
+Each graph domain (material, effect, shader) supplies node type definitions; the compiler provides
+the shared pipeline.
 
 ```rust
 /// A compiled shader output.
@@ -1346,8 +1346,8 @@ pub struct GraphCompiler;
 impl GraphCompiler {
     /// Compiles a graph to shader bytecode.
     /// Steps: topological sort, type check, dead code
-    /// elimination, GLSL emission, glslc compilation,
-    /// optional glslc conversion.
+    /// elimination, GLSL emission, naga compilation,
+    /// optional naga conversion.
     pub fn compile(
         nodes: &[NodeDef],
         edges: &[(NodeId, usize, NodeId, usize)],
@@ -1361,7 +1361,7 @@ pub enum CompileTarget {
     SpirV,
     /// SPIR-V for Vulkan.
     SpirV,
-    /// SPIR-V (via glslc).
+    /// SPIR-V (via naga).
     Vulkan,
     /// All targets.
     All,
@@ -1429,9 +1429,9 @@ Core algorithms are consumed at different points in the frame lifecycle:
 4. **`CompressionCodec`** — Platform-native async I/O
    - **macOS:** kqueue-based async compress
    - **Linux:** io_uring-based async compress
-5. **`GraphCompiler`** — glslc CLI subprocess
-   - **macOS:** glslc CLI subprocess + glslc CLI subprocess
-   - **Linux:** glslc CLI subprocess
+5. **`GraphCompiler`** — naga in-process compilation
+   - **macOS:** naga in-process compilation + naga in-process compilation
+   - **Linux:** naga in-process compilation
 6. **`PlatformTier`** — Desktop / HighEnd
    - **macOS:** Mobile / Desktop
    - **Linux:** Desktop / HighEnd
@@ -1681,7 +1681,7 @@ streaming policy.
 - Replace all Tokio references with compio
 - Remove `*mut World` from `WorkContext` — use safe `&mut World` with lifetime
 - Fix `ConditionCheckFn` lifetime — use `for<'w> fn(&ConditionContext<'w>) -> bool`
-- Fix `GraphCompiler` platform notes — "glslc CLI subprocess" not "glslc via C API"
+- Fix `GraphCompiler` platform notes — "naga in-process compilation" not "naga via C API"
 - Use `impl Fn` instead of `fn` pointer for `ConnectivityAnalyzer` neighbor function
 - Resolve handle bit layout as 32+32 universally
 - Add `DeterministicRng` primitive (identified gap)

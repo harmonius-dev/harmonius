@@ -162,8 +162,8 @@ synchronous (no async/await anywhere in the engine or editor — backend servers
 concern) and use arena-backed collections plus `DashMap` where concurrent maps are needed, per
 [constraints.md](../constraints.md). The process DAG is scheduled on the custom crossbeam-deque job
 system (see [core-runtime/game-loop.md](../core-runtime/game-loop.md)); no thread pool, no Rayon, no
-async runtime. CLI shader tools (`glslc`, `glslc`) are invoked as blocking subprocesses from
-job-system worker threads, never from the main thread.
+async runtime. bundled `naga` are invoked in-process from job-system worker threads, never from the
+main thread.
 
 **Debug tooling.** A runtime-toggleable `CookTrace` flag (set via editor debug panel or CLI
 `--trace-cook`) enables per-asset timing, cache hit/miss logs, and BLAKE3 hash dumps. Disabled by
@@ -189,7 +189,7 @@ game-loop systems. Two execution contexts exist:
 | # | Failure | Impact | Recovery |
 |---|---------|--------|----------|
 | 1 | Cook fails for 1 asset | Build aborted | See detail 1 |
-| 2 | glslc/glslc CLI crash | Shader variant missing | See detail 2 |
+| 2 | naga compile failure | Shader variant missing | See detail 2 |
 | 3 | CAS corruption | Stale baked data | See detail 3 |
 | 4 | Bundle exceeds size limit | Packaging fails | See detail 4 |
 | 5 | Signing key unavailable | Cannot ship | See detail 5 |
@@ -199,7 +199,7 @@ game-loop systems. Two execution contexts exist:
 
 1. **Cook fails for 1 asset** — fix the source asset in the editor, then re-invoke the cook. The
    incremental cache skips all unchanged assets.
-2. **glslc/glslc CLI crash** — retry the subprocess up to 3 times. On persistent failure, fall back
+2. **naga compile failure** — retry compilation up to 3 times. On persistent failure, fall back
    to the last cached shader variant. If no cache entry exists, abort the build with a diagnostic
    pointing to the shader.
 3. **CAS corruption** — detected by BLAKE3 hash mismatch on read. Invalidate the corrupted entry,
@@ -221,14 +221,14 @@ game-loop systems. Two execution contexts exist:
 
 | Platform | Shader pipeline | Texture | Linker |
 |----------|-----------------|---------|--------|
-| Windows | GLSL->glslc->SPIR-V | BC7 | MSVC link.exe |
+| Windows | GLSL->naga->SPIR-V | BC7 | MSVC link.exe |
 | macOS/iOS | See detail 1 | ASTC | Apple ld64 |
-| Linux | GLSL->glslc->SPIR-V | BC7 | lld |
-| Android | GLSL->glslc->SPIR-V | ASTC/ETC2 | lld |
+| Linux | GLSL->naga->SPIR-V | BC7 | lld |
+| Android | GLSL->naga->SPIR-V | ASTC/ETC2 | lld |
 | Consoles | Platform SDK | Native | Server-side |
 
-1. **macOS/iOS shader pipeline** — two-step process: GLSL -> `glslc` -> SPIR-V intermediate, then
-   SPIR-V -> `glslc` -> `.SPIR-V module`. Both tools are invoked as CLI subprocesses per
+1. **macOS/iOS shader pipeline** — two-step process: GLSL -> `naga` -> SPIR-V intermediate, then
+   SPIR-V -> `naga` -> `.SPIR-V module`. Both tools are invoked as CLI subprocesses per
    constraints.md.
 
 ## Class Diagram
@@ -334,10 +334,10 @@ See companion
    integration review.
 4. **crossbeam-deque job system.** The sequence diagram note says "crossbeam-deque work-stealing /
    custom job system; no async/await". The dependency paragraph also explicitly states there is no
-   thread pool, no Rayon, no async runtime, and CLI shader tools (`glslc`, `glslc`)
+   thread pool, no Rayon, no async runtime, and bundled `naga`
    run as blocking subprocesses on job-system worker threads, never on the main thread.
 5. **macOS shader pipeline.** Platform Considerations detail 1 documents the two-step GLSL ->
-   `glslc` -> SPIR-V -> `glslc` -> `.SPIR-V module` pipeline, invoked via CLI subprocess per
+   `naga` -> SPIR-V -> `naga` -> `.SPIR-V module` pipeline, invoked via CLI subprocess per
    constraints.md.
 6. **Platform-native I/O failure modes.** Failure modes 6-8 cover io_uring (Linux), GCD
    `dispatch_io` (macOS), and IOCP (Windows) errors during CAS writes, each with retry +

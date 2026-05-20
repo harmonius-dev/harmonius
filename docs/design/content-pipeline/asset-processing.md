@@ -28,7 +28,7 @@
 6. **F-12.2.6** -- Audio encoding (Opus, ADPCM, PCM)
 7. **F-12.2.7** -- Shader graph to GLSL code generation
 8. **F-12.2.8** -- Asset dependency graph for rebuilds
-9. **F-12.2.9** -- `glslc` and `glslc` CLI pipeline
+9. **F-12.2.9** -- `naga` and `naga` CLI pipeline
 
 ### Asset Streaming (F-12.5)
 
@@ -148,7 +148,7 @@ graph TD
     end
 
     subgraph "External CLI"
-        glslc["glslc CLI (subprocess)"]
+        naga["naga (in-process)"]
         MOP[meshoptimizer]
     end
 
@@ -170,7 +170,7 @@ graph TD
     PRR --> AU
     PRR --> LM
 
-    SC -.-> glslc
+    SC -.-> naga
     MO -.-> MOP
 
     PM --> TP
@@ -224,13 +224,14 @@ harmonius_content/
 flowchart LR
     SG["Shader Graph"]
     GLSL["GLSL Source"]
-    glslc["glslc CLI\n(subprocess)"]
+    naga["naga
+(in-process)"]
     SPIRV["SPIR-V"]
     CACHE["CAS Cache"]
 
     SG -->|Code Gen| GLSL
-    GLSL --> glslc
-    glslc --> SPIRV
+    GLSL --> naga
+    naga --> SPIRV
     SPIRV --> CACHE
 ```
 
@@ -1044,7 +1045,7 @@ flowchart TD
 
 | Platform | Output | Pipeline |
 |----------|--------|----------|
-| All targets | SPIR-V | GLSL → `glslc` → SPIR-V |
+| All targets | SPIR-V | GLSL → `naga` → SPIR-V |
 
 ### I/O Backend Selection
 
@@ -1076,8 +1077,8 @@ flowchart TD
 
 | Library | FFI Bridge |
 |---------|------------|
-| glslc | CLI subprocess (all platforms) |
-| glslc | CLI subprocess (macOS) |
+| naga | CLI subprocess (all platforms) |
+| naga | CLI subprocess (macOS) |
 | meshoptimizer | C ABI Rust crate |
 | blake3 | Native Rust crate |
 
@@ -1170,8 +1171,8 @@ Test cases are defined inline below.
 | BC7 compress 4K tex | < 100 ms |
 | LOD gen 100K tris | < 50 ms |
 | Meshlet build 100K tris | < 20 ms |
-| glslc GLSL to SPIR-V (cold) | < 500 ms |
-| glslc GLSL to SPIR-V | < 200 ms |
+| naga GLSL to SPIR-V (cold) | < 500 ms |
+| naga GLSL to SPIR-V | < 200 ms |
 | Incremental rebuild (1 asset) | < 2 s |
 | Full build 10K assets (8 cores) | < 5 min |
 | Async I/O throughput (NVMe) | >= 80% BW |
@@ -1189,8 +1190,8 @@ Test cases are defined inline below.
    one C call?
 3. **Shader variant explosion.** On-demand compilation (compile at first use) vs full ahead-of-time
    for all permutations?
-4. **glslc version pinning.** Which version to pin; how to handle shader model availability across
-   versions?
+4. **naga crate version pinning.** Which version to pin; how to handle shader model availability
+   across versions?
 5. **Pak alignment granularity.** 512 B (sector) vs 4 KB (page) for mmap compatibility? Larger
    alignment wastes space for small assets.
 6. **GPU decompression codec.** GDeflate (native Vulkan staging buffers) vs Zstd (custom compute

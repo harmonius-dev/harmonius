@@ -61,8 +61,8 @@
     - **Verification:** Modify a codegen'd type, trigger hot-reload, and verify the change takes
       effect without restart. Build a shipping binary and verify LTO is applied.
 
-11. **R-15.14.11** — The engine **SHALL** compile GLSL shaders offline via glslc and
-    glslc CLI to SPIR-V with parallel variant compilation via the
+11. **R-15.14.11** — The engine **SHALL** compile GLSL shaders offline via in-process `naga` to
+    SPIR-V with parallel variant compilation via the
     job system and per-platform variant caching keyed by BLAKE3(source + flags + tool version +
     platform).
     - **Rationale:** Offline shader compilation eliminates runtime stalls and enables per-platform

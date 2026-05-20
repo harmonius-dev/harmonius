@@ -157,7 +157,7 @@ Companion test cases for [graph-runtime.md](graph-runtime.md).
 | 1 | F-2.7.1     |
 
 1. **#1** — Material subsystem compiles "color + normal" graph
-   - **Expected:** GlslBackend artifact passes glslc compile
+   - **Expected:** GlslBackend artifact passes naga compile
 
 ### TC-7.2.3.1 Behavior Tree Client Round-Trip
 

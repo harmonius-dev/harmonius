@@ -875,9 +875,9 @@ cross-compile for all platforms from a single runner:
 
 | Build target | Runner OS | Reason |
 |-------------|-----------|--------|
-| Windows (Vulkan) | `windows-latest` | MSVC toolchain, Vulkan SDK, glslc |
-| macOS (Vulkan) | `macos-latest` | Xcode, Vulkan SDK, glslc, XcodeGen |
-| Linux (Vulkan) | `ubuntu-latest` | Vulkan SDK, glslc, io_uring headers |
+| Windows (Vulkan) | `windows-latest` | MSVC toolchain, Vulkan SDK, naga |
+| macOS (Vulkan) | `macos-latest` | Xcode, Vulkan SDK, naga, XcodeGen |
+| Linux (Vulkan) | `ubuntu-latest` | Vulkan SDK, naga, io_uring headers |
 | iOS (Vulkan) | `macos-latest` | Xcode + iOS SDK, code signing |
 | Android (Vulkan) | `ubuntu-latest` | Android NDK, Vulkan, cross-compile |
 | Switch | Self-hosted | NDA SDK, not available on GitHub |

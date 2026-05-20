@@ -52,7 +52,7 @@ Test case IDs use `TC-2.3.10.Z.N` format.
     variants.
 13. **TC-2.3.10.4.2** `test_precompile_respects_caps` -- No bundle exceeds caps after precompile.
 14. **TC-2.3.10.5.1** `test_on_demand_compile_missing_key` -- Resolver compiles a missing key via
-    glslc and returns bytecode.
+    naga and returns bytecode.
 15. **TC-2.3.10.5.2** `test_on_demand_updates_miss_log` -- Miss log contains the key after.
 16. **TC-2.3.10.6.1** `test_bundle_roundtrip_mmap` -- Build, mmap, read, assert equal.
 17. **TC-2.3.10.6.2** `test_bundle_format_version_check` -- Bundle with wrong format version returns
@@ -77,7 +77,7 @@ Test case IDs use `TC-2.3.10.Z.N` format.
 1. **TC-2.3.10.4.3** `test_full_build_precompile_pak` -- Build a project with 5 materials, assert
    pak contains all resolved variants.
 2. **TC-2.3.10.5.3** `test_runtime_resolve_precompiled_hit` -- Precompiled variant resolves without
-   invoking glslc.
+   invoking naga.
 3. **TC-2.3.10.5.4** `test_runtime_resolve_on_demand_fallback` -- Resolve a key not in pak; assert
    on-demand compile succeeds, PSO cache hit next time.
 4. **TC-2.3.10.6.3** `test_pak_cross_backend_build` -- Build Vulkan paks from the
@@ -94,5 +94,5 @@ Test case IDs use `TC-2.3.10.Z.N` format.
 
 1. **TC-2.3.10.4.B1** -- Precompile 4096 variants. Pass if < 5 minutes on dev hardware.
 2. **TC-2.3.10.5.B1** -- Resolve a precompiled variant. Pass if < 500 ns.
-3. **TC-2.3.10.5.B2** -- On-demand compile via glslc subprocess. Pass if < 200 ms.
+3. **TC-2.3.10.5.B2** -- On-demand compile via naga in-process compilation. Pass if < 200 ms.
 4. **TC-2.3.10.6.B1** -- Open and mmap `shaders.pak`. Pass if < 10 ms.

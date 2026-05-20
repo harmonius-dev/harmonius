@@ -27,12 +27,12 @@ files. Benchmarks run on the perf CI lane.
 
 | ID | Test | Input | Expected | Req |
 |----|------|-------|----------|-----|
-| TC-IR-5.2.1.I1 | Shader graph to GLSL codegen | PBR material graph | Valid GLSL source, glslc accepts | IR-5.2.1 |
+| TC-IR-5.2.1.I1 | Shader graph to GLSL codegen | PBR material graph | Valid GLSL source, naga accepts | IR-5.2.1 |
 | TC-IR-5.2.1.I2 | Shader graph custom nodes | User-defined nodes | GLSL with monomorphized functions | IR-5.2.1 |
-| TC-IR-5.2.2.I1 | glslc produces valid SPIR-V | GLSL SM 6.0 | SPIR-V passes validation | IR-5.2.2 |
-| TC-IR-5.2.2.I2 | glslc produces valid SPIR-V | GLSL SM 6.0 | SPIR-V passes spirv-val | IR-5.2.2 |
+| TC-IR-5.2.2.I1 | naga produces valid SPIR-V | GLSL SM 6.0 | SPIR-V passes validation | IR-5.2.2 |
+| TC-IR-5.2.2.I2 | naga produces valid SPIR-V | GLSL SM 6.0 | SPIR-V passes spirv-val | IR-5.2.2 |
 | TC-IR-5.2.2.I3 | Main-thread subprocess ownership | Compile request | Worker never touches pipe | IR-5.2.2 |
-| TC-IR-5.2.3.I1 | glslc produces valid SPIR-V module | SPIR-V from glslc | SPIR-V module loads on Vulkan device `[GPU]` | IR-5.2.3 |
+| TC-IR-5.2.3.I1 | naga produces valid SPIR-V module | SPIR-V from naga | SPIR-V module loads on Vulkan device `[GPU]` | IR-5.2.3 |
 | TC-IR-5.2.4.I1 | BC7 texture loads to GPU | PNG, Windows profile | BC7 bound in draw call `[GPU]` | IR-5.2.4 |
 | TC-IR-5.2.4.I2 | ASTC texture loads on iOS | PNG, iOS profile | ASTC bound `[GPU]` | IR-5.2.4 |
 | TC-IR-5.2.4.I3 | ASTC texture loads on macOS | PNG, macOS profile | Same ASTC blob as iOS | IR-5.2.4 |
@@ -51,15 +51,15 @@ files. Benchmarks run on the perf CI lane.
 
 | ID | Test | Input | Expected | Req |
 |----|------|-------|----------|-----|
-| TC-IR-5.2.2.N1 | `[NEG]` glslc compile error | Syntactically invalid GLSL | Exit != 0; stderr captured; old PSO kept | IR-5.2.2 |
-| TC-IR-5.2.2.N2 | `[NEG]` glslc missing binary | CLI not installed | Graceful error; asset build fails cleanly | IR-5.2.2 |
-| TC-IR-5.2.3.N1 | `[NEG]` glslc translation error | Malformed SPIR-V | Error path; previous SPIR-V module retained | IR-5.2.3 |
+| TC-IR-5.2.2.N1 | `[NEG]` naga compile error | Syntactically invalid GLSL | Exit != 0; stderr captured; old PSO kept | IR-5.2.2 |
+| TC-IR-5.2.2.N2 | `[NEG]` naga unavailable | CLI not installed | Graceful error; asset build fails cleanly | IR-5.2.2 |
+| TC-IR-5.2.3.N1 | `[NEG]` naga compile error | Malformed SPIR-V | Error path; previous SPIR-V module retained | IR-5.2.3 |
 | TC-IR-5.2.4.N1 | `[NEG]` Unsupported format | 10-bit HDR on ETC2 target | Falls back to `Rgba8UnormFallback` | IR-5.2.4 |
 | TC-IR-5.2.4.N2 | `[NEG]` Corrupt PNG | Truncated file | Load error; red placeholder shown | IR-5.2.4 |
 | TC-IR-5.2.5.N1 | `[NEG]` Meshlet build fails | Degenerate triangles | Logged; excluded from draw list | IR-5.2.5 |
 | TC-IR-5.2.6.N1 | `[NEG]` Shader error keeps old | Invalid GLSL edit | Previous pipeline still renders | IR-5.2.6 |
 | TC-IR-5.2.6.N2 | `[NEG]` Stale handle resolve | Freed + reused slot | `resolve` returns `None` via generation | IR-5.2.6 |
-| TC-IR-5.2.6.N3 | `[NEG]` glslc stderr to overlay | Compile error, 3 diagnostics | `ShaderReloadStatus::Failed{3}` in ECS resource | IR-5.2.6 |
+| TC-IR-5.2.6.N3 | `[NEG]` naga diagnostics to overlay | Compile error, 3 diagnostics | `ShaderReloadStatus::Failed{3}` in ECS resource | IR-5.2.6 |
 | TC-IR-5.2.7.N1 | `[NEG]` Streaming I/O error | Truncated asset file | Retries 3x; falls back to lowest resident mip | IR-5.2.7 |
 | TC-IR-5.2.7.N2 | `[NEG]` Streaming timeout | Slow disk fixture | Marked `Failed` after budget; render continues | IR-5.2.7 |
 | TC-IR-5.2.U.N1 | `[NEG]` mmap alignment fail | Misaligned fixture | rkyv `check_bytes` rejects; asset load fails | IR-5.2.4 |
@@ -69,9 +69,9 @@ files. Benchmarks run on the perf CI lane.
 
 | ID | Benchmark | Target | Req |
 |----|-----------|--------|-----|
-| TC-IR-5.2.2.B1 | Cold shader compile (glslc) | < 500 ms | IR-5.2.2 |
+| TC-IR-5.2.2.B1 | Cold shader compile (naga) | < 500 ms | IR-5.2.2 |
 | TC-IR-5.2.2.B2 | Cached shader compile | < 1 ms | IR-5.2.2 |
-| TC-IR-5.2.3.B1 | glslc SPIR-V -> SPIR-V module | < 200 ms | IR-5.2.3 |
+| TC-IR-5.2.3.B1 | naga SPIR-V -> SPIR-V module | < 200 ms | IR-5.2.3 |
 | TC-IR-5.2.4.B1 | BC7 compression, 1K texture | 100+ tex/s | IR-5.2.4 |
 | TC-IR-5.2.4.B2 | ASTC 4x4 compression, 1K texture | 80+ tex/s | IR-5.2.4 |
 | TC-IR-5.2.5.B1 | Meshlet build, 50K triangles | < 50 ms | IR-5.2.5 |

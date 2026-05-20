@@ -65,7 +65,7 @@
 ## Custom Materials
 
 9. **R-2.12.9** — The engine **SHALL** allow fully custom material graphs with access to all
-   rendering inputs and configurable outputs, compiling to GLSL via glslc to SPIR-V,
+   rendering inputs and configurable outputs, compiling to GLSL via `naga` to SPIR-V,
    with reusable material functions.
    - **Rationale:** Custom graphs provide full creative freedom without engine source modification.
    - **Verification:** Create a procedural lava material. Verify animated output. Verify material

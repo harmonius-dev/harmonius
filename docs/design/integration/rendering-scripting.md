@@ -12,7 +12,7 @@
 | ID | Requirement | Systems |
 |----|-------------|---------|
 | IR-3.5.1 | Material graphs codegen to GLSL source | Script, Ren |
-| IR-3.5.2 | GLSL compiles via glslc CLI subprocess | Script, Ren |
+| IR-3.5.2 | GLSL compiles via naga in-process compilation | Script, Ren |
 | IR-3.5.3 | Shader permutations from material features | Script, Ren |
 | IR-3.5.4 | Hot reload patches shader binaries | Script, Ren |
 | IR-3.5.5 | Post-process graphs codegen compute GLSL | Script, Ren |
@@ -23,8 +23,8 @@
    surface shader function. Output includes PBR params (albedo, metallic, roughness, normal,
    emissive). The middleman `.dylib` produced by codegen exposes per-material entry points and the
    GLSL source is written to a CAS-backed arena rather than a heap `String`.
-2. **IR-3.5.2** -- Generated GLSL is compiled by `glslc` CLI as a subprocess during asset
-   processing. Output is SPIR-V. `glslc` CLI compiles GLSL to SPIR-V module. No runtime shader
+2. **IR-3.5.2** -- Generated GLSL is compiled by `naga` CLI as a subprocess during asset
+   processing. Output is SPIR-V. `naga` compiles GLSL to SPIR-V module. No runtime shader
    compilation in shipping builds. The subprocess is spawned from the main thread and its
    stdout/stderr pipes are polled via the OS event loop alongside other platform I/O -- no async
    runtime is involved.
@@ -33,7 +33,7 @@
    Asset processing pre-compiles all active permutations in parallel via the job system and stores
    the resulting `CompiledEffect` / `CompiledShader` entries in the CAS.
 4. **IR-3.5.4** -- During development, a main-thread file watcher observes material graph assets.
-   When an asset changes, a worker thread recompiles the graph to GLSL, the main thread runs `glslc`
+   When an asset changes, a worker thread recompiles the graph to GLSL, the main thread runs `naga`
    as a subprocess, the worker archives the resulting bytecode via rkyv, and the render thread swaps
    the `PipelineStateHandle` on the next frame. All boundary crossings are crossbeam MPSC channels
    with documented buffer lengths (see [Channel Topology](#channel-topology)).
@@ -62,8 +62,8 @@ target 3D surface and compute shaders only.
 | `ShaderFeatures` | Rendering | Scripting | Feature bits |
 | `RenderPath` | Rendering | Scripting | Fwd/deferred |
 | `MaterialShaderOutput` | Scripting | Asset Pipeline | GLSL + keys (rkyv) |
-| `ShaderCompileRequest` | Scripting | Asset Pipeline | Offline glslc input |
-| `ShaderProfile` | Scripting | Asset Pipeline | glslc target profile |
+| `ShaderCompileRequest` | Scripting | Asset Pipeline | Offline naga input |
+| `ShaderProfile` | Scripting | Asset Pipeline | naga target profile |
 | `CompiledEffect` | VFX | Scripting | Kernels (rkyv) |
 | `CompiledKernel` | VFX | Scripting | GPU bytecode (rkyv) |
 | `PipelineStateHandle` | Rendering | Hot reload | Generational GPU state |
@@ -362,7 +362,7 @@ pub struct MaterialShaderOutput {
 }
 
 /// Offline-only shader compilation request handed to
-/// the main thread for `glslc` subprocess invocation.
+/// the main thread for `naga` subprocess invocation.
 /// MUST NOT be constructed on the render frame path.
 /// `entry_point` is a `SmolStr` (inline up to 22
 /// bytes); `defines` is an arena span rather than
@@ -383,7 +383,7 @@ pub struct DefinePair {
     pub value: smol_str::SmolStr,
 }
 
-/// Shader profiles for glslc compilation.
+/// Shader profiles for naga compilation.
 /// Only SM 6.6 variants are currently targeted;
 /// SM 6.0-6.5 are explicitly out of scope for the
 /// first release (see Open Questions).
@@ -458,8 +458,8 @@ sequenceDiagram
     participant FW as File Watcher [M]
     participant W as Worker [W]
     participant M as Main [M]
-    participant glslc as glslc subprocess
-    participant glslc as glslc subprocess
+    participant Naga as naga in-process compilation
+    participant Naga as naga in-process compilation
     participant CAS as CAS Cache
     participant R as Render Thread [R]
     participant GPU as GPU
@@ -469,10 +469,10 @@ sequenceDiagram
     W->>W: codegen_glsl -> MaterialShaderOutput
     W->>M: shader_compile_requests (MPSC, cap=64)
     Note over M: Main owns subprocess + I/O
-    M->>glslc: spawn (stdin: GLSL)
-    glslc-->>M: SPIR-V + SPIR-V (stdout, OS-loop poll)
-    M->>glslc: spawn (stdin: SPIR-V)
-    glslc-->>M: SPIR-V module (stdout, OS-loop poll)
+    M->>Naga: spawn (stdin: GLSL)
+    Naga-->>M: SPIR-V + SPIR-V (stdout, OS-loop poll)
+    M->>Naga: spawn (stdin: SPIR-V)
+    Naga-->>M: SPIR-V module (stdout, OS-loop poll)
     M->>W: shader_compile_results (MPSC, cap=64)
     W->>CAS: rkyv archive (mmap write)
     W->>R: pipeline_commands (MPSC, cap=128)
@@ -499,15 +499,15 @@ byte buffers.
 | `material_graph_events` | Main (FW) | Worker | MPSC | 32 | File watcher -> recompile |
 
 Back-pressure: critical paths (`pipeline_commands`) block the producer; non-critical paths
-(`reload_status_updates`) drop oldest. Hot-reload latency is dominated by the `glslc` subprocess,
-not channel throughput.
+(`reload_status_updates`) drop oldest. Hot-reload latency is dominated by the `naga` subprocess, not
+channel throughput.
 
 ### Three-Thread Model
 
 | Data | Thread | Access |
 |------|--------|--------|
 | File watcher | Main | Detects material graph changes |
-| `glslc` / glslc subprocess | Main | Spawns + polls stdout via OS loop |
+| `naga` / naga in-process compilation | Main | Compiles in-process via OS loop |
 | `MaterialShaderCache` | Worker | GLSL arena writes |
 | CAS cache | Worker | rkyv archive writes |
 | `PipelineStateTable` | Render (core-pinned) | Owner of descriptor arena |
@@ -541,8 +541,8 @@ it does not need rkyv derives.
 | System | Game loop phase | Timestep | Order |
 |--------|----------------|----------|-------|
 | Graph compilation | Asset processing | Offline | First |
-| glslc subprocess | Asset processing (Main) | Offline | After codegen |
-| glslc | Asset processing (Main) | Offline | After glslc |
+| naga in-process compilation | Asset processing (Main) | Offline | After codegen |
+| naga | Asset processing (Main) | Offline | After naga |
 | File watcher poll | Phase 8 Frame End | Variable | Background |
 | Hot-reload recompile | Worker, non-blocking | Variable | Channel-polled |
 | Pipeline publish | Phase 0 Frame Start (Render) | Variable | Before extract |
@@ -563,15 +563,15 @@ is required to hide or show any overlay.
 | Permutation usage stats | `debug.permutation_stats` | Profiler overlay |
 | GLSL source preview | `debug.glsl_preview` | Editor inspector |
 | Hot-reload trace | `debug.hot_reload_trace` | Profiler overlay |
-| glslc stderr tail | `debug.dxc_stderr` | Editor overlay |
+| naga diagnostics tail | `debug.dxc_stderr` | Editor overlay |
 
 ## Failure Modes
 
 | Failure | Impact | Recovery |
 |---------|--------|----------|
 | GLSL codegen error | No shader | Emit error node; retain prior handle |
-| glslc compile failure | No binary | Fall back to error shader; publish `Failed` |
-| glslc binary missing | Build halt | Graceful error; asset build fails cleanly |
+| naga compile failure | No binary | Fall back to error shader; publish `Failed` |
+| naga binary missing | Build halt | Graceful error; asset build fails cleanly |
 | Invalid permutation | Missing variant | Use default permutation (documented fallback) |
 | Hot reload conflict | Stale shader | Retry on next channel drain |
 | SPIR-V module convert fail | No macOS shader | Fall back to previous SPIR-V module handle |
@@ -582,7 +582,7 @@ is required to hide or show any overlay.
 
 1. **Missing permutation** -- when a requested `PermutationKey` has no compiled variant, the
    renderer falls back to the `DefaultLit + ForwardPlus + NONE` permutation and logs a warning.
-2. **glslc failure** -- the previous `PipelineStateHandle` is retained by the render thread; the
+2. **naga failure** -- the previous `PipelineStateHandle` is retained by the render thread; the
    editor overlay shows `ShaderReloadStatus::Failed { error_count }` until the next successful
    compile.
 3. **SPIR-V module failure** -- the previous SPIR-V module handle is retained; cross-platform
@@ -594,11 +594,11 @@ is required to hide or show any overlay.
 
 | Platform | Compiler | Output | Runtime compile |
 |----------|---------|--------|-----------------|
-| Windows (Vulkan) | glslc | SPIR-V | Dev-only |
-| macOS (Vulkan) | glslc | SPIR-V module | Dev-only |
-| iOS (Vulkan) | glslc | SPIR-V module | Dev-only |
-| Linux (Vulkan) | glslc | SPIR-V | Dev-only |
-| Android (Vulkan) | glslc | SPIR-V | Dev-only |
+| Windows (Vulkan) | naga | SPIR-V | Dev-only |
+| macOS (Vulkan) | naga | SPIR-V module | Dev-only |
+| iOS (Vulkan) | naga | SPIR-V module | Dev-only |
+| Linux (Vulkan) | naga | SPIR-V | Dev-only |
+| Android (Vulkan) | naga | SPIR-V | Dev-only |
 | Shipping | Pre-compiled | All formats | Never |
 
 ### Dev-Mode Subprocess Execution
@@ -635,8 +635,8 @@ pipeline and are not produced by this codegen path.
 See companion [rendering-scripting-test-cases.md](rendering-scripting-test-cases.md). All
 integration tests are CI-runnable without hardware GPU requirements where possible -- GPU-dependent
 tests are marked `[GPU]` and run on the GPU test runners. Negative tests cover GLSL codegen failure,
-glslc compile failure, glslc missing binary, SPIR-V module failure, missing permutation fallback,
-rkyv alignment failure, and channel back-pressure.
+naga compile failure, naga unavailable, SPIR-V module failure, missing permutation fallback, rkyv
+alignment failure, and channel back-pressure.
 
 ## Open Questions
 

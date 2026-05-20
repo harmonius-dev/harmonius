@@ -27,7 +27,7 @@
      correctly.
 
 5. **R-15.8.5** — The engine **SHALL** support visual shader graph authoring compiling through the
-   glslc/glslc pipeline to SPIR-V, with a material graph variant
+   GLSL → `naga` → SPIR-V pipeline, with a material graph variant
    providing PBR inputs and live preview.
    - **Rationale:** Shader authoring must be visual and produce shaders for all GPU backends.
    - **Verification:** Create a shader graph, compile it, and verify correct rendering on Vulkan,

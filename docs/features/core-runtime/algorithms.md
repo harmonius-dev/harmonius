@@ -21,7 +21,7 @@
 
 2. **F-1.10.2** — Compile visual node graphs into platform shader bytecode (SPIR-V, SPIR-V, SPIR-V)
    via a GraphCompiler. The compiler traverses the node graph, generates intermediate GLSL, and
-   invokes CLI shader tools (glslc, glslc) to produce final bytecode. Per-node error diagnostics
+   invokes bundled `naga` to produce final bytecode. Per-node error diagnostics
    report type mismatches, missing connections, and invalid configurations.
    - **Deps:** F-1.10.4 (Condition Expressions)
 

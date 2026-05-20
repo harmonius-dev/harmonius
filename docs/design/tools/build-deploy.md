@@ -249,9 +249,9 @@ GLSL is the sole shader intermediate language. All shaders are compiled offline 
 
 | Source | Tool | Output | Platforms |
 |--------|------|--------|-----------|
-| `.glsl` | glslc | SPIR-V | Windows, Xbox |
-| `.glsl` | glslc | SPIR-V | Linux, Android |
-| `.glsl` | glslc → `glslc` | SPIR-V | macOS, iOS |
+| `.glsl` | naga | SPIR-V | Windows, Xbox |
+| `.glsl` | naga | SPIR-V | Linux, Android |
+| `.glsl` | naga → `naga` | SPIR-V | macOS, iOS |
 | `.glsl` | Platform SDK | Console format | Switch, PlayStation |
 
 **Variant handling:** each material graph emits a permutation matrix from its feature flags. A
@@ -754,7 +754,7 @@ Console targets are never built on developer machines.
 | SDK | NX SDK | GDK | PS SDK |
 | Package | NSP | XVC | `.pkg` |
 | Certification | Nintendo Lotcheck | Xbox cert | Sony TRC |
-| Shader | Console binary (NX shader compiler) | SPIR-V via GDK glslc | Console binary |
+| Shader | Console binary (NX shader compiler) | SPIR-V via GDK naga | Console binary |
 
 ## Test Plan
 
@@ -813,9 +813,9 @@ Add a "Shader baking" subsection:
 
 | Source | Tool | Output | Platform |
 |--------|------|--------|----------|
-| GLSL | glslc | SPIR-V | Windows, Xbox |
-| GLSL | glslc | SPIR-V | Linux, Android |
-| GLSL | glslc → glslc | SPIR-V | macOS, iOS |
+| GLSL | naga | SPIR-V | Windows, Xbox |
+| GLSL | naga | SPIR-V | Linux, Android |
+| GLSL | naga → naga | SPIR-V | macOS, iOS |
 | GLSL | Platform SDK | Console format | Switch, PS |
 
 Shader variant handling: permutation matrix from material graph feature flags. Per-platform variant
@@ -896,7 +896,7 @@ drain-then-swap point (scripting.md RF-27 item 6).
 |-----------|-----------|------|-----------|
 | Asset pipeline | consumes | source assets | AssetDatabase API |
 | Codegen pipeline | consumes | .rs source from graphs | Codegen emitter |
-| Shader pipeline | produces | compiled shaders | glslc CLI |
+| Shader pipeline | produces | compiled shaders | naga |
 | Team tools | bidirectional | CI/CD, shared cache | GitHub Actions |
 | Editor | bidirectional | build triggers, progress | Channel + UI |
 | Platform I/O | consumes | file writes | Platform-native I/O |
@@ -951,7 +951,7 @@ The complete pipeline from editor project to shippable game:
    - **Codegen** — all logic graphs, table schemas, custom components emit `.rs` source
    - **Compile** — bundled rustc compiles middleman; for shipping, `cargo build --release` with LTO
      static-links everything
-   - **Shader bake** — GLSL → glslc/glslc per platform (RF-3)
+   - **Shader bake** — GLSL → naga per platform (RF-3)
    - **Asset bake** — textures compressed, meshes optimized, audio transcoded per platform (RF-8)
    - **Bundle** — assets packaged into rkyv bundle files (RF-4)
    - **Package** — platform-native installer (RF-6)
@@ -1128,7 +1128,7 @@ rebuild the same assets independently.
 | Artifact | Cache key inputs | Typical size |
 |----------|-----------------|-------------|
 | Middleman .dylib | All .rs source + rustc version + platform | 10-100 MB |
-| Compiled shaders (per variant) | GLSL source + glslc version + platform | 1-50 KB each |
+| Compiled shaders (per variant) | GLSL source + naga crate version + platform | 1-50 KB each |
 | Baked texture (per platform) | Source image + compression settings + platform | 100 KB - 10 MB |
 | Baked mesh (per platform) | Source mesh + LOD settings + meshlet config | 100 KB - 50 MB |
 | Baked audio | Source audio + codec + quality settings | 100 KB - 10 MB |
@@ -1164,7 +1164,7 @@ rebuild the same assets independently.
 9. **Eviction** — L1 cache: LRU eviction when disk usage exceeds configurable budget (default 5 GB).
    L2 cache: LRU eviction per project with configurable budget (default 50 GB). CI artifacts pinned
    for N days (configurable, default 30).
-10. **Invalidation** — when the engine version changes (rustc version, glslc version, codegen
+10. **Invalidation** — when the engine version changes (rustc version, naga crate version, codegen
     pipeline version), ALL cached artifacts are invalidated. The first build after an engine update
     rebuilds everything. Subsequent builds are fast (L2 populated by CI).
 11. **Cache warming** — `harmonius cache warm` CLI command pre-builds all assets for all configured

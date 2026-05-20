@@ -97,9 +97,9 @@
     - **Rationale:** Generational handles detect use-after-free without undefined behavior.
     - **Verification:** Free a buffer handle and attempt reuse; verify runtime error.
 
-13. **R-2.1.15** — The engine **SHALL** compile GLSL shader sources to SPIR-V via the `glslc` CLI
-    during asset processing, caching artifacts by source hash and never invoking compilers at
-    runtime in shipping builds.
+13. **R-2.1.15** — The engine **SHALL** compile GLSL shader sources to SPIR-V via the bundled
+    `naga` crate during asset processing, caching artifacts by source hash and never invoking
+    compilers at runtime in shipping builds.
     - **Rationale:** Offline compilation eliminates runtime hitches and shader-tool dependencies in
       shipped games.
     - **Verification:** Process a shader graph asset; verify SPIR-V is stored in CAS and loads via

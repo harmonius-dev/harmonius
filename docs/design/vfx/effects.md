@@ -226,10 +226,10 @@ flowchart LR
     C --> D[Type Check Edges]
     D --> E[Topological Sort]
     E --> F[GLSL CodeGen]
-    F --> G[glslc Compile]
+    F --> G[naga Compile]
     G --> H[SPIR-V]
     G --> I[SPIR-V]
-    H --> J[glslc]
+    H --> J[naga]
     J --> K[SPIR-V]
 ```
 
@@ -1192,7 +1192,7 @@ Screen effects are per-camera (RF-9). Each `Camera` entity has its own post-proc
 
 1. **Author** -- effects artist connects typed nodes.
 2. **Preview** -- graph compiles on save, preview simulates.
-3. **Compile** -- validate, flatten, type check, sort, GLSL codegen, glslc compile. Cached by
+3. **Compile** -- validate, flatten, type check, sort, GLSL codegen, naga compile. Cached by
    content hash.
 4. **Load** -- runtime loads `CompiledEffect` binary.
 5. **Spawn** -- `VfxSpawnEvent` creates ECS entities.
@@ -1260,7 +1260,7 @@ ECS systems and the render thread communicate via a double-buffered staging chan
 
 ### Shader Pipeline
 
-| Platform | Source | glslc Output | Final |
+| Platform | Source | naga Output | Final |
 |----------|--------|------------|-------|
 | Vulkan | GLSL | SPIR-V | SPIR-V |
 | Vulkan | GLSL | SPIR-V | SPIR-V |
@@ -1409,7 +1409,7 @@ Tests are defined in the companion file [effects-test-cases.md](effects-test-cas
 
 For runtime effects: deferred rendering dependency for projected decals means forward-rendered
 platforms must fall back to mesh decals. For the effect graph: GLSL-only shader IL means two-stage
-compilation (glslc), adding warm-up latency. We keep the constraint because a single IL reduces
+compilation (naga), adding warm-up latency. We keep the constraint because a single IL reduces
 compiler complexity.
 
 **Q2. How can this design be improved?**

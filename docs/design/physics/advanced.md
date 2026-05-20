@@ -1963,18 +1963,18 @@ Each physics tick, vehicle systems execute in order:
 
 **Windows:**
 
-- GPU compute via Vulkan compute shaders (GLSL compiled by glslc).
+- GPU compute via Vulkan compute shaders (GLSL compiled by naga).
 - Fluid and cloth dispatch use compute command lists on the async compute queue when available.
 
 **macOS:**
 
-- GPU compute via Vulkan compute shaders (GLSL compiled by glslc, converted by glslc
+- GPU compute via Vulkan compute shaders (GLSL compiled by naga, converted by naga
   via C ABI).
 - Command buffer completion handlers are GCD dispatch blocks. Controlled drain at poll point.
 
 **Linux:**
 
-- GPU compute via Vulkan compute shaders (GLSL compiled to SPIR-V by glslc).
+- GPU compute via Vulkan compute shaders (GLSL compiled to SPIR-V by naga).
 - Fracture and fluid asset streaming uses platform-native io_uring via the core-runtime
   request/handle pattern. No async runtimes, no `Future<>`, no `.await`.
 
@@ -2323,7 +2323,7 @@ implements standalone force systems instead. Either:
 Rotation parameter for spatial queries is defined in the physics foundation design (RF-13). This
 design should reference it.
 
-### RF-8: Fix glslc
+### RF-8: Fix naga
 
 Line 1696 says "via C ABI." Must be CLI subprocess per constraints.
 

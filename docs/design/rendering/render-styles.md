@@ -165,7 +165,7 @@ This document covers four tightly coupled subsystems:
    glass, fabric, metal, clearcoat, wax, parallax, material graph system
 
 All state as ECS components. All logic as systems in the render graph. Static dispatch. GLSL via
-glslc to SPIR-V.
+naga to SPIR-V.
 
 ## Architecture
 
@@ -297,10 +297,10 @@ flowchart TD
     E --> F{In Cache?}
     F -->|Yes| C
     F -->|No| G[Generate GLSL]
-    G --> H[glslc Compile]
+    G --> H[naga Compile]
     H --> I[SPIR-V + SPIR-V]
     I --> J{Metal?}
-    J -->|Yes| K[glslc]
+    J -->|Yes| K[naga]
     K --> L[Store in Cache]
     J -->|No| L
     L --> M[Create Pipeline State]

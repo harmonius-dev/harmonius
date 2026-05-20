@@ -8,7 +8,6 @@ Packages the Rust `harmonius_app` binary into a `.app` bundle so AppKit windowin
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 - Rust stable
 - Vulkan SDK or Homebrew `molten-vk` (MoltenVK ICD + dylib)
-- `glslangValidator` on `PATH` (Vulkan SDK or `glslang` package)
 
 ## Build and run
 
@@ -25,4 +24,4 @@ open build/Debug/Harmonius.app
 cargo run -p harmonius_app --release
 ```
 
-Requires X11, Vulkan loader, and `glslangValidator`.
+Requires X11 and a Vulkan loader.

@@ -27,9 +27,9 @@ files. Benchmarks run on the perf CI lane.
 | TC-IR-3.5.1.I1 | PBR graph emits GLSL | Albedo tex + metallic slider | Valid GLSL w/ `SurfaceOutput` | IR-3.5.1 |
 | TC-IR-3.5.1.I2 | Unlit graph emits GLSL | Color constant only | GLSL with `Unlit` model | IR-3.5.1 |
 | TC-IR-3.5.1.I3 | Normal map node emits TBN | Graph w/ normal sample | GLSL includes TBN transform | IR-3.5.1 |
-| TC-IR-3.5.2.I1 | glslc produces SPIR-V | Valid PBR pixel GLSL | SPIR-V passes validation | IR-3.5.2 |
-| TC-IR-3.5.2.I2 | glslc produces SPIR-V | Valid PBR pixel GLSL | SPIR-V passes `spirv-val` | IR-3.5.2 |
-| TC-IR-3.5.2.I3 | glslc produces SPIR-V module | SPIR-V from glslc | SPIR-V module loads on Vulkan `[GPU]` | IR-3.5.2 |
+| TC-IR-3.5.2.I1 | naga produces SPIR-V | Valid PBR pixel GLSL | SPIR-V passes validation | IR-3.5.2 |
+| TC-IR-3.5.2.I2 | naga produces SPIR-V | Valid PBR pixel GLSL | SPIR-V passes `spirv-val` | IR-3.5.2 |
+| TC-IR-3.5.2.I3 | naga produces SPIR-V module | SPIR-V from naga | SPIR-V module loads on Vulkan `[GPU]` | IR-3.5.2 |
 | TC-IR-3.5.2.I4 | Main-thread subprocess owner | Compile request | Worker never touches pipe | IR-3.5.2 |
 | TC-IR-3.5.3.I1 | Permutation enumeration | DefaultLit+AlphaClip+FwdPlus | Unique PSO per combo | IR-3.5.3 |
 | TC-IR-3.5.3.I2 | Feature ifdef blocks | Graph w/ optional emissive | `#ifdef HAS_EMISSIVE` present | IR-3.5.3 |
@@ -51,13 +51,13 @@ files. Benchmarks run on the perf CI lane.
 |----|------|-------|----------|-----|
 | TC-IR-3.5.1.N1 | `[NEG]` GLSL codegen error | Cyclic graph | Error node; prior handle kept | IR-3.5.1 |
 | TC-IR-3.5.1.N2 | `[NEG]` Unknown node kind | Graph w/ unresolved node | Build fails with descriptive error | IR-3.5.1 |
-| TC-IR-3.5.2.N1 | `[NEG]` glslc compile error | Syntactically invalid GLSL | Exit != 0; stderr captured | IR-3.5.2 |
-| TC-IR-3.5.2.N2 | `[NEG]` glslc missing binary | CLI not installed | Graceful error; build fails | IR-3.5.2 |
-| TC-IR-3.5.2.N3 | `[NEG]` glslc translation error | Malformed SPIR-V | Previous SPIR-V module retained | IR-3.5.2 |
+| TC-IR-3.5.2.N1 | `[NEG]` naga compile error | Syntactically invalid GLSL | Exit != 0; stderr captured | IR-3.5.2 |
+| TC-IR-3.5.2.N2 | `[NEG]` naga unavailable | CLI not installed | Graceful error; build fails | IR-3.5.2 |
+| TC-IR-3.5.2.N3 | `[NEG]` naga compile error | Malformed SPIR-V | Previous SPIR-V module retained | IR-3.5.2 |
 | TC-IR-3.5.3.N1 | `[NEG]` Missing permutation | Unknown `PermutationKey` | Falls back to default permutation | IR-3.5.3 |
 | TC-IR-3.5.4.N1 | `[NEG]` Hot reload compile fail | Invalid GLSL edit | Previous pipeline still renders | IR-3.5.4 |
 | TC-IR-3.5.4.N2 | `[NEG]` Stale handle resolve | Freed + reused slot | `resolve` returns `None` | IR-3.5.4 |
-| TC-IR-3.5.4.N3 | `[NEG]` glslc stderr to overlay | Compile error, 3 diagnostics | `Failed{3}` in ECS resource | IR-3.5.4 |
+| TC-IR-3.5.4.N3 | `[NEG]` naga diagnostics to overlay | Compile error, 3 diagnostics | `Failed{3}` in ECS resource | IR-3.5.4 |
 | TC-IR-3.5.5.N1 | `[NEG]` PP graph invalid binding | Missing input texture | Build fails; pass not registered | IR-3.5.5 |
 | TC-IR-3.5.6.N1 | `[NEG]` Effect kernel compile fail | Invalid spawn GLSL | Effect disabled; warning emitted | IR-3.5.6 |
 | TC-IR-3.5.U.N1 | `[NEG]` rkyv misalignment | Misaligned fixture | `check_bytes` rejects | IR-3.5.1 |
@@ -69,8 +69,8 @@ files. Benchmarks run on the perf CI lane.
 |----|-----------|--------|-----|
 | TC-IR-3.5.1.B1 | GLSL codegen 100-node graph | < 50 ms | IR-3.5.1 |
 | TC-IR-3.5.1.B2 | `MaterialShaderCache` arena insert | < 5 us | IR-3.5.1 |
-| TC-IR-3.5.2.B1 | Cold `glslc` compile single shader | < 500 ms | IR-3.5.2 |
-| TC-IR-3.5.2.B2 | Cached `glslc` compile | < 1 ms | IR-3.5.2 |
+| TC-IR-3.5.2.B1 | Cold `naga` compile single shader | < 500 ms | IR-3.5.2 |
+| TC-IR-3.5.2.B2 | Cached `naga` compile | < 1 ms | IR-3.5.2 |
 | TC-IR-3.5.3.B1 | 16 permutation compile batch | < 5 s total | IR-3.5.3 |
 | TC-IR-3.5.3.B2 | Permutation sorted-Vec lookup (256) | < 200 ns | IR-3.5.3 |
 | TC-IR-3.5.4.B1 | Hot reload end-to-end | < 1 s (R-13.4.NF2) | IR-3.5.4 |

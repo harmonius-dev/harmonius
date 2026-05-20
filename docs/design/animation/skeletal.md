@@ -1536,8 +1536,8 @@ Animation events follow this path:
 
 ### Compute Shader Dispatch
 
-All three compute stages (keyframe eval, blend, skinning) use GLSL compiled via glslc. On macOS,
-SPIR-V is translated to SPIR-V via glslc (CLI subprocess per project constraints).
+All three compute stages (keyframe eval, blend, skinning) use GLSL compiled via naga. On macOS,
+SPIR-V is translated to SPIR-V via naga (CLI subprocess per project constraints).
 
 Thread group sizes:
 
