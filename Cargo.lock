@@ -656,6 +656,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8babf46d4c1c9d92deac9f7be466f76dfc4482b6452fc5024b5e8daf6ffeb3ee"
 dependencies = [
  "libm",
+ "rkyv 0.7.46",
 ]
 
 [[package]]
@@ -855,6 +856,15 @@ dependencies = [
 [[package]]
 name = "harmonius_integration"
 version = "0.1.0"
+
+[[package]]
+name = "harmonius_integration_animation_physics"
+version = "0.1.0"
+dependencies = [
+ "glam 0.29.3",
+ "rkyv 0.7.46",
+ "rkyv_derive 0.7.46",
+]
 
 [[package]]
 name = "harmonius_integration_animation_rendering"
