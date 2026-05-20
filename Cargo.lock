@@ -856,6 +856,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_integration_editor_animation"
+version = "0.1.0"
+dependencies = [
+ "glam 0.29.3",
+]
+
+[[package]]
 name = "harmonius_integration_editor_physics"
 version = "0.1.0"
 
