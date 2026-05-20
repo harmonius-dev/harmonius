@@ -931,6 +931,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_graph"
+version = "0.1.0"
+dependencies = [
+ "smallvec",
+]
+
+[[package]]
 name = "harmonius_integration"
 version = "0.1.0"
 
