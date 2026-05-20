@@ -1237,6 +1237,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_timeline"
+version = "0.1.0"
+dependencies = [
+ "rkyv 0.8.16",
+ "smallvec",
+ "smol_str 0.3.2",
+]
+
+[[package]]
 name = "harmonius_timelines_scripting"
 version = "0.1.0"
 dependencies = [
@@ -2223,6 +2232,7 @@ dependencies = [
  "rend 0.5.3",
  "rkyv_derive 0.8.16",
  "smallvec",
+ "smol_str 0.3.2",
  "tinyvec",
  "uuid",
 ]
