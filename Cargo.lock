@@ -864,6 +864,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_integration_audio_physics"
+version = "0.1.0"
+
+[[package]]
 name = "harmonius_integration_editor_animation"
 version = "0.1.0"
 dependencies = [
