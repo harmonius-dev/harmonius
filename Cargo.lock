@@ -720,6 +720,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius-core"
+version = "0.1.0"
+
+[[package]]
 name = "harmonius-integration-ai-data-tables"
 version = "0.1.0"
 dependencies = [
