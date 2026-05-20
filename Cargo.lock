@@ -1348,6 +1348,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration_ai_event_logs"
+version = "0.1.0"
+dependencies = [
+ "bytecheck 0.6.12",
+ "crossbeam-channel",
+ "rkyv 0.7.46",
+ "smallvec",
+]
+
+[[package]]
 name = "integration_attributes_effects_physics"
 version = "0.1.0"
 dependencies = [
