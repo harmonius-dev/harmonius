@@ -6,14 +6,14 @@
 > [design/rendering/render-pipeline.md](../../design/rendering/render-pipeline.md) and
 > [design/rendering/pipeline-state-cache.md](../../design/rendering/pipeline-state-cache.md).
 
-The GPU runtime is the shared services layer between the GPU backend interface and consumers
-such as the render graph, asset pipeline, and PSO cache. All requirements below are Vulkan 1.4
-on top of `ash`; the runtime exposes Vulkan idioms (descriptor pools, descriptor sets, timeline
-semaphores) consistently across all platforms.
+The GPU runtime is the shared services layer between the GPU backend interface and consumers such as
+the render graph, asset pipeline, and PSO cache. All requirements below are Vulkan 1.4 on top of
+`ash`; the runtime exposes Vulkan idioms (descriptor pools, descriptor sets, timeline semaphores)
+consistently across all platforms.
 
-This file replaces the prior `gpu-abstraction.md`, which used a non-conforming `GR-*` ID
-scheme without Rationale/Verification. The Legacy ID Mapping table at the bottom maps every
-`GR-N.M` reference still found in the corpus to the canonical `R-2.14.*` ID.
+This file replaces the prior `gpu-abstraction.md`, which used a non-conforming `GR-*` ID scheme
+without Rationale/Verification. The Legacy ID Mapping table at the bottom maps every `GR-N.M`
+reference still found in the corpus to the canonical `R-2.14.*` ID.
 
 ## Memory Management
 

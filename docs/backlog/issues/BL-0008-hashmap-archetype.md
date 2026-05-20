@@ -11,15 +11,15 @@ status: triage
 title: Remove HashMap from ECS Archetype hot path
 ---
 
-# Remove `HashMap` from ECS `Archetype` hot path
+## Remove `HashMap` from ECS `Archetype` hot path
 
-## Context
+### Context
 
-`core-runtime/ecs.md` Archetype storage uses `HashMap<ComponentId, Column>` on the hot query
-path. This violates the project-wide rule "no HashMap on hot paths" (constraints.md
+`core-runtime/ecs.md` Archetype storage uses `HashMap<ComponentId, Column>` on the hot query path.
+This violates the project-wide rule "no HashMap on hot paths" (constraints.md
 `Performance Patterns`, SC-2). The 2026-04-12 design review §3.1 flagged this.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Archetype column lookup uses sorted `Vec<(ComponentId, Column)>` plus binary search,
       or a dense keyed store, instead of `HashMap`.
@@ -27,12 +27,12 @@ path. This violates the project-wide rule "no HashMap on hot paths" (constraints
 - [ ] `ecs.md` design diagram and pseudocode reflect the new container.
 - [ ] `shared-conventions.md` SC-2 row for ECS Archetype examples no longer flags `HashMap`.
 
-## Verification
+### Verification
 
-`grep 'HashMap' docs/design/core-runtime/ecs.md` shows no Archetype hot-path usage; the
-benchmark suite reports equal or better p99 lookup.
+`grep 'HashMap' docs/design/core-runtime/ecs.md` shows no Archetype hot-path usage; the benchmark
+suite reports equal or better p99 lookup.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.1](../../design/design-review.md#31-core-runtime)
 - [docs/design/integration/shared-conventions.md SC-2](../../design/integration/shared-conventions.md#sc-2----no-hashmap-on-hot-paths)

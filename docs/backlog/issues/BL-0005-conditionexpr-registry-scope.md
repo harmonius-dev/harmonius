@@ -11,16 +11,16 @@ status: triage
 title: Decide ConditionExpr registry scope (global vs per-subsystem)
 ---
 
-# Decide `ConditionExpr` registry scope (global vs per-subsystem)
+## Decide `ConditionExpr` registry scope (global vs per-subsystem)
 
-## Context
+### Context
 
-`ConditionExpr` and `ConditionRegistry` are referenced by graphs, effects, and containers in
-the data-systems layer. The design review §3.3 noted there is no statement about whether
-registries are shared across subsystems or owned per subsystem. Either decision is workable;
-not deciding produces subtle bugs.
+`ConditionExpr` and `ConditionRegistry` are referenced by graphs, effects, and containers in the
+data-systems layer. The design review §3.3 noted there is no statement about whether registries are
+shared across subsystems or owned per subsystem. Either decision is workable; not deciding produces
+subtle bugs.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Decision recorded in `data-systems/composition.md`: one global `ConditionRegistry` per
       world, or one registry per subsystem.
@@ -31,12 +31,12 @@ not deciding produces subtle bugs.
       reference each other.
 - [ ] `canonical-owners.md` row for `ConditionExpr` flips to `Owned`.
 
-## Verification
+### Verification
 
-Reading any of the three subsystem docs makes the registry-ownership story unambiguous; no
-backlog comments survive on this question.
+Reading any of the three subsystem docs makes the registry-ownership story unambiguous; no backlog
+comments survive on this question.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.3](../../design/design-review.md#33-data-systems)
 - [docs/design/data-systems/composition.md](../../design/data-systems/composition.md)

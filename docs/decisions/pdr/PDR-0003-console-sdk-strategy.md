@@ -13,8 +13,8 @@ Non-Disclosure Agreements (NDAs). NDAs prohibit:
 - Bundling the SDK in a public open-source release.
 - Allowing the SDK headers or libraries to be inspected by non-licensed developers.
 
-A pure open-source engine cannot ship console SDKs in the public binary. Customers building
-for consoles must obtain platform-holder licenses themselves.
+A pure open-source engine cannot ship console SDKs in the public binary. Customers building for
+consoles must obtain platform-holder licenses themselves.
 
 The engine has two architectural choices:
 
@@ -28,8 +28,8 @@ The engine has two architectural choices:
 ## Decision
 
 Console SDKs are the only proprietary components in the Harmonius product
-([PDR-0001](PDR-0001-apache2-no-royalties.md)). They are delivered via a server-side build
-farm. The engine ships an open-source `console-build` client; the farm holds the SDKs.
+([PDR-0001](PDR-0001-apache2-no-royalties.md)). They are delivered via a server-side build farm. The
+engine ships an open-source `console-build` client; the farm holds the SDKs.
 
 Annual license fees (per platform):
 
@@ -58,8 +58,8 @@ The license covers NDA compliance, 24/7 support during certification, and platfo
 ## Reversibility
 
 Could revert to per-developer SDK install if a platform holder permits broader distribution.
-Unlikely in the foreseeable future. The build-farm choice is also a customer-experience
-positive — customers do not need to manage SDK environment setup.
+Unlikely in the foreseeable future. The build-farm choice is also a customer-experience positive —
+customers do not need to manage SDK environment setup.
 
 ## References
 

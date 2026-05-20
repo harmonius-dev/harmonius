@@ -11,25 +11,25 @@ status: triage
 title: Specify audio ducking (voice > SFX > music)
 ---
 
-# Specify audio ducking (voice > SFX > music)
+## Specify audio ducking (voice > SFX > music)
 
-## Context
+### Context
 
 `audio/audio.md` has no ducking spec. Industry standard is voice > SFX > music ducking with
 configurable thresholds.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Ducking algorithm documented: priority levels, attack / release times, threshold
       configuration.
 - [ ] Per-source priority enum exposed.
 - [ ] Cross-references to mixer graph in `audio.md` and audio integration docs.
 
-## Verification
+### Verification
 
 Concurrent voice + SFX + music produces audible ducking matching the documented thresholds.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.6 / P2 #57](../../design/design-review.md#36-ai--audio--input--ui--networking)
 - [docs/design/audio/audio.md](../../design/audio/audio.md)

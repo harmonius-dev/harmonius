@@ -6,18 +6,18 @@ Accepted — 2024-08-12 (backfilled 2026-05-20)
 
 ## Context
 
-Game engines are most commonly built in C++ (Unreal, CryEngine, custom AAA stacks) or C#
-runtime atop a C++ core (Unity). Both choices carry significant ongoing costs: undefined
-behavior, slow build times, manual memory management, and weak concurrency primitives.
-Modern alternatives (Rust, Zig, Carbon) offer different trade-offs. The project needs a single
-language for engine, editor, codegen output, headless game server, and most tooling.
+Game engines are most commonly built in C++ (Unreal, CryEngine, custom AAA stacks) or C# runtime
+atop a C++ core (Unity). Both choices carry significant ongoing costs: undefined behavior, slow
+build times, manual memory management, and weak concurrency primitives. Modern alternatives (Rust,
+Zig, Carbon) offer different trade-offs. The project needs a single language for engine, editor,
+codegen output, headless game server, and most tooling.
 
 ## Decision
 
 Rust (stable channel only — no nightly features) is the primary language for every component:
 engine, editor, headless game server, asset pipeline, codegen targets, and command-line tools.
-Visual editor output codegens to Rust source compiled by a bundled `rustc` into a middleman
-`.dylib` (see [ADR-0005](ADR-0005-codegen-middleman-dylib.md)).
+Visual editor output codegens to Rust source compiled by a bundled `rustc` into a middleman `.dylib`
+(see [ADR-0005](ADR-0005-codegen-middleman-dylib.md)).
 
 ## Consequences
 

@@ -1,8 +1,7 @@
 # User Stories Coverage Matrix
 
-Maps every `US-X.Y.Z` to its persona, requirement, design, and test artifacts. Coverage is
-partial; see [requirements-matrix.md](requirements-matrix.md) for the matched list of
-domains.
+Maps every `US-X.Y.Z` to its persona, requirement, design, and test artifacts. Coverage is partial;
+see [requirements-matrix.md](requirements-matrix.md) for the matched list of domains.
 
 ## Status legend
 
@@ -78,8 +77,8 @@ domains.
 
 ## Other domains (Summary only)
 
-Same approach as the requirements matrix: 13 domains carry "Summary only" rows. Detailed
-mapping deferred to 2026-Q3 OKR-3.
+Same approach as the requirements matrix: 13 domains carry "Summary only" rows. Detailed mapping
+deferred to 2026-Q3 OKR-3.
 
 | Domain               | Story files | Notes                                                  |
 |----------------------|------------:|--------------------------------------------------------|
@@ -107,5 +106,5 @@ mapping deferred to 2026-Q3 OKR-3.
 | AI              |     7 |       2 |      0 |        0 |     9 |
 | **Total (indexed)** | **30** | **8** | **0** | **0** |    **38** |
 
-Indexed coverage: 30 / 38 = **79%** Owned across the four matrixed domains. The 8 Partial
-rows have backlog issues attached.
+Indexed coverage: 30 / 38 = **79%** Owned across the four matrixed domains. The 8 Partial rows have
+backlog issues attached.

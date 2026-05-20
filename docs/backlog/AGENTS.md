@@ -4,9 +4,9 @@ All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
 
 ## Purpose
 
-The backlog is a docs-native, GitHub-ready list of open work items. Every issue has a
-markdown file with a stable `BL-NNNN` ID, a title, labels, and an acceptance contract.
-Mirroring to GitHub is a one-way sync; the markdown files are the source of truth.
+The backlog is a docs-native, GitHub-ready list of open work items. Every issue has a markdown file
+with a stable `BL-NNNN` ID, a title, labels, and an acceptance contract. Mirroring to GitHub is a
+one-way sync; the markdown files are the source of truth.
 
 ## Structure
 
@@ -26,8 +26,7 @@ docs/backlog/
 |-------------|----------------------|--------------------------------------|
 | Backlog ID  | `BL-NNNN-{slug}`     | `BL-0007-modop-unification`          |
 
-`NNNN` is monotonic across the whole backlog. Slugs are kebab-case and stable after
-publication.
+`NNNN` is monotonic across the whole backlog. Slugs are kebab-case and stable after publication.
 
 ## Issue file format
 

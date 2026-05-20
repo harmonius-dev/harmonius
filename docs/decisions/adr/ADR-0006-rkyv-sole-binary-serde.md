@@ -7,28 +7,27 @@ Accepted — 2024-11-06 (backfilled 2026-05-20)
 ## Context
 
 The engine writes save files, baked assets, and network state. Each path needs a binary
-serialization library. Common Rust choices include `serde` (with `bincode` or `postcard`),
-`rkyv`, `prost` (Protobuf), and `flatbuffers`.
+serialization library. Common Rust choices include `serde` (with `bincode` or `postcard`), `rkyv`,
+`prost` (Protobuf), and `flatbuffers`.
 
-Serde is the default, but its `Deserialize` step copies bytes into Rust objects, which is
-expensive for large baked assets (meshes, textures, audio, scene state). Network paths also
-prefer zero-copy or minimal-copy decoding.
+Serde is the default, but its `Deserialize` step copies bytes into Rust objects, which is expensive
+for large baked assets (meshes, textures, audio, scene state). Network paths also prefer zero-copy
+or minimal-copy decoding.
 
 `rkyv` provides zero-copy archive access via mmap: the binary layout *is* the in-memory
-representation. Validation is performed once at archive load; reads after that are pointer
-chases.
+representation. Validation is performed once at archive load; reads after that are pointer chases.
 
 ## Decision
 
 `rkyv` is the sole binary serialization library for the engine. Save files, baked assets, and
 network payloads all use rkyv.
 
-Serde is banned engine-wide except in tools that emit JSON for external consumers (rumdl,
-package metadata, editor preferences stored as human-readable text).
+Serde is banned engine-wide except in tools that emit JSON for external consumers (rumdl, package
+metadata, editor preferences stored as human-readable text).
 
-A custom Harmonius-specific text format covers scene files. It is designed for line-based
-diffing and merge conflict resolution (not BSN, not RON). Mixed text + binary serialization is
-allowed: text scene files reference companion `.bin` files in the same directory.
+A custom Harmonius-specific text format covers scene files. It is designed for line-based diffing
+and merge conflict resolution (not BSN, not RON). Mixed text + binary serialization is allowed: text
+scene files reference companion `.bin` files in the same directory.
 
 ## Consequences
 

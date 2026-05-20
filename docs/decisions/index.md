@@ -1,8 +1,8 @@
 # Decision Records Index
 
-This is the entry point for all Architecture Decision Records (ADRs) and Product
-Decision Records (PDRs). Every record listed here lives at a stable URL; supersession
-chains are linked rather than collapsed.
+This is the entry point for all Architecture Decision Records (ADRs) and Product Decision Records
+(PDRs). Every record listed here lives at a stable URL; supersession chains are linked rather than
+collapsed.
 
 See [AGENTS.md](AGENTS.md) for record format, lifecycle, and authoring rules.
 

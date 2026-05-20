@@ -11,15 +11,15 @@ status: triage
 title: Backfill thin requirement files (≤ 4 SHALL statements)
 ---
 
-# Backfill thin requirement files (≤ 4 SHALL statements)
+## Backfill thin requirement files (≤ 4 SHALL statements)
 
-## Context
+### Context
 
-The 2026-05 audit identified several requirement files with three or fewer `R-X.Y.Z`
-statements: `localization-editor.md` (3), `fog-of-war.md` (4), `animation/first-person.md`
-(4), `asset-import.md` (5). These are too thin to drive design or implementation.
+The 2026-05 audit identified several requirement files with three or fewer `R-X.Y.Z` statements:
+`localization-editor.md` (3), `fog-of-war.md` (4), `animation/first-person.md` (4),
+`asset-import.md` (5). These are too thin to drive design or implementation.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Each thin file expanded to at least eight `R-X.Y.Z` statements with Rationale and
       Verification per the requirements folder rules.
@@ -27,12 +27,12 @@ statements: `localization-editor.md` (3), `fog-of-war.md` (4), `animation/first-
       coverage.
 - [ ] `requirements/README.md` counts updated.
 
-## Verification
+### Verification
 
 `grep -c 'SHALL' docs/requirements/*/{localization-editor,fog-of-war,first-person,asset-import}.md`
 shows ≥ 8 each.
 
-## References
+### References
 
 - [docs/coverage/audits/2026-05-audit.md](../../coverage/audits/2026-05-audit.md)
 - [docs/requirements/AGENTS.md](../../requirements/AGENTS.md)

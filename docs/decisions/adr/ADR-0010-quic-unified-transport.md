@@ -6,11 +6,11 @@ Accepted — 2025-03-12 (backfilled 2026-05-20)
 
 ## Context
 
-Game networking historically uses TCP for reliable channels (HTTP, REST, WebSocket) and UDP
-plus a custom reliability layer (ENet, RakNet, custom rollback) for the game loop. Voice chat
-adds a third transport. Matchmaking uses HTTPS. The engine evaluated this stack and found that
-running four transport types compounds operational complexity (firewall holes, NAT traversal
-strategies, monitoring, congestion control) without strong technical motivation.
+Game networking historically uses TCP for reliable channels (HTTP, REST, WebSocket) and UDP plus a
+custom reliability layer (ENet, RakNet, custom rollback) for the game loop. Voice chat adds a third
+transport. Matchmaking uses HTTPS. The engine evaluated this stack and found that running four
+transport types compounds operational complexity (firewall holes, NAT traversal strategies,
+monitoring, congestion control) without strong technical motivation.
 
 QUIC (IETF RFC 9000) is a modern UDP-based protocol that provides:
 
@@ -19,15 +19,14 @@ QUIC (IETF RFC 9000) is a modern UDP-based protocol that provides:
 - Multiplexed streams without head-of-line blocking.
 - Connection migration across IP changes.
 
-Mature implementations exist on every target platform: `quinn-proto` (sans-io Rust QUIC),
-Apple's `Networking.framework`, and Microsoft's MsQuic.
+Mature implementations exist on every target platform: `quinn-proto` (sans-io Rust QUIC), Apple's
+`Networking.framework`, and Microsoft's MsQuic.
 
 ## Decision
 
-All network communication uses QUIC. There is no TCP, no custom UDP, no separate DTLS or
-HTTPS connections, no WebSocket layer. Game state replication, asset streaming, HTTP-style
-API calls, voice chat, and matchmaking all run over QUIC streams or datagrams on the same
-connection.
+All network communication uses QUIC. There is no TCP, no custom UDP, no separate DTLS or HTTPS
+connections, no WebSocket layer. Game state replication, asset streaming, HTTP-style API calls,
+voice chat, and matchmaking all run over QUIC streams or datagrams on the same connection.
 
 Platform implementations:
 
@@ -37,9 +36,9 @@ Platform implementations:
 | Apple    | `Networking.framework` via `objc2`        |
 | Windows  | MsQuic via `windows-rs`                   |
 
-The QUIC layer is consumed via a sans-io adapter on the game side (synchronous, no async
-runtime per [ADR-0004](ADR-0004-no-async-in-engine.md)). Backend services on Kubernetes can
-use Tokio + `quinn` if convenient.
+The QUIC layer is consumed via a sans-io adapter on the game side (synchronous, no async runtime per
+[ADR-0004](ADR-0004-no-async-in-engine.md)). Backend services on Kubernetes can use Tokio + `quinn`
+if convenient.
 
 ## Consequences
 

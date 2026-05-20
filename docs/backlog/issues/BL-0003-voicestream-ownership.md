@@ -11,9 +11,9 @@ status: triage
 title: Split VoiceStream ownership (transport vs codec)
 ---
 
-# Split `VoiceStream` ownership (transport vs codec)
+## Split `VoiceStream` ownership (transport vs codec)
 
-## Context
+### Context
 
 The 2026-04-12 design review §2.2 found two `VoiceStream` definitions:
 
@@ -22,7 +22,7 @@ The 2026-04-12 design review §2.2 found two `VoiceStream` definitions:
 
 Both refer to the "same" voice stream but cover different concerns.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] `networking/network-services.md` owns the transport-side `VoiceStream` (QUIC stream
       framing, jitter buffer, NAT considerations).
@@ -31,12 +31,12 @@ Both refer to the "same" voice stream but cover different concerns.
 - [ ] `canonical-owners.md` rows for `VoiceStream (transport)` and `VoiceStream (codec)`
       flip to `Owned`.
 
-## Verification
+### Verification
 
-Each definition exists in exactly one file; the other file references the canonical
-definition by name.
+Each definition exists in exactly one file; the other file references the canonical definition by
+name.
 
-## References
+### References
 
 - [docs/design/design-review.md §2.2](../../design/design-review.md#22-foundational-type-duplication)
 - [docs/design/audio/audio.md](../../design/audio/audio.md)

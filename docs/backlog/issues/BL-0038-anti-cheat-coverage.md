@@ -11,27 +11,28 @@ status: triage
 title: Complete anti-cheat surface (input, teleport, reconciliation)
 ---
 
-# Complete anti-cheat surface (input, teleport, reconciliation)
+## Complete anti-cheat surface (input, teleport, reconciliation)
 
-## Context
+### Context
 
-The 2026-04-12 review §3.6 found anti-cheat partial: movement and damage validators exist,
-but input validation, teleport detection thresholds, and reconciliation bounds are missing.
+The 2026-04-12 review §3.6 found anti-cheat partial: movement and damage validators exist, but input
+validation, teleport detection thresholds, and reconciliation bounds are missing.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Input validation: per-action rate limits, per-frame action caps.
 - [ ] Teleport detection: position-delta thresholds, server reconcile distance bounds.
 - [ ] Reconciliation bounds: maximum client / server divergence before snap.
 - [ ] Companion test cases include adversarial scenarios.
 
-## Verification
+### Verification
 
-Adversarial test scenarios (high-rate input, teleport, drift) trigger documented mitigations
-without false positives in normal play.
+Adversarial test scenarios (high-rate input, teleport, drift) trigger documented mitigations without
+false positives in normal play.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.6](../../design/design-review.md#36-ai--audio--input--ui--networking)
 - [docs/design/networking/network-services.md](../../design/networking/network-services.md)
-- [docs/user-stories/networking/non-functional.md](../../user-stories/networking/non-functional.md) US-8.NFR.7
+- [docs/user-stories/networking/non-functional.md](../../user-stories/networking/non-functional.md)
+  US-8.NFR.7

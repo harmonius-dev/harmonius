@@ -1,9 +1,8 @@
 # Backlog Index
 
-Docs-native, GitHub-ready issue catalog. Source of truth for engineering and
-documentation work items. See [AGENTS.md](AGENTS.md) for issue file format,
-[labels.md](labels.md) for the label taxonomy, and [projects.md](projects.md) for the
-GitHub Projects board model.
+Docs-native, GitHub-ready issue catalog. Source of truth for engineering and documentation work
+items. See [AGENTS.md](AGENTS.md) for issue file format, [labels.md](labels.md) for the label
+taxonomy, and [projects.md](projects.md) for the GitHub Projects board model.
 
 ## Counts (snapshot 2026-05-20)
 
@@ -54,9 +53,8 @@ Each issue closes one row of [`design/canonical-owners.md`](../design/canonical-
 
 ### Design-review backlog migration (`BL-0015` … `BL-0042`)
 
-These are the still-open items from
-[`docs/design/design-review.md`](../design/design-review.md) after the 2026-05 status
-update.
+These are the still-open items from [`docs/design/design-review.md`](../design/design-review.md)
+after the 2026-05 status update.
 
 | ID                                                                | Title                                                   | Pri | Effort |
 |-------------------------------------------------------------------|---------------------------------------------------------|-----|--------|

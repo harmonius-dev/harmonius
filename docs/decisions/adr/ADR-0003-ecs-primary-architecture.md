@@ -7,17 +7,17 @@ Accepted — 2024-09-18 (backfilled 2026-05-20)
 ## Context
 
 Game engines historically expose a heterogeneous stack: scene-graph hierarchies (Unity, Unreal),
-actor-component objects, and inheritance trees. ECS (Entity Component System) is increasingly
-the architecture of choice for performance-critical engines (Bevy, EnTT, Unreal Mass) because
-it gives cache-friendly iteration, parallelism, and clean data ownership.
+actor-component objects, and inheritance trees. ECS (Entity Component System) is increasingly the
+architecture of choice for performance-critical engines (Bevy, EnTT, Unreal Mass) because it gives
+cache-friendly iteration, parallelism, and clean data ownership.
 
 Adopting ECS as a partial pattern (alongside actor trees) leads to the worst-of-both: confused
 ownership, double-bookkeeping, and inconsistent threading rules.
 
 ## Decision
 
-The engine is ECS-primary. Approximately 90% of simulation data lives as ECS components and
-~90% of gameplay logic as ECS systems. The remaining 10% is explicitly justified:
+The engine is ECS-primary. Approximately 90% of simulation data lives as ECS components and ~90% of
+gameplay logic as ECS systems. The remaining 10% is explicitly justified:
 
 - **Audio runtime.** Real-time mixer thread with sub-0.5 ms budget. Bridges via SPSC command
   queue.

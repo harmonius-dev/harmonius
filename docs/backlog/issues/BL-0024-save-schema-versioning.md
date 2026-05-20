@@ -11,15 +11,15 @@ status: triage
 title: Specify save schema versioning and migration
 ---
 
-# Specify save schema versioning and migration
+## Specify save schema versioning and migration
 
-## Context
+### Context
 
-`game-framework/save-system.md` has `MigrationRegistry` declared but not specified. The
-2026-04-12 review §3.7 / P1 #25 noted: stable GUID IDs, migration chain ordering, rollback
-on failure, autosave retention, and procedural-asset save handling are missing.
+`game-framework/save-system.md` has `MigrationRegistry` declared but not specified. The 2026-04-12
+review §3.7 / P1 #25 noted: stable GUID IDs, migration chain ordering, rollback on failure, autosave
+retention, and procedural-asset save handling are missing.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Stable GUID IDs documented (per-component, per-asset).
 - [ ] Migration chain ordering: linear vs DAG, conflict policy.
@@ -27,12 +27,12 @@ on failure, autosave retention, and procedural-asset save handling are missing.
 - [ ] Autosave retention policy (keep N most recent, oldest evicted).
 - [ ] Procedural-asset save handling: serialize generation seeds, not generated artifacts.
 
-## Verification
+### Verification
 
 A save file written under v1 schema migrates cleanly to v2 with rollback test cases for
 mid-migration failure.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.7 / P1 #25](../../design/design-review.md)
 - [docs/design/game-framework/save-system.md](../../design/game-framework/save-system.md)

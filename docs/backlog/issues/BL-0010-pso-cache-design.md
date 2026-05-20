@@ -11,12 +11,12 @@ status: triage
 title: Design pipeline-state-object cache (recovery + GC + persistence)
 ---
 
-# Design pipeline-state-object cache (recovery + GC + persistence)
+## Design pipeline-state-object cache (recovery + GC + persistence)
 
-## Context
+### Context
 
-`rendering/pipeline-state-cache.md` exists with the basic cache design. The 2026-04-12
-review's RF-15 / RF-17 recommended fleshing out:
+`rendering/pipeline-state-cache.md` exists with the basic cache design. The 2026-04-12 review's
+RF-15 / RF-17 recommended fleshing out:
 
 - Disk persistence layout and versioning
 - Recovery from corrupt cache files
@@ -24,7 +24,7 @@ review's RF-15 / RF-17 recommended fleshing out:
 - Barrier analysis algorithm (split barriers, redundancy detection, state-transition
   validation)
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] `pipeline-state-cache.md` documents the on-disk layout (header, version, entry
       format) and the validation procedure on load.
@@ -36,12 +36,12 @@ review's RF-15 / RF-17 recommended fleshing out:
 - [ ] Companion `pipeline-state-cache-test-cases.md` covers persistence, recovery, eviction,
       and barrier analysis.
 
-## Verification
+### Verification
 
-A second-pass review of `pipeline-state-cache.md` finds zero TODO markers and a complete
-test-case companion.
+A second-pass review of `pipeline-state-cache.md` finds zero TODO markers and a complete test-case
+companion.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.2 / P1 #15 / P1 #17](../../design/design-review.md)
 - [docs/design/rendering/pipeline-state-cache.md](../../design/rendering/pipeline-state-cache.md)

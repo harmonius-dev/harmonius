@@ -186,9 +186,8 @@ graph TB
 
 ### Core Runtime Foundation Primitives
 
-These are the cross-cutting types every other subsystem reuses. They land before any
-implementation; canonical ownership is enforced via
-[canonical-owners.md](design/canonical-owners.md).
+These are the cross-cutting types every other subsystem reuses. They land before any implementation;
+canonical ownership is enforced via [canonical-owners.md](design/canonical-owners.md).
 
 | Doc                                                                | Owns                                                |
 |--------------------------------------------------------------------|-----------------------------------------------------|
@@ -1525,10 +1524,10 @@ and content services.
 
 ### Integration
 
-Pair-wise integration designs between every two subsystems that share data on the
-hot path. Sixty-two pair docs plus three meta docs cover ~90% of the cross-subsystem
-contracts. New pair docs reference [shared-conventions.md](design/integration/shared-conventions.md)
-and stop restating cross-cutting rules.
+Pair-wise integration designs between every two subsystems that share data on the hot path.
+Sixty-two pair docs plus three meta docs cover ~90% of the cross-subsystem contracts. New pair docs
+reference [shared-conventions.md](design/integration/shared-conventions.md) and stop restating
+cross-cutting rules.
 
 #### Meta documents
 
@@ -1540,9 +1539,9 @@ and stop restating cross-cutting rules.
 
 #### Pair-wise design documents
 
-The full list lives in `docs/design/integration/`. Each pair has `{a}-{b}.md` plus a
-companion `{a}-{b}-test-cases.md`. Coverage is tracked by the integration column of
-the [coverage matrices](coverage/index.md).
+The full list lives in `docs/design/integration/`. Each pair has `{a}-{b}.md` plus a companion
+`{a}-{b}-test-cases.md`. Coverage is tracked by the integration column of the
+[coverage matrices](coverage/index.md).
 
 ---
 
@@ -1685,10 +1684,10 @@ graph TB
 
 ## Design Summary
 
-Counts as of 2026-05-20. Excludes companion `*-test-cases.md` files. The `integration/`
-row counts pair-wise design docs only — the three meta docs (`shared-conventions.md`,
-`shared-messaging-capacities.md`, `high-level.md`) are listed separately under the
-Integration section above.
+Counts as of 2026-05-20. Excludes companion `*-test-cases.md` files. The `integration/` row counts
+pair-wise design docs only — the three meta docs (`shared-conventions.md`,
+`shared-messaging-capacities.md`, `high-level.md`) are listed separately under the Integration
+section above.
 
 | Directory             | Design Files |
 |-----------------------|------------:|

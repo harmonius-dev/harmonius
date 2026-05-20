@@ -4,9 +4,9 @@ All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
 
 ## Purpose
 
-Implementation plans pair every primary design under `docs/design/` with a `PLAN-*` file that
-holds traceability (R-/F-/US-/TC- IDs), TDD sequencing, integration and constraint conformance
-checks, and manual validation evidence pointers.
+Implementation plans pair every primary design under `docs/design/` with a `PLAN-*` file that holds
+traceability (R-/F-/US-/TC- IDs), TDD sequencing, integration and constraint conformance checks, and
+manual validation evidence pointers.
 
 ## Structure
 
@@ -43,9 +43,9 @@ Two status fields exist and they answer different questions:
 | `status` in plan frontmatter | `{domain}/{slug}.md` plan body          | Intended state       |
 | `status` in progress frontmatter | `progress/PLAN-{slug}.md`           | Execution state      |
 
-The progress file is the source of truth for execution state. The plan-body `status` represents
-the planning intent (e.g., `not_started` until the plan body itself is finalized). Coverage
-matrices and phase rollups read the progress file.
+The progress file is the source of truth for execution state. The plan-body `status` represents the
+planning intent (e.g., `not_started` until the plan body itself is finalized). Coverage matrices and
+phase rollups read the progress file.
 
 ## Rules
 
@@ -67,6 +67,6 @@ matrices and phase rollups read the progress file.
 | New integration pair design                  | `integration/{pair}.md`               |
 | New cross-cutting deliverable                | `cross-cutting/{topic}.md`            |
 
-Workflow tooling (`workflow` and `artifact` plugins from the marketplace) drives plan creation
-and progress tracking. The retired `harmonize` and `plan-orchestrator` agents are no longer
-used; legacy event-log entries in phase rollups are preserved as audit trail only.
+Workflow tooling (`workflow` and `artifact` plugins from the marketplace) drives plan creation and
+progress tracking. The retired `harmonize` and `plan-orchestrator` agents are no longer used; legacy
+event-log entries in phase rollups are preserved as audit trail only.

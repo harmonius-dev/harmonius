@@ -11,14 +11,14 @@ status: triage
 title: Pick A* variant and nav-mesh parameters
 ---
 
-# Pick A* variant and nav-mesh parameters
+## Pick A* variant and nav-mesh parameters
 
-## Context
+### Context
 
-`ai/navigation.md` mentions A* without specifying variant, heuristic, tie-breaker, or heap
-type. Recast-style nav-mesh generation has no citation or parameters.
+`ai/navigation.md` mentions A* without specifying variant, heuristic, tie-breaker, or heap type.
+Recast-style nav-mesh generation has no citation or parameters.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] A* variant chosen (vanilla, Theta*, JPS) with heuristic and tie-breaker documented.
 - [ ] Heap type chosen (binary heap, Fibonacci, pairing) with rationale.
@@ -26,11 +26,11 @@ type. Recast-style nav-mesh generation has no citation or parameters.
       handling, with Recast citation.
 - [ ] Companion test cases benchmark per-query latency against R-7.NFR.2 targets.
 
-## Verification
+### Verification
 
 500 A* queries per tick on a 50-tile NavMesh with p95 < 0.1 ms (R-7.NFR.2).
 
-## References
+### References
 
 - [docs/design/design-review.md P1 #22](../../design/design-review.md)
 - [docs/requirements/ai/navigation.md](../../requirements/ai/navigation.md)

@@ -184,10 +184,10 @@ DAG.
 
 ## 3. Revenue Model
 
-> **Aligned with [monetization-analysis.md](monetization-analysis.md), PDR-0001 (no royalty,
-> no marketplace commission), and PDR-0002 (customer-owned AI keys).** Earlier versions of
-> this section listed a 5% royalty above $1M, a 12% marketplace commission, and a premium AI
-> subscription. All three were superseded by the policy-of-record decisions noted above.
+> **Aligned with [monetization-analysis.md](monetization-analysis.md), PDR-0001 (no royalty, no
+> marketplace commission), and PDR-0002 (customer-owned AI keys).** Earlier versions of this section
+> listed a 5% royalty above $1M, a 12% marketplace commission, and a premium AI subscription. All
+> three were superseded by the policy-of-record decisions noted above.
 
 ### Revenue Sources
 

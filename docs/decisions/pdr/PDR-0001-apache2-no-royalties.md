@@ -21,11 +21,11 @@ generating revenue.
 
 ## Decision
 
-The engine is Apache 2.0 across all core components: engine, editor, headless game server,
-codegen pipeline, all visual editors, all server services, and the deployment chart. There is
-no royalty at any revenue band. There is no per-seat fee. There is no marketplace commission
-on the open-source asset store. Third-party stores (FAB, Synty, TurboSquid) keep their own
-fees; the engine does not insert itself into those transactions.
+The engine is Apache 2.0 across all core components: engine, editor, headless game server, codegen
+pipeline, all visual editors, all server services, and the deployment chart. There is no royalty at
+any revenue band. There is no per-seat fee. There is no marketplace commission on the open-source
+asset store. Third-party stores (FAB, Synty, TurboSquid) keep their own fees; the engine does not
+insert itself into those transactions.
 
 Revenue comes from optional services and proprietary console SDKs only:
 
@@ -52,8 +52,8 @@ Reversing this decision would require:
   contributions made in good faith).
 - Breaking the trust contract with the community.
 
-Effectively, this decision is one-way. New revenue streams must fit *inside* the
-free-engine constraint, not relax it.
+Effectively, this decision is one-way. New revenue streams must fit *inside* the free-engine
+constraint, not relax it.
 
 ## References
 

@@ -24,8 +24,8 @@
 
 1. **F-12.4.2** — When a source asset changes, the pipeline re-imports and reprocesses only the
    affected asset and its dependents, then patches the in-memory runtime representation without
-   restarting the application. Textures swap via descriptor pool/set updates; meshes and materials swap
-   via atomic pointer replacement behind a frame fence.
+   restarting the application. Textures swap via descriptor pool/set updates; meshes and materials
+   swap via atomic pointer replacement behind a frame fence.
    - **Deps:** F-12.4.1, F-12.2.8, F-12.3.3
 2. **F-12.4.3** — Detect shader source or graph changes, recompile affected permutations, and swap
    pipeline state objects at the next frame boundary. Compilation errors are displayed as an overlay

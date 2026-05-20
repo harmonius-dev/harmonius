@@ -4,10 +4,10 @@ All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
 
 ## Purpose
 
-Architecture Decision Records (ADRs) and Product Decision Records (PDRs) capture the
-"why" behind significant architectural and product choices. ADRs document engineering
-decisions that shape the codebase. PDRs document product, monetization, and policy
-decisions that downstream engineering must respect.
+Architecture Decision Records (ADRs) and Product Decision Records (PDRs) capture the "why" behind
+significant architectural and product choices. ADRs document engineering decisions that shape the
+codebase. PDRs document product, monetization, and policy decisions that downstream engineering must
+respect.
 
 ## Structure
 
@@ -28,9 +28,9 @@ docs/decisions/
 | ADR  | `ADR-NNNN-{slug}` | `ADR-0002-vulkan-sole-gpu`   |
 | PDR  | `PDR-NNNN-{slug}` | `PDR-0001-apache-2-no-royal` |
 
-`NNNN` is a four-digit zero-padded ordinal that never repeats. Slugs are kebab-case,
-short, and stable (an ADR's slug must not change once published; the slug may shorten a
-long title at write-time, but never edit it later).
+`NNNN` is a four-digit zero-padded ordinal that never repeats. Slugs are kebab-case, short, and
+stable (an ADR's slug must not change once published; the slug may shorten a long title at
+write-time, but never edit it later).
 
 ## Status lifecycle
 
@@ -42,8 +42,8 @@ long title at write-time, but never edit it later).
 | `Deprecated` | Decision still on record but no longer applicable                      |
 | `Reversed`   | Decision was Accepted and later explicitly undone (rare; link reversal) |
 
-A `Superseded` record stays in place — never delete or rewrite history. Add a
-"Superseded by" link at the top, and update its successor with a "Supersedes" link.
+A `Superseded` record stays in place — never delete or rewrite history. Add a "Superseded by" link
+at the top, and update its successor with a "Supersedes" link.
 
 ## Required sections (ADR)
 

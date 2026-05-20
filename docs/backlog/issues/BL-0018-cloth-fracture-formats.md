@@ -11,14 +11,14 @@ status: triage
 title: Specify cloth constraint and fracture pattern formats
 ---
 
-# Specify cloth constraint and fracture pattern formats
+## Specify cloth constraint and fracture pattern formats
 
-## Context
+### Context
 
 `physics/advanced.md` references cloth constraint types and fracture patterns by name without
 specifying layouts. The 2026-04-12 review P2 #37 flagged this.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Cloth constraint format documented: structural / shear / bending springs, pin
       attachments, wind-coupling fields.
@@ -27,12 +27,12 @@ specifying layouts. The 2026-04-12 review P2 #37 flagged this.
 - [ ] Asset pipeline can import / bake both formats.
 - [ ] Companion `advanced-test-cases.md` covers both with concrete examples.
 
-## Verification
+### Verification
 
 A reader of `advanced.md` can construct a cloth or fracture asset without consulting the
 implementation.
 
-## References
+### References
 
 - [docs/design/design-review.md P2 #37](../../design/design-review.md)
 - [docs/design/physics/advanced.md](../../design/physics/advanced.md)

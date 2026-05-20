@@ -6,21 +6,20 @@ Accepted — 2025-04-08 (backfilled 2026-05-20)
 
 ## Context
 
-Game engines historically ship dedicated subsystems for genre features: an inventory subsystem,
-a quest subsystem, an ability subsystem, a skill-tree subsystem, a loot subsystem, a crafting
-subsystem. Each ships with bespoke editor UIs, save formats, and runtime data. This is fast for
-the first game in the genre but compounds maintenance cost as feature variations multiply.
+Game engines historically ship dedicated subsystems for genre features: an inventory subsystem, a
+quest subsystem, an ability subsystem, a skill-tree subsystem, a loot subsystem, a crafting
+subsystem. Each ships with bespoke editor UIs, save formats, and runtime data. This is fast for the
+first game in the genre but compounds maintenance cost as feature variations multiply.
 
-The alternative is to provide a small set of generic primitives that compose into any genre
-feature: directed graphs, data tables, attributes/effects, containers/slots (data layer); plus
-grids, spatial awareness, timelines, event logs (simulation layer). Quests, abilities,
-inventory, progression, crafting, and most other gameplay become recipes wired in the visual
-editor.
+The alternative is to provide a small set of generic primitives that compose into any genre feature:
+directed graphs, data tables, attributes/effects, containers/slots (data layer); plus grids, spatial
+awareness, timelines, event logs (simulation layer). Quests, abilities, inventory, progression,
+crafting, and most other gameplay become recipes wired in the visual editor.
 
 ## Decision
 
-Game features are not built as dedicated subsystems. Users compose generic primitives from the
-data systems and simulation layers in visual editors to create any gameplay.
+Game features are not built as dedicated subsystems. Users compose generic primitives from the data
+systems and simulation layers in visual editors to create any gameplay.
 
 Four data primitives:
 
@@ -40,8 +39,8 @@ Four simulation primitives:
 | Timelines             | Time-ordered sequence of values and events                      |
 | Event logs            | Append-only history for replay, AI memory, audit trails         |
 
-Standard genre features map to these primitives in
-[architecture.md](../../architecture.md) "Composition Model" and
+Standard genre features map to these primitives in [architecture.md](../../architecture.md)
+"Composition Model" and
 [docs/design/data-systems/composition.md](../../design/data-systems/composition.md).
 
 ## Consequences

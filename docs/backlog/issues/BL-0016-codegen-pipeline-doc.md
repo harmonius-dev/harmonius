@@ -11,14 +11,14 @@ status: triage
 title: Author docs/design/core-runtime/codegen-pipeline.md
 ---
 
-# Author `core-runtime/codegen-pipeline.md`
+## Author `core-runtime/codegen-pipeline.md`
 
-## Context
+### Context
 
-`scripting.md` and `visual-editors.md` both claim parts of the codegen pipeline. The
-2026-04-12 review §3.7 / P2 #56 recommended a single owner for IR, optimizer, and backends.
+`scripting.md` and `visual-editors.md` both claim parts of the codegen pipeline. The 2026-04-12
+review §3.7 / P2 #56 recommended a single owner for IR, optimizer, and backends.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] New `core-runtime/codegen-pipeline.md` documents the IR, optimizer passes, and the
       `RustBackend`, `GlslBackend`, `TypeDescriptorBackend` from `graph-runtime.md`.
@@ -28,12 +28,12 @@ title: Author docs/design/core-runtime/codegen-pipeline.md
       each backend's output.
 - [ ] Hot reload integration is explicit (codegen output → middleman .dylib → reload).
 
-## Verification
+### Verification
 
-A reader of `codegen-pipeline.md` understands the flow from visual graph to compiled Rust /
-GLSL without reading scripting or visual-editors.
+A reader of `codegen-pipeline.md` understands the flow from visual graph to compiled Rust / GLSL
+without reading scripting or visual-editors.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.7 / P2 #56](../../design/design-review.md#37-platform--tools--game-framework--content-pipeline)
 - [docs/design/core-runtime/graph-runtime.md](../../design/core-runtime/graph-runtime.md)

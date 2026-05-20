@@ -11,18 +11,18 @@ status: triage
 title: GameTime, pause, and determinism for simulation primitives
 ---
 
-# `GameTime`, pause, and determinism for simulation primitives
+## `GameTime`, pause, and determinism for simulation primitives
 
-## Context
+### Context
 
-The 2026-04-12 review §3.4 / P1 #34 found that the four simulation primitives lack a unified
-time / pause / determinism story:
+The 2026-04-12 review §3.4 / P1 #34 found that the four simulation primitives lack a unified time /
+pause / determinism story:
 
 - Time-scale (slow-mo, pause, 0.5×) is not specified for grids or event logs.
 - Pause semantics are not unified — grids keep propagating unless callers stop calling.
 - Determinism seed plumbing is absent.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] `core-runtime/game-loop.md` defines `GameTime { tick: u64, elapsed_secs: f64,
       time_scale: f32, paused: bool, seed: u64 }`.
@@ -32,12 +32,12 @@ time / pause / determinism story:
 - [ ] Determinism seed flows through `GameTime.seed` per SC-8.
 - [ ] `canonical-owners.md` row for `GameTime` flips to `Owned`.
 
-## Verification
+### Verification
 
 Pause toggles freeze grid propagation, timeline playback, and event-log threshold evaluation
 identically. Replays with the same seed produce identical outputs.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.4 / P1 #34](../../design/design-review.md)
 - [docs/design/integration/shared-conventions.md SC-8](../../design/integration/shared-conventions.md)

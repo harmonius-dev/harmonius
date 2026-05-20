@@ -123,8 +123,8 @@ These terms are coined or redefined by the Harmonius project and appear across d
 
 ## Harmonius-coined cross-cutting types
 
-Cross-cutting types referenced from many subsystems. Each has a single canonical owner
-recorded in [design/canonical-owners.md](design/canonical-owners.md).
+Cross-cutting types referenced from many subsystems. Each has a single canonical owner recorded in
+[design/canonical-owners.md](design/canonical-owners.md).
 
 | #  | Type                       | Owner doc                                       |
 |----|----------------------------|-------------------------------------------------|
@@ -158,5 +158,5 @@ recorded in [design/canonical-owners.md](design/canonical-owners.md).
 | 28 | `VoiceStream` (transport)  | networking/network-services.md                  |
 | 29 | `VoiceStream` (codec)      | audio/audio.md                                  |
 
-`(pending)` means the type is referenced across the corpus but the canonical owner doc
-has the type as `Pending creation`. See [design/canonical-owners.md](design/canonical-owners.md).
+`(pending)` means the type is referenced across the corpus but the canonical owner doc has the type
+as `Pending creation`. See [design/canonical-owners.md](design/canonical-owners.md).

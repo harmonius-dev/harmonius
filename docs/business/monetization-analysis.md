@@ -192,9 +192,9 @@ requirements) and the optional managed hosting service.
 ### Open-Source Service Dependencies
 
 All self-hosted services use exclusively open-source software. The canonical OSS stack lives in
-[design/networking/network-infrastructure.md](../design/networking/network-infrastructure.md)
-RF-6 and is referenced normatively by ADR-0009. There is no AWS-specific dependency in the
-default stack — any Kubernetes substrate works.
+[design/networking/network-infrastructure.md](../design/networking/network-infrastructure.md) RF-6
+and is referenced normatively by ADR-0009. There is no AWS-specific dependency in the default stack
+— any Kubernetes substrate works.
 
 | Service Need        | Open-Source Choice                  | Proprietary Avoided                |
 |---------------------|-------------------------------------|------------------------------------|
@@ -265,8 +265,8 @@ convenience service (managed hosting).
 
 ### Self-Hosted Scaling Profiles (Kubernetes Footprint)
 
-All services are free and open source. Users pay only their own Kubernetes infrastructure
-costs (any provider, any region, or bare metal). Four profiles match team size and budget.
+All services are free and open source. Users pay only their own Kubernetes infrastructure costs (any
+provider, any region, or bare metal). Four profiles match team size and budget.
 
 | Profile    | Target       | K8s footprint (rough)                               | HA AZs |
 |------------|--------------|------------------------------------------------------|--------|
@@ -275,10 +275,9 @@ costs (any provider, any region, or bare metal). Four profiles match team size a
 | Studio     | 10–50 users  | 3+ node cluster, dedicated TiKV PD/store node pool   | 2      |
 | Production | 50+ users    | Multi-zone cluster with horizontal scaling           | 3      |
 
-The dollar cost depends on the chosen provider (cloud Kubernetes, managed Kubernetes, on-prem,
-bare metal) and is no longer modeled here. The Helm chart and operator are identical across
-substrates per
-[network-infrastructure.md](../design/networking/network-infrastructure.md) RF-6.
+The dollar cost depends on the chosen provider (cloud Kubernetes, managed Kubernetes, on-prem, bare
+metal) and is no longer modeled here. The Helm chart and operator are identical across substrates
+per [network-infrastructure.md](../design/networking/network-infrastructure.md) RF-6.
 
 ### Comparison: Self-Hosted vs. Managed Hosting
 
@@ -293,16 +292,16 @@ substrates per
 | Portability                   | Any K8s substrate                      | Locked to Harmonius managed service  |
 | SLA                           | Self-defined                           | 99.9% uptime guarantee                |
 
-For solo developers, the Solo profile (k3s on a small VM) typically costs less than managed
-hosting. For larger teams, self-hosting scales more cost-effectively. Managed hosting remains
-attractive for teams that want zero operational overhead.
+For solo developers, the Solo profile (k3s on a small VM) typically costs less than managed hosting.
+For larger teams, self-hosting scales more cost-effectively. Managed hosting remains attractive for
+teams that want zero operational overhead.
 
 ## 3. Per-User Server Costs (Managed Hosting)
 
-The previous version of this section modeled per-user managed-hosting costs using AWS US-East
-list prices (RDS, ECS, S3, CloudFront, Lambda, DynamoDB). That model conflicts with the current
-OSS stack. A new per-user cost model rebased on Kubernetes node sizing plus the OSS bundle
-(TiKV, Garage, Pingora, Vector, Prometheus, Grafana, Loki) is tracked under
+The previous version of this section modeled per-user managed-hosting costs using AWS US-East list
+prices (RDS, ECS, S3, CloudFront, Lambda, DynamoDB). That model conflicts with the current OSS
+stack. A new per-user cost model rebased on Kubernetes node sizing plus the OSS bundle (TiKV,
+Garage, Pingora, Vector, Prometheus, Grafana, Loki) is tracked under
 [BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) and the
 [2026-Q3 OKRs](../okrs/2026-q3.md). Until then, the published managed-hosting price ($29 / user /
 month) is the only canonical figure; underlying cost composition is treated as commercially

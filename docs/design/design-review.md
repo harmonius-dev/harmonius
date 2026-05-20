@@ -7,17 +7,17 @@ pair-wise integration designs at the time of the audit; now 77 subsystem docs + 
 docs).
 
 > **This document is a status snapshot, not a live backlog.** Open items have moved to
-> [`docs/backlog/`](../backlog/index.md). The 2026-04-12 audit body below is preserved verbatim
-> for historical context. The Status Update section that immediately follows reflects the
-> 2026-05-20 deslop pass.
+> [`docs/backlog/`](../backlog/index.md). The 2026-04-12 audit body below is preserved verbatim for
+> historical context. The Status Update section that immediately follows reflects the 2026-05-20
+> deslop pass.
 
 ## Status Update — 2026-05-20
 
-The deslop pass (`cursor/deslop-docs-corpus-e306`) closed the foundational P0 items, installed
-the [canonical-owner registry](canonical-owners.md), wired up [shared
-conventions](integration/shared-conventions.md) and [shared messaging
-capacities](integration/shared-messaging-capacities.md), and migrated remaining work to
-[`docs/backlog/`](../backlog/index.md). Counts below come from the
+The deslop pass (`cursor/deslop-docs-corpus-e306`) closed the foundational P0 items, installed the
+[canonical-owner registry](canonical-owners.md), wired up
+[shared conventions](integration/shared-conventions.md) and
+[shared messaging capacities](integration/shared-messaging-capacities.md), and migrated remaining
+work to [`docs/backlog/`](../backlog/index.md). Counts below come from the
 [2026-05 audit](../coverage/audits/2026-05-audit.md).
 
 ### Status legend
@@ -107,7 +107,7 @@ capacities](integration/shared-messaging-capacities.md), and migrated remaining 
 |------|--------|-------|
 | 58. `core-runtime/change-detection.md` | `[x]` | Exists. |
 | 59. Integration-boundaries section in timelines | `[ ]` | Backlog. |
-| 60. Standardize `FM-N` fallback labels | `[~]` | Adopted in [shared-conventions.md SC-6](integration/shared-conventions.md#sc-6----fallback-modes). |
+| 60. Standardize `FM-N` fallback labels | `[~]` | Adopted in [shared-conventions.md SC-6](integration/shared-conventions.md#sc-6----fallback-mode-naming-fm-n). |
 | 61. Algorithm citations universally applied | `[ ]` | Tracked alongside backlog audits. |
 | 62. Rename `PhaseNode` / collapse with `Phase` | `[ ]` | Backlog. |
 | 63. `SpatialUpdateSystem` phase ordering | `[ ]` | Backlog. |
@@ -127,15 +127,15 @@ capacities](integration/shared-messaging-capacities.md), and migrated remaining 
 | P3    | 1    | 4       | 6    | 0        | 11    |
 | **Total** | **23** | **15** | **29** | **1**  | **68**|
 
-29 fully-open items have moved to [`docs/backlog/`](../backlog/index.md) under
-`BL-0001` … `BL-0042`. The 15 partial items have either an issue tracking the residual
-work or are sufficiently complete that follow-up is opportunistic.
+29 fully-open items have moved to [`docs/backlog/`](../backlog/index.md) under `BL-0001` …
+`BL-0042`. The 15 partial items have either an issue tracking the residual work or are sufficiently
+complete that follow-up is opportunistic.
 
 ### Forward pointer
 
 New design-review-style audits land as dated audits under
-[`docs/coverage/audits/`](../coverage/audits/) rather than amending this file. This
-keeps the historical 2026-04-12 audit pristine and lets coverage gates evolve.
+[`docs/coverage/audits/`](../coverage/audits/) rather than amending this file. This keeps the
+historical 2026-04-12 audit pristine and lets coverage gates evolve.
 
 ---
 

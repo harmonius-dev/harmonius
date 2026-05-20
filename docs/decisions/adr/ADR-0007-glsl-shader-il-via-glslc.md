@@ -15,20 +15,18 @@ Authors need a shader source language. The choices are:
 - **Slang** — newer multi-target language with strong type system.
 - **Custom DSL** — lots of effort for marginal benefit.
 
-DXC's SPIR-V output has historically lagged behind D3D12; HLSL's primary tooling target is
-D3D12 not Vulkan. Slang is promising but adds a new dependency plus authors need to learn a
-new language.
+DXC's SPIR-V output has historically lagged behind D3D12; HLSL's primary tooling target is D3D12 not
+Vulkan. Slang is promising but adds a new dependency plus authors need to learn a new language.
 
 ## Decision
 
 GLSL is the sole shader source language. The build pipeline invokes `glslc` (the Vulkan SDK
-compiler) as a subprocess. SPIR-V is produced offline at asset processing time and at hot
-reload time. The engine ships no embedded shader compiler library; everything goes through
-`glslc`.
+compiler) as a subprocess. SPIR-V is produced offline at asset processing time and at hot reload
+time. The engine ships no embedded shader compiler library; everything goes through `glslc`.
 
-Material graphs ([render-styles.md](../../design/rendering/render-styles.md)) and VFX effect
-graphs ([effects.md](../../design/rendering/render-effects.md)) codegen GLSL source; that
-source goes through the same `glslc` path.
+Material graphs ([render-styles.md](../../design/rendering/render-styles.md)) and VFX effect graphs
+([effects.md](../../design/rendering/render-effects.md)) codegen GLSL source; that source goes
+through the same `glslc` path.
 
 ## Consequences
 

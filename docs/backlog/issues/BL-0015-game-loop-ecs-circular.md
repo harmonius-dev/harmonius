@@ -11,16 +11,15 @@ status: triage
 title: Resolve game-loop ↔ ECS circular dependency
 ---
 
-# Resolve game-loop ↔ ECS circular dependency
+## Resolve game-loop ↔ ECS circular dependency
 
-## Context
+### Context
 
-`core-runtime/game-loop.md` defines `GameLoopGraph` and `CompiledFrame`, but those types
-also appear in `ecs.md`. The 2026-04-12 review P0 #9 recommended moving them into
-`game-loop.md` only and having `ecs.md::Schedule` produce a `SystemGraph` that the
-game loop compiles.
+`core-runtime/game-loop.md` defines `GameLoopGraph` and `CompiledFrame`, but those types also appear
+in `ecs.md`. The 2026-04-12 review P0 #9 recommended moving them into `game-loop.md` only and having
+`ecs.md::Schedule` produce a `SystemGraph` that the game loop compiles.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] `GameLoopGraph` and `CompiledFrame` are defined exactly once, in `game-loop.md`.
 - [ ] `Schedule` in `ecs.md` produces a `SystemGraph` (or equivalent intermediate) with no
@@ -29,12 +28,12 @@ game loop compiles.
       point.
 - [ ] No type is defined in both `ecs.md` and `game-loop.md`.
 
-## Verification
+### Verification
 
-A reader can describe the dependency direction (game-loop depends on ecs, not vice versa)
-from the docs alone.
+A reader can describe the dependency direction (game-loop depends on ecs, not vice versa) from the
+docs alone.
 
-## References
+### References
 
 - [docs/design/design-review.md P0 #9](../../design/design-review.md#p0--must-land-before-implementation-begins)
 - [docs/design/core-runtime/ecs.md](../../design/core-runtime/ecs.md)

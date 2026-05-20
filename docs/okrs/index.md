@@ -1,7 +1,7 @@
 # OKR Cycle Index
 
-Each OKR cycle is a calendar quarter. Cycle files are immutable once their retro is
-appended. New goals always create a new file.
+Each OKR cycle is a calendar quarter. Cycle files are immutable once their retro is appended. New
+goals always create a new file.
 
 See [AGENTS.md](AGENTS.md) for cycle file format and authoring rules.
 

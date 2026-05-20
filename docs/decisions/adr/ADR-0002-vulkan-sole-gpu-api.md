@@ -6,21 +6,21 @@ Accepted — 2024-09-04 (backfilled 2026-05-20)
 
 ## Context
 
-The engine targets Windows, macOS, Linux, iOS, Android, and consoles. Historically, supporting
-this matrix required juggling D3D12 (Windows), Metal (Apple), and Vulkan (Linux/Android). Each
-backend carries different pipeline state objects, descriptor models, barrier idioms, and shader
-ILs. Maintaining three backends doubles the surface area of every GPU feature.
+The engine targets Windows, macOS, Linux, iOS, Android, and consoles. Historically, supporting this
+matrix required juggling D3D12 (Windows), Metal (Apple), and Vulkan (Linux/Android). Each backend
+carries different pipeline state objects, descriptor models, barrier idioms, and shader ILs.
+Maintaining three backends doubles the surface area of every GPU feature.
 
 Vulkan 1.4 ratified mesh shaders, ray tracing, work graphs (via vendor extensions), and
-hardware-accelerated path-tracing primitives. macOS Vulkan support via `MoltenVK` was the
-historical wedge but the project intentionally targets native Vulkan on Apple via `ash` plus
-the runtime translation layer that ships with newer macOS.
+hardware-accelerated path-tracing primitives. macOS Vulkan support via `MoltenVK` was the historical
+wedge but the project intentionally targets native Vulkan on Apple via `ash` plus the runtime
+translation layer that ships with newer macOS.
 
 ## Decision
 
-Vulkan 1.4 is the sole GPU API on every platform. Rust accesses Vulkan via the `ash` crate.
-There is no D3D12 backend, no Metal backend, no DXC, no HLSL, and no MoltenVK as a runtime
-dependency. Shader IL is GLSL compiled offline to SPIR-V via the `glslc` subprocess
+Vulkan 1.4 is the sole GPU API on every platform. Rust accesses Vulkan via the `ash` crate. There is
+no D3D12 backend, no Metal backend, no DXC, no HLSL, and no MoltenVK as a runtime dependency. Shader
+IL is GLSL compiled offline to SPIR-V via the `glslc` subprocess
 ([ADR-0007](ADR-0007-glsl-shader-il-via-glslc.md)).
 
 ## Consequences

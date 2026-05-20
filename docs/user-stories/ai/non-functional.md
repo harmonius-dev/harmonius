@@ -4,9 +4,9 @@ Non-functional stories for the AI domain (X = 7). Performance, scalability, memo
 quality-of-result targets that drive the matching `R-7.NFR.*` requirements in
 [`requirements/ai/non-functional.md`](../../requirements/ai/non-functional.md).
 
-Folder rules: stories use the `As a {persona} (P-N), I want {action}, so that {benefit}` form
-with no acceptance criteria, no feature links, and no requirement links inline. Persona
-definitions live in [`personas.md`](../personas.md).
+Folder rules: stories use the `As a {persona} (P-N), I want {action}, so that {benefit}` form with
+no acceptance criteria, no feature links, and no requirement links inline. Persona definitions live
+in [`personas.md`](../personas.md).
 
 ## Frame Budget
 

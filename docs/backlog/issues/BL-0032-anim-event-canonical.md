@@ -11,24 +11,24 @@ status: triage
 title: Canonical AnimEvent location
 ---
 
-# Canonical `AnimEvent` location
+## Canonical `AnimEvent` location
 
-## Context
+### Context
 
-`AnimEvent` variants are listed per-consumer (audio, VFX, gameplay) instead of canonically
-in `animation/skeletal.md`. The 2026-04-12 review §3.8 flagged this.
+`AnimEvent` variants are listed per-consumer (audio, VFX, gameplay) instead of canonically in
+`animation/skeletal.md`. The 2026-04-12 review §3.8 flagged this.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] `animation/skeletal.md` defines the canonical `AnimEvent` enum with all variants.
 - [ ] Audio, VFX, and gameplay integration docs reference the canonical enum.
 - [ ] `canonical-owners.md` row for `AnimEvent` flips to `Owned`.
 
-## Verification
+### Verification
 
 `grep -rE 'enum AnimEvent' docs/design/` shows exactly one definition.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.8](../../design/design-review.md#38-integration-layer)
 - [docs/design/animation/skeletal.md](../../design/animation/skeletal.md)

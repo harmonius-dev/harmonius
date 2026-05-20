@@ -1,15 +1,14 @@
 # Backlog Project Boards
 
-GitHub Projects model for the backlog. Boards are *views* over the issue set, not
-authoritative storage. The markdown files in [issues/](issues/) are the source of
-truth.
+GitHub Projects model for the backlog. Boards are *views* over the issue set, not authoritative
+storage. The markdown files in [issues/](issues/) are the source of truth.
 
 ## Boards
 
 ### Engine Roadmap (primary)
 
-Single project that contains every backlog issue. Filtered, swimlaned, and grouped by
-the views below.
+Single project that contains every backlog issue. Filtered, swimlaned, and grouped by the views
+below.
 
 | Column          | Filter                              |
 |-----------------|-------------------------------------|
@@ -22,8 +21,8 @@ the views below.
 
 ### Foundation (sub-board)
 
-Filter: `domain:core-runtime` OR `domain:integration` OR `domain:meta`. Use this board
-for ADR/PDR/SC follow-up and canonical-owner cleanup. Driven by 2026-Q3 OKRs.
+Filter: `domain:core-runtime` OR `domain:integration` OR `domain:meta`. Use this board for
+ADR/PDR/SC follow-up and canonical-owner cleanup. Driven by 2026-Q3 OKRs.
 
 ### Mid-level systems (sub-board)
 
@@ -32,13 +31,13 @@ Filter: `domain:rendering` OR `domain:physics` OR `domain:geometry` OR `domain:u
 
 ### Domain systems (sub-board)
 
-Filter: `domain:ai` OR `domain:animation` OR `domain:audio` OR `domain:networking` OR
-`domain:vfx` OR `domain:simulation` OR `domain:data-systems`. Per-domain feature work.
+Filter: `domain:ai` OR `domain:animation` OR `domain:audio` OR `domain:networking` OR `domain:vfx`
+OR `domain:simulation` OR `domain:data-systems`. Per-domain feature work.
 
 ### Application (sub-board)
 
-Filter: `domain:game-framework` OR `domain:tools` OR `domain:content-pipeline` OR
-`domain:platform`. Editor, save, and shipping concerns.
+Filter: `domain:game-framework` OR `domain:tools` OR `domain:content-pipeline` OR `domain:platform`.
+Editor, save, and shipping concerns.
 
 ### Coverage and audits (sub-board)
 
@@ -66,8 +65,8 @@ These rules run on the GitHub project once the labels are mirrored:
 | New issue with no `status:*`                     | Move to Triage column           |
 | All `blocked_by` close                           | Suggest moving to `status:ready` |
 
-Automation rules are advisory in this doc — the workflow plugin or a GitHub Actions
-workflow under `.github/workflows/` is the implementation venue and out of scope here.
+Automation rules are advisory in this doc — the workflow plugin or a GitHub Actions workflow under
+`.github/workflows/` is the implementation venue and out of scope here.
 
 ## Mirroring policy
 

@@ -1,7 +1,7 @@
 # Backlog Label Taxonomy
 
-GitHub label model used by all issues. Labels are sorted alphabetically inside each
-group when listed in issue frontmatter. Add new labels by amending this file first.
+GitHub label model used by all issues. Labels are sorted alphabetically inside each group when
+listed in issue frontmatter. Add new labels by amending this file first.
 
 ## Priority
 
@@ -49,25 +49,24 @@ group when listed in issue frontmatter. Add new labels by amending this file fir
 
 ## Domain (one per issue)
 
-`domain:ai`, `domain:animation`, `domain:audio`, `domain:business`,
-`domain:content-pipeline`, `domain:core-runtime`, `domain:cross-cutting`,
-`domain:data-systems`, `domain:decisions`, `domain:design-review`,
-`domain:game-framework`, `domain:geometry`, `domain:input`, `domain:integration`,
-`domain:meta`, `domain:networking`, `domain:okrs`, `domain:physics`, `domain:platform`,
-`domain:plans`, `domain:rendering`, `domain:simulation`, `domain:tools`, `domain:ui`,
-`domain:vfx`.
+`domain:ai`, `domain:animation`, `domain:audio`, `domain:business`, `domain:content-pipeline`,
+`domain:core-runtime`, `domain:cross-cutting`, `domain:data-systems`, `domain:decisions`,
+`domain:design-review`, `domain:game-framework`, `domain:geometry`, `domain:input`,
+`domain:integration`, `domain:meta`, `domain:networking`, `domain:okrs`, `domain:physics`,
+`domain:platform`, `domain:plans`, `domain:rendering`, `domain:simulation`, `domain:tools`,
+`domain:ui`, `domain:vfx`.
 
-`domain:meta` covers the four programs themselves (decisions, okrs, backlog,
-coverage). `domain:cross-cutting` covers `cross-cutting.md`-scoped requirements and
-performance budgets. `domain:integration` covers `design/integration/` pair docs.
-`domain:design-review` covers the `design/design-review.md` backlog migration.
+`domain:meta` covers the four programs themselves (decisions, okrs, backlog, coverage).
+`domain:cross-cutting` covers `cross-cutting.md`-scoped requirements and performance budgets.
+`domain:integration` covers `design/integration/` pair docs. `domain:design-review` covers the
+`design/design-review.md` backlog migration.
 
 ## Component (optional, multiple allowed)
 
-Free-form short tag for the specific component the issue touches:
-`component:ecs`, `component:game-loop`, `component:scheduler`, `component:render-graph`,
-`component:asset-pipeline`, `component:hot-reload`, `component:editor-core`,
-`component:profiler`, `component:save-system`, `component:network-transport`, …
+Free-form short tag for the specific component the issue touches: `component:ecs`,
+`component:game-loop`, `component:scheduler`, `component:render-graph`, `component:asset-pipeline`,
+`component:hot-reload`, `component:editor-core`, `component:profiler`, `component:save-system`,
+`component:network-transport`, …
 
 Add new component tags in this file before applying.
 

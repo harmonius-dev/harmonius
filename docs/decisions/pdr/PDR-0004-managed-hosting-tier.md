@@ -6,10 +6,9 @@ Accepted — 2025-03-25
 
 ## Context
 
-The Apache 2.0 + no-royalty + no-commission posture
-([PDR-0001](PDR-0001-apache2-no-royalties.md)) commits to free engine and free self-hosting.
-The engine still needs revenue. Three sources are committed: console SDK licenses, enterprise
-support, and managed hosting.
+The Apache 2.0 + no-royalty + no-commission posture ([PDR-0001](PDR-0001-apache2-no-royalties.md))
+commits to free engine and free self-hosting. The engine still needs revenue. Three sources are
+committed: console SDK licenses, enterprise support, and managed hosting.
 
 Managed hosting must satisfy three constraints:
 
@@ -39,10 +38,11 @@ Tier inclusions:
 | US/EU region selection             | Standard                            |
 | Migration to self-host             | Supported at any time, no fees      |
 
-The earlier $10/$20/$50 per-user tiering with per-feature SaaS subscriptions
-(collaboration / AI / enterprise) is superseded by the single $29/user/month tier. Enterprise
-support remains separate at $10K–$50K/year for studios with shipping deadlines who need SLA
-guarantees beyond the standard 99.9%.
+The earlier per-user tiering used three separate subscriptions for collaboration, AI, and enterprise
+(priced at $10, $20, and
+$50 per user per month respectively). That model is superseded by the single $29/user/month tier.
+Enterprise support remains separate at $10K–$50K/year for studios with shipping deadlines who need
+SLA guarantees beyond the standard 99.9%.
 
 ## Engineering implications
 
@@ -58,8 +58,8 @@ guarantees beyond the standard 99.9%.
 ## Reversibility
 
 Pricing changes are forward-only and contractually limited. Discontinuing managed hosting is
-possible because customers can always self-host the same Helm chart — it is the no-lock-in
-guarantee that protects them.
+possible because customers can always self-host the same Helm chart — it is the no-lock-in guarantee
+that protects them.
 
 ## References
 

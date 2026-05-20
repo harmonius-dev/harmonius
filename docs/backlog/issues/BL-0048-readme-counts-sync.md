@@ -11,30 +11,30 @@ status: triage
 title: Sync requirements / user-stories / features README counts
 ---
 
-# Sync `requirements` / `user-stories` / `features` README counts
+## Sync `requirements` / `user-stories` / `features` README counts
 
-## Context
+### Context
 
-Each of `requirements/README.md`, `user-stories/README.md`, `features/README.md` carries a
-Summary table with files-per-domain and total counts. The 2026-05 audit found these tables
-drift from the filesystem as files are added or removed.
+Each of `requirements/README.md`, `user-stories/README.md`, `features/README.md` carries a Summary
+table with files-per-domain and total counts. The 2026-05 audit found these tables drift from the
+filesystem as files are added or removed.
 
-The deslop pass updated some counts in passing (Core Runtime 9 → 11 files; AI 8 → 9;
-networking story totals adjusted; rendering requirements +36 from gpu-runtime). A clean
-re-tally is still needed.
+The deslop pass updated some counts in passing (Core Runtime 9 → 11 files; AI 8 → 9; networking
+story totals adjusted; rendering requirements +36 from gpu-runtime). A clean re-tally is still
+needed.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Programmatic recount of each domain's file count and SHALL / story / feature count.
 - [ ] All three README Summary tables match the filesystem to the unit.
 - [ ] Counts in `architecture.md` Design Summary verified.
 - [ ] Audit recorded in `coverage/audits/`.
 
-## Verification
+### Verification
 
 A diff script comparing README counts to filesystem counts shows zero discrepancies.
 
-## References
+### References
 
 - [docs/requirements/README.md](../../requirements/README.md)
 - [docs/user-stories/README.md](../../user-stories/README.md)

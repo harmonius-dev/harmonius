@@ -1,8 +1,8 @@
 # Coverage Index
 
-This is the entry point for coverage matrices and dated audits. Coverage answers two
-questions: (1) does every requirement / user story have matching feature, design, and
-test artifacts; (2) does every artifact trace back to a requirement or user story.
+This is the entry point for coverage matrices and dated audits. Coverage answers two questions: (1)
+does every requirement / user story have matching feature, design, and test artifacts; (2) does
+every artifact trace back to a requirement or user story.
 
 See [AGENTS.md](AGENTS.md) for matrix and audit format.
 
@@ -21,8 +21,7 @@ See [AGENTS.md](AGENTS.md) for matrix and audit format.
 
 ## Generation
 
-Matrices and audits are produced by inspecting the filesystem (Glob + Grep). The
-canonical recipe:
+Matrices and audits are produced by inspecting the filesystem (Glob + Grep). The canonical recipe:
 
 1. Enumerate every `R-X.Y.Z` in `docs/requirements/`, every `US-X.Y.Z` in
    `docs/user-stories/`, every `F-X.Y.Z` in `docs/features/`, every `TC-X.Y.Z.N` in
@@ -31,9 +30,9 @@ canonical recipe:
 3. Produce per-domain tables and orphan lists.
 4. Write the audit dated `YYYY-MM-audit.md`.
 
-The current matrices are partial — they fully cover Core Runtime, Data Systems,
-Simulation, and Networking. Other domains carry a "Summary only" line and are tracked
-by [`docs/backlog/issues/`](../backlog/index.md) for completion.
+The current matrices are partial — they fully cover Core Runtime, Data Systems, Simulation, and
+Networking. Other domains carry a "Summary only" line and are tracked by
+[`docs/backlog/issues/`](../backlog/index.md) for completion.
 
 ## Coverage gates (advisory)
 
@@ -46,5 +45,4 @@ by [`docs/backlog/issues/`](../backlog/index.md) for completion.
 | Each design doc has a companion `*-test-cases.md`          | 100%      |
 | Each integration doc references `shared-conventions.md`    | 100%      |
 
-These gates are advisory until promoted to ADRs (proposed: ADR-0015 to make them
-normative).
+These gates are advisory until promoted to ADRs (proposed: ADR-0015 to make them normative).

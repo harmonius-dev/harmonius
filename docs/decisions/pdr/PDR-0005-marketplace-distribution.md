@@ -6,14 +6,13 @@ Accepted — 2025-04-22
 
 ## Context
 
-Game engines typically ship marketplaces that take a 12–30% commission on every transaction
-(Unity Asset Store: 30%, Unreal FAB: 12%). Commissions fund discovery, hosting, and payment
-infrastructure. They also create revenue alignment problems with the engine vendor and with
-asset sellers.
+Game engines typically ship marketplaces that take a 12–30% commission on every transaction (Unity
+Asset Store: 30%, Unreal FAB: 12%). Commissions fund discovery, hosting, and payment infrastructure.
+They also create revenue alignment problems with the engine vendor and with asset sellers.
 
-[PDR-0001](PDR-0001-apache2-no-royalties.md) commits to no marketplace commission. The
-engine still needs an asset marketplace because it is a competitive expectation. Two models
-are compatible with the no-commission posture:
+[PDR-0001](PDR-0001-apache2-no-royalties.md) commits to no marketplace commission. The engine still
+needs an asset marketplace because it is a competitive expectation. Two models are compatible with
+the no-commission posture:
 
 1. **Open-source community-run repository.** Like crates.io for Rust. Free hosting, no
    commission, no payment processing in the engine. Sellers integrate with external payment
@@ -22,8 +21,8 @@ are compatible with the no-commission posture:
    etc., from inside the editor. Those marketplaces handle their own pricing and commissions.
    The engine takes nothing.
 
-Both models are compatible. The decision is whether to operate the OSS repo, integrate
-external marketplaces, or both.
+Both models are compatible. The decision is whether to operate the OSS repo, integrate external
+marketplaces, or both.
 
 ## Decision
 
@@ -53,7 +52,8 @@ Plugin marketplace mechanics live in
 - The repository runs on the same Helm chart used by every other server service.
 - External marketplaces are accessed via published HTTP / QUIC APIs of those vendors. The
   engine never proxies their transactions.
-- Search uses TiKV indexes plus app-layer query logic ([ADR-0009](../adr/ADR-0009-oss-kubernetes-stack.md)).
+- Search uses TiKV indexes plus app-layer query logic
+  ([ADR-0009](../adr/ADR-0009-oss-kubernetes-stack.md)).
 - Asset versioning ([F-12.6](../../features/content-pipeline/asset-versioning.md)) integrates
   with marketplace versioning so dependency upgrades are first-class.
 

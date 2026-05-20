@@ -7,8 +7,7 @@ Accepted — 2024-10-23 (backfilled 2026-05-20)
 ## Context
 
 User-authored content in the editor — components, materials, shading models, blueprints, logic
-graphs, animation state machines — must be runnable inside the engine. Two industry patterns
-exist:
+graphs, animation state machines — must be runnable inside the engine. Two industry patterns exist:
 
 1. **Reflection + bytecode VM.** Define types in the editor; the engine reflects on them at
    runtime; logic compiles to bytecode interpreted by an embedded VM (Unity's IL2CPP-prior,
@@ -17,8 +16,8 @@ exist:
    bundled toolchain; the engine loads compiled code without reflection.
 
 Pattern 1 has runtime cost (interpreter dispatch, reflection lookups), versioning hazards, and
-prevents many compile-time optimizations. Pattern 2 needs a bundled toolchain but pays no
-runtime cost.
+prevents many compile-time optimizations. Pattern 2 needs a bundled toolchain but pays no runtime
+cost.
 
 ## Decision
 
@@ -28,8 +27,8 @@ called the **middleman `.dylib`**. The engine binary loads the middleman at star
 `libloading`. Hot reload recompiles the middleman and re-loads it; the engine binary itself is
 stable across edit sessions.
 
-For shipping builds, the middleman and all plugins are statically linked into a single
-executable with LTO. No `.dylib` is shipped.
+For shipping builds, the middleman and all plugins are statically linked into a single executable
+with LTO. No `.dylib` is shipped.
 
 ## Consequences
 

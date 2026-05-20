@@ -4,9 +4,9 @@ All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
 
 ## Purpose
 
-The coverage tree quantifies how complete the documentation corpus is across the
-requirement / feature / user-story / design / test pipelines. Matrices live here.
-Audits live in [audits/](audits/) and are dated, append-only.
+The coverage tree quantifies how complete the documentation corpus is across the requirement /
+feature / user-story / design / test pipelines. Matrices live here. Audits live in
+[audits/](audits/) and are dated, append-only.
 
 ## Structure
 

@@ -11,27 +11,26 @@ status: triage
 title: Unify ModOp across attributes-effects and containers-slots
 ---
 
-# Unify `ModOp` across attributes-effects and containers-slots
+## Unify `ModOp` across attributes-effects and containers-slots
 
-## Context
+### Context
 
-The 2026-04-12 design review §2.2 catalogued `ModOp` / `ModifierOp` as defined in two places
-with overlapping but incompatible semantics:
+The 2026-04-12 design review §2.2 catalogued `ModOp` / `ModifierOp` as defined in two places with
+overlapping but incompatible semantics:
 
 - `data-systems/attributes-effects.md` defines a `ModOp` enum with arithmetic + curve
   operators.
 - `data-systems/containers-slots.md` defines a `ModifierOp` enum with stat-propagation
   operators.
 
-Containers' socket system propagates stat modifiers through the effects system, which means
-the two enums are read by the same code paths. Defining them twice creates subtle merge bugs
-when a new operator lands.
+Containers' socket system propagates stat modifiers through the effects system, which means the two
+enums are read by the same code paths. Defining them twice creates subtle merge bugs when a new
+operator lands.
 
-The
-[canonical-owners.md](../../design/canonical-owners.md) registry lists `ModOp` as
+The [canonical-owners.md](../../design/canonical-owners.md) registry lists `ModOp` as
 `Pending consolidation` with `core-runtime/primitives.md` as the intended owner.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Single `ModOp` enum lives in `core-runtime/primitives.md` covering both attributes
       and containers semantics.
@@ -43,12 +42,12 @@ The
       containers from effects).
 - [ ] `canonical-owners.md` row for `ModOp` flips from `Pending consolidation` to `Owned`.
 
-## Verification
+### Verification
 
 `grep -rE 'enum ModOp|enum ModifierOp' docs/design/` yields exactly one definition in
 `core-runtime/primitives.md`.
 
-## References
+### References
 
 - [docs/design/design-review.md §2.2](../../design/design-review.md#22-foundational-type-duplication)
 - [docs/design/canonical-owners.md](../../design/canonical-owners.md)

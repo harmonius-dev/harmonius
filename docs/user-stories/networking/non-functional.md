@@ -4,11 +4,12 @@ Non-functional stories for the Networking domain (X = 8). Latency, throughput, c
 operational targets that drive matching requirements in
 [`requirements/networking/transport-layer.md`](../../requirements/networking/transport-layer.md),
 [`requirements/networking/state-replication.md`](../../requirements/networking/state-replication.md),
-and [`requirements/networking/mmo-infrastructure.md`](../../requirements/networking/mmo-infrastructure.md).
+and
+[`requirements/networking/mmo-infrastructure.md`](../../requirements/networking/mmo-infrastructure.md).
 
-Folder rules: stories use the `As a {persona} (P-N), I want {action}, so that {benefit}` form
-with no acceptance criteria, no feature links, and no requirement links inline. Persona
-definitions live in [`personas.md`](../personas.md).
+Folder rules: stories use the `As a {persona} (P-N), I want {action}, so that {benefit}` form with
+no acceptance criteria, no feature links, and no requirement links inline. Persona definitions live
+in [`personas.md`](../personas.md).
 
 ## Transport Latency
 

@@ -44,9 +44,9 @@ rendering subsystems.
 ### GPU Runtime Requirements
 
 GPU Runtime requirements moved to canonical `R-2.14.*` IDs in
-[requirements/rendering/gpu-runtime.md](../../requirements/rendering/gpu-runtime.md). The
-legacy `GR-*` prefix is retired; the requirements file's Legacy ID Mapping table preserves
-trace continuity.
+[requirements/rendering/gpu-runtime.md](../../requirements/rendering/gpu-runtime.md). The legacy
+`GR-*` prefix is retired; the requirements file's Legacy ID Mapping table preserves trace
+continuity.
 
 | Requirement                  |
 |------------------------------|

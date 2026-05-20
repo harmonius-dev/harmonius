@@ -4,10 +4,10 @@ All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
 
 ## Purpose
 
-Quarterly Objectives and Key Results (OKRs) anchor docs and design work to measurable
-outcomes. They link the design-review backlog and `docs/backlog/` issues to specific
-quarter-bounded targets. OKRs are not mandates for individuals; they describe what
-"done" looks like for a unit of work in a given cycle.
+Quarterly Objectives and Key Results (OKRs) anchor docs and design work to measurable outcomes. They
+link the design-review backlog and `docs/backlog/` issues to specific quarter-bounded targets. OKRs
+are not mandates for individuals; they describe what "done" looks like for a unit of work in a given
+cycle.
 
 ## Structure
 
@@ -18,8 +18,8 @@ docs/okrs/
   YYYY-qN.md
 ```
 
-`YYYY-qN.md` files are calendar-quarter cycle files (`2026-q3.md`, etc.). Each cycle
-file owns its objectives until the cycle closes and a retro is appended.
+`YYYY-qN.md` files are calendar-quarter cycle files (`2026-q3.md`, etc.). Each cycle file owns its
+objectives until the cycle closes and a retro is appended.
 
 ## ID format
 
@@ -28,8 +28,8 @@ file owns its objectives until the cycle closes and a retro is appended.
 | Objective   | `O-N`        | `O-2`        |
 | Key Result  | `KR-N.M`     | `KR-2.3`     |
 
-IDs reset each cycle file. The cycle file is the namespace. To reference an OKR from
-elsewhere, use `2026-q3:O-2` or `2026-q3:KR-2.3`.
+IDs reset each cycle file. The cycle file is the namespace. To reference an OKR from elsewhere, use
+`2026-q3:O-2` or `2026-q3:KR-2.3`.
 
 ## Required sections (cycle file)
 

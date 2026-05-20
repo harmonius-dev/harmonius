@@ -6,9 +6,8 @@ Accepted — 2024-12-04 (backfilled 2026-05-20)
 
 ## Context
 
-`winit` is the standard Rust windowing library. It abstracts Win32, Cocoa, X11, Wayland,
-UIKit, and Android. Most Rust game projects use it. The engine evaluated `winit` and found
-three problems:
+`winit` is the standard Rust windowing library. It abstracts Win32, Cocoa, X11, Wayland, UIKit, and
+Android. Most Rust game projects use it. The engine evaluated `winit` and found three problems:
 
 1. **Event-loop ownership.** `winit` requires its event loop to drive the main thread. The
    engine's main-thread event loop also needs to drain platform-native I/O completions
@@ -33,9 +32,9 @@ The engine implements windowing directly:
 | iOS      | `UIWindow` via `objc2`             |
 | Android  | NDK `ANativeWindow` via the `ndk` crate |
 
-The main thread owns the OS event loop directly and integrates platform-native I/O polling in
-the same loop. There is no `winit` dependency. The custom layer is small per platform because
-the engine consumes only a narrow slice of the windowing API.
+The main thread owns the OS event loop directly and integrates platform-native I/O polling in the
+same loop. There is no `winit` dependency. The custom layer is small per platform because the engine
+consumes only a narrow slice of the windowing API.
 
 ## Consequences
 

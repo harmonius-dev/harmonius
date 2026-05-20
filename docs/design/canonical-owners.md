@@ -1,14 +1,14 @@
 # Canonical Owners — Shared-Type Registry
 
 The single index of who owns which shared type. Per
-[design-review.md §2.2](design-review.md#22-foundational-type-duplication), foundational
-type duplication is the second-largest systemic flaw in the corpus. This file is the
-authoritative registry. If you need a shared type and it is not here, add the row
-before introducing the type elsewhere.
+[design-review.md §2.2](design-review.md#22-foundational-type-duplication), foundational type
+duplication is the second-largest systemic flaw in the corpus. This file is the authoritative
+registry. If you need a shared type and it is not here, add the row before introducing the type
+elsewhere.
 
-> **Normative.** Every design and integration document MUST reference, not redefine,
-> the types listed below. Adding a duplicate definition is a folder-rule violation.
-> Discovering a duplicate creates a backlog issue under [BL-0001..BL-0014]
+> **Normative.** Every design and integration document MUST reference, not redefine, the types
+> listed below. Adding a duplicate definition is a folder-rule violation. Discovering a duplicate
+> creates a backlog issue under [BL-0001..BL-0014]
 > (../backlog/index.md#canonical-owner-consolidations-bl-0001--bl-0014).
 
 ## Status legend
@@ -50,10 +50,10 @@ Owner: [`core-runtime/primitives.md`](core-runtime/primitives.md).
 | `PhysicsBvh`                  | `physics/foundation.md`                              | Owned                   | —                                                                        |
 | `SpatialIndex` trait          | `core-runtime/spatial-index.md`                      | Owned                   | —                                                                        |
 
-`UniformGrid<T>` is the core algorithmic primitive. The two specializations differ in
-purpose (gameplay propagation vs networking AOI). The pending rename keeps the generic
-in core, renames the gameplay specialization `CellGrid`, and renames the networking
-specialization `AoiGrid` to remove the namespace clash.
+`UniformGrid<T>` is the core algorithmic primitive. The two specializations differ in purpose
+(gameplay propagation vs networking AOI). The pending rename keeps the generic in core, renames the
+gameplay specialization `CellGrid`, and renames the networking specialization `AoiGrid` to remove
+the namespace clash.
 
 ## ID and handle taxonomy
 
@@ -97,9 +97,8 @@ Owner: [`core-runtime/error.md`](core-runtime/error.md).
 | `InterpolatedTransform`    | `core-runtime/scene-transforms.md`     | Owned                  |
 | `PreviousGlobalTransform2D`| `core-runtime/scene-transforms.md`     | Owned                  |
 
-`FrameContext` and `GameTime` carry frame index, interpolation alpha, deterministic
-seed, pause flag, and budgets. Promoting these to canonical types removes ad-hoc
-copies in integration docs. See
+`FrameContext` and `GameTime` carry frame index, interpolation alpha, deterministic seed, pause
+flag, and budgets. Promoting these to canonical types removes ad-hoc copies in integration docs. See
 [BL-0014](../backlog/issues/BL-0014-frameworld-promote.md) and
 [BL-0026](../backlog/issues/BL-0026-game-time-pause-determinism.md).
 
@@ -132,10 +131,10 @@ Owner: [`core-runtime/graph-runtime.md`](core-runtime/graph-runtime.md).
 | `GlslBackend`                 | `core-runtime/graph-runtime.md`        | Owned  |
 | `TypeDescriptorBackend`       | `core-runtime/graph-runtime.md`        | Owned  |
 
-The eight visual graph systems (logic / scripting, directed-graph data, behavior tree,
-material graph, VFX effect graph, animation state machine, procedural generation,
-timeline track) all parameterize this owner. They never reinvent topological sort,
-cycle detection, validation, or hot-reload triggering.
+The eight visual graph systems (logic / scripting, directed-graph data, behavior tree, material
+graph, VFX effect graph, animation state machine, procedural generation, timeline track) all
+parameterize this owner. They never reinvent topological sort, cycle detection, validation, or
+hot-reload triggering.
 
 ## Data systems shared types
 

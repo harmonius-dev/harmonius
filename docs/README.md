@@ -1,7 +1,7 @@
 # Harmonius Documentation
 
-This is the entry point for the Harmonius documentation corpus. Every directory under
-`docs/` has an `AGENTS.md` rulebook and an `index.md` (or equivalent) entry point.
+This is the entry point for the Harmonius documentation corpus. Every directory under `docs/` has an
+`AGENTS.md` rulebook and an `index.md` (or equivalent) entry point.
 
 ## Reading order
 
@@ -116,6 +116,6 @@ flowchart LR
 
 ## Mode of authoring
 
-The [`workflow`](https://github.com/cjhowe-us/marketplace) and `artifact` plugins from
-the `cjhowe-us-marketplace` marketplace drive author / review / update flows. See
+The [`workflow`](https://github.com/cjhowe-us/marketplace) and `artifact` plugins from the
+`cjhowe-us-marketplace` marketplace drive author / review / update flows. See
 [root AGENTS.md](../AGENTS.md) for plugin commands and meta-workflows.

@@ -11,15 +11,14 @@ status: triage
 title: Specify meshlet asset pipeline end-to-end
 ---
 
-# Specify meshlet asset pipeline end-to-end
+## Specify meshlet asset pipeline end-to-end
 
-## Context
+### Context
 
-`rendering/meshlets.md` exists. The 2026-04-12 review's P1 #16 noted the asset pipeline path
-(import → `MeshletAsset` → GPU upload) was incomplete, and the link to BLAS for ray tracing
-was unspecified.
+`rendering/meshlets.md` exists. The 2026-04-12 review's P1 #16 noted the asset pipeline path (import
+→ `MeshletAsset` → GPU upload) was incomplete, and the link to BLAS for ray tracing was unspecified.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Import path specified: source mesh → meshlet builder → `MeshletAsset` (rkyv archive).
 - [ ] `MeshletAsset` schema documented (vertex layout, triangle indices, bounding cones,
@@ -29,12 +28,12 @@ was unspecified.
 - [ ] Companion `meshlets-test-cases.md` covers import, archive validation, GPU upload, and
       BLAS construction.
 
-## Verification
+### Verification
 
-A reader can take a `.glb` mesh asset to a rendered meshlet draw using only `meshlets.md`,
-the asset pipeline, and the canonical `Material` type.
+A reader can take a `.glb` mesh asset to a rendered meshlet draw using only `meshlets.md`, the asset
+pipeline, and the canonical `Material` type.
 
-## References
+### References
 
 - [docs/design/design-review.md P1 #16](../../design/design-review.md)
 - [docs/design/rendering/meshlets.md](../../design/rendering/meshlets.md)

@@ -1,10 +1,10 @@
 # R-7.NFR -- AI Non-Functional Requirements
 
-Performance, scalability, memory, and quality-of-result requirements for the AI domain. Driven
-by the matching user stories in
-[`user-stories/ai/non-functional.md`](../../user-stories/ai/non-functional.md). All numeric
-targets reference the desktop reference profile in
-[`cross-cutting.md`](../cross-cutting.md) unless otherwise stated.
+Performance, scalability, memory, and quality-of-result requirements for the AI domain. Driven by
+the matching user stories in
+[`user-stories/ai/non-functional.md`](../../user-stories/ai/non-functional.md). All numeric targets
+reference the desktop reference profile in [`cross-cutting.md`](../cross-cutting.md) unless
+otherwise stated.
 
 ## Frame Budget
 

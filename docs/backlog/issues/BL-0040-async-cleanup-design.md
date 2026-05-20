@@ -11,19 +11,19 @@ status: triage
 title: Drain residual async/await prose in design tree
 ---
 
-# Drain residual async/await prose in design tree
+## Drain residual async/await prose in design tree
 
-## Context
+### Context
 
 The 2026-04-12 review P0 #6 mostly closed the async-purge work for game-runtime code. Per
-[ADR-0004](../../decisions/adr/ADR-0004-no-async-in-engine.md), engine / editor / game
-server are sync. Backend services on Kubernetes may use Tokio.
+[ADR-0004](../../decisions/adr/ADR-0004-no-async-in-engine.md), engine / editor / game server are
+sync. Backend services on Kubernetes may use Tokio.
 
-A grep for `async fn|\.await|tokio::|Future<` across `docs/design/` still hits ~30 files,
-mostly in migration-table prose, RF / TODO sections, or test expected outputs. This issue
-finishes that cleanup.
+A grep for `async fn|\.await|tokio::|Future<` across `docs/design/` still hits ~30 files, mostly in
+migration-table prose, RF / TODO sections, or test expected outputs. This issue finishes that
+cleanup.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] All RF / TODO prose that says "replace async with sync" is either applied (and the
       RF marked APPLIED) or moved to a backlog issue.
@@ -31,13 +31,13 @@ finishes that cleanup.
 - [ ] `networking/network-infrastructure.md` (TiKV examples) is the only legitimate
       async/await source in the design tree, scoped per ADR-0004 to backend services.
 
-## Verification
+### Verification
 
 `grep -rE 'async fn|\.await|tokio::|Future<' docs/design/` returns hits only in
-`network-infrastructure.md`, the `constraints.md` prohibition text, the design-review status
-update, and explicitly-historical migration sections.
+`network-infrastructure.md`, the `constraints.md` prohibition text, the design-review status update,
+and explicitly-historical migration sections.
 
-## References
+### References
 
 - [ADR-0004 No async in engine](../../decisions/adr/ADR-0004-no-async-in-engine.md)
 - [docs/design/design-review.md P0 #6](../../design/design-review.md)

@@ -7,23 +7,21 @@ Accepted — 2026-04-12
 ## Context
 
 The 60+ pair-wise integration design documents under
-[docs/design/integration/](../../design/integration/) repeatedly restated the same
-cross-cutting rules: `Arc` only for immutable shared data, no `HashMap` on hot paths, sorted
-backing stores for blackboards, MPSC default channel shape, rkyv for persistence, fallback
-mode names, channel capacity formula, and several others. The
-[2026-04-12 design review](../../design/design-review.md) §2.8 quantified this: same prose
-appearing across 5–8 integration docs with slight wording variations. Any change required
-editing every copy.
+[docs/design/integration/](../../design/integration/) repeatedly restated the same cross-cutting
+rules: `Arc` only for immutable shared data, no `HashMap` on hot paths, sorted backing stores for
+blackboards, MPSC default channel shape, rkyv for persistence, fallback mode names, channel capacity
+formula, and several others. The [2026-04-12 design review](../../design/design-review.md) §2.8
+quantified this: same prose appearing across 5–8 integration docs with slight wording variations.
+Any change required editing every copy.
 
-The audit also noted that the cross-cutting rules belong in one normative file; per-pair
-integration docs should carry the *contract* between the two subsystems, not restate the
-rules.
+The audit also noted that the cross-cutting rules belong in one normative file; per-pair integration
+docs should carry the *contract* between the two subsystems, not restate the rules.
 
 ## Decision
 
-[`docs/design/integration/shared-conventions.md`](../../design/integration/shared-conventions.md)
-is the single normative source for cross-cutting integration rules. Fourteen rules
-(`SC-1` … `SC-14`) cover:
+[`docs/design/integration/shared-conventions.md`](../../design/integration/shared-conventions.md) is
+the single normative source for cross-cutting integration rules. Fourteen rules (`SC-1` … `SC-14`)
+cover:
 
 | ID    | Rule                                                                      |
 |-------|---------------------------------------------------------------------------|
@@ -42,8 +40,8 @@ is the single normative source for cross-cutting integration rules. Fourteen rul
 | SC-13 | `DashMap` replaces `HashMap` when concurrency is required                 |
 | SC-14 | Integration docs carry contracts, not implementations                     |
 
-All integration design docs MUST link `shared-conventions.md` and MUST NOT restate the rule
-text. Deviations require a "Deviation" subsection citing the specific rule and rationale.
+All integration design docs MUST link `shared-conventions.md` and MUST NOT restate the rule text.
+Deviations require a "Deviation" subsection citing the specific rule and rationale.
 
 ## Consequences
 

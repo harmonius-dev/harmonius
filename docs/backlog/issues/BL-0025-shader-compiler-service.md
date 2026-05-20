@@ -11,15 +11,15 @@ status: triage
 title: Consolidate shader compilation into one service
 ---
 
-# Consolidate shader compilation into one service
+## Consolidate shader compilation into one service
 
-## Context
+### Context
 
-`asset-processing.md`, `visual-editors.md`, and `build-deploy.md` each describe shader
-compilation independently. The 2026-04-12 review P2 #55 recommended a single
-`ShaderCompiler` service in `harmonius_core` with the other docs becoming clients.
+`asset-processing.md`, `visual-editors.md`, and `build-deploy.md` each describe shader compilation
+independently. The 2026-04-12 review P2 #55 recommended a single `ShaderCompiler` service in
+`harmonius_core` with the other docs becoming clients.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] New `core-runtime/shader-compiler.md` (or equivalent) defines the canonical service.
 - [ ] `asset-processing.md`, `visual-editors.md`, `build-deploy.md` reference the canonical
@@ -27,11 +27,11 @@ compilation independently. The 2026-04-12 review P2 #55 recommended a single
 - [ ] No glslc subprocess invocation appears outside the canonical service.
 - [ ] Hot reload uses the same service.
 
-## Verification
+### Verification
 
 `grep -r 'glslc' docs/design/` shows references only inside the canonical service doc.
 
-## References
+### References
 
 - [docs/design/design-review.md P2 #55](../../design/design-review.md)
 - [ADR-0007 GLSL via glslc](../../decisions/adr/ADR-0007-glsl-shader-il-via-glslc.md)

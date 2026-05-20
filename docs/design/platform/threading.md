@@ -1262,12 +1262,12 @@ The engine uses platform-native completion-based I/O directly, no async runtime:
 | Windows  | IOCP via `windows-rs`                                |
 | Apple    | `dispatch_io` via `dispatch2`; `Networking.framework` via `objc2` |
 
-The platform layer handles both file I/O and network I/O through one engine-side request/handle
-API. It replaces Tokio, mio, and all third-party cross-platform I/O wrappers.
+The platform layer handles both file I/O and network I/O through one engine-side request/handle API.
+It replaces Tokio, mio, and all third-party cross-platform I/O wrappers.
 
 **Future optimization**: Vulkan staging buffers can be added later for disk-to-GPU DMA transfers,
-bypassing CPU memory for GPU assets (textures, mesh buffers). This is an optimization on top of
-the platform-native I/O layer, not a replacement.
+bypassing CPU memory for GPU assets (textures, mesh buffers). This is an optimization on top of the
+platform-native I/O layer, not a replacement.
 
 #### Remove custom thread pool — use Rayon
 
@@ -1321,8 +1321,8 @@ Assets use a state machine that advances each frame:
 6. `WaitingOnDeps` — sub-assets loading
 7. `Ready` — fully loaded, available to systems
 
-GPU assets flow: platform-native reads to CPU memory, game loop sends data in frame packet, render thread
-uploads to GPU.
+GPU assets flow: platform-native reads to CPU memory, game loop sends data in frame packet, render
+thread uploads to GPU.
 
 **Future optimization**: Vulkan staging buffers (Windows) and Vulkan staging buffers (macOS) add
 disk-to-GPU DMA, skipping the CPU memory hop for GPU assets. The asset pipeline would pre-split
@@ -1339,8 +1339,8 @@ files:
 
 > **Superseded** by the `RF-NEW [APPLIED]: Revised dependencies` table further down. The current
 > dependency set drops both `rayon` and `compio` in favour of the custom `crossbeam-deque` job
-> system and direct platform-native I/O. This subsection is preserved for traceability of the
-> review history.
+> system and direct platform-native I/O. This subsection is preserved for traceability of the review
+> history.
 
 ### Open items from review
 

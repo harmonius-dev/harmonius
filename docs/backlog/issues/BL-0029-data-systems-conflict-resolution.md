@@ -11,15 +11,14 @@ status: triage
 title: Conflict-resolution spec for effects and containers
 ---
 
-# Conflict-resolution spec for effects and containers
+## Conflict-resolution spec for effects and containers
 
-## Context
+### Context
 
-The 2026-04-12 review §3.3 noted no conflict-resolution spec for simultaneous effect
-applications, simultaneous threshold crossings, or failed mid-transaction container
-transfers.
+The 2026-04-12 review §3.3 noted no conflict-resolution spec for simultaneous effect applications,
+simultaneous threshold crossings, or failed mid-transaction container transfers.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] `attributes-effects.md` documents simultaneous-effect-application order and stack
       composition rules.
@@ -28,12 +27,12 @@ transfers.
       partial-failure handling, atomicity guarantees.
 - [ ] Companion test cases cover each conflict scenario.
 
-## Verification
+### Verification
 
-Concurrent effect / container operations produce deterministic outcomes that match the
-documented rules.
+Concurrent effect / container operations produce deterministic outcomes that match the documented
+rules.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.3](../../design/design-review.md#33-data-systems)
 - [docs/design/data-systems/attributes-effects.md](../../design/data-systems/attributes-effects.md)

@@ -1,8 +1,8 @@
 # Timelines ↔ Camera Integration Design
 
 > **Compliance.** This document follows the cross-cutting conventions in
-> [shared-conventions.md](shared-conventions.md) (SC-1..SC-14) and the channel-capacity formula
-> in [shared-messaging-capacities.md](shared-messaging-capacities.md). Deviations: none.
+> [shared-conventions.md](shared-conventions.md) (SC-1..SC-14) and the channel-capacity formula in
+> [shared-messaging-capacities.md](shared-messaging-capacities.md). Deviations: none.
 
 ## Systems Involved
 

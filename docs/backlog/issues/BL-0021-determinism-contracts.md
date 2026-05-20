@@ -11,15 +11,15 @@ status: triage
 title: Determinism contracts for animation, procedural, event-logs
 ---
 
-# Determinism contracts for animation, procedural, event-logs
+## Determinism contracts for animation, procedural, event-logs
 
-## Context
+### Context
 
-The 2026-04-12 review §3.4 / P2 #40 noted that physics has a determinism contract but
-animation state-machine evaluation, procedural animation (IK, foot placement), and event-log
-threshold evaluation do not. Each subsystem claims determinism without specifying it.
+The 2026-04-12 review §3.4 / P2 #40 noted that physics has a determinism contract but animation
+state-machine evaluation, procedural animation (IK, foot placement), and event-log threshold
+evaluation do not. Each subsystem claims determinism without specifying it.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] `animation/state-machine.md` documents determinism: tick order, RNG plumbing
       (`GameTime.seed`), float-precision policy.
@@ -28,12 +28,12 @@ threshold evaluation do not. Each subsystem claims determinism without specifyin
       tick-stamp order).
 - [ ] All three reference SC-8 (`GameTime.seed` plumbing).
 
-## Verification
+### Verification
 
-Replaying a recorded session produces identical animation poses, identical procedural
-outputs, and identical event-log threshold firings frame for frame.
+Replaying a recorded session produces identical animation poses, identical procedural outputs, and
+identical event-log threshold firings frame for frame.
 
-## References
+### References
 
 - [docs/design/design-review.md §3.4 / P2 #40](../../design/design-review.md)
 - [docs/design/integration/shared-conventions.md SC-8](../../design/integration/shared-conventions.md)

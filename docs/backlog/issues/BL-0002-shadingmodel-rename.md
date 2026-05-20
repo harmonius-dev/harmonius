@@ -11,32 +11,31 @@ status: triage
 title: Resolve ShadingModel vs ShadingModelId duplication
 ---
 
-# Resolve `ShadingModel` vs `ShadingModelId` duplication
+## Resolve `ShadingModel` vs `ShadingModelId` duplication
 
-## Context
+### Context
 
-The 2026-04-12 design review §2.2 noted that `ShadingModel` and `ShadingModelId` are the
-same concept under two names:
+The 2026-04-12 design review §2.2 noted that `ShadingModel` and `ShadingModelId` are the same
+concept under two names:
 
 - `rendering/rendering-core.md` defines `ShadingModel` as the runtime enum.
 - `rendering/render-styles.md` defines `ShadingModelId` for serialization and material graph
   export.
 
-Two names for the same concept causes drift in error messages, editor enums, and shader
-codegen.
+Two names for the same concept causes drift in error messages, editor enums, and shader codegen.
 
-## Acceptance criteria
+### Acceptance criteria
 
 - [ ] Pick one name (`ShadingModel`) and remove the other.
 - [ ] Update `rendering-core.md` and `render-styles.md` consistently.
 - [ ] Update material graph codegen output to emit the canonical name.
 - [ ] `canonical-owners.md` row for `ShadingModel` flips to `Owned`.
 
-## Verification
+### Verification
 
 `grep -r 'ShadingModelId' docs/` returns zero matches.
 
-## References
+### References
 
 - [docs/design/design-review.md §2.2](../../design/design-review.md#22-foundational-type-duplication)
 - [docs/design/canonical-owners.md](../../design/canonical-owners.md)

@@ -7,9 +7,9 @@ Accepted — 2026-04-12
 ## Context
 
 The 2026-04-12 design review §2.9 originally recommended extracting coroutine support to a new
-`core-runtime/coroutines.md` so the scripting crate could become a client of a shared
-coroutine runtime. The recommendation was based on the existence of `CoroutineState` inside
-the scripting design.
+`core-runtime/coroutines.md` so the scripting crate could become a client of a shared coroutine
+runtime. The recommendation was based on the existence of `CoroutineState` inside the scripting
+design.
 
 On further inspection of the corpus, several integration designs already treated "no coroutine
 runtime" as an invariant:
@@ -21,8 +21,8 @@ runtime" as an invariant:
 - `integration/timelines-scripting.md` — multi-frame sequencing flows through timelines.
 - `integration/high-level.md` G1 — explicit "no coroutine runtime" invariant.
 
-Treating `CoroutineState` as a shared primitive would conflict with the invariants the rest
-of the corpus already encodes.
+Treating `CoroutineState` as a shared primitive would conflict with the invariants the rest of the
+corpus already encodes.
 
 ## Decision
 
@@ -32,12 +32,12 @@ The engine has no coroutine runtime. Cross-subsystem multi-frame sequencing uses
 - **Behavior trees** for AI multi-frame sequencing.
 - **Delayed events** (fire-and-forget) for ad-hoc scheduling.
 
-The `CoroutineState` type inside the scripting crate is a codegen-internal yield-lowering
-state machine, not a shared primitive. It is renamed to `SuspendState` and scoped to the
-scripting crate. It is not exported.
+The `CoroutineState` type inside the scripting crate is a codegen-internal yield-lowering state
+machine, not a shared primitive. It is renamed to `SuspendState` and scoped to the scripting crate.
+It is not exported.
 
-This ADR explicitly **reverses** the 2026-04-12 design-review P1 task #20 ("Extract
-coroutines to `core-runtime/coroutines.md`").
+This ADR explicitly **reverses** the 2026-04-12 design-review P1 task #20 ("Extract coroutines to
+`core-runtime/coroutines.md`").
 
 ## Consequences
 

@@ -1377,9 +1377,9 @@ ownership to the completion handler posted as a job.
 
 #### Replace Tokio with platform-native I/O
 
-> Earlier feedback recommended swapping Tokio for `compio`. This was superseded by the later
-> RF-NEW [APPLIED] decision (see below) to drop async runtimes entirely and use platform-native
-> APIs directly. The historical Tokio→compio mapping is preserved here only as audit trail.
+> Earlier feedback recommended swapping Tokio for `compio`. This was superseded by the later RF-NEW
+> [APPLIED] decision (see below) to drop async runtimes entirely and use platform-native APIs
+> directly. The historical Tokio→compio mapping is preserved here only as audit trail.
 
 | Tokio reference                  | Replacement                                       |
 |----------------------------------|---------------------------------------------------|

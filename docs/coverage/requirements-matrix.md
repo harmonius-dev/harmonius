@@ -1,11 +1,11 @@
 # Requirements Coverage Matrix
 
-Maps every `R-X.Y.Z` to its feature, user-story, design, and test artifacts. Coverage status
-is per-row.
+Maps every `R-X.Y.Z` to its feature, user-story, design, and test artifacts. Coverage status is
+per-row.
 
-The matrix is partial: Core Runtime, Data Systems, Simulation, and Networking are matrixed
-in full per [docs/coverage/index.md](index.md). Other domains carry "Summary only" entries
-and are tracked by [BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) and
+The matrix is partial: Core Runtime, Data Systems, Simulation, and Networking are matrixed in full
+per [docs/coverage/index.md](index.md). Other domains carry "Summary only" entries and are tracked
+by [BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) and
 [BL-0048](../backlog/issues/BL-0048-readme-counts-sync.md).
 
 ## Status legend
@@ -33,11 +33,10 @@ and are tracked by [BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md
 | [algorithms.md](../requirements/core-runtime/algorithms.md)                 | R-1.10.1..11| features/core-runtime/algorithms.md              | user-stories/core-runtime/algorithms.md              | design/core-runtime/algorithms.md plus primitives.md | algorithms-test-cases.md plus primitives-test-cases.md | Owned |
 | [game-loop.md](../requirements/core-runtime/game-loop.md)                   | R-1.11.1..10| features/core-runtime/game-loop.md               | user-stories/core-runtime/game-loop.md               | design/core-runtime/game-loop.md        | game-loop-test-cases.md | Owned |
 
-Foundation primitives (`error.md`, `io.md`, `ids.md`, `hot-reload-protocol.md`,
-`graph-runtime.md`, `change-detection.md`, `console-variables.md`, `primitives.md`) currently
-live as design docs only; their R-IDs feed off the existing requirement files
-(`async-io.md`, `algorithms.md`, etc.). A future audit will split these into dedicated
-requirement files if the requirement count justifies it.
+Foundation primitives (`error.md`, `io.md`, `ids.md`, `hot-reload-protocol.md`, `graph-runtime.md`,
+`change-detection.md`, `console-variables.md`, `primitives.md`) currently live as design docs only;
+their R-IDs feed off the existing requirement files (`async-io.md`, `algorithms.md`, etc.). A future
+audit will split these into dedicated requirement files if the requirement count justifies it.
 
 ## Data Systems (`R-16.*`)
 
@@ -48,10 +47,9 @@ requirement files if the requirement count justifies it.
 | [attributes-effects.md](../requirements/data-systems/attributes-effects.md)   | R-16.3.* | user-stories/data-systems/attributes-effects.md | design/data-systems/attributes-effects.md | attributes-effects-test-cases.md| Owned  |
 | [containers-slots.md](../requirements/data-systems/containers-slots.md)       | R-16.4.* | user-stories/data-systems/containers-slots.md   | design/data-systems/containers-slots.md   | containers-slots-test-cases.md  | Owned  |
 
-The `composition.md` design has no dedicated requirement file; it documents authoring
-patterns over the four primitives. Tracked under
-[BL-0028](../backlog/issues/BL-0028-replicate-data-systems.md) and
-[BL-0029](../backlog/issues/BL-0029-data-systems-conflict-resolution.md).
+The `composition.md` design has no dedicated requirement file; it documents authoring patterns over
+the four primitives. Tracked under [BL-0028](../backlog/issues/BL-0028-replicate-data-systems.md)
+and [BL-0029](../backlog/issues/BL-0029-data-systems-conflict-resolution.md).
 
 ## Simulation (`R-17.*`)
 
@@ -75,12 +73,12 @@ patterns over the four primitives. Tracked under
 | [communication.md](../requirements/networking/communication.md)                   | R-8.6a.*| user-stories/networking/communication.md      | design/networking/network-services.md       | network-services-test-cases.md        | Owned   |
 | [mmo-infrastructure.md](../requirements/networking/mmo-infrastructure.md)         | R-8.7.* | user-stories/networking/mmo-infrastructure.md | design/networking/network-infrastructure.md | network-infrastructure-test-cases.md | Owned   |
 | [anti-cheat.md](../requirements/networking/anti-cheat.md)                         | R-8.8.* | user-stories/networking/anti-cheat.md         | design/networking/network-infrastructure.md | network-infrastructure-test-cases.md | Partial — see BL-0038 |
-| [non-functional.md](../requirements/networking/non-functional.md) (new)           | R-8.NFR.* | user-stories/networking/non-functional.md    | (multi-doc)                                  | (multi-doc)                            | Partial |
+| `non-functional.md` (planned, see BL-0044)                                          | R-8.NFR.* | user-stories/networking/non-functional.md    | (multi-doc)                                  | (multi-doc)                            | Partial |
 
 Networking-NFR requirements file is tracked as a follow-up under
-[BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) — currently the user-story
-file exists (deslop pass) but a matching `requirements/networking/non-functional.md` has
-not yet been authored.
+[BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) — currently the user-story file
+exists (deslop pass) but a matching `requirements/networking/non-functional.md` has not yet been
+authored.
 
 ## AI (`R-7.*`)
 
@@ -98,10 +96,9 @@ not yet been authored.
 
 ## Other domains (Summary only)
 
-The following domains are not yet matrixed in full. They carry one summary row per file
-here. Detailed mapping is tracked under
-[BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) and the
-[2026-Q3 OKR O-3](../okrs/2026-q3.md).
+The following domains are not yet matrixed in full. They carry one summary row per file here.
+Detailed mapping is tracked under [BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) and
+the [2026-Q3 OKR O-3](../okrs/2026-q3.md).
 
 | Domain               | Files | Notes                                                |
 |----------------------|------:|------------------------------------------------------|
@@ -129,5 +126,5 @@ here. Detailed mapping is tracked under
 | AI              |     7 |       2 |      0 |        0 |     9 |
 | **Total (indexed)** | **32** | **6** | **0** | **0** |    **38** |
 
-Indexed coverage: 32 / 38 = **84%** Owned across the four matrixed domains. Remaining 6
-Partial rows have backlog issues attached.
+Indexed coverage: 32 / 38 = **84%** Owned across the four matrixed domains. Remaining 6 Partial rows
+have backlog issues attached.

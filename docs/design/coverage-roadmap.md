@@ -1,9 +1,9 @@
 # Design Coverage Roadmap
 
-This roadmap lists the mid- and low-level design decompositions that the corpus still
-needs. Each entry maps to a backlog issue. Closing every roadmap entry means every domain
-either has a coherent set of mid-level docs or has been consciously left as a single
-top-level doc with a documented reason.
+This roadmap lists the mid- and low-level design decompositions that the corpus still needs. Each
+entry maps to a backlog issue. Closing every roadmap entry means every domain either has a coherent
+set of mid-level docs or has been consciously left as a single top-level doc with a documented
+reason.
 
 ## Status legend
 
@@ -56,9 +56,8 @@ Current: `ui-framework.md` (everything). Roadmap split into four files:
 
 ## Missing integration pairs
 
-The 2026-04-12 design review §3.8 identified missing integration pairs. Three are tracked
-on this roadmap; the other items in that section have already been authored or are tracked
-elsewhere.
+The 2026-04-12 design review §3.8 identified missing integration pairs. Three are tracked on this
+roadmap; the other items in that section have already been authored or are tracked elsewhere.
 
 | Pair                                      | Status   | Backlog                                                 |
 |-------------------------------------------|----------|---------------------------------------------------------|
@@ -68,8 +67,8 @@ elsewhere.
 
 ## Domains with intentional single-doc shape
 
-Some domains are intentionally one design file because the surface area is small. They are
-not decomposition candidates.
+Some domains are intentionally one design file because the surface area is small. They are not
+decomposition candidates.
 
 | Domain               | File                            | Reason for single-doc                                 |
 |----------------------|---------------------------------|-------------------------------------------------------|
@@ -84,9 +83,9 @@ not decomposition candidates.
 | UI              |                     1 |             3 |            4 |
 | Integration     |                    62 |             3 |           65 |
 
-Closing the roadmap moves Audio + Input + UI from monolithic to mid-level coverage and adds
-three integration pairs. The work is sized in the backlog (XL for the three decomposes; M
-for the three integration pairs).
+Closing the roadmap moves Audio + Input + UI from monolithic to mid-level coverage and adds three
+integration pairs. The work is sized in the backlog (XL for the three decomposes; M for the three
+integration pairs).
 
 ## Out-of-scope work
 
