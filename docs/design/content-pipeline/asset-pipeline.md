@@ -1352,7 +1352,7 @@ Test cases are defined inline below.
    archive level, so CAS compression may be redundant.
 3. **Asset ID stability across branches.** Independent UUID generation creates duplicates on merge.
    Deterministic IDs from source path break on rename.
-4. **Descriptor heap update atomicity.** Vulkan descriptor set updates require double-buffering or
+4. **Descriptor set update atomicity.** Vulkan descriptor set updates require double-buffering or
    descriptor indexing for texture hot reload.
 5. **Structural diff granularity.** Per-vertex mesh diff (precise but slow) vs summary statistics
    (fast but coarse)?

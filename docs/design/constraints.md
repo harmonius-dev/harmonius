@@ -125,7 +125,7 @@ Three thread roles communicate via crossbeam-channel. No shared mutable state.
   Exceptions:
   - **Audio runtime.** Dedicated real-time thread with < 0.5 ms latency budget. ECS components
     (`AudioSource`, `AudioListener`) bridge game state via lock-free SPSC command queue.
-  - **GPU resource management.** Descriptor heaps, command allocators, and swap chains are managed
+  - **GPU resource management.** Descriptor pools, command allocators, and swap chains are managed
     internally by the rendering backend.
   - **Windowing and platform event loops.** OS event loops are not ECS systems but forward events
     into ECS.

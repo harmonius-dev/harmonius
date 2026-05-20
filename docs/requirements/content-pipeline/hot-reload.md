@@ -17,7 +17,7 @@
 
 2. **R-12.4.2** — The engine **SHALL** re-import and reprocess only the affected asset and its
    dependents when a source asset changes, then patch the in-memory runtime representation without
-   restarting the application, using descriptor heap updates for textures and atomic pointer
+   restarting the application, using descriptor pool/set updates for textures and atomic pointer
    replacement behind a frame fence for meshes and materials.
    - **Rationale:** In-place asset swapping preserves live game state during iteration, eliminating
      restart latency for content creators.

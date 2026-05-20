@@ -1970,9 +1970,10 @@ level.
 
 ### RF-6: Fix constraints.md stale references [APPLIED]
 
-constraints.md body text still references compio (lines 51, 83, 99) and Rayon (line 51) while line
-190 says they are removed. Update the threading table and I/O model section to match the removal
-declaration. This causes downstream designs to make inconsistent choices.
+The constraints.md body text previously referenced `compio` and Rayon in the threading and I/O
+sections while the dependency list said both were removed. Constraints now consistently use
+platform-native I/O language and list `tokio`, `mio`, `rayon`, `compio` under `Removed:`. No
+downstream design should reintroduce them.
 
 ### RF-7: Remove or differentiate SpatialBundle [APPLIED]
 

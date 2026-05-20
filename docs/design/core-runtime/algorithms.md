@@ -1678,7 +1678,7 @@ streaming policy.
 
 ### Accepted recommendations
 
-- Replace all Tokio references with compio
+- Replace all Tokio references with platform-native I/O (io_uring / IOCP / GCD)
 - Remove `*mut World` from `WorkContext` — use safe `&mut World` with lifetime
 - Fix `ConditionCheckFn` lifetime — use `for<'w> fn(&ConditionContext<'w>) -> bool`
 - Fix `GraphCompiler` platform notes — "naga in-process compilation" not "naga via C API"

@@ -1182,8 +1182,9 @@ implementation differs per platform behind `cfg` attributes.
 
 Platform I/O API divergence is the most limiting. Each platform has a different completion I/O model
 (`io_uring`, IOCP, GCD `dispatch_io`), and the `PlatformIo` abstraction must present a uniform
-interface. Lifting this would require a cross-platform I/O library, but existing options (Tokio,
-compio) create unwanted threads or add unnecessary abstraction layers.
+interface. Lifting this would require a cross-platform I/O library, but existing options create
+unwanted threads or add unnecessary abstraction layers, so the engine talks to platform APIs
+directly.
 
 **Q2. How can this design be improved?**
 
@@ -1244,29 +1245,29 @@ No shared mutable state.
 
 | Thread | Owns | Handles |
 |--------|------|---------|
-| Main | OS event loop, compio | Window, input, timers, all I/O |
-| Game loop | ECS, GameLoopGraph, Rayon | Simulation only — drains one channel |
+| Main | OS event loop, platform-native I/O | Window, input, timers, all I/O |
+| Game loop | ECS, GameLoopGraph, custom job system | Simulation only — drains one channel |
 | Render | GPU | Draw calls, GPU uploads |
 
 The game loop thread touches zero OS APIs. All OS interaction is consolidated on the main thread.
 The render thread only does GPU work and never performs file I/O.
 
-#### Remove Tokio — use compio
+#### Remove Tokio — use platform-native I/O
 
-compio provides cross-platform completion-based I/O using the best backend per platform:
+The engine uses platform-native completion-based I/O directly, no async runtime:
 
-| Platform | compio backend |
-|----------|---------------|
-| Linux | `io_uring` |
-| Windows | IOCP |
-| macOS | kqueue |
+| Platform | File / Network I/O                                  |
+|----------|------------------------------------------------------|
+| Linux    | `io_uring` via `rustix`                              |
+| Windows  | IOCP via `windows-rs`                                |
+| Apple    | `dispatch_io` via `dispatch2`; `Networking.framework` via `objc2` |
 
-compio handles both file I/O and network I/O through one API. It replaces Tokio, mio, and all
-platform-specific I/O code.
+The platform layer handles both file I/O and network I/O through one engine-side request/handle
+API. It replaces Tokio, mio, and all third-party cross-platform I/O wrappers.
 
-**Future optimization**: Vulkan staging buffers (Windows) and Vulkan staging buffers (macOS) can be
-added later for disk-to-GPU DMA transfers, bypassing CPU memory for GPU assets (textures, mesh
-buffers). This is an optimization on top of compio, not a replacement.
+**Future optimization**: Vulkan staging buffers can be added later for disk-to-GPU DMA transfers,
+bypassing CPU memory for GPU assets (textures, mesh buffers). This is an optimization on top of
+the platform-native I/O layer, not a replacement.
 
 #### Remove custom thread pool — use Rayon
 
@@ -1313,14 +1314,14 @@ Game Loop Thread (one frame):
 Assets use a state machine that advances each frame:
 
 1. `Queued` — load requested, handle returned immediately
-2. `Loading` — compio read in flight
+2. `Loading` — platform-native read in flight
 3. `BytesReady` — I/O complete, bytes in CPU memory
 4. `Processing` — CPU work (parse, build BVH)
 5. `DepsNeeded` — discovered sub-assets, queue more I/O
 6. `WaitingOnDeps` — sub-assets loading
 7. `Ready` — fully loaded, available to systems
 
-GPU assets flow: compio reads to CPU memory, game loop sends data in frame packet, render thread
+GPU assets flow: platform-native reads to CPU memory, game loop sends data in frame packet, render thread
 uploads to GPU.
 
 **Future optimization**: Vulkan staging buffers (Windows) and Vulkan staging buffers (macOS) add
@@ -1334,28 +1335,21 @@ files:
 | `sword.tex.gpu` | GPU-direct (DMA) | Compressed texture |
 | `forest.scene` | CPU memory | Scene graph, metadata |
 
-### Revised dependency list
+### Revised dependency list (superseded)
 
-| Dependency | Purpose |
-|------------|---------|
-| `rayon` | Work-stealing thread pool, data parallelism |
-| `compio` | All file and network I/O (io_uring/IOCP/kqueue) |
-| `windows-rs` | Win32 windowing, input |
-| `objc2` | Apple framework bindings (Vulkan, AppKit) |
-
-Removed: `tokio`, `mio`, `crossbeam-deque`, `crossbeam-utils`, `smallvec`.
-
-Future additions: `Vulkan staging buffers` (Windows) and Vulkan staging buffers (macOS) for
-disk-to-GPU DMA optimization. Target Vulkan 1.4 API when available (WWDC 2025) for explicit memory
-management, placement sparse resources, and improved shader compilation.
+> **Superseded** by the `RF-NEW [APPLIED]: Revised dependencies` table further down. The current
+> dependency set drops both `rayon` and `compio` in favour of the custom `crossbeam-deque` job
+> system and direct platform-native I/O. This subsection is preserved for traceability of the
+> review history.
 
 ### Open items from review
 
-1. Core topology / P-core vs E-core affinity — neither Rayon nor compio exposes this; custom code
-   still needed
+1. Core topology / P-core vs E-core affinity — neither prior candidate exposes this; the custom
+   job system handles it directly
 2. `set_priority` on `TaskGraphBuilder` is global, not per-node — needs
    `set_node_priority(TaskNodeId, TaskPriority)` for mixed priority graphs
-3. HTTP client for cloud services — non-blocking via compio (no blocking HTTP)
+3. HTTP client for cloud services — synchronous request/handle on top of platform-native I/O
+   (no blocking HTTP, no async runtime)
 4. Test cases needed for `GameLoopGraph::compile()`, `CompiledFrame::execute()`, and
    `EventDispatcher`
 

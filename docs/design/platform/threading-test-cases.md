@@ -67,7 +67,7 @@ Companion test cases for [threading.md](threading.md).
 |---|-------------|
 | 1 | R-14.3.5    |
 
-1. **#1** — Read test file via compio on main thread
+1. **#1** — Read test file via platform-native I/O on main thread
    - **Expected:** Correct data returned, game loop thread not blocked
 
 ### TC-14.3.5.2 IO Completions At Frame Boundary
@@ -77,7 +77,7 @@ Companion test cases for [threading.md](threading.md).
 | 1 | R-14.3.5    |
 | 2 | R-14.3.5    |
 
-1. **#1** — Submit I/O via compio, check before frame drain
+1. **#1** — Submit I/O via platform-native I/O, check before frame drain
    - **Expected:** Result not yet available to game loop
 2. **#2** — Drain channel at frame boundary
    - **Expected:** Result arrives and contains correct data
@@ -105,13 +105,13 @@ Companion test cases for [threading.md](threading.md).
 2. **#2** — Spawn low-priority job system task, query affinity
    - **Expected:** Pinned to efficiency core (if available)
 
-### TC-14.3.5.I1 Compio Read 10 MB
+### TC-14.3.5.I1 Platform IO Read 10 MB
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-14.3.5    |
 
-1. **#1** — Read 10 MB file via compio on main thread
+1. **#1** — Read 10 MB file via platform-native I/O on main thread
    - **Expected:** Game loop not blocked, data integrity verified via channel delivery
 
 ### TC-14.3.1.I1 Utilization Imbalance
@@ -129,8 +129,8 @@ Companion test cases for [threading.md](threading.md).
 |---|-------------|
 | 1 | R-14.3.5    |
 
-1. **#1** — Main thread reads file via compio, sends result to game loop via channel, game loop
-   sends render data to render thread
+1. **#1** — Main thread reads file via platform-native I/O, sends result to game loop via channel,
+   game loop sends render data to render thread
    - **Expected:** Data flows through all 3 threads correctly with no blocking
 
 <!-- THIN: design section lacks detail -->
@@ -195,11 +195,11 @@ Companion test cases for [threading.md](threading.md).
 |---|----------|--------|--------|-------------|
 | 1 | 10K heterogeneous jobs across job system workers | Avg utilization | >= 80% | R-14.3.1 |
 
-### TC-14.3.5.B1 Compio Poll 100 Completions
+### TC-14.3.5.B1 Platform IO Poll 100 Completions
 
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
-| 1 | Submit 100 reads via compio, drain completions | Poll duration | < 50 us | R-14.3.5 |
+| 1 | Submit 100 reads via platform-native I/O, drain completions | Poll duration | < 50 us | R-14.3.5 |
 
 ### TC-14.3.5.B2 Channel Throughput
 
@@ -207,8 +207,8 @@ Companion test cases for [threading.md](threading.md).
 |---|----------|--------|--------|-------------|
 | 1 | 8 producers sending to game loop channel | Per-message latency | < 1 us | R-14.3.5 |
 
-### TC-14.3.5.B3 Compio IO Throughput
+### TC-14.3.5.B3 Platform IO Throughput
 
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
-| 1 | Sequential read 1 GB via compio | Throughput | >= 80% raw disk | R-14.3.5 |
+| 1 | Sequential read 1 GB via platform-native I/O | Throughput | >= 80% raw disk | R-14.3.5 |

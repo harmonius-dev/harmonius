@@ -781,7 +781,7 @@ Companion test cases for [algorithms.md](algorithms.md).
 | 1 | F-12.5      |
 | 2 | F-12.5      |
 
-1. **#1** — Load pages via compio on main thread
+1. **#1** — Load pages via platform-native I/O (io_uring / IOCP / GCD) on main thread
    - **Expected:** Pages loaded, delivered via channel
 2. **#2** — Verify residency tracking
    - **Expected:** All loaded pages marked Resident

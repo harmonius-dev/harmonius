@@ -26,7 +26,7 @@
 | US-12.4.8 | game designer (P-5)        |
 
 1. **US-12.4.3** — **As an** environment artist (P-8), **I want** modified textures to swap in the
-   running viewport via descriptor heap updates without restarting, **so that** I see material
+   running viewport via descriptor pool/set updates without restarting, **so that** I see material
    changes in real time.
 2. **US-12.4.4** — **As an** environment artist (P-8), **I want** modified meshes and materials
    swapped via atomic pointer replacement behind a frame fence, **so that** no rendering artifacts

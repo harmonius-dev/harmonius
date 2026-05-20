@@ -1314,7 +1314,7 @@ annotations in the API would mitigate these weaknesses.
 
 **Q3. Is there a better approach?** If we are not taking it, why not?
 
-A third-party async runtime (Tokio, compio) (both rejected) would reduce platform code but adds
+A third-party async runtime (Tokio, compio — both rejected) would reduce platform code but adds
 threads, removes control over poll timing, and prevents GPU DMA integration (Vulkan staging buffers
 I/O). We chose platform-native APIs because they give direct control over buffer registration,
 completion ordering, and disk-to-GPU DMA paths with zero extra threads.
@@ -1375,28 +1375,27 @@ ownership to the completion handler posted as a job.
 
 ### Architecture changes
 
-#### Replace Tokio with compio
+#### Replace Tokio with platform-native I/O
 
-All I/O references must change from Tokio to compio. Update `AsyncIo` internals, `CancelToken`,
-architecture diagrams, data flow diagrams, dependency table, Design Q&A, and all test cases. compio
-runs on the main thread.
+> Earlier feedback recommended swapping Tokio for `compio`. This was superseded by the later
+> RF-NEW [APPLIED] decision (see below) to drop async runtimes entirely and use platform-native
+> APIs directly. The historical Tokio→compio mapping is preserved here only as audit trail.
 
-| Tokio reference | compio replacement |
-|----------------|-------------------|
-| `tokio::runtime::Runtime` | compio proactor |
-| `tokio_util::CancellationToken` | Custom `CancelToken` |
-| `tokio::task::JoinHandle` | `compio::runtime::spawn` handle |
-| `tokio::select!` | compio equivalent |
-| `tokio::fs` | `compio-fs` |
-| `tokio::net` | `compio-net` |
+| Tokio reference                  | Replacement                                       |
+|----------------------------------|---------------------------------------------------|
+| `tokio::runtime::Runtime`        | Per-platform completion engine on the main thread |
+| `tokio_util::CancellationToken`  | Custom `CancelToken` (atomic + waker list)        |
+| `tokio::task::JoinHandle`        | `IoRequest` handle plus completion channel        |
+| `tokio::select!`                 | Channel `recv` with timeout                       |
+| `tokio::fs`                      | io_uring / IOCP / `dispatch_io` files             |
+| `tokio::net`                     | io_uring / IOCP / `Networking.framework`          |
 
-Build a custom `CancelToken` using `AtomicBool` + waker list with parent-child hierarchy, since
-compio lacks one.
+Build a custom `CancelToken` using `AtomicBool` + waker list with parent-child hierarchy.
 
 #### Move `AsyncIo` to main thread
 
-The game loop must not own or poll I/O. The main thread owns the compio runtime. Game loop sends I/O
-requests via channel, receives completions via channel.
+The game loop must not own or poll I/O. The main thread owns the platform-native I/O engine. Game
+loop sends I/O requests via channel, receives completions via channel.
 
 Remove `poll()` and `block_on()` calls from the frame loop pseudocode. The game loop drains a
 completion channel at frame start.
@@ -1433,7 +1432,7 @@ internally.
 | Entity metadata | ECS slot map |
 | Per-frame scratch | `PerThreadArena` |
 | GPU upload staging | Render thread ring buffers |
-| I/O buffers | compio (main thread) |
+| I/O buffers | platform-native I/O (main thread) |
 | Asset CPU data | `PoolAllocator` per type |
 
 #### Avoid allocation on the game loop hot path
@@ -1455,7 +1454,7 @@ asset pipeline design, which consults `MemoryBudget` for pressure information.
 
 - Remove raw pointers (`*const AsyncIo`, `*const MemoryBudget`) — use references with lifetimes
 - Add explicit `close()` to `VfsHandle`
-- Exploit compio's native io_uring buffer registration for R-1.8.9
+- Use `rustix`'s native io_uring buffer registration directly for R-1.8.9
 - Relocate `BigInt`/`BigFloat` to algorithms or math
 - Document `MemoryBudget` interior mutability — atomics justified for cross-thread budget reporting
 - Add missing test cases: VFS mount priority, idle poll, graceful shutdown
@@ -1463,7 +1462,7 @@ asset pipeline design, which consults `MemoryBudget` for pressure information.
 ### Open items
 
 1. Custom `CancelToken` design — parent-child hierarchy without tokio_util
-2. Audio I/O path — separate deadline-scheduled thread or routed through compio with priority
+2. Audio I/O path — separate deadline-scheduled thread or routed through platform I/O with priority
 3. VFS archive support (zip/pak) — needed for shipping
 4. BLAKE3 streaming hash — lazy vs eager computation
 

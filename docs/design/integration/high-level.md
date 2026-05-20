@@ -344,7 +344,7 @@ the channel type and tunable per-title without recompiling the engine core.
 2. **Workers** own all ECS World data. The game loop driver runs on one worker; others execute
    parallel tasks via work-stealing (crossbeam-deque). If work-stealing finds no tasks, the worker
    spins briefly then parks.
-3. **Render thread** owns GPU resources (command buffers, descriptor heaps, swap chain). It reads
+3. **Render thread** owns GPU resources (command buffers, descriptor pools, swap chain). It reads
    only the immutable `RenderFrame` snapshot. If no new frame is available in the triple buffer, the
    render thread re-presents the previous frame.
 4. **Audio RT thread** owns the audio device and mix graph. It reads commands from a bounded MPSC

@@ -381,11 +381,11 @@ Companion test cases for [memory-async-io.md](memory-async-io.md).
 | 3 | R-1.8.1     |
 
 1. **#1** — Run full test suite on Windows
-   - **Expected:** All tests pass (compio IOCP)
+   - **Expected:** All tests pass (IOCP via windows-rs)
 2. **#2** — Run full test suite on macOS
-   - **Expected:** All tests pass (compio kqueue)
+   - **Expected:** All tests pass (GCD `dispatch_io` via dispatch2)
 3. **#3** — Run full test suite on Linux
-   - **Expected:** All tests pass (compio io_uring)
+   - **Expected:** All tests pass (io_uring via rustix)
 
 ### TC-1.8.4.I1 TCP Connect Accept 1MB
 

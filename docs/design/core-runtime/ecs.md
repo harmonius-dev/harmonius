@@ -3138,7 +3138,7 @@ impact of removing them?
 
 The "ECS-primary (~90%)" constraint is the single largest limiting factor. Most engine data lives in
 the ECS, but explicit exceptions exist for subsystems where a dedicated data store is essential: the
-audio runtime (real-time mixer thread), GPU resource management (descriptor heaps, buffer pools),
+audio runtime (real-time mixer thread), GPU resource management (descriptor pools, buffer pools),
 windowing (platform-native handles), the shader pipeline (compilation caches), and asset processing
 internals (import scratch buffers). Physics engines like PhysX and Havok maintain independent
 broadphase and solver structures that can be highly optimized in isolation. Relaxing the constraint
@@ -3312,11 +3312,12 @@ Additionally, the `tags` field of `Archetype` was updated from `HashSet<Componen
 `EntityCommands<'a>` holds `commands: &'a mut Commands<'a>` — self-referential borrow that won't
 compile. Use separate lifetimes: `EntityCommands<'a, 'w>`.
 
-### RF-6: Replace all Tokio references with compio [APPLIED]
+### RF-6: Replace all Tokio references with platform-native I/O [APPLIED]
 
 The frame execution sequence diagram references "Tokio Runtime" and `runtime.poll()`. The Q&A
-section references "Tokio async I/O" and "Tokio runtime." Replace all with compio per
-constraints.md.
+section references "Tokio async I/O" and "Tokio runtime." Replace all with platform-native I/O
+(io_uring / IOCP / GCD) on the main thread, per constraints.md. (An earlier review recommended
+swapping Tokio for `compio`; that recommendation was later superseded — see RF-16.)
 
 ### RF-7: Add event capture/bubble phases [APPLIED]
 
@@ -3435,8 +3436,8 @@ Saved in project memory for inclusion when those designs are reviewed:
    integration with ECS. Component schema editor UI.
 4. **Build pipeline design** — final game export compiles all user components and blueprints into
    the shipping binary. AOT compilation for consoles/iOS.
-5. **Asset pipeline design** — bridging compio I/O completions into ECS command buffers at frame
-   poll point (from Q&A Q5).
+5. **Asset pipeline design** — bridging platform-native I/O completions into ECS command buffers
+   at frame poll point (from Q&A Q5).
 6. **Plugin system design** — codegen pipeline, middleman `.dylib` hot-reload, plugin-as-data
    packaging convention.
 
@@ -3477,15 +3478,15 @@ No type erasure in the hot path. LLVM sees concrete types end-to-end and can aut
 
 ### RF-16: Platform I/O integration [APPLIED]
 
-The ECS integrates with platform-native I/O (not compio) via the main thread:
+The ECS integrates with platform-native I/O via the main thread:
 
 1. Main thread polls I/O completions (io_uring / IOCP / GCD)
 2. Completions posted as jobs to worker pool via crossbeam-channel
 3. Job inserts result components into World
 4. ECS systems read results as normal component queries
 
-The frame execution sequence diagram must replace "compio" / "Tokio Runtime" references with
-"Platform I/O" showing the main thread polling completions and posting jobs.
+The frame execution sequence diagram replaces any earlier "Tokio Runtime" or `compio` references
+with "Platform I/O" showing the main thread polling completions and posting jobs.
 
 ### RF-17: Plugins are data, not DLLs [APPLIED]
 

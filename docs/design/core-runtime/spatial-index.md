@@ -2365,10 +2365,11 @@ Line 1656 references "GCD dispatch." Remove — GCD is used for I/O dispatch, no
 2. Double-buffered background rebuild
 3. Adjust 4-core benchmark target from >= 3x to >= 2x
 
-### RF-10: Fix constraints.md stale references
+### RF-10: Fix constraints.md stale references [APPLIED]
 
-constraints.md threading table (lines 51-52) still references compio and Rayon. Line 193 says they
-are removed. Update the threading table to say "custom job system" and "platform-native I/O."
+The constraints.md threading table previously referenced `compio` and Rayon while the dependency
+list said both were removed. Constraints now consistently say "custom job system" and
+"platform-native I/O" and the `Removed:` line lists `tokio`, `mio`, `rayon`, `compio`.
 
 ### RF-11: 2D spatial index [APPLIED]
 

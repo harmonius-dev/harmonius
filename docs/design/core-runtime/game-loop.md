@@ -884,7 +884,7 @@ relationships.
 
 ### RF-7: Fix constraints.md threading table [APPLIED]
 
-The threading table (lines 51-52) still references compio and Rayon. Update to:
+The constraints.md threading table previously referenced `compio` and Rayon. Updated to:
 
 | Thread | Owns | Handles |
 |--------|------|---------|
