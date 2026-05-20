@@ -7,7 +7,27 @@ with mesh shaders and ray tracing as minimum requirements. All simulation runs t
 architecture with no separate data stores. Users build all gameplay by composing generic primitives
 in visual editors — no code required.
 
-See [design/constraints.md](design/constraints.md) for the full constraint set.
+See [design/constraints.md](design/constraints.md) for the full constraint set,
+[design/canonical-owners.md](design/canonical-owners.md) for the shared-type registry, and
+[design/design-review.md](design/design-review.md) for the standing design audit.
+
+## Documentation Map
+
+| Tree                            | Purpose                                                |
+|---------------------------------|--------------------------------------------------------|
+| [README](README.md)             | Top-level entry point and reading order                |
+| [glossary](glossary.md)         | Engine-specific terminology                            |
+| [architecture](architecture.md) | This file — module reference and system overview       |
+| [design](design/)               | Design documents, integration pairs, and constraints   |
+| [requirements](requirements/)   | `R-X.Y.Z` SHALL statements with Rationale + Verification |
+| [user-stories](user-stories/)   | `US-X.Y.Z` persona-driven stories                      |
+| [features](features/)           | `F-X.Y.Z` feature catalog                              |
+| [plans](plans/)                 | Implementation plans plus dated progress files         |
+| [business](business/)           | Domain decomposition, GTM, monetization                |
+| [decisions](decisions/)         | Architecture and Product Decision Records              |
+| [okrs](okrs/)                   | Quarterly Objectives and Key Results                   |
+| [backlog](backlog/)             | Docs-native, GitHub-ready issue catalog (`BL-NNNN`)    |
+| [coverage](coverage/)           | Coverage matrices and dated audits                     |
 
 ## High-Level Architecture
 
@@ -145,24 +165,41 @@ graph TB
 |-------|-------------|
 | 5 — Application | Game Framework, Tools / Editor |
 | 4 — Simulation | Grids, Spatial Awareness, Timelines, Events |
-| 3 — Data Systems | Graphs, Tables, Attributes, Containers |
+| 3 — Data Systems | Graphs, Tables, Attributes, Containers, Composition |
 | 2 — Domain | AI, Animation, Audio, Networking, VFX |
 | 1 — Mid-Level | Physics, Rendering, Geometry, UI, Input |
 | 0.5 — Pipeline | Content Pipeline |
-| 0 — Foundation | Core Runtime, Platform |
+| 0 — Foundation | Core Runtime (foundation primitives + subsystems), Platform |
 
 1. **5 — Application** — [Game Framework](#game-framework), [Tools / Editor](#tools--editor)
 2. **4 — Simulation** — [Simulation](#simulation) (Grids, Spatial Awareness, Timelines, Event Logs)
 3. **3 — Data Systems** — [Data Systems](#data-systems) (Directed Graphs, Data Tables, Attributes /
-   Effects, Containers / Slots)
+   Effects, Containers / Slots, Composition guide)
 4. **2 — Domain** — [AI](#ai), [Animation](#animation), [Audio](#audio), [Networking](#networking),
    [VFX](#vfx)
 5. **1 — Mid-Level** — [Physics](#physics), [Rendering](#rendering), [Geometry](#geometry),
    [UI](#ui), [Input](#input)
 6. **0.5 — Pipeline** —
    [Content Pipeline](#content-pipeline)
-7. **0 — Foundation** — [Core Runtime](#core-runtime),
+7. **0 — Foundation** — [Core Runtime](#core-runtime) (with the Foundation Primitives layer below),
    [Platform](#platform)
+
+### Core Runtime Foundation Primitives
+
+These are the cross-cutting types every other subsystem reuses. They land before any
+implementation; canonical ownership is enforced via
+[canonical-owners.md](design/canonical-owners.md).
+
+| Doc                                                                | Owns                                                |
+|--------------------------------------------------------------------|-----------------------------------------------------|
+| [primitives.md](design/core-runtime/primitives.md)                 | `Handle`, `HandleMap`, `SlotMap`, `SortedVecMap`, `RingBuffer`, `DirtyRegionSet`, `DispatchTable`, `BudgetAllocator`, `DeterministicRng` |
+| [ids.md](design/core-runtime/ids.md)                               | `StableId`, `GenerationalIndex`, `NetworkEntityId`, `BlackboardKey` |
+| [error.md](design/core-runtime/error.md)                           | `EngineError`, `ToEngineError`, `IoError`, `CompileError`, `MigrationError` |
+| [io.md](design/core-runtime/io.md)                                 | `IoRequest`, `IoResponse`, main-thread drain protocol |
+| [graph-runtime.md](design/core-runtime/graph-runtime.md)           | `GraphNode`, `GraphEdge`, `GraphValidator`, `DagValidator`, `CodegenBackend` |
+| [hot-reload-protocol.md](design/core-runtime/hot-reload-protocol.md)| `HotReloadManager`, `ReloadRequest`, `ReloadBarrier`, `StateMigrationFn` |
+| [change-detection.md](design/core-runtime/change-detection.md)     | Tick lifecycle, `Changed<T>` query contract          |
+| [console-variables.md](design/core-runtime/console-variables.md)   | `ConVar` registry and scoping                        |
 
 ---
 
@@ -412,6 +449,9 @@ graph TB
 | [windowing.md](design/platform/windowing.md) | [windowing-test-cases.md](design/platform/windowing-test-cases.md) |
 | [threading.md](design/platform/threading.md) | [threading-test-cases.md](design/platform/threading-test-cases.md) |
 | [platform-services.md](design/platform/platform-services.md) | [platform-services-test-cases.md](design/platform/platform-services-test-cases.md) |
+| [telemetry.md](design/platform/telemetry.md) | [telemetry-test-cases.md](design/platform/telemetry-test-cases.md) |
+| [crash-reporting.md](design/platform/crash-reporting.md) | [crash-reporting-test-cases.md](design/platform/crash-reporting-test-cases.md) |
+| [console-integration.md](design/platform/console-integration.md) | [console-integration-test-cases.md](design/platform/console-integration-test-cases.md) |
 
 #### Features
 
@@ -482,6 +522,14 @@ graph TB
 | [memory-async-io.md](design/core-runtime/memory-async-io.md) | [memory-async-io-test-cases.md](design/core-runtime/memory-async-io-test-cases.md) |
 | [spatial-index.md](design/core-runtime/spatial-index.md) | [spatial-index-test-cases.md](design/core-runtime/spatial-index-test-cases.md) |
 | [algorithms.md](design/core-runtime/algorithms.md) | [algorithms-test-cases.md](design/core-runtime/algorithms-test-cases.md) |
+| [primitives.md](design/core-runtime/primitives.md) | [primitives-test-cases.md](design/core-runtime/primitives-test-cases.md) |
+| [ids.md](design/core-runtime/ids.md) | [ids-test-cases.md](design/core-runtime/ids-test-cases.md) |
+| [error.md](design/core-runtime/error.md) | [error-test-cases.md](design/core-runtime/error-test-cases.md) |
+| [io.md](design/core-runtime/io.md) | [io-test-cases.md](design/core-runtime/io-test-cases.md) |
+| [graph-runtime.md](design/core-runtime/graph-runtime.md) | [graph-runtime-test-cases.md](design/core-runtime/graph-runtime-test-cases.md) |
+| [hot-reload-protocol.md](design/core-runtime/hot-reload-protocol.md) | [hot-reload-protocol-test-cases.md](design/core-runtime/hot-reload-protocol-test-cases.md) |
+| [change-detection.md](design/core-runtime/change-detection.md) | [change-detection-test-cases.md](design/core-runtime/change-detection-test-cases.md) |
+| [console-variables.md](design/core-runtime/console-variables.md) | [console-variables-test-cases.md](design/core-runtime/console-variables-test-cases.md) |
 
 #### Features
 
@@ -496,6 +544,8 @@ graph TB
 | [memory-management.md](features/core-runtime/memory-management.md) |
 | [async-io.md](features/core-runtime/async-io.md) |
 | [spatial-indexing.md](features/core-runtime/spatial-indexing.md) |
+| [algorithms.md](features/core-runtime/algorithms.md) |
+| [game-loop.md](features/core-runtime/game-loop.md) |
 
 #### Requirements
 
@@ -510,6 +560,9 @@ graph TB
 | [memory-management.md](requirements/core-runtime/memory-management.md) |
 | [async-io.md](requirements/core-runtime/async-io.md) |
 | [spatial-indexing.md](requirements/core-runtime/spatial-indexing.md) |
+| [algorithms.md](requirements/core-runtime/algorithms.md) |
+| [game-loop.md](requirements/core-runtime/game-loop.md) |
+| [cross-cutting.md](requirements/cross-cutting.md) |
 
 #### User Stories
 
@@ -524,6 +577,8 @@ graph TB
 | [memory-management.md](user-stories/core-runtime/memory-management.md) |
 | [async-io.md](user-stories/core-runtime/async-io.md) |
 | [spatial-indexing.md](user-stories/core-runtime/spatial-indexing.md) |
+| [algorithms.md](user-stories/core-runtime/algorithms.md) |
+| [game-loop.md](user-stories/core-runtime/game-loop.md) |
 
 ---
 
@@ -555,8 +610,18 @@ graph TB
 | [data-tables.md](design/data-systems/data-tables.md) | [data-tables-test-cases.md](design/data-systems/data-tables-test-cases.md) |
 | [attributes-effects.md](design/data-systems/attributes-effects.md) | [attributes-effects-test-cases.md](design/data-systems/attributes-effects-test-cases.md) |
 | [containers-slots.md](design/data-systems/containers-slots.md) | [containers-slots-test-cases.md](design/data-systems/containers-slots-test-cases.md) |
+| [composition.md](design/data-systems/composition.md) | [composition-test-cases.md](design/data-systems/composition-test-cases.md) |
 
-#### Features
+#### Features (primitives)
+
+| Feature |
+|---------|
+| [directed-graphs.md](features/data-systems/directed-graphs.md) |
+| [data-tables.md](features/data-systems/data-tables.md) |
+| [attributes-effects.md](features/data-systems/attributes-effects.md) |
+| [containers-slots.md](features/data-systems/containers-slots.md) |
+
+#### Features (compositions, hosted under game-framework)
 
 | Feature |
 |---------|
@@ -576,7 +641,16 @@ graph TB
 | [minigames.md](features/game-framework/minigames.md) |
 | [racing.md](features/game-framework/racing.md) |
 
-#### Requirements
+#### Requirements (primitives)
+
+| Requirement |
+|-------------|
+| [directed-graphs.md](requirements/data-systems/directed-graphs.md) |
+| [data-tables.md](requirements/data-systems/data-tables.md) |
+| [attributes-effects.md](requirements/data-systems/attributes-effects.md) |
+| [containers-slots.md](requirements/data-systems/containers-slots.md) |
+
+#### Requirements (compositions, hosted under game-framework)
 
 | Requirement |
 |-------------|
@@ -596,7 +670,16 @@ graph TB
 | [minigames.md](requirements/game-framework/minigames.md) |
 | [racing.md](requirements/game-framework/racing.md) |
 
-#### User Stories
+#### User Stories (primitives)
+
+| User Story |
+|------------|
+| [directed-graphs.md](user-stories/data-systems/directed-graphs.md) |
+| [data-tables.md](user-stories/data-systems/data-tables.md) |
+| [attributes-effects.md](user-stories/data-systems/attributes-effects.md) |
+| [containers-slots.md](user-stories/data-systems/containers-slots.md) |
+
+#### User Stories (compositions, hosted under game-framework)
 
 | User Story |
 |------------|
@@ -647,7 +730,16 @@ graph TB
 | [timelines.md](design/simulation/timelines.md) | [timelines-test-cases.md](design/simulation/timelines-test-cases.md) |
 | [event-logs.md](design/simulation/event-logs.md) | [event-logs-test-cases.md](design/simulation/event-logs-test-cases.md) |
 
-#### Features
+#### Features (primitives)
+
+| Feature |
+|---------|
+| [grids-volumes.md](features/simulation/grids-volumes.md) |
+| [spatial-awareness.md](features/simulation/spatial-awareness.md) |
+| [timelines.md](features/simulation/timelines.md) |
+| [event-logs.md](features/simulation/event-logs.md) |
+
+#### Features (compositions, hosted under game-framework)
 
 | Feature |
 |---------|
@@ -659,7 +751,16 @@ graph TB
 | [cinematics.md](features/game-framework/cinematics.md) |
 | [social.md](features/game-framework/social.md) |
 
-#### Requirements
+#### Requirements (primitives)
+
+| Requirement |
+|-------------|
+| [grids-volumes.md](requirements/simulation/grids-volumes.md) |
+| [spatial-awareness.md](requirements/simulation/spatial-awareness.md) |
+| [timelines.md](requirements/simulation/timelines.md) |
+| [event-logs.md](requirements/simulation/event-logs.md) |
+
+#### Requirements (compositions, hosted under game-framework)
 
 | Requirement |
 |-------------|
@@ -671,7 +772,16 @@ graph TB
 | [cinematics.md](requirements/game-framework/cinematics.md) |
 | [social.md](requirements/game-framework/social.md) |
 
-#### User Stories
+#### User Stories (primitives)
+
+| User Story |
+|------------|
+| [grids-volumes.md](user-stories/simulation/grids-volumes.md) |
+| [spatial-awareness.md](user-stories/simulation/spatial-awareness.md) |
+| [timelines.md](user-stories/simulation/timelines.md) |
+| [event-logs.md](user-stories/simulation/event-logs.md) |
+
+#### User Stories (compositions, hosted under game-framework)
 
 | User Story |
 |------------|
@@ -706,6 +816,7 @@ graph TB
 | [camera.md](design/game-framework/camera.md) | [camera-test-cases.md](design/game-framework/camera-test-cases.md) |
 | [save-system.md](design/game-framework/save-system.md) | [save-system-test-cases.md](design/game-framework/save-system-test-cases.md) |
 | [scripting.md](design/game-framework/scripting.md) | [scripting-test-cases.md](design/game-framework/scripting-test-cases.md) |
+| [localization.md](design/game-framework/localization.md) | [localization-test-cases.md](design/game-framework/localization-test-cases.md) |
 
 #### Features
 
@@ -754,7 +865,11 @@ GPU abstraction, render graph, core rendering, lighting, post-processing, and ma
 | [rendering-core.md](design/rendering/rendering-core.md) | [rendering-core-test-cases.md](design/rendering/rendering-core-test-cases.md) |
 | [render-effects.md](design/rendering/render-effects.md) | [render-effects-test-cases.md](design/rendering/render-effects-test-cases.md) |
 | [render-styles.md](design/rendering/render-styles.md) | [render-styles-test-cases.md](design/rendering/render-styles-test-cases.md) |
-| [2d.md](design/rendering/2d.md) | — |
+| [2d.md](design/rendering/2d.md) | [2d-test-cases.md](design/rendering/2d-test-cases.md) |
+| [camera-rendering.md](design/rendering/camera-rendering.md) | [camera-rendering-test-cases.md](design/rendering/camera-rendering-test-cases.md) |
+| [meshlets.md](design/rendering/meshlets.md) | [meshlets-test-cases.md](design/rendering/meshlets-test-cases.md) |
+| [pipeline-state-cache.md](design/rendering/pipeline-state-cache.md) | [pipeline-state-cache-test-cases.md](design/rendering/pipeline-state-cache-test-cases.md) |
+| [shader-variants.md](design/rendering/shader-variants.md) | [shader-variants-test-cases.md](design/rendering/shader-variants-test-cases.md) |
 
 #### Features
 
@@ -772,12 +887,14 @@ GPU abstraction, render graph, core rendering, lighting, post-processing, and ma
 | [character-rendering.md](features/rendering/character-rendering.md) |
 | [stylized-effects.md](features/rendering/stylized-effects.md) |
 | [advanced-materials.md](features/rendering/advanced-materials.md) |
+| [first-person-rendering.md](features/rendering/first-person-rendering.md) |
 
 #### Requirements
 
 | Requirement |
 |-------------|
 | [gpu-abstraction-layer.md](requirements/rendering/gpu-abstraction-layer.md) |
+| [gpu-runtime.md](requirements/rendering/gpu-runtime.md) |
 | [render-graph.md](requirements/rendering/render-graph.md) |
 | [core-rendering.md](requirements/rendering/core-rendering.md) |
 | [scene-rendering-pipeline.md](requirements/rendering/scene-rendering-pipeline.md) |
@@ -789,6 +906,7 @@ GPU abstraction, render graph, core rendering, lighting, post-processing, and ma
 | [character-rendering.md](requirements/rendering/character-rendering.md) |
 | [stylized-effects.md](requirements/rendering/stylized-effects.md) |
 | [advanced-materials.md](requirements/rendering/advanced-materials.md) |
+| [first-person-rendering.md](requirements/rendering/first-person-rendering.md) |
 
 #### User Stories
 
@@ -806,6 +924,7 @@ GPU abstraction, render graph, core rendering, lighting, post-processing, and ma
 | [character-rendering.md](user-stories/rendering/character-rendering.md) |
 | [stylized-effects.md](user-stories/rendering/stylized-effects.md) |
 | [advanced-materials.md](user-stories/rendering/advanced-materials.md) |
+| [first-person-rendering.md](user-stories/rendering/first-person-rendering.md) |
 
 ---
 
@@ -830,6 +949,7 @@ Asset import, processing, streaming, hot reload, and asset versioning.
 | [streaming-io.md](features/content-pipeline/streaming-io.md) |
 | [hot-reload.md](features/content-pipeline/hot-reload.md) |
 | [asset-versioning.md](features/content-pipeline/asset-versioning.md) |
+| [content-plugins.md](features/content-pipeline/content-plugins.md) |
 
 #### Requirements
 
@@ -841,6 +961,7 @@ Asset import, processing, streaming, hot reload, and asset versioning.
 | [streaming-io.md](requirements/content-pipeline/streaming-io.md) |
 | [hot-reload.md](requirements/content-pipeline/hot-reload.md) |
 | [asset-versioning.md](requirements/content-pipeline/asset-versioning.md) |
+| [content-plugins.md](requirements/content-pipeline/content-plugins.md) |
 
 #### User Stories
 
@@ -852,6 +973,7 @@ Asset import, processing, streaming, hot reload, and asset versioning.
 | [streaming-io.md](user-stories/content-pipeline/streaming-io.md) |
 | [hot-reload.md](user-stories/content-pipeline/hot-reload.md) |
 | [asset-versioning.md](user-stories/content-pipeline/asset-versioning.md) |
+| [content-plugins.md](user-stories/content-pipeline/content-plugins.md) |
 
 ---
 
@@ -1079,6 +1201,7 @@ Behavior trees, utility AI, GOAP, navigation, pathfinding, steering, and crowd s
 | [crowd-simulation.md](requirements/ai/crowd-simulation.md) |
 | [tactical-combat.md](requirements/ai/tactical-combat.md) |
 | [perception.md](requirements/ai/perception.md) |
+| [non-functional.md](requirements/ai/non-functional.md) |
 
 #### User Stories
 
@@ -1092,6 +1215,7 @@ Behavior trees, utility AI, GOAP, navigation, pathfinding, steering, and crowd s
 | [crowd-simulation.md](user-stories/ai/crowd-simulation.md) |
 | [tactical-combat.md](user-stories/ai/tactical-combat.md) |
 | [perception.md](user-stories/ai/perception.md) |
+| [non-functional.md](user-stories/ai/non-functional.md) |
 
 ---
 
@@ -1148,6 +1272,7 @@ Transport, state replication, sessions, replay, voice chat, server infrastructur
 | [communication.md](user-stories/networking/communication.md) |
 | [mmo-infrastructure.md](user-stories/networking/mmo-infrastructure.md) |
 | [anti-cheat.md](user-stories/networking/anti-cheat.md) |
+| [non-functional.md](user-stories/networking/non-functional.md) |
 
 ---
 
@@ -1304,6 +1429,10 @@ and content services.
 | [team-tools.md](design/tools/team-tools.md) | [team-tools-test-cases.md](design/tools/team-tools-test-cases.md) |
 | [build-deploy.md](design/tools/build-deploy.md) | [build-deploy-test-cases.md](design/tools/build-deploy-test-cases.md) |
 | [content-services.md](design/tools/content-services.md) | [content-services-test-cases.md](design/tools/content-services-test-cases.md) |
+| [undo-redo.md](design/tools/undo-redo.md) | [undo-redo-test-cases.md](design/tools/undo-redo-test-cases.md) |
+| [selection-model.md](design/tools/selection-model.md) | [selection-model-test-cases.md](design/tools/selection-model-test-cases.md) |
+| [scene-versioning.md](design/tools/scene-versioning.md) | [scene-versioning-test-cases.md](design/tools/scene-versioning-test-cases.md) |
+| [plugin-marketplace.md](design/tools/plugin-marketplace.md) | [plugin-marketplace-test-cases.md](design/tools/plugin-marketplace-test-cases.md) |
 
 #### Features
 
@@ -1321,6 +1450,8 @@ and content services.
 | [shared-cache.md](features/tools/shared-cache.md) |
 | [ai-governance.md](features/tools/ai-governance.md) |
 | [ai-assistant.md](features/tools/ai-assistant.md) |
+| [ai-cloud-backend.md](features/tools/ai-cloud-backend.md) |
+| [cloud-build.md](features/tools/cloud-build.md) |
 | [deployment.md](features/tools/deployment.md) |
 | [launcher.md](features/tools/launcher.md) |
 | [asset-store.md](features/tools/asset-store.md) |
@@ -1348,6 +1479,8 @@ and content services.
 | [shared-cache.md](requirements/tools/shared-cache.md) |
 | [ai-governance.md](requirements/tools/ai-governance.md) |
 | [ai-assistant.md](requirements/tools/ai-assistant.md) |
+| [ai-cloud-backend.md](requirements/tools/ai-cloud-backend.md) |
+| [cloud-build.md](requirements/tools/cloud-build.md) |
 | [deployment.md](requirements/tools/deployment.md) |
 | [launcher.md](requirements/tools/launcher.md) |
 | [asset-store.md](requirements/tools/asset-store.md) |
@@ -1375,6 +1508,8 @@ and content services.
 | [shared-cache.md](user-stories/tools/shared-cache.md) |
 | [ai-governance.md](user-stories/tools/ai-governance.md) |
 | [ai-assistant.md](user-stories/tools/ai-assistant.md) |
+| [ai-cloud-backend.md](user-stories/tools/ai-cloud-backend.md) |
+| [cloud-build.md](user-stories/tools/cloud-build.md) |
 | [deployment.md](user-stories/tools/deployment.md) |
 | [launcher.md](user-stories/tools/launcher.md) |
 | [asset-store.md](user-stories/tools/asset-store.md) |
@@ -1385,6 +1520,29 @@ and content services.
 | [vr-editor.md](user-stories/tools/vr-editor.md) |
 | [remote-editing.md](user-stories/tools/remote-editing.md) |
 | [specialized-editors.md](user-stories/tools/specialized-editors.md) |
+
+---
+
+### Integration
+
+Pair-wise integration designs between every two subsystems that share data on the
+hot path. Sixty-two pair docs plus three meta docs cover ~90% of the cross-subsystem
+contracts. New pair docs reference [shared-conventions.md](design/integration/shared-conventions.md)
+and stop restating cross-cutting rules.
+
+#### Meta documents
+
+| Doc | Purpose |
+|-----|---------|
+| [shared-conventions.md](design/integration/shared-conventions.md) | Normative `SC-1`..`SC-14` cross-cutting rules |
+| [shared-messaging-capacities.md](design/integration/shared-messaging-capacities.md) | Channel capacity formula and table |
+| [high-level.md](design/integration/high-level.md) | Cross-subsystem invariants `G1`..`Gn` |
+
+#### Pair-wise design documents
+
+The full list lives in `docs/design/integration/`. Each pair has `{a}-{b}.md` plus a
+companion `{a}-{b}-test-cases.md`. Coverage is tracked by the integration column of
+the [coverage matrices](coverage/index.md).
 
 ---
 
@@ -1527,23 +1685,31 @@ graph TB
 
 ## Design Summary
 
-| Directory | Design Files |
-|-----------|------------:|
-| core-runtime | 8 |
-| data-systems | 4 |
-| simulation | 4 |
-| game-framework | 3 |
-| ai | 3 |
-| animation | 3 |
-| audio | 1 |
-| content-pipeline | 2 |
-| geometry | 2 |
-| input | 1 |
-| networking | 3 |
-| physics | 3 |
-| platform | 3 |
-| rendering | 5 |
-| tools | 7 |
-| ui | 1 |
-| vfx | 2 |
-| **Total** | **55** |
+Counts as of 2026-05-20. Excludes companion `*-test-cases.md` files. The `integration/`
+row counts pair-wise design docs only — the three meta docs (`shared-conventions.md`,
+`shared-messaging-capacities.md`, `high-level.md`) are listed separately under the
+Integration section above.
+
+| Directory             | Design Files |
+|-----------------------|------------:|
+| core-runtime          | 16          |
+| data-systems          | 5           |
+| simulation            | 5           |
+| game-framework        | 4           |
+| ai                    | 3           |
+| animation             | 3           |
+| audio                 | 1           |
+| content-pipeline      | 2           |
+| geometry              | 2           |
+| input                 | 1           |
+| networking            | 3           |
+| physics               | 3           |
+| platform              | 6           |
+| rendering             | 9           |
+| tools                 | 11          |
+| ui                    | 1           |
+| vfx                   | 2           |
+| **Subsystem subtotal**| **77**      |
+| integration (pairs)   | 59          |
+| integration (meta)    | 3           |
+| **Total designs**     | **139**     |

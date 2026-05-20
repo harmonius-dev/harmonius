@@ -120,3 +120,43 @@ These terms are coined or redefined by the Harmonius project and appear across d
     Track (a Cinematics Editor channel)
 17. **Zero Reflection** — no `dyn Reflect`, no `TypeRegistry`, no runtime `TypeId` dispatch; all
     type metadata generated statically by the codegen pipeline
+
+## Harmonius-coined cross-cutting types
+
+Cross-cutting types referenced from many subsystems. Each has a single canonical owner
+recorded in [design/canonical-owners.md](design/canonical-owners.md).
+
+| #  | Type                       | Owner doc                                       |
+|----|----------------------------|-------------------------------------------------|
+| 1  | `AoiGrid`                  | networking/network-transport.md                  |
+| 2  | `BlackboardComponent`      | core-runtime/ecs.md                              |
+| 3  | `BudgetAllocator`          | core-runtime/primitives.md                      |
+| 4  | `CellGrid`                 | simulation/grids-volumes.md                     |
+| 5  | `CompiledMaterial`         | rendering/render-pipeline.md (pending)          |
+| 6  | `ConVar`                   | core-runtime/console-variables.md               |
+| 7  | `DeterministicRng`         | core-runtime/primitives.md                      |
+| 8  | `DirtyRegionSet`           | core-runtime/primitives.md                      |
+| 9  | `DispatchTable<F>`         | core-runtime/primitives.md                      |
+| 10 | `EditorWorld`              | tools/editor-core.md                            |
+| 11 | `EngineError`              | core-runtime/error.md                           |
+| 12 | `EventBridge`              | tools/editor-core.md                            |
+| 13 | `FrameContext`             | core-runtime/game-loop.md                       |
+| 14 | `GameTime`                 | core-runtime/game-loop.md (pending)             |
+| 15 | `HotReloadManager`         | core-runtime/hot-reload-protocol.md             |
+| 16 | `InterpolatedTransform`    | core-runtime/scene-transforms.md                |
+| 17 | `LocalizedStringId`        | game-framework/localization.md                  |
+| 18 | `Material`                 | rendering/render-pipeline.md (pending)          |
+| 19 | `MaterialGraph`            | rendering/render-styles.md                      |
+| 20 | `MeshletAsset`             | rendering/meshlets.md                           |
+| 21 | `NetworkEntityId`          | core-runtime/ids.md                             |
+| 22 | `PsoCache`                 | rendering/pipeline-state-cache.md               |
+| 23 | `RenderFrame`              | core-runtime/game-loop.md                       |
+| 24 | `RenderLayerMask`          | rendering/rendering-core.md                     |
+| 25 | `ShadingModel`             | rendering/rendering-core.md                     |
+| 26 | `Swapchain`                | rendering/render-pipeline.md (pending)          |
+| 27 | `UniformGrid<T>`           | core-runtime/spatial-index.md                   |
+| 28 | `VoiceStream` (transport)  | networking/network-services.md                  |
+| 29 | `VoiceStream` (codec)      | audio/audio.md                                  |
+
+`(pending)` means the type is referenced across the corpus but the canonical owner doc
+has the type as `Pending creation`. See [design/canonical-owners.md](design/canonical-owners.md).

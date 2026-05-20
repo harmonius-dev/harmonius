@@ -1,7 +1,143 @@
 # Harmonius Design Review
 
-Date: 2026-04-12 Scope: All design documents under `docs/design/` (~170 files across 17 domains plus
-50 pair-wise integration designs).
+Original audit date: 2026-04-12. Status update: 2026-05-20.
+
+Original scope: all design documents under `docs/design/` (~170 files across 17 domains plus 50
+pair-wise integration designs at the time of the audit; now 77 subsystem docs + 62 integration
+docs).
+
+> **This document is a status snapshot, not a live backlog.** Open items have moved to
+> [`docs/backlog/`](../backlog/index.md). The 2026-04-12 audit body below is preserved verbatim
+> for historical context. The Status Update section that immediately follows reflects the
+> 2026-05-20 deslop pass.
+
+## Status Update — 2026-05-20
+
+The deslop pass (`cursor/deslop-docs-corpus-e306`) closed the foundational P0 items, installed
+the [canonical-owner registry](canonical-owners.md), wired up [shared
+conventions](integration/shared-conventions.md) and [shared messaging
+capacities](integration/shared-messaging-capacities.md), and migrated remaining work to
+[`docs/backlog/`](../backlog/index.md). Counts below come from the
+[2026-05 audit](../coverage/audits/2026-05-audit.md).
+
+### Status legend
+
+| Marker | Meaning                                                                |
+|--------|------------------------------------------------------------------------|
+| `[x]`  | Done — landed and verified                                             |
+| `[~]`  | Partial — substantively done, residual cleanup tracked in backlog      |
+| `[ ]`  | Open — tracked in [`docs/backlog/`](../backlog/index.md)               |
+| `[r]`  | Reversed — earlier recommendation undone; see linked ADR               |
+
+### P0 — must land before implementation begins
+
+| Item | Status | Notes |
+|------|--------|-------|
+| 1. `core-runtime/graph-runtime.md` | `[x]` | Lives at [graph-runtime.md](core-runtime/graph-runtime.md) |
+| 2. `core-runtime/primitives.md` | `[x]` | Sole owner of primitives; see [canonical-owners.md](canonical-owners.md) |
+| 3. `core-runtime/ids.md` | `[x]` | `StableId`, `NetworkEntityId` defined |
+| 4. `core-runtime/hot-reload-protocol.md` | `[x]` | Single protocol for all hot-reload consumers |
+| 5. Bridge types (`RenderFrame`, `InterpolatedTransform`, `CompileError`, `IoError`, `NetworkEntityId`) | `[~]` | `RenderFrame`, `InterpolatedTransform`, `IoError`, `NetworkEntityId` owned. `CompileError` still defined in 4 docs — [BL-0007](../backlog/issues/BL-0007-compileerror-single-owner.md). |
+| 6. Async purge across design tree | `[~]` | Game-runtime async fully removed. Residual prose-only mentions in migration tables — [BL-0040](../backlog/issues/BL-0040-async-cleanup-design.md). |
+| 7. Rewrite `network-transport.md` sync | `[x]` | Zero `tokio::` references. |
+| 8. `data-systems/composition.md` | `[x]` | Walks through quest/ability/inventory authoring. |
+| 9. Game-loop ↔ ECS circular dependency | `[ ]` | [BL-0015](../backlog/issues/BL-0015-game-loop-ecs-circular.md). |
+| 10. Editor shadow world | `[x]` | `EditorWorld` + `EventBridge` in [editor-core.md](tools/editor-core.md). |
+
+### P1 — fix before / during the first implementation milestones
+
+| Item | Status | Notes |
+|------|--------|-------|
+| 11. Unify `ModOp` | `[ ]` | [BL-0001](../backlog/issues/BL-0001-modop-unification.md). |
+| 12. Make `NodeStatus` generic | `[ ]` | Tracked alongside [BL-0005](../backlog/issues/BL-0005-conditionexpr-registry-scope.md). |
+| 13. Remove `HashMap` from `Archetype` | `[ ]` | [BL-0008](../backlog/issues/BL-0008-hashmap-archetype.md). |
+| 14. Declare `Material` type | `[ ]` | [BL-0009](../backlog/issues/BL-0009-material-type-unification.md). |
+| 15. Design PSO cache | `[~]` | Doc exists at [pipeline-state-cache.md](rendering/pipeline-state-cache.md); recovery + GC remaining in [BL-0010](../backlog/issues/BL-0010-pso-cache-design.md). |
+| 16. Meshlet asset pipeline | `[~]` | Doc exists at [meshlets.md](rendering/meshlets.md); asset import end-to-end in [BL-0011](../backlog/issues/BL-0011-meshlet-asset-pipeline.md). |
+| 17. Specify barrier analysis | `[ ]` | Tracked under [BL-0010](../backlog/issues/BL-0010-pso-cache-design.md). |
+| 18. Unify 2D / 3D render graph | `[ ]` | [BL-0012](../backlog/issues/BL-0012-2d-3d-render-graph-merge.md). |
+| 19. Split camera doc (brain vs render) | `[~]` | [camera-rendering.md](rendering/camera-rendering.md) created; brain split tracked in [BL-0013](../backlog/issues/BL-0013-camera-split.md). |
+| 20. Extract coroutines to core-runtime | `[r]` | Reversed by [ADR-0014](../decisions/adr/ADR-0014-no-coroutine-runtime.md). Engine has no coroutine runtime; scripting's `SuspendState` is codegen-internal. |
+| 21. Move cloud sync / achievements to platform-services | `[~]` | Save-system reduced; full move tracked in [BL-0024](../backlog/issues/BL-0024-save-schema-versioning.md). |
+| 22. Pick pathfinding algorithm | `[ ]` | [BL-0027](../backlog/issues/BL-0027-pathfinding-algorithm-pick.md). |
+| 23. QUIC stream multiplexing | `[ ]` | [BL-0022](../backlog/issues/BL-0022-quic-stream-multiplexing.md). |
+| 24. Replication delta compression | `[ ]` | [BL-0023](../backlog/issues/BL-0023-replication-delta.md). |
+| 25. Save schema versioning | `[ ]` | [BL-0024](../backlog/issues/BL-0024-save-schema-versioning.md). |
+| 26. Unify blackboard on ECS components | `[ ]` | [BL-0006](../backlog/issues/BL-0006-blackboard-as-component.md). |
+| 27. Voice-chat ownership split | `[ ]` | [BL-0003](../backlog/issues/BL-0003-voicestream-ownership.md). |
+| 28. `core-runtime/error.md` | `[x]` | Owns `EngineError`, `ToEngineError`. |
+| 29. `core-runtime/io.md` | `[x]` | Owns `IoRequest`/`IoResponse` and main-thread drain. |
+| 30. Integration shared conventions | `[~]` | [shared-conventions.md](integration/shared-conventions.md) exists; ~27 pair docs still need to reference SC-N — handled in this deslop pass. |
+| 31. Flesh out `input-camera.md` and `input-ui.md` | `[x]` | Both substantive. |
+| 32. `audio-physics.md` and `geometry-vfx.md` | `[x]` | Both exist. |
+| 33. Composition-density performance profile | `[ ]` | Tracked under [BL-0030](../backlog/issues/BL-0030-data-tables-query-api.md). |
+| 34. `GameTime`, pause, determinism for sim primitives | `[ ]` | [BL-0026](../backlog/issues/BL-0026-game-time-pause-determinism.md). |
+
+### P2 — quality and completeness
+
+| Item | Status | Notes |
+|------|--------|-------|
+| 35. Move impl pseudocode out of integration docs | `[~]` | Largely done; residual instances tracked under integration cleanup. |
+| 36. Skinning weight format | `[ ]` | [BL-0017](../backlog/issues/BL-0017-skinning-weight-format.md). |
+| 37. Cloth + fracture formats | `[ ]` | [BL-0018](../backlog/issues/BL-0018-cloth-fracture-formats.md). |
+| 38. Fluid solver variant | `[ ]` | [BL-0019](../backlog/issues/BL-0019-fluid-solver-variant.md). |
+| 39. ACL animation compression | `[ ]` | [BL-0020](../backlog/issues/BL-0020-animation-compression-acl.md). |
+| 40. Determinism contracts | `[ ]` | [BL-0021](../backlog/issues/BL-0021-determinism-contracts.md). |
+| 41. GPU timestamp calibration | `[ ]` | Backlog (under [BL-0022](../backlog/issues/BL-0022-quic-stream-multiplexing.md)-adjacent profiler work). |
+| 42. Dormancy thresholds (networking-ecs) | `[~]` | Defined in [networking-ecs.md](integration/networking-ecs.md); thresholds open. |
+| 43. `NameplateBuffer` capacity | `[~]` | Pulled into [shared-messaging-capacities.md](integration/shared-messaging-capacities.md). |
+| 44. Extract `DirtyRegionSet` | `[x]` | Owned in [primitives.md](core-runtime/primitives.md). |
+| 45. Extract dispatch / budget primitives | `[x]` | Owned in [primitives.md](core-runtime/primitives.md). |
+| 46. `core-runtime/console-variables.md` | `[x]` | Exists. |
+| 47. Localization runtime | `[x]` | [game-framework/localization.md](game-framework/localization.md). |
+| 48. `platform/crash-reporting.md` | `[x]` | Exists. |
+| 49. `platform/telemetry.md` | `[x]` | Exists. |
+| 50. `platform/console-integration.md` | `[x]` | Exists. |
+| 51. `tools/plugin-marketplace.md` | `[x]` | Exists. |
+| 52. `tools/undo-redo.md` | `[x]` | Exists; deepening tracked in [BL-0034](../backlog/issues/BL-0034-undo-redo-deepen.md). |
+| 53. `tools/selection-model.md` | `[x]` | Exists. |
+| 54. `tools/scene-versioning.md` | `[x]` | Exists. |
+| 55. Single shader-compiler service | `[ ]` | [BL-0025](../backlog/issues/BL-0025-shader-compiler-service.md). |
+| 56. `codegen-pipeline.md` | `[ ]` | [BL-0016](../backlog/issues/BL-0016-codegen-pipeline-doc.md). |
+| 57. IME / ducking / SOFA / WCAG / steering | `[ ]` | [BL-0035](../backlog/issues/BL-0035-input-ime-support.md), [BL-0036](../backlog/issues/BL-0036-audio-ducking.md), [BL-0037](../backlog/issues/BL-0037-hrtf-sofa-loading.md), [BL-0039](../backlog/issues/BL-0039-accessibility-wcag.md), [BL-0041](../backlog/issues/BL-0041-classic-steering-primitives.md). |
+
+### P3 — polish and future-proofing
+
+| Item | Status | Notes |
+|------|--------|-------|
+| 58. `core-runtime/change-detection.md` | `[x]` | Exists. |
+| 59. Integration-boundaries section in timelines | `[ ]` | Backlog. |
+| 60. Standardize `FM-N` fallback labels | `[~]` | Adopted in [shared-conventions.md SC-6](integration/shared-conventions.md#sc-6----fallback-modes). |
+| 61. Algorithm citations universally applied | `[ ]` | Tracked alongside backlog audits. |
+| 62. Rename `PhaseNode` / collapse with `Phase` | `[ ]` | Backlog. |
+| 63. `SpatialUpdateSystem` phase ordering | `[ ]` | Backlog. |
+| 64. Event-channel contention guarantees | `[ ]` | Backlog. |
+| 65. Composition tests cross-subsystem | `[ ]` | Backlog. |
+| 66. Single canonical `VoiceStream` / `AnimEvent` / `AudioCommand` | `[~]` | Tracked under [BL-0003](../backlog/issues/BL-0003-voicestream-ownership.md) and [BL-0032](../backlog/issues/BL-0032-anim-event-canonical.md). |
+| 67. Promote `FrameContext` first-class | `[ ]` | [BL-0014](../backlog/issues/BL-0014-frameworld-promote.md). |
+| 68. Factor LOD-tier tables out of integration docs | `[~]` | Animation tier consolidated; remaining backlog. |
+
+### Roll-up
+
+| Phase | Done | Partial | Open | Reversed | Total |
+|-------|-----:|--------:|-----:|---------:|------:|
+| P0    | 7    | 2       | 1    | 0        | 10    |
+| P1    | 6    | 5       | 12   | 1        | 24    |
+| P2    | 9    | 4       | 10   | 0        | 23    |
+| P3    | 1    | 4       | 6    | 0        | 11    |
+| **Total** | **23** | **15** | **29** | **1**  | **68**|
+
+29 fully-open items have moved to [`docs/backlog/`](../backlog/index.md) under
+`BL-0001` … `BL-0042`. The 15 partial items have either an issue tracking the residual
+work or are sufficiently complete that follow-up is opportunistic.
+
+### Forward pointer
+
+New design-review-style audits land as dated audits under
+[`docs/coverage/audits/`](../coverage/audits/) rather than amending this file. This
+keeps the historical 2026-04-12 audit pristine and lets coverage gates evolve.
+
+---
 
 ## Executive Summary
 
