@@ -733,6 +733,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_ai_grids"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "crossbeam-channel",
+ "tracing",
+]
+
+[[package]]
 name = "harmonius_app"
 version = "0.1.0"
 dependencies = [
