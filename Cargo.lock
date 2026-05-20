@@ -991,6 +991,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_input"
+version = "0.1.0"
+dependencies = [
+ "glam 0.29.3",
+ "smallvec",
+]
+
+[[package]]
 name = "harmonius_integration"
 version = "0.1.0"
 
