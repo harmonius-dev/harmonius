@@ -1155,6 +1155,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_rendering_pso_cache"
+version = "0.1.0"
+dependencies = [
+ "crc32fast",
+ "tempfile",
+]
+
+[[package]]
 name = "harmonius_save"
 version = "0.1.0"
 dependencies = [
