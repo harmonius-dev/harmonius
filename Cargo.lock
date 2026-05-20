@@ -841,7 +841,15 @@ dependencies = [
 name = "harmonius_gpu_runtime"
 version = "0.1.0"
 dependencies = [
- "harmonius_core",
+ "crossbeam-channel",
+ "tracing",
+]
+
+[[package]]
+name = "harmonius_gpu_runtime_test"
+version = "0.1.0"
+dependencies = [
+ "harmonius_gpu_runtime",
 ]
 
 [[package]]
