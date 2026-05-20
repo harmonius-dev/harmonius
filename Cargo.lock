@@ -330,6 +330,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "console_sdk"
+version = "0.1.0"
+
+[[package]]
+name = "console_stub"
+version = "0.1.0"
+dependencies = [
+ "console_sdk",
+]
+
+[[package]]
+name = "console_target"
+version = "0.1.0"
+
+[[package]]
 name = "constant_time_eq"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -641,7 +656,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8babf46d4c1c9d92deac9f7be466f76dfc4482b6452fc5024b5e8daf6ffeb3ee"
 dependencies = [
  "libm",
- "serde",
 ]
 
 [[package]]
@@ -743,10 +757,9 @@ dependencies = [
 name = "harmonius_core"
 version = "0.1.0"
 dependencies = [
- "glam 0.29.3",
- "serde",
- "serde_json",
- "smallvec",
+ "console_sdk",
+ "console_stub",
+ "console_target",
 ]
 
 [[package]]
