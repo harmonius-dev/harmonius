@@ -40,8 +40,8 @@ support contracts, and optional managed hosting.
    integrations (PS5, Xbox, Switch)
 2. **Enterprise support contracts** — Priority bug fixes, dedicated engineer, SLA guarantees for
    studios with shipping deadlines
-3. **Managed hosting (optional)** — Convenience service for teams who prefer not to self-host
-   collaboration, build cache, and mod infrastructure on AWS
+3. **Managed hosting (optional)** — Convenience service for teams who prefer not to operate the
+   collaboration, build cache, and mod infrastructure themselves on Kubernetes
 
 ### What We Do NOT Charge For
 
@@ -51,7 +51,7 @@ support contracts, and optional managed hosting.
 | Open source asset store  |
 | External store purchases |
 | AI content generation    |
-| Self-hosting (AWS)       |
+| Self-hosting (Kubernetes)|
 | All server services      |
 | Marketplace commission   |
 
@@ -61,7 +61,8 @@ support contracts, and optional managed hosting.
    third-party store purchases
 4. **AI content generation** — Runs locally on user hardware; no cloud dependency, no per-generation
    fee
-5. **Self-hosting (AWS)** — Deployment templates provided; user pays only AWS infrastructure costs
+5. **Self-hosting (Kubernetes)** — Helm charts provided; user pays only their own Kubernetes
+   infrastructure costs (any provider or bare metal)
 6. **All server services** — Build cache, collaboration, matchmaking, asset store -- all open source
    and free to self-host
 7. **Marketplace commission** — No built-in paid marketplace; the open source store is free and
@@ -157,49 +158,59 @@ requirements) and the optional managed hosting service.
     - **Rationale:** Core no-code promise; open source enables custom node authoring by the
       community.
 16. **Collaboration service (CRDT, cloud)** — Collaboration service (CRDT, cloud)
-    - **Rationale:** Self-hosted on AWS with open-source deps (PostgreSQL, Redis, NATS). Managed
-      hosting available for convenience.
+    - **Rationale:** Self-hosted on Kubernetes (TiKV + Garage + Pingora). Managed hosting available
+      for convenience.
 17. **Shared build cache** — Shared build cache
-    - **Rationale:** Self-hosted on AWS with S3-compatible storage and Redis index. Managed hosting
+    - **Rationale:** Self-hosted on Kubernetes (Garage for blobs, TiKV for index). Managed hosting
       available for convenience.
 18. **Matchmaking service** — Matchmaking service
-    - **Rationale:** Self-hosted on AWS with PostgreSQL, Redis, and NATS. Managed hosting available
-      for convenience.
+    - **Rationale:** Self-hosted on Kubernetes via the matchmaker microservice
+      ([network-infrastructure.md](../design/networking/network-infrastructure.md)). Managed
+      hosting available for convenience.
 19. **Asset marketplace** — Asset marketplace
-    - **Rationale:** Self-hosted on AWS with PostgreSQL, OpenSearch, and S3. Managed hosting
-      available for convenience.
+    - **Rationale:** Self-hosted on Kubernetes (TiKV + Garage). Managed hosting available for
+      convenience.
 20. **Universe generation server** — Universe generation server
-    - **Rationale:** Self-hosted on AWS. Managed hosting available for convenience.
+    - **Rationale:** Self-hosted on Kubernetes. Managed hosting available for convenience.
 21. **Mod hosting and moderation** — Mod hosting and moderation
-    - **Rationale:** Self-hosted on AWS. Managed hosting available for convenience.
+    - **Rationale:** Self-hosted on Kubernetes (Garage for blobs). Managed hosting available for
+      convenience.
 22. **AI assistant (LLM-based)** — AI assistant (LLM-based)
-    - **Rationale:** Self-hosted with user-provided LLM API keys. Managed hosting available.
+    - **Rationale:** Local inference shipped with the engine. Cloud LLM access uses
+      customer-owned API keys (no Harmonius proxy). See PDR-0002.
 23. **Deployment configuration** — Deployment configuration
-    - **Rationale:** Infrastructure templates using exclusively open-source dependencies. Free on
-      AWS Marketplace.
+    - **Rationale:** Helm chart bundling TiKV, Garage, Pingora, Vector, Prometheus, Grafana, Loki,
+      cert-manager, Sealed Secrets. Runs on EKS, GKE, AKS, k3s, or bare metal.
 24. **Monitoring stack** — Monitoring stack
-    - **Rationale:** Prometheus + Grafana + Loki. Self-hosted on AWS. No CloudWatch dependency.
+    - **Rationale:** Vector + Prometheus + Grafana + Loki. Self-hosted on Kubernetes. No
+      proprietary cloud monitoring required.
 25. **Console backends (PS5, Xbox, Switch)** — Console backends (PS5, Xbox, Switch)
     - **Rationale:** Platform holder NDAs prohibit open-sourcing console SDKs.
 26. **Managed hosting service** — Managed hosting service
-    - **Rationale:** Convenience service for teams who prefer not to self-host on AWS.
+    - **Rationale:** Convenience service for teams who prefer not to operate Kubernetes themselves.
 
 ### Open-Source Service Dependencies
 
-All self-hosted services use exclusively open-source software. No proprietary AWS services beyond
-S3, EC2, ECS, and RDS for PostgreSQL.
+All self-hosted services use exclusively open-source software. The canonical OSS stack lives in
+[design/networking/network-infrastructure.md](../design/networking/network-infrastructure.md)
+RF-6 and is referenced normatively by ADR-0009. There is no AWS-specific dependency in the
+default stack — any Kubernetes substrate works.
 
-| Service Need | Open-Source Choice | Proprietary Avoided |
-|--------------|--------------------|--------------------|
-| Database | PostgreSQL (RDS) | Aurora, DynamoDB |
-| Cache | Redis / Valkey (ElastiCache) | Proprietary ElastiCache protocol |
-| Auth | Keycloak (ECS) | Cognito |
-| Message queue | NATS (ECS) | SQS, SNS |
-| Object storage | S3-compatible API | (S3 retained -- standard API, MinIO-compatible) |
-| Search | OpenSearch | CloudSearch |
-| Monitoring | Grafana + Prometheus + Loki (ECS) | CloudWatch |
-| Git hosting | Forgejo (ECS/EC2) | CodeCommit |
-| CI/CD | Forgejo Actions | CodePipeline, CodeBuild |
+| Service Need        | Open-Source Choice                  | Proprietary Avoided                |
+|---------------------|-------------------------------------|------------------------------------|
+| Database            | TiKV                                | RDS, Aurora, DynamoDB              |
+| Cache / sessions    | TiKV (TTL keys)                     | Redis on ElastiCache               |
+| Auth                | Keycloak (Helm)                     | Cognito                            |
+| Message queue       | NATS (Helm)                         | SQS, SNS                           |
+| Object storage      | Garage (S3-compatible)              | S3, MinIO Enterprise               |
+| Search              | App-layer indexes on TiKV           | CloudSearch, OpenSearch            |
+| CDN / reverse proxy | Pingora (Rust)                      | CloudFront, CloudFlare             |
+| Logs                | Vector → Loki                       | CloudWatch Logs                    |
+| Metrics             | Prometheus + Grafana                | CloudWatch Metrics                 |
+| Git hosting         | Forgejo                             | CodeCommit, GitHub Enterprise      |
+| CI/CD               | Forgejo Actions                     | CodePipeline, CodeBuild            |
+| Orchestration       | Kubernetes + custom kube-rs operator| ArgoCD, Spinnaker                  |
+| Secrets             | Sealed Secrets / cert-manager       | KMS, Secrets Manager               |
 
 ### Classification Summary
 
@@ -220,7 +231,7 @@ convenience service (managed hosting).
 | Aspect                       | Price                |
 |------------------------------|----------------------|
 | Engine (all components)      | Free                 |
-| Self-hosting (AWS)           | Free (user pays AWS) |
+| Self-hosting (Kubernetes)    | Free (user pays infra) |
 | Managed hosting              | $29/user/month       |
 | Enterprise support           | $10,000-$50,000/year |
 | Console SDK license (PS5)    | $10,000/year         |
@@ -231,7 +242,7 @@ convenience service (managed hosting).
 | Education and non-commercial | Free                 |
 
 1. **Engine (all components)** — Apache 2.0, no royalties, no per-seat fees
-2. **Self-hosting (AWS)** — Deployment templates provided for all services
+2. **Self-hosting (Kubernetes)** — Helm chart provided for all services (any K8s substrate)
 3. **Managed hosting** — Optional; for teams who prefer not to self-host
 4. **Enterprise support** — Priority bug fixes, dedicated engineer, SLA
 5. **Console SDK license (PS5)** — Covers NDA compliance, 24/7 support, and platform updates
@@ -252,151 +263,62 @@ convenience service (managed hosting).
    take no cut.
 6. **AI content generation is free** -- Local inference runs on user hardware with no cloud fees.
 
-### Self-Hosted Scaling Profiles (AWS Infrastructure Cost)
+### Self-Hosted Scaling Profiles (Kubernetes Footprint)
 
-All services are free and open source. Users pay only AWS infrastructure costs. Four profiles match
-team size and budget.
+All services are free and open source. Users pay only their own Kubernetes infrastructure
+costs (any provider, any region, or bare metal). Four profiles match team size and budget.
 
-| Profile | Target | Est. Monthly Cost | Instance Sizes | AZs |
-|---------|--------|-------------------|---------------|-----|
-| Solo | 1 user | ~$20 | t4g.micro | 1 |
-| Team | 2-10 users | ~$100 | t4g.small | 1 |
-| Studio | 10-50 users | ~$500 | t4g.medium / m6g.large | 2 |
-| Production | 50+ users | ~$2,000+ | m6g.xlarge+, auto-scaling | 3 |
+| Profile    | Target       | K8s footprint (rough)                               | HA AZs |
+|------------|--------------|------------------------------------------------------|--------|
+| Solo       | 1 user       | k3s on a single small VM (1–2 vCPU, 4 GiB RAM)      | 1      |
+| Team       | 2–10 users   | 3-node general-purpose cluster                       | 1      |
+| Studio     | 10–50 users  | 3+ node cluster, dedicated TiKV PD/store node pool   | 2      |
+| Production | 50+ users    | Multi-zone cluster with horizontal scaling           | 3      |
+
+The dollar cost depends on the chosen provider (cloud Kubernetes, managed Kubernetes, on-prem,
+bare metal) and is no longer modeled here. The Helm chart and operator are identical across
+substrates per
+[network-infrastructure.md](../design/networking/network-infrastructure.md) RF-6.
 
 ### Comparison: Self-Hosted vs. Managed Hosting
 
-| Aspect                        | Managed hosting ($29/user/mo)       |
-|-------------------------------|-------------------------------------|
-| Setup effort                  | Zero; instant provisioning          |
-| Monthly cost (solo)           | $29                                 |
-| Monthly cost (10-person team) | $290                                |
-| Monthly cost (50-person team) | $1,450                              |
-| Dependencies                  | Fully managed by Harmonius          |
-| Maintenance                   | Fully managed by Harmonius          |
-| Data sovereignty              | US/EU region selection              |
-| Customization                 | Standard configuration only         |
-| Portability                   | Locked to Harmonius managed service |
-| SLA                           | 99.9% uptime guarantee              |
+| Aspect                        | Self-host                              | Managed                              |
+|-------------------------------|----------------------------------------|--------------------------------------|
+| Setup effort                  | `helm install harmonius-server`       | Zero; provisioned per organization   |
+| Recurring fee                 | Substrate cost only                    | $29/user/month                        |
+| Dependencies                  | TiKV, Garage, Pingora, Vector, Loki   | Fully managed                        |
+| Maintenance                   | Operator-driven; Harmonius community  | Fully managed                        |
+| Data sovereignty              | Full control                           | US/EU region selection                |
+| Customization                 | Full (modify charts, swap services)    | Standard configuration                |
+| Portability                   | Any K8s substrate                      | Locked to Harmonius managed service  |
+| SLA                           | Self-defined                           | 99.9% uptime guarantee                |
 
-1. **Setup effort** — 1-click Marketplace or deployment CLI
-2. **Monthly cost (solo)** — ~$20 (Solo profile)
-3. **Monthly cost (10-person team)** — ~$100 (Team profile)
-4. **Monthly cost (50-person team)** — ~$500 (Studio profile)
-5. **Dependencies** — All open source (PostgreSQL, Redis, NATS, Keycloak)
-6. **Maintenance** — Team manages updates, scaling
-7. **Data sovereignty** — Full control over data location
-8. **Customization** — Full (modify any service, swap deps)
-9. **Portability** — Migrate to any cloud or on-prem (MinIO, bare metal)
-10. **SLA** — Per AWS SLA
-
-For solo developers, self-hosting on the Solo profile
-(~$20/mo) is cheaper than managed hosting ($29/mo). For larger teams, self-hosting scales more
-cost-effectively. Managed hosting remains attractive for teams that want zero operational overhead.
+For solo developers, the Solo profile (k3s on a small VM) typically costs less than managed
+hosting. For larger teams, self-hosting scales more cost-effectively. Managed hosting remains
+attractive for teams that want zero operational overhead.
 
 ## 3. Per-User Server Costs (Managed Hosting)
 
-### Cost Estimates per Cloud Service
+The previous version of this section modeled per-user managed-hosting costs using AWS US-East
+list prices (RDS, ECS, S3, CloudFront, Lambda, DynamoDB). That model conflicts with the current
+OSS stack. A new per-user cost model rebased on Kubernetes node sizing plus the OSS bundle
+(TiKV, Garage, Pingora, Vector, Prometheus, Grafana, Loki) is tracked under
+[BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) and the
+[2026-Q3 OKRs](../okrs/2026-q3.md). Until then, the published managed-hosting price ($29 / user /
+month) is the only canonical figure; underlying cost composition is treated as commercially
+sensitive.
 
-All estimates use AWS US-East pricing as of 2025. Costs are per active user per month unless noted
-otherwise. These costs apply only to the managed hosting service.
+The shape of the model still applies:
 
-#### Collaboration Service (CRDT Sync)
-
-| Resource | Unit cost | Usage per user/month | Monthly cost |
-|----------|-----------|---------------------|--------------|
-| PostgreSQL RDS (db.t4g.small, shared) | $23/mo per instance | 1/100th instance | $0.23 |
-| S3 storage (project data) | $0.023/GB | 5 GB average | $0.12 |
-| EC2 WebSocket server (t4g.medium, shared) | $48/mo per instance | 1/50th instance | $0.96 |
-| Data transfer (CRDT sync) | $0.09/GB | 2 GB | $0.18 |
-| **Subtotal** | | | **$1.49** |
-
-#### Shared Build Cache
-
-| Resource | Unit cost | Usage per user/month | Monthly cost |
-|----------|-----------|---------------------|--------------|
-| S3 storage (build artifacts) | $0.023/GB | 50 GB average | $1.15 |
-| CloudFront bandwidth (cache hits) | $0.085/GB | 100 GB | $8.50 |
-| S3 GET requests | $0.0004/1000 | 500,000 requests | $0.20 |
-| **Subtotal** | | | **$9.85** |
-
-#### Asset Marketplace
-
-| Resource | Unit cost | Usage per user/month | Monthly cost |
-|----------|-----------|---------------------|--------------|
-| API server (shared Lambda) | $0.20/1M requests | 10,000 requests | $0.002 |
-| S3 storage (asset hosting) | $0.023/GB | 1 GB (amortized) | $0.02 |
-| CloudFront (asset downloads) | $0.085/GB | 5 GB | $0.43 |
-| Search (OpenSearch, shared) | $150/mo per instance | 1/500th instance | $0.30 |
-| **Subtotal** | | | **$0.75** |
-
-#### Universe Generation Server
-
-| Resource | Unit cost | Usage per user/month | Monthly cost |
-|----------|-----------|---------------------|--------------|
-| GPU compute (g5.xlarge) | $1.006/hr | 2 hours/month | $2.01 |
-| Result storage (S3) | $0.023/GB | 10 GB | $0.23 |
-| Database (DynamoDB) | $1.25/WCU | 5 WCU (shared) | $0.01 |
-| **Subtotal** | | | **$2.25** |
-
-#### Mod Hosting and Moderation
-
-| Resource | Unit cost | Usage per user/month | Monthly cost |
-|----------|-----------|---------------------|--------------|
-| S3 storage (mod files) | $0.023/GB | 20 GB | $0.46 |
-| CloudFront (mod downloads) | $0.085/GB | 50 GB | $4.25 |
-| Moderation compute (Lambda + AI) | $0.20/1M + LLM | 1,000 scans | $0.15 |
-| **Subtotal** | | | **$4.86** |
-
-#### AI Assistant (LLM-Based)
-
-| Resource | Unit cost | Usage per user/month | Monthly cost |
-|----------|-----------|---------------------|--------------|
-| LLM API (mid-tier model) | ~$3/M input, ~$15/M output | 50 queries, ~2K tokens each | $1.80 |
-| Context retrieval (embeddings) | $0.10/M tokens | 100K tokens | $0.01 |
-| **Subtotal** | | | **$1.81** |
-
-#### Infrastructure Services
-
-| Resource | Unit cost | Usage per user/month | Monthly cost |
-|----------|-----------|---------------------|--------------|
-| Crash reporting (S3 + Lambda) | $0.023/GB + Lambda | 100 MB + 100 invocations | $0.01 |
-| **Subtotal** | | | **$0.01** |
-
-### Total Per-User Monthly Cost (Managed Hosting)
-
-| Service | Cost/user/month |
-|---------|----------------|
-| Collaboration (CRDT sync) | $1.49 |
-| Shared build cache | $9.85 |
-| Asset marketplace | $0.75 |
-| Universe generation | $2.25 |
-| Mod hosting | $4.86 |
-| AI assistant | $1.81 |
-| Infrastructure | $0.01 |
-| **Total (all services)** | **$21.02** |
-
-At $29/user/month managed hosting price, the gross margin per user is **$7.98 (27.5%)**. This margin
-covers operational overhead, support, and profit.
-
-### Per-User Cost at Different Team Sizes (Managed Hosting)
-
-Economies of scale reduce per-user cost as shared infrastructure is amortized across more users.
-
-| Service | 1 dev | 5 devs | 20 devs | 100 devs |
-|---------|-------|--------|---------|----------|
-| Collaboration | $23.00 | $5.60 | $2.10 | $1.49 |
-| Build cache | $12.00 | $10.50 | $10.00 | $9.85 |
-| Marketplace | $1.50 | $1.00 | $0.80 | $0.75 |
-| Universe generation | $2.25 | $2.25 | $2.25 | $2.25 |
-| Mod hosting | $5.00 | $4.90 | $4.86 | $4.86 |
-| AI assistant | $1.81 | $1.81 | $1.81 | $1.81 |
-| Infrastructure | $0.50 | $0.15 | $0.05 | $0.01 |
-| **Total** | **$46.06** | **$26.21** | **$21.87** | **$21.02** |
-
-Solo developers on managed hosting face higher per-user costs due to fixed infrastructure overhead.
-At team sizes of 20+, per-user costs converge toward the marginal cost. Solo developers are
-encouraged to self-host, where costs are significantly lower.
+| Service                          | Cost driver                                            |
+|----------------------------------|--------------------------------------------------------|
+| Collaboration (CRDT)             | TiKV writes + WebSocket pods                           |
+| Shared build cache               | Garage egress + TiKV index                             |
+| Asset marketplace                | Garage storage + TiKV reads + Pingora egress          |
+| Universe generation              | GPU node-hour bucket                                   |
+| Mod hosting                      | Garage egress + content-mod inference                  |
+| AI assistant                     | Customer-owned API keys (no engine proxy, see PDR-0002)|
+| Crash reporting                  | Garage uploads + Vector ingestion                      |
 
 ## 4. Revenue Projections
 
@@ -513,17 +435,17 @@ more heavily on console SDK adoption and enterprise support contracts.
 | Source access    | Fully open source (Apache 2.0)                                            |
 | Royalties        | None                                                                      |
 | Engine cost      | Free forever                                                              |
-| Cloud services   | All open source (PostgreSQL, Redis, NATS, Keycloak); self-host or managed |
-| Multiplayer      | Built-in transport + replication                                          |
+| Cloud services   | TiKV + Garage + Pingora + Vector + Prometheus + Grafana + Loki on K8s     |
+| Multiplayer      | Built-in QUIC transport + replication                                     |
 | Collaboration    | Built-in CRDT sync (open source)                                          |
 | Build cache      | Built-in shared cache (open source)                                       |
-| Marketplace      | 12% commission                                                            |
+| Marketplace      | None (no commission); third-party stores keep their own fees             |
 | Console support  | $10K/yr per platform                                                      |
 | No-code tools    | Logic Graph (open source)                                                 |
-| AI assistant     | Open source (self-hosted)                                                 |
+| AI assistant     | Local inference + customer-owned cloud LLM keys (PDR-0002)                |
 | Mod support      | Built-in hosting (open source)                                            |
-| Deployment infra | AWS deployment (open-source deps: PostgreSQL, Redis, NATS, Keycloak)     |
-| Matchmaking      | Built-in open-source matchmaker (PostgreSQL, Redis, NATS)                 |
+| Deployment infra | Kubernetes Helm chart (any K8s substrate)                                 |
+| Matchmaking      | Built-in OSS matchmaker microservice (TiKV + custom kube-rs operator)     |
 
 | Aspect           |
 |------------------|
@@ -593,10 +515,12 @@ more heavily on console SDK adoption and enterprise support contracts.
    with production-ready networking, CRDT collaboration, shared build cache, matchmaking, and
    deployment infrastructure. Godot lacks these entirely; Unreal requires third-party solutions.
 3. **Self-hostable everything with open-source deps** -- Every server component uses open-source
-   dependencies (PostgreSQL, Redis, NATS, Keycloak, Forgejo, Grafana). Teams can migrate to any
-   cloud or on-premises deployment. Unlike Unity Cloud, there is zero vendor lock-in.
-4. **1-click deployment** -- Free AWS Marketplace listing with guided wizard deploys all services.
-   Solo developers pay ~$20/mo. No DevOps expertise required.
+   dependencies (TiKV, Garage, Pingora, Vector, Prometheus, Grafana, Loki, Keycloak, Forgejo).
+   Teams can migrate to any cloud or on-premises Kubernetes deployment. Unlike Unity Cloud, there
+   is zero vendor lock-in.
+4. **One-command deployment** -- `helm install harmonius-server` plus a custom kube-rs operator
+   handles game-aware deployment, canary validation, and graceful player drain. Solo developers
+   can run the full stack on a single small VM via k3s. No DevOps expertise required.
 5. **AAA-grade features in an open-source engine** -- Harmonius bridges the gap between Godot (open
    source but limited feature set) and Unreal (AAA features but proprietary with royalties).
    Features like GPU-driven rendering, ray tracing, advanced physics, and universe generation exceed
@@ -649,8 +573,9 @@ more heavily on console SDK adoption and enterprise support contracts.
    driving organic adoption.
 6. ****Mitigation 3**** — Enterprise support includes priority bug fixes and SLA, creating clear
    value for studios with shipping deadlines.
-7. ****Mitigation 4**** — Marketplace commission scales with ecosystem growth; seed marketplace
-   early to build GMV.
+7. ****Mitigation 4**** — Asset marketplace acts as ecosystem flywheel for managed hosting and
+   enterprise support adoption rather than a direct revenue line; the engine takes no commission
+   (per PDR-0001).
 
 ### Risk 2: Open-Source Fork Competing
 
@@ -691,18 +616,21 @@ more heavily on console SDK adoption and enterprise support contracts.
 | **Mitigation 3** |
 | **Mitigation 4** |
 
-1. ****Risk**** — Managed hosting margins are thin ($7.98/user/month). Unexpected usage spikes or
-   AWS price increases could eliminate margin.
-2. ****Severity**** — Medium -- manageable with monitoring and reserved instances.
-3. ****Trigger**** — Viral adoption spike; underestimated bandwidth costs; GPU compute price
+1. ****Risk**** — Managed hosting margin depends on the per-user K8s footprint plus egress
+   from Garage and Pingora. Unexpected usage spikes or substrate price increases could compress
+   margin.
+2. ****Severity**** — Medium -- manageable with monitoring and committed-use discounts where
+   available.
+3. ****Trigger**** — Viral adoption spike; underestimated egress costs; GPU compute price
    increases.
-4. ****Mitigation 1**** — Use reserved instances and savings plans to reduce AWS costs 40-60%.
+4. ****Mitigation 1**** — Use committed-use discounts on managed-Kubernetes substrates;
+   alternatively run dedicated bare-metal nodes for predictable cost.
 5. ****Mitigation 2**** — Usage-based overages for bandwidth-heavy users rather than flat-rate
    pricing.
 6. ****Mitigation 3**** — Monitor cost-per-user weekly; adjust pricing quarterly with 90 days
    notice.
-7. ****Mitigation 4**** — Build cache and CDN costs (largest line items) scale sub-linearly with
-   deduplication.
+7. ****Mitigation 4**** — Build cache (Garage) and CDN (Pingora) costs scale sub-linearly with
+   deduplication and intelligent caching.
 
 ### Risk 4: Marketplace Not Achieving Critical Mass
 
@@ -771,7 +699,10 @@ more heavily on console SDK adoption and enterprise support contracts.
 - [CryEngine licensing](https://www.cryengine.com/support/view/licensing)
 - [O3DE open-source announcement](https://www.theregister.com/2021/07/07/open_3d_engine/)
 - [Epic Marketplace 88/12 split](https://www.unrealengine.com/en-US/blog/epic-announces-unreal-engine-marketplace-88-12-revenue-share)
-- [AWS S3 pricing](https://aws.amazon.com/s3/pricing/)
-- [AWS RDS pricing](https://aws.amazon.com/rds/postgresql/pricing/)
-- [AWS CloudFront pricing](https://aws.amazon.com/cloudfront/pricing/)
+- [TiKV documentation](https://tikv.org/docs/)
+- [Garage S3-compatible object storage](https://garagehq.deuxfleurs.fr/)
+- [Pingora reverse proxy](https://github.com/cloudflare/pingora)
+- [Vector observability pipeline](https://vector.dev/)
+- [Loki log aggregation](https://grafana.com/oss/loki/)
+- [Helm package manager](https://helm.sh/)
 - [LLM API pricing comparison 2025](https://intuitionlabs.ai/articles/llm-api-pricing-comparison-2025)

@@ -751,7 +751,9 @@ domain or complexity level.
 5. ****ToolsEditor.WorldBuilding**** — Terrain painting, foliage placement, level tools
 6. ****ToolsEditor.Profiling**** — CPU/GPU profiler, stat overlays, memory tracker
 7. ****ToolsEditor.AdvancedTools**** — Version control, remote editing, AI assistant, deployment,
-   launcher, mod support, localization, CRDT collaboration
+   launcher, mod support, localization, CRDT collaboration, server infrastructure (Helm chart,
+   custom kube-rs operator, TiKV / Garage / Pingora / Vector / Prometheus / Grafana / Loki — see
+   [design/networking/network-infrastructure.md](../design/networking/network-infrastructure.md))
 
 **Outbound edges:**
 

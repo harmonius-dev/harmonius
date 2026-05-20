@@ -4,9 +4,16 @@ Work plan for the Harmonius game engine. Maps every feature-group from the
 [domain decomposition](domain-decomposition.md) to its requirements, features, design status, and
 implementation status. Organized by wave to show what can proceed in parallel at each stage.
 
-**Current state:** Requirements and features are fully specified (1,501 requirements, 1,204 features
-across 15 domains). Build system is configured (Rust stable, XcodeGen for macOS/iOS, Vulkan backend
-selection). No source code exists. No designs exist.
+**Current state (2026-05-20):** Requirements, features, and user stories are fully specified
+(1,648 requirements, 1,204+ features, 3,206 user stories across 17 domains). Build system is
+configured (Rust stable, XcodeGen for macOS/iOS, Vulkan-only via `ash`). 77 subsystem design
+documents and 62 integration designs are in place under
+[docs/design/](../design/) (see [architecture.md](../architecture.md) Design Summary). The
+canonical OSS server stack is documented in
+[design/networking/network-infrastructure.md](../design/networking/network-infrastructure.md)
+(K8s + TiKV + Garage + Pingora + Vector + Prometheus + Grafana + Loki). Implementation status is
+tracked in [docs/plans/](../plans/index.md) and the dated progress files under
+[docs/plans/progress/](../plans/progress/).
 
 ---
 

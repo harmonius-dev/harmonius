@@ -184,45 +184,60 @@ DAG.
 
 ## 3. Revenue Model
 
+> **Aligned with [monetization-analysis.md](monetization-analysis.md), PDR-0001 (no royalty,
+> no marketplace commission), and PDR-0002 (customer-owned AI keys).** Earlier versions of
+> this section listed a 5% royalty above $1M, a 12% marketplace commission, and a premium AI
+> subscription. All three were superseded by the policy-of-record decisions noted above.
+
 ### Revenue Sources
 
-| Source               | Type                   | Price Point        |
-|----------------------|------------------------|--------------------|
-| Core engine + editor | Free + open source     | $0                 |
-| Cloud collaboration  | SaaS subscription      | $10/user/month     |
-| AI assistant         | Premium subscription   | $20/user/month     |
-| Asset marketplace    | Transaction commission | 12% of sale price  |
-| Enterprise tier      | SaaS subscription      | $50/user/month     |
-| Game royalty         | Revenue share          | 5% above $1M gross |
-| Shared build cache   | Usage-based cloud      | $0.01/build-minute |
-| Dedicated hosting    | Managed infrastructure | Custom pricing     |
+| Source                       | Type                   | Price Point        |
+|------------------------------|------------------------|--------------------|
+| Core engine + editor         | Free + open source     | $0                 |
+| Self-hosting (Kubernetes)    | Free                   | $0 (substrate cost)|
+| Managed hosting              | SaaS subscription      | $29/user/month     |
+| Enterprise support           | Annual contract        | $10K–$50K/year     |
+| Console SDK addon (PS5)      | Annual license         | $10K/year          |
+| Console SDK addon (Xbox)     | Annual license         | $10K/year          |
+| Console SDK addon (Switch)   | Annual license         | $10K/year          |
+| Asset marketplace            | None (no commission)   | $0                 |
+| AI assistant                 | None (customer-owned API keys) | $0         |
+| Game royalty                 | None (developers keep 100%)    | $0         |
 
-1. **Core engine + editor** — Always
-2. **Cloud collaboration** — After ToolsEditor.AdvancedTools (Wave 6)
-3. **AI assistant** — After ToolsEditor.AdvancedTools (Wave 6)
-4. **Asset marketplace** — After ContentPipeline.DCCPlugins (Wave 6)
-5. **Enterprise tier** — After Networking.Replication (Wave 3) + collaboration
-6. **Game royalty** — After first game ships
-7. **Shared build cache** — After ContentPipeline.AssetDatabase (Wave 2) + cloud infra
-8. **Dedicated hosting** — After Networking.MMO (Wave 6)
+1. **Core engine + editor** — Always free and open source
+2. **Self-hosting (Kubernetes)** — Helm chart deploys all server services on any K8s substrate
+3. **Managed hosting** — Optional convenience tier; Harmonius operates the same Helm chart
+4. **Enterprise support** — Priority bug fixes, dedicated engineer, SLA — for studios with ship
+   deadlines
+5. **Console SDK addon licenses** — Required only for console shipping; the only proprietary
+   components, justified by platform-holder NDAs
+6. **Asset marketplace** — Open-source community-run repository; the engine takes no commission
+7. **AI assistant** — Local inference with the engine; cloud LLM access uses
+   the customer's own API keys (no Harmonius proxy)
+8. **Game royalty** — None; developers keep 100% of game revenue at every scale
 
 ### Path to $10K MRR
 
-| Scenario | Users Needed |
-|----------|-------------|
-| Cloud collaboration only ($10/mo) | 1,000 paying users |
-| AI assistant only ($20/mo) | 500 paying users |
-| Enterprise only ($50/user/mo) | 200 seats (4-8 studios) |
-| Blended (most likely) | ~400 users across tiers |
+Reachable through any combination of managed hosting, enterprise support, and console SDKs:
+
+| Scenario                                 | Path to $10K MRR              |
+|------------------------------------------|-------------------------------|
+| Managed hosting only ($29/user/mo)       | ~345 paying users             |
+| Enterprise support only ($10K–$50K/yr)   | 3–10 active contracts         |
+| Console SDK only ($10K/yr per platform)  | ~30 active console licensees  |
+| Blended (most likely)                    | Mix of all three              |
 
 ### Pricing Philosophy
 
 - **Core engine is always free and open source.** Non-negotiable for Rust community adoption and
   competitive positioning against Unity's pricing controversies.
-- **Revenue comes from cloud services, not the engine itself.** Collaboration, AI assistance, asset
-  marketplace, and build infrastructure are all cloud-hosted value-adds.
-- **No royalty below $1M.** Indie developers pay nothing until they succeed. This removes the
+- **Revenue comes from optional managed services, console SDKs, and enterprise support — never
+  from royalty, per-seat fees, or marketplace commissions.** This is the ADR-0009 / PDR-0001
+  policy of record.
+- **No royalty at any revenue band.** Developers keep 100% of game revenue. This removes the
   biggest friction point in engine adoption.
+- **No engine-side AI billing.** Cloud LLM access uses customer-owned API keys (PDR-0002). Local
+  inference is shipped with the engine at no cost.
 
 ---
 
@@ -334,7 +349,7 @@ feedback.
 |-----------|--------|-----------|
 | Language | C++ (unsafe, slow builds) | Rust (safe, fast iteration with hot reload) |
 | Visual scripting | Blueprints (mature) | Logic graphs (planned, similar scope) |
-| Licensing | 5% royalty >$1M | Free core, cloud services revenue |
+| Licensing | 5% royalty >$1M | Apache 2.0 with no royalty; revenue from managed hosting / support / console SDKs |
 | Build system | UnrealBuildTool (slow) | Cargo (fast, incremental) |
 | Editor | Decades of polish | New, modern architecture |
 | Planet-scale | Limited (World Partition) | Native universe pipeline |
