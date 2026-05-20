@@ -778,6 +778,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "harmonius_animation"
+version = "0.1.0"
+
+[[package]]
 name = "harmonius_app"
 version = "0.1.0"
 dependencies = [
