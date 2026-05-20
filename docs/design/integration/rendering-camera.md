@@ -1,5 +1,9 @@
 # Rendering ↔ Camera Integration Design
 
+> **Compliance.** This document follows the cross-cutting conventions in
+> [shared-conventions.md](shared-conventions.md) (SC-1..SC-14) and the channel-capacity formula
+> in [shared-messaging-capacities.md](shared-messaging-capacities.md). Deviations: none.
+
 ## Scope
 
 This integration covers **3D camera output** (perspective + orthographic) feeding the renderer.
