@@ -23,11 +23,11 @@ Current: `audio.md` (everything from RT mixer to HRTF). Roadmap split into five 
 
 | Proposed file                                   | Owns                                                                            | Status   | Backlog                                                |
 |-------------------------------------------------|---------------------------------------------------------------------------------|----------|--------------------------------------------------------|
-| `audio-runtime.md`                              | RT mixer thread, command queue, lifecycle                                        | Roadmap  | [BL-0050](../backlog/issues/BL-0050-audio-decompose.md) |
-| `audio-mixing.md`                               | Mixer graph, buses, ducking                                                     | Roadmap  | [BL-0050](../backlog/issues/BL-0050-audio-decompose.md), [BL-0036](../backlog/issues/BL-0036-audio-ducking.md) |
-| `audio-streaming.md`                            | File streaming, decoder, ring buffers                                           | Roadmap  | [BL-0050](../backlog/issues/BL-0050-audio-decompose.md) |
-| `audio-spatial.md`                              | HRTF, positional, occlusion                                                     | Roadmap  | [BL-0037](../backlog/issues/BL-0037-hrtf-sofa-loading.md), [BL-0050](../backlog/issues/BL-0050-audio-decompose.md) |
-| `audio-codecs.md`                               | Supported codecs, profile loading                                               | Roadmap  | [BL-0050](../backlog/issues/BL-0050-audio-decompose.md) |
+| `audio-runtime.md`                              | RT mixer thread, command queue, lifecycle                                        | Roadmap  | [BL-0050](https://github.com/cjhowe-us/harmonius/issues?q=BL-0050) |
+| `audio-mixing.md`                               | Mixer graph, buses, ducking                                                     | Roadmap  | [BL-0050](https://github.com/cjhowe-us/harmonius/issues?q=BL-0050), [BL-0036](https://github.com/cjhowe-us/harmonius/issues?q=BL-0036) |
+| `audio-streaming.md`                            | File streaming, decoder, ring buffers                                           | Roadmap  | [BL-0050](https://github.com/cjhowe-us/harmonius/issues?q=BL-0050) |
+| `audio-spatial.md`                              | HRTF, positional, occlusion                                                     | Roadmap  | [BL-0037](https://github.com/cjhowe-us/harmonius/issues?q=BL-0037), [BL-0050](https://github.com/cjhowe-us/harmonius/issues?q=BL-0050) |
+| `audio-codecs.md`                               | Supported codecs, profile loading                                               | Roadmap  | [BL-0050](https://github.com/cjhowe-us/harmonius/issues?q=BL-0050) |
 
 After the split, `audio.md` becomes a short overview index pointing at the five sub-docs.
 
@@ -37,11 +37,11 @@ Current: `input.md` (devices through IME). Roadmap split into five files:
 
 | Proposed file                                   | Owns                                                                            | Status   | Backlog                                                |
 |-------------------------------------------------|---------------------------------------------------------------------------------|----------|--------------------------------------------------------|
-| `input-devices.md`                              | Keyboard, mouse, controller, touch device abstraction                           | Roadmap  | [BL-0051](../backlog/issues/BL-0051-input-decompose.md) |
-| `input-actions.md`                              | Action mapping, contexts, runtime rebinding                                     | Roadmap  | [BL-0051](../backlog/issues/BL-0051-input-decompose.md) |
-| `input-gestures.md`                             | Touch gestures, multi-touch                                                     | Roadmap  | [BL-0051](../backlog/issues/BL-0051-input-decompose.md) |
-| `input-haptics.md`                              | Rumble, force feedback                                                          | Roadmap  | [BL-0051](../backlog/issues/BL-0051-input-decompose.md) |
-| `input-ime.md`                                  | IME composition / commit                                                        | Roadmap  | [BL-0035](../backlog/issues/BL-0035-input-ime-support.md) |
+| `input-devices.md`                              | Keyboard, mouse, controller, touch device abstraction                           | Roadmap  | [BL-0051](https://github.com/cjhowe-us/harmonius/issues?q=BL-0051) |
+| `input-actions.md`                              | Action mapping, contexts, runtime rebinding                                     | Roadmap  | [BL-0051](https://github.com/cjhowe-us/harmonius/issues?q=BL-0051) |
+| `input-gestures.md`                             | Touch gestures, multi-touch                                                     | Roadmap  | [BL-0051](https://github.com/cjhowe-us/harmonius/issues?q=BL-0051) |
+| `input-haptics.md`                              | Rumble, force feedback                                                          | Roadmap  | [BL-0051](https://github.com/cjhowe-us/harmonius/issues?q=BL-0051) |
+| `input-ime.md`                                  | IME composition / commit                                                        | Roadmap  | [BL-0035](https://github.com/cjhowe-us/harmonius/issues?q=BL-0035) |
 
 ### UI (`design/ui/`)
 
@@ -49,10 +49,10 @@ Current: `ui-framework.md` (everything). Roadmap split into four files:
 
 | Proposed file                                   | Owns                                                                            | Status   | Backlog                                                |
 |-------------------------------------------------|---------------------------------------------------------------------------------|----------|--------------------------------------------------------|
-| `ui-framework.md` (kept; trimmed)               | Widget framework, lifecycle, event routing                                      | Roadmap  | [BL-0052](../backlog/issues/BL-0052-ui-decompose.md)   |
-| `ui-layout.md`                                  | Layout engine                                                                   | Roadmap  | [BL-0052](../backlog/issues/BL-0052-ui-decompose.md)   |
-| `ui-rendering.md`                               | Text shaping, glyph atlas, batching, scissor, masking                           | Roadmap  | [BL-0052](../backlog/issues/BL-0052-ui-decompose.md)   |
-| `ui-accessibility.md`                           | Keyboard nav, screen reader, WCAG plan                                          | Roadmap  | [BL-0039](../backlog/issues/BL-0039-accessibility-wcag.md), [BL-0052](../backlog/issues/BL-0052-ui-decompose.md) |
+| `ui-framework.md` (kept; trimmed)               | Widget framework, lifecycle, event routing                                      | Roadmap  | [BL-0052](https://github.com/cjhowe-us/harmonius/issues?q=BL-0052)   |
+| `ui-layout.md`                                  | Layout engine                                                                   | Roadmap  | [BL-0052](https://github.com/cjhowe-us/harmonius/issues?q=BL-0052)   |
+| `ui-rendering.md`                               | Text shaping, glyph atlas, batching, scissor, masking                           | Roadmap  | [BL-0052](https://github.com/cjhowe-us/harmonius/issues?q=BL-0052)   |
+| `ui-accessibility.md`                           | Keyboard nav, screen reader, WCAG plan                                          | Roadmap  | [BL-0039](https://github.com/cjhowe-us/harmonius/issues?q=BL-0039), [BL-0052](https://github.com/cjhowe-us/harmonius/issues?q=BL-0052) |
 
 ## Missing integration pairs
 
@@ -61,9 +61,9 @@ roadmap; the other items in that section have already been authored or are track
 
 | Pair                                      | Status   | Backlog                                                 |
 |-------------------------------------------|----------|---------------------------------------------------------|
-| `attributes-effects-rendering.md`          | Roadmap  | [BL-0053](../backlog/issues/BL-0053-attributes-rendering-integration.md) |
-| `event-logs-animation.md`                  | Roadmap  | [BL-0054](../backlog/issues/BL-0054-event-logs-animation-integration.md) |
-| `vfx-audio.md`                             | Roadmap  | [BL-0055](../backlog/issues/BL-0055-vfx-audio-integration.md)            |
+| `attributes-effects-rendering.md`          | Roadmap  | [BL-0053](https://github.com/cjhowe-us/harmonius/issues?q=BL-0053) |
+| `event-logs-animation.md`                  | Roadmap  | [BL-0054](https://github.com/cjhowe-us/harmonius/issues?q=BL-0054) |
+| `vfx-audio.md`                             | Roadmap  | [BL-0055](https://github.com/cjhowe-us/harmonius/issues?q=BL-0055)            |
 
 ## Domains with intentional single-doc shape
 

@@ -5,8 +5,8 @@ per-row.
 
 The matrix is partial: Core Runtime, Data Systems, Simulation, and Networking are matrixed in full
 per [docs/coverage/index.md](index.md). Other domains carry "Summary only" entries and are tracked
-by [BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) and
-[BL-0048](../backlog/issues/BL-0048-readme-counts-sync.md).
+by [BL-0044](https://github.com/cjhowe-us/harmonius/issues?q=BL-0044) and
+[BL-0048](https://github.com/cjhowe-us/harmonius/issues?q=BL-0048).
 
 ## Status legend
 
@@ -48,8 +48,9 @@ audit will split these into dedicated requirement files if the requirement count
 | [containers-slots.md](../requirements/data-systems/containers-slots.md)       | R-16.4.* | user-stories/data-systems/containers-slots.md   | design/data-systems/containers-slots.md   | containers-slots-test-cases.md  | Owned  |
 
 The `composition.md` design has no dedicated requirement file; it documents authoring patterns over
-the four primitives. Tracked under [BL-0028](../backlog/issues/BL-0028-replicate-data-systems.md)
-and [BL-0029](../backlog/issues/BL-0029-data-systems-conflict-resolution.md).
+the four primitives. Tracked under
+[BL-0028](https://github.com/cjhowe-us/harmonius/issues?q=BL-0028) and
+[BL-0029](https://github.com/cjhowe-us/harmonius/issues?q=BL-0029).
 
 ## Simulation (`R-17.*`)
 
@@ -76,7 +77,7 @@ and [BL-0029](../backlog/issues/BL-0029-data-systems-conflict-resolution.md).
 | `non-functional.md` (planned, see BL-0044)                                          | R-8.NFR.* | user-stories/networking/non-functional.md    | (multi-doc)                                  | (multi-doc)                            | Partial |
 
 Networking-NFR requirements file is tracked as a follow-up under
-[BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) — currently the user-story file
+[BL-0044](https://github.com/cjhowe-us/harmonius/issues?q=BL-0044) — currently the user-story file
 exists (deslop pass) but a matching `requirements/networking/non-functional.md` has not yet been
 authored.
 
@@ -97,8 +98,8 @@ authored.
 ## Other domains (Summary only)
 
 The following domains are not yet matrixed in full. They carry one summary row per file here.
-Detailed mapping is tracked under [BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) and
-the [2026-Q3 OKR O-3](../okrs/2026-q3.md).
+Detailed mapping is tracked under [BL-0044](https://github.com/cjhowe-us/harmonius/issues?q=BL-0044)
+and the [2026-Q3 OKR O-3](../okrs/2026-q3.md).
 
 | Domain               | Files | Notes                                                |
 |----------------------|------:|------------------------------------------------------|

@@ -1,0 +1,1283 @@
+{
+  "issues": [
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Unify `ModOp` across attributes-effects and containers-slots\n\n### Context\n\nThe 2026-04-12 design review §2.2 catalogued `ModOp` / `ModifierOp` as defined in two places with\noverlapping but incompatible semantics:\n\n- `data-systems/attributes-effects.md` defines a `ModOp` enum with arithmetic + curve\n  operators.\n- `data-systems/containers-slots.md` defines a `ModifierOp` enum with stat-propagation\n  operators.\n\nContainers' socket system propagates stat modifiers through the effects system, which means the two\nenums are read by the same code paths. Defining them twice creates subtle merge bugs when a new\noperator lands.\n\nThe [canonical-owners.md](../../design/canonical-owners.md) registry lists `ModOp` as\n`Pending consolidation` with `core-runtime/primitives.md` as the intended owner.\n\n### Acceptance criteria\n\n- [ ] Single `ModOp` enum lives in `core-runtime/primitives.md` covering both attributes\n      and containers semantics.\n- [ ] `data-systems/attributes-effects.md` references the canonical enum and deletes the\n      duplicate definition.\n- [ ] `data-systems/containers-slots.md` references the canonical enum and deletes the\n      duplicate definition.\n- [ ] Sockets emit modifier events rather than directly applying effects (decouples\n      containers from effects).\n- [ ] `canonical-owners.md` row for `ModOp` flips from `Pending consolidation` to `Owned`.\n\n### Verification\n\n`grep -rE 'enum ModOp|enum ModifierOp' docs/design/` yields exactly one definition in\n`core-runtime/primitives.md`.\n\n### References\n\n- [docs/design/design-review.md §2.2](../../design/design-review.md#22-foundational-type-duplication)\n- [docs/design/canonical-owners.md](../../design/canonical-owners.md)\n- [docs/design/data-systems/attributes-effects.md](../../design/data-systems/attributes-effects.md)\n- [docs/design/data-systems/containers-slots.md](../../design/data-systems/containers-slots.md)\n- [docs/design/core-runtime/primitives.md](../../design/core-runtime/primitives.md)\n",
+      "domain": "data-systems",
+      "effort": "M",
+      "id": "BL-0001",
+      "labels": [
+        "coverage:design",
+        "domain:data-systems",
+        "p1",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P1",
+      "title": "BL-0001: Unify ModOp across attributes-effects and containers-slots",
+      "title_short": "Unify ModOp across attributes-effects and containers-slots"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Resolve `ShadingModel` vs `ShadingModelId` duplication\n\n### Context\n\nThe 2026-04-12 design review §2.2 noted that `ShadingModel` and `ShadingModelId` are the same\nconcept under two names:\n\n- `rendering/rendering-core.md` defines `ShadingModel` as the runtime enum.\n- `rendering/render-styles.md` defines `ShadingModelId` for serialization and material graph\n  export.\n\nTwo names for the same concept causes drift in error messages, editor enums, and shader codegen.\n\n### Acceptance criteria\n\n- [ ] Pick one name (`ShadingModel`) and remove the other.\n- [ ] Update `rendering-core.md` and `render-styles.md` consistently.\n- [ ] Update material graph codegen output to emit the canonical name.\n- [ ] `canonical-owners.md` row for `ShadingModel` flips to `Owned`.\n\n### Verification\n\n`grep -r 'ShadingModelId' docs/` returns zero matches.\n\n### References\n\n- [docs/design/design-review.md §2.2](../../design/design-review.md#22-foundational-type-duplication)\n- [docs/design/canonical-owners.md](../../design/canonical-owners.md)\n- [docs/design/rendering/rendering-core.md](../../design/rendering/rendering-core.md)\n- [docs/design/rendering/render-styles.md](../../design/rendering/render-styles.md)\n",
+      "domain": "rendering",
+      "effort": "S",
+      "id": "BL-0002",
+      "labels": [
+        "coverage:design",
+        "domain:rendering",
+        "p1",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P1",
+      "title": "BL-0002: Resolve ShadingModel vs ShadingModelId duplication",
+      "title_short": "Resolve ShadingModel vs ShadingModelId duplication"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Split `VoiceStream` ownership (transport vs codec)\n\n### Context\n\nThe 2026-04-12 design review §2.2 found two `VoiceStream` definitions:\n\n- `audio/audio.md` defines codec and HRTF spatialization.\n- `networking/network-services.md` defines transport over QUIC.\n\nBoth refer to the \"same\" voice stream but cover different concerns.\n\n### Acceptance criteria\n\n- [ ] `networking/network-services.md` owns the transport-side `VoiceStream` (QUIC stream\n      framing, jitter buffer, NAT considerations).\n- [ ] `audio/audio.md` owns the audio-side `VoiceStream` (Opus codec, HRTF, mixer routing).\n- [ ] The two layers exchange opaque PCM-frame messages over a documented adapter interface.\n- [ ] `canonical-owners.md` rows for `VoiceStream (transport)` and `VoiceStream (codec)`\n      flip to `Owned`.\n\n### Verification\n\nEach definition exists in exactly one file; the other file references the canonical definition by\nname.\n\n### References\n\n- [docs/design/design-review.md §2.2](../../design/design-review.md#22-foundational-type-duplication)\n- [docs/design/audio/audio.md](../../design/audio/audio.md)\n- [docs/design/networking/network-services.md](../../design/networking/network-services.md)\n- [ADR-0010 QUIC unified transport](../../decisions/adr/ADR-0010-quic-unified-transport.md)\n",
+      "domain": "networking",
+      "effort": "M",
+      "id": "BL-0003",
+      "labels": [
+        "coverage:design",
+        "domain:audio",
+        "domain:networking",
+        "p1",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P1",
+      "title": "BL-0003: Split VoiceStream ownership (transport vs codec)",
+      "title_short": "Split VoiceStream ownership (transport vs codec)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Rename gameplay grid `CellGrid` and AOI grid `AoiGrid`\n\n### Context\n\n`UniformGrid<T>` is currently defined in three places with subtly different APIs:\n\n- `core-runtime/spatial-index.md` (canonical generic primitive)\n- `core-runtime/algorithms.md` (alternate definition)\n- `simulation/grids-volumes.md` (gameplay propagation specialization)\n- `networking/network-transport.md` (AOI / interest-management specialization)\n\nThe three users have legitimately different access patterns. The fix is to keep the generic in core,\nrename the gameplay specialization `CellGrid`, and rename the networking specialization `AoiGrid`.\n\n### Acceptance criteria\n\n- [ ] `core-runtime/spatial-index.md` owns the `UniformGrid<T>` generic primitive.\n- [ ] `simulation/grids-volumes.md` defines `CellGrid` as the gameplay specialization.\n- [ ] `networking/network-transport.md` defines `AoiGrid` as the AOI specialization.\n- [ ] `core-runtime/algorithms.md` references the spatial-index definition rather than\n      redefining.\n- [ ] All `canonical-owners.md` rows for grid types flip to `Owned`.\n\n### Verification\n\n`grep -rE 'struct UniformGrid|struct CellGrid|struct AoiGrid' docs/design/` shows exactly one\ndefinition per name.\n\n### References\n\n- [docs/design/design-review.md §2.2](../../design/design-review.md#22-foundational-type-duplication)\n- [docs/design/canonical-owners.md](../../design/canonical-owners.md)\n",
+      "domain": "core-runtime",
+      "effort": "M",
+      "id": "BL-0004",
+      "labels": [
+        "coverage:design",
+        "domain:core-runtime",
+        "domain:networking",
+        "domain:simulation",
+        "p1",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P1",
+      "title": "BL-0004: Rename gameplay grid CellGrid and AOI grid AoiGrid",
+      "title_short": "Rename gameplay grid CellGrid and AOI grid AoiGrid"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Decide `ConditionExpr` registry scope (global vs per-subsystem)\n\n### Context\n\n`ConditionExpr` and `ConditionRegistry` are referenced by graphs, effects, and containers in the\ndata-systems layer. The design review §3.3 noted there is no statement about whether registries are\nshared across subsystems or owned per subsystem. Either decision is workable; not deciding produces\nsubtle bugs.\n\n### Acceptance criteria\n\n- [ ] Decision recorded in `data-systems/composition.md`: one global `ConditionRegistry` per\n      world, or one registry per subsystem.\n- [ ] `data-systems/attributes-effects.md` and `data-systems/directed-graphs.md` reference\n      the chosen owner.\n- [ ] If global, document how subsystems register their condition fns at startup.\n- [ ] If per-subsystem, document the namespacing rules and how cross-subsystem conditions\n      reference each other.\n- [ ] `canonical-owners.md` row for `ConditionExpr` flips to `Owned`.\n\n### Verification\n\nReading any of the three subsystem docs makes the registry-ownership story unambiguous; no backlog\ncomments survive on this question.\n\n### References\n\n- [docs/design/design-review.md §3.3](../../design/design-review.md#33-data-systems)\n- [docs/design/data-systems/composition.md](../../design/data-systems/composition.md)\n",
+      "domain": "data-systems",
+      "effort": "M",
+      "id": "BL-0005",
+      "labels": [
+        "coverage:design",
+        "domain:data-systems",
+        "p1",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P1",
+      "title": "BL-0005: Decide ConditionExpr registry scope (global vs per-subsystem)",
+      "title_short": "Decide ConditionExpr registry scope (global vs per-subsystem)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Replace `Blackboard` singleton with ECS component\n\n### Context\n\n`Blackboard` is currently a behavior-tree-private type with its own scope/value registry. GOAP uses\n`WorldState`. Steering uses components directly. The 2026-04-12 design review §3.6 catalogued this\nas three ways to hold per-agent state — a violation of the ECS-primary principle in\n[ADR-0003](../../decisions/adr/ADR-0003-ecs-primary-architecture.md).\n\n`shared-conventions.md` SC-3 already mandates sorted backing stores for blackboards. The remaining\nwork is to make the blackboard live on the entity that owns it.\n\n### Acceptance criteria\n\n- [ ] `BlackboardComponent` defined in `core-runtime/ecs.md` (or `behavior.md`) with sorted\n      `Vec<(BlackboardKey, BlackboardValue)>` backing store per SC-3.\n- [ ] `BlackboardKey` is a codegen'd enum, not a string.\n- [ ] `behavior.md`, `goap.md`, `utility-ai.md` updated to read/write the component instead\n      of a singleton.\n- [ ] Steering integration consumes `BlackboardComponent` for hide / interpose / target\n      data.\n- [ ] Eight integration docs that restated the \"use BTreeMap\" rule trim the duplicated prose\n      and reference SC-3.\n\n### Verification\n\n`grep -r 'Blackboard ::' docs/design/` returns zero singleton usages; only component reads.\n\n### References\n\n- [docs/design/design-review.md §3.6](../../design/design-review.md#36-ai--audio--input--ui--networking)\n- [docs/design/integration/shared-conventions.md SC-3](../../design/integration/shared-conventions.md#sc-3----blackboard-backing-store)\n- [ADR-0003 ECS-primary architecture](../../decisions/adr/ADR-0003-ecs-primary-architecture.md)\n",
+      "domain": "ai",
+      "effort": "L",
+      "id": "BL-0006",
+      "labels": [
+        "coverage:design",
+        "domain:ai",
+        "domain:core-runtime",
+        "p1",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P1",
+      "title": "BL-0006: Replace Blackboard singleton with ECS component",
+      "title_short": "Replace Blackboard singleton with ECS component"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Move `CompileError` to single owner (`error.md`)\n\n### Context\n\n`CompileError` is currently defined in four places:\n\n- `core-runtime/error.md` (canonical owner per `canonical-owners.md`)\n- `core-runtime/game-loop.md`\n- `game-framework/scripting.md`\n- `core-runtime/algorithms.md`\n\nThe duplicates have inconsistent variants and missing documentation.\n\n### Acceptance criteria\n\n- [ ] `core-runtime/error.md` is the sole definition of `CompileError`.\n- [ ] All other docs reference it via cross-link instead of redefining.\n- [ ] Variants cover scripting compile errors, schedule build errors, and graph codegen\n      errors.\n- [ ] `canonical-owners.md` row for `CompileError` flips from `Pending consolidation` to\n      `Owned`.\n\n### Verification\n\n`grep -rE 'enum CompileError' docs/design/` returns exactly one definition in `error.md`.\n\n### References\n\n- [docs/design/canonical-owners.md](../../design/canonical-owners.md)\n- [docs/design/core-runtime/error.md](../../design/core-runtime/error.md)\n",
+      "domain": "core-runtime",
+      "effort": "S",
+      "id": "BL-0007",
+      "labels": [
+        "coverage:design",
+        "domain:core-runtime",
+        "p1",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P1",
+      "title": "BL-0007: Move CompileError to single owner (error.md)",
+      "title_short": "Move CompileError to single owner (error.md)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Remove `HashMap` from ECS `Archetype` hot path\n\n### Context\n\n`core-runtime/ecs.md` Archetype storage uses `HashMap<ComponentId, Column>` on the hot query path.\nThis violates the project-wide rule \"no HashMap on hot paths\" (constraints.md\n`Performance Patterns`, SC-2). The 2026-04-12 design review §3.1 flagged this.\n\n### Acceptance criteria\n\n- [ ] Archetype column lookup uses sorted `Vec<(ComponentId, Column)>` plus binary search,\n      or a dense keyed store, instead of `HashMap`.\n- [ ] Benchmark `archetype_column_lookup_p99` is at most equal to the prior HashMap version.\n- [ ] `ecs.md` design diagram and pseudocode reflect the new container.\n- [ ] `shared-conventions.md` SC-2 row for ECS Archetype examples no longer flags `HashMap`.\n\n### Verification\n\n`grep 'HashMap' docs/design/core-runtime/ecs.md` shows no Archetype hot-path usage; the benchmark\nsuite reports equal or better p99 lookup.\n\n### References\n\n- [docs/design/design-review.md §3.1](../../design/design-review.md#31-core-runtime)\n- [docs/design/integration/shared-conventions.md SC-2](../../design/integration/shared-conventions.md#sc-2----no-hashmap-on-hot-paths)\n- [docs/design/core-runtime/ecs.md](../../design/core-runtime/ecs.md)\n",
+      "domain": "core-runtime",
+      "effort": "M",
+      "id": "BL-0008",
+      "labels": [
+        "coverage:design",
+        "domain:core-runtime",
+        "p1",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P1",
+      "title": "BL-0008: Remove HashMap from ECS Archetype hot path",
+      "title_short": "Remove HashMap from ECS Archetype hot path"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Declare canonical `Material` type\n\n### Context\n\nThe 2026-04-12 design review §3.2 noted that `Material` as a unified type does not exist:\n\n- `MaterialComponent` lives in `rendering-core.md`\n- `MaterialGraph` lives in `render-styles.md`\n- `CompiledMaterial` is implied in `render-pipeline.md` but never defined\n\nThe three are never linked in the design corpus, so callers cannot reason about the material\nlifecycle (graph → compiled → component → draw).\n\n### Acceptance criteria\n\n- [ ] `rendering/render-pipeline.md` declares `Material { id, graph, compiled_shaders,\n      descriptor_layout }` with clear ownership.\n- [ ] `rendering-core.md`, `render-styles.md`, and `pipeline-state-cache.md` reference the\n      canonical `Material` type.\n- [ ] Material lifecycle (graph → compile → cache → component → draw) is documented in one\n      place with a Mermaid sequence diagram.\n- [ ] `canonical-owners.md` rows for `Material` and `CompiledMaterial` flip from\n      `Pending creation` to `Owned`.\n\n### Verification\n\nA reader can trace a material from author-time graph to GPU draw call by reading one design doc.\n\n### References\n\n- [docs/design/design-review.md §3.2](../../design/design-review.md#32-rendering)\n- [docs/design/canonical-owners.md](../../design/canonical-owners.md)\n- [docs/design/rendering/render-pipeline.md](../../design/rendering/render-pipeline.md)\n",
+      "domain": "rendering",
+      "effort": "L",
+      "id": "BL-0009",
+      "labels": [
+        "coverage:design",
+        "domain:rendering",
+        "p1",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P1",
+      "title": "BL-0009: Declare canonical Material type",
+      "title_short": "Declare canonical Material type"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Design pipeline-state-object cache (recovery + GC + persistence)\n\n### Context\n\n`rendering/pipeline-state-cache.md` exists with the basic cache design. The 2026-04-12 review's\nRF-15 / RF-17 recommended fleshing out:\n\n- Disk persistence layout and versioning\n- Recovery from corrupt cache files\n- Garbage collection (when to evict entries)\n- Barrier analysis algorithm (split barriers, redundancy detection, state-transition\n  validation)\n\n### Acceptance criteria\n\n- [ ] `pipeline-state-cache.md` documents the on-disk layout (header, version, entry\n      format) and the validation procedure on load.\n- [ ] Recovery section explains corrupt-cache handling: drop and rebuild silently with\n      log line.\n- [ ] GC policy: LRU with high-water / low-water thresholds; document defaults.\n- [ ] Barrier analysis algorithm specified pseudocode (resource state transitions, split\n      barriers, elision conditions).\n- [ ] Companion `pipeline-state-cache-test-cases.md` covers persistence, recovery, eviction,\n      and barrier analysis.\n\n### Verification\n\nA second-pass review of `pipeline-state-cache.md` finds zero TODO markers and a complete test-case\ncompanion.\n\n### References\n\n- [docs/design/design-review.md §3.2 / P1 #15 / P1 #17](../../design/design-review.md)\n- [docs/design/rendering/pipeline-state-cache.md](../../design/rendering/pipeline-state-cache.md)\n",
+      "domain": "rendering",
+      "effort": "L",
+      "id": "BL-0010",
+      "labels": [
+        "coverage:design",
+        "domain:rendering",
+        "p1",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P1",
+      "title": "BL-0010: Design pipeline-state-object cache (recovery + GC + persistence)",
+      "title_short": "Design pipeline-state-object cache (recovery + GC + persistence)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Specify meshlet asset pipeline end-to-end\n\n### Context\n\n`rendering/meshlets.md` exists. The 2026-04-12 review's P1 #16 noted the asset pipeline path (import\n→ `MeshletAsset` → GPU upload) was incomplete, and the link to BLAS for ray tracing was unspecified.\n\n### Acceptance criteria\n\n- [ ] Import path specified: source mesh → meshlet builder → `MeshletAsset` (rkyv archive).\n- [ ] `MeshletAsset` schema documented (vertex layout, triangle indices, bounding cones,\n      LOD chain).\n- [ ] GPU upload path: from rkyv archive to bindless GPU buffer; staging buffer use.\n- [ ] BLAS construction: meshlet → BLAS proxy mapping for ray tracing.\n- [ ] Companion `meshlets-test-cases.md` covers import, archive validation, GPU upload, and\n      BLAS construction.\n\n### Verification\n\nA reader can take a `.glb` mesh asset to a rendered meshlet draw using only `meshlets.md`, the asset\npipeline, and the canonical `Material` type.\n\n### References\n\n- [docs/design/design-review.md P1 #16](../../design/design-review.md)\n- [docs/design/rendering/meshlets.md](../../design/rendering/meshlets.md)\n- [docs/design/content-pipeline/asset-pipeline.md](../../design/content-pipeline/asset-pipeline.md)\n",
+      "domain": "rendering",
+      "effort": "L",
+      "id": "BL-0011",
+      "labels": [
+        "coverage:design",
+        "domain:content-pipeline",
+        "domain:rendering",
+        "p1",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P1",
+      "title": "BL-0011: Specify meshlet asset pipeline end-to-end",
+      "title_short": "Specify meshlet asset pipeline end-to-end"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Unify 2D and 3D render graph passes\n\n### Context\n\nThe 2026-04-12 review §3.2 noted that the 2D path is completely parallel to 3D. `2d.md` shows an\nisolated sprite pipeline with its own lights, camera, physics, and transform. Integration with the\nshared render graph is asserted but not shown. `RenderLayerMask` is referenced in 2D and 3D with\ninconsistent types.\n\n### Acceptance criteria\n\n- [ ] Decision recorded in `render-pipeline.md`: 2D passes are part of the existing render\n      graph, OR a post-3D composite layer with documented hand-off.\n- [ ] `RenderLayerMask` unified across 2D and 3D as a single type.\n- [ ] `2d.md` and `render-pipeline.md` share a single render-graph diagram showing how 2D\n      passes attach.\n- [ ] `Camera2D` and `CameraComponent` either share a `CameraBase` trait or are documented\n      as deliberately separate with clear interop rules.\n\n### Verification\n\nA reader of `render-pipeline.md` can describe how 2D rendering joins 3D rendering at the swapchain\nhandoff in one paragraph.\n\n### References\n\n- [docs/design/design-review.md §3.2 / P1 #18](../../design/design-review.md#32-rendering)\n- [docs/design/rendering/2d.md](../../design/rendering/2d.md)\n- [docs/design/rendering/render-pipeline.md](../../design/rendering/render-pipeline.md)\n",
+      "domain": "rendering",
+      "effort": "L",
+      "id": "BL-0012",
+      "labels": [
+        "coverage:design",
+        "domain:rendering",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0012: Unify 2D and 3D render graph passes",
+      "title_short": "Unify 2D and 3D render graph passes"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Camera split (brain vs lens / render concerns)\n\n### Context\n\n`game-framework/camera.md` historically contained spring-arm collision retraction, cine camera,\npicture-in-picture, and camera sequencer. The 2026-04-12 review §2.9 P1 #19 found that the last\nthree are rendering or sequencing concerns, not gameplay.\n\n`rendering/camera-rendering.md` was created to host the rendering concerns, but the split is\nincomplete: `game-framework/camera.md` still owns some lens parameters that should live in the\nrendering doc.\n\n### Acceptance criteria\n\n- [ ] `game-framework/camera.md` owns the camera **brain**: priorities, blends, target\n      tracking, feel parameters.\n- [ ] `rendering/camera-rendering.md` owns the **lens / render concerns**: spring arm\n      collision, cine camera, PiP, viewport composition, camera sequencer.\n- [ ] No type or property is defined in both files.\n- [ ] Cross-references between the two files are explicit.\n- [ ] Editor camera UI shows both brain and lens panels with clear separation.\n\n### Verification\n\n`grep -rE 'spring_arm|picture_in_picture|cine_camera' docs/design/game-framework/` returns zero\nmatches; same terms appear only in `rendering/camera-rendering.md`.\n\n### References\n\n- [docs/design/design-review.md §2.9 / P1 #19](../../design/design-review.md#29-game-framework-scope-creep)\n- [docs/design/game-framework/camera.md](../../design/game-framework/camera.md)\n- [docs/design/rendering/camera-rendering.md](../../design/rendering/camera-rendering.md)\n",
+      "domain": "game-framework",
+      "effort": "M",
+      "id": "BL-0013",
+      "labels": [
+        "coverage:design",
+        "domain:game-framework",
+        "domain:rendering",
+        "p1",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P1",
+      "title": "BL-0013: Camera split (brain vs lens / render concerns)",
+      "title_short": "Camera split (brain vs lens / render concerns)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Promote `FrameContext` to a first-class type\n\n### Context\n\nThe 2026-04-12 review P3 #67 recommended promoting `FrameContext` to a first-class type defined in\none place and used everywhere. Today the same fields (`frame_index`, `interp_alpha`, `game_time`,\n`frame_budgets`, `seed`) are recreated ad hoc in integration docs and per-subsystem code.\n\n### Acceptance criteria\n\n- [ ] `core-runtime/game-loop.md` defines `FrameContext { frame_index, interp_alpha,\n      game_time, frame_budgets, seed }`.\n- [ ] Integration docs that reference these fields cross-link instead of redefining.\n- [ ] `canonical-owners.md` row for `FrameContext` flips from `Pending consolidation` to\n      `Owned`.\n- [ ] `GameTime` is included in this work or tracked as a sibling issue (see BL-0026).\n\n### Verification\n\n`grep -rE 'struct FrameContext|frame_index.*: u64' docs/design/` shows the canonical definition in\nexactly one file.\n\n### References\n\n- [docs/design/design-review.md P3 #67](../../design/design-review.md)\n- [docs/design/canonical-owners.md](../../design/canonical-owners.md)\n- [docs/design/core-runtime/game-loop.md](../../design/core-runtime/game-loop.md)\n",
+      "domain": "core-runtime",
+      "effort": "M",
+      "id": "BL-0014",
+      "labels": [
+        "coverage:design",
+        "domain:core-runtime",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0014: Promote FrameContext to a first-class type",
+      "title_short": "Promote FrameContext to a first-class type"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Resolve game-loop ↔ ECS circular dependency\n\n### Context\n\n`core-runtime/game-loop.md` defines `GameLoopGraph` and `CompiledFrame`, but those types also appear\nin `ecs.md`. The 2026-04-12 review P0 #9 recommended moving them into `game-loop.md` only and having\n`ecs.md::Schedule` produce a `SystemGraph` that the game loop compiles.\n\n### Acceptance criteria\n\n- [ ] `GameLoopGraph` and `CompiledFrame` are defined exactly once, in `game-loop.md`.\n- [ ] `Schedule` in `ecs.md` produces a `SystemGraph` (or equivalent intermediate) with no\n      knowledge of frame phases.\n- [ ] `game-loop.md::GameLoopGraph::compile(systems: SystemGraph)` is the single integration\n      point.\n- [ ] No type is defined in both `ecs.md` and `game-loop.md`.\n\n### Verification\n\nA reader can describe the dependency direction (game-loop depends on ecs, not vice versa) from the\ndocs alone.\n\n### References\n\n- [docs/design/design-review.md P0 #9](../../design/design-review.md#p0--must-land-before-implementation-begins)\n- [docs/design/core-runtime/ecs.md](../../design/core-runtime/ecs.md)\n- [docs/design/core-runtime/game-loop.md](../../design/core-runtime/game-loop.md)\n",
+      "domain": "core-runtime",
+      "effort": "M",
+      "id": "BL-0015",
+      "labels": [
+        "coverage:design",
+        "domain:core-runtime",
+        "p1",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P1",
+      "title": "BL-0015: Resolve game-loop ↔ ECS circular dependency",
+      "title_short": "Resolve game-loop ↔ ECS circular dependency"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Author `core-runtime/codegen-pipeline.md`\n\n### Context\n\n`scripting.md` and `visual-editors.md` both claim parts of the codegen pipeline. The 2026-04-12\nreview §3.7 / P2 #56 recommended a single owner for IR, optimizer, and backends.\n\n### Acceptance criteria\n\n- [ ] New `core-runtime/codegen-pipeline.md` documents the IR, optimizer passes, and the\n      `RustBackend`, `GlslBackend`, `TypeDescriptorBackend` from `graph-runtime.md`.\n- [ ] `scripting.md` and `visual-editors.md` reference this doc instead of redefining\n      pieces of the pipeline.\n- [ ] Companion `codegen-pipeline-test-cases.md` covers IR construction, optimization, and\n      each backend's output.\n- [ ] Hot reload integration is explicit (codegen output → middleman .dylib → reload).\n\n### Verification\n\nA reader of `codegen-pipeline.md` understands the flow from visual graph to compiled Rust / GLSL\nwithout reading scripting or visual-editors.\n\n### References\n\n- [docs/design/design-review.md §3.7 / P2 #56](../../design/design-review.md#37-platform--tools--game-framework--content-pipeline)\n- [docs/design/core-runtime/graph-runtime.md](../../design/core-runtime/graph-runtime.md)\n- [ADR-0005 codegen middleman .dylib](../../decisions/adr/ADR-0005-codegen-middleman-dylib.md)\n",
+      "domain": "core-runtime",
+      "effort": "L",
+      "id": "BL-0016",
+      "labels": [
+        "coverage:design",
+        "domain:core-runtime",
+        "domain:tools",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0016: Author docs/design/core-runtime/codegen-pipeline.md",
+      "title_short": "Author docs/design/core-runtime/codegen-pipeline.md"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Specify skinning weight format\n\n### Context\n\n`animation/skeletal.md` references `BonePalette` as `Handle<GpuBuffer>` with no layout contract. The\n2026-04-12 review P2 #36 noted this leaves consumers to invent the layout.\n\n### Acceptance criteria\n\n- [ ] Skinning weight format documented in `skeletal.md`: `[u8; 4]` bone indices plus\n      quantized weights, palette layout, alignment.\n- [ ] Bone palette layout (matrix array, dual quaternion array) specified.\n- [ ] Companion `skeletal-test-cases.md` covers the weight format with concrete byte layouts.\n\n### Verification\n\nGPU skinning shaders (`skeletal-test-cases.md` benchmarks) read the documented byte layout without\nambiguity.\n\n### References\n\n- [docs/design/design-review.md P2 #36](../../design/design-review.md)\n- [docs/design/animation/skeletal.md](../../design/animation/skeletal.md)\n",
+      "domain": "animation",
+      "effort": "M",
+      "id": "BL-0017",
+      "labels": [
+        "coverage:design",
+        "domain:animation",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0017: Specify skinning weight format",
+      "title_short": "Specify skinning weight format"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Specify cloth constraint and fracture pattern formats\n\n### Context\n\n`physics/advanced.md` references cloth constraint types and fracture patterns by name without\nspecifying layouts. The 2026-04-12 review P2 #37 flagged this.\n\n### Acceptance criteria\n\n- [ ] Cloth constraint format documented: structural / shear / bending springs, pin\n      attachments, wind-coupling fields.\n- [ ] Fracture pattern format documented: pre-fractured chunk graph or runtime Voronoi\n      parameters.\n- [ ] Asset pipeline can import / bake both formats.\n- [ ] Companion `advanced-test-cases.md` covers both with concrete examples.\n\n### Verification\n\nA reader of `advanced.md` can construct a cloth or fracture asset without consulting the\nimplementation.\n\n### References\n\n- [docs/design/design-review.md P2 #37](../../design/design-review.md)\n- [docs/design/physics/advanced.md](../../design/physics/advanced.md)\n",
+      "domain": "physics",
+      "effort": "L",
+      "id": "BL-0018",
+      "labels": [
+        "coverage:design",
+        "domain:physics",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0018: Specify cloth constraint and fracture pattern formats",
+      "title_short": "Specify cloth constraint and fracture pattern formats"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Pick fluid solver variant (SPH / FLIP / Eulerian)\n\n### Context\n\n`physics/advanced.md` mentions fluid simulation but does not pick a solver. SPH (smoothed particle\nhydrodynamics), FLIP / PIC, and Eulerian grid solvers each have different trade-offs.\n\n### Acceptance criteria\n\n- [ ] `advanced.md` picks one solver variant and documents the trade-offs.\n- [ ] Solver parameters specified (particle count budgets, grid resolution, viscosity model).\n- [ ] Source citation included per `constraints.md` Documentation Standards.\n- [ ] Determinism contract specified (see BL-0021).\n\n### Verification\n\n`advanced.md` reads as a complete, citable design for fluid simulation.\n\n### References\n\n- [docs/design/design-review.md P2 #38](../../design/design-review.md)\n- [docs/design/physics/advanced.md](../../design/physics/advanced.md)\n",
+      "domain": "physics",
+      "effort": "M",
+      "id": "BL-0019",
+      "labels": [
+        "coverage:design",
+        "domain:physics",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0019: Pick fluid solver variant (SPH / FLIP / Eulerian)",
+      "title_short": "Pick fluid solver variant (SPH / FLIP / Eulerian)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Specify animation compression (ACL or equivalent)\n\n### Context\n\n`animation/skeletal.md` claims 10:1+ compression ratios but does not pick a format.\n[ACL](https://github.com/nfrechette/acl) is the de-facto open-source choice; alternatives include\ncustom quantization or Bitsquid-style.\n\n### Acceptance criteria\n\n- [ ] `skeletal.md` picks a compression format and cites the reference.\n- [ ] Target ratio (≥ 10:1) and quality bounds (per-bone error tolerance) specified.\n- [ ] Asset pipeline integration documented (offline compression at bake time).\n- [ ] Companion test cases include round-trip quality measurements.\n\n### Verification\n\nA clip baked through the pipeline meets the documented compression and quality targets.\n\n### References\n\n- [docs/design/design-review.md P2 #39](../../design/design-review.md)\n- [docs/design/animation/skeletal.md](../../design/animation/skeletal.md)\n",
+      "domain": "animation",
+      "effort": "M",
+      "id": "BL-0020",
+      "labels": [
+        "coverage:design",
+        "domain:animation",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0020: Specify animation compression (ACL or equivalent)",
+      "title_short": "Specify animation compression (ACL or equivalent)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Determinism contracts for animation, procedural, event-logs\n\n### Context\n\nThe 2026-04-12 review §3.4 / P2 #40 noted that physics has a determinism contract but animation\nstate-machine evaluation, procedural animation (IK, foot placement), and event-log threshold\nevaluation do not. Each subsystem claims determinism without specifying it.\n\n### Acceptance criteria\n\n- [ ] `animation/state-machine.md` documents determinism: tick order, RNG plumbing\n      (`GameTime.seed`), float-precision policy.\n- [ ] `animation/procedural.md` documents IK solver determinism (iteration count, tolerance).\n- [ ] `simulation/event-logs.md` documents threshold evaluation determinism (tie-breaking,\n      tick-stamp order).\n- [ ] All three reference SC-8 (`GameTime.seed` plumbing).\n\n### Verification\n\nReplaying a recorded session produces identical animation poses, identical procedural outputs, and\nidentical event-log threshold firings frame for frame.\n\n### References\n\n- [docs/design/design-review.md §3.4 / P2 #40](../../design/design-review.md)\n- [docs/design/integration/shared-conventions.md SC-8](../../design/integration/shared-conventions.md)\n",
+      "domain": "cross-cutting",
+      "effort": "M",
+      "id": "BL-0021",
+      "labels": [
+        "coverage:design",
+        "domain:cross-cutting",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0021: Determinism contracts for animation, procedural, event-logs",
+      "title_short": "Determinism contracts for animation, procedural, event-logs"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Specify QUIC stream multiplexing policy\n\n### Context\n\nPer [ADR-0010](../../decisions/adr/ADR-0010-quic-unified-transport.md), all networking rides QUIC.\nThe 2026-04-12 review P1 #23 noted the per-stream policy is unspecified: stream count, fairness,\nbackpressure, voice vs replication multiplexing.\n\n### Acceptance criteria\n\n- [ ] `networking/network-transport.md` specifies stream types: replication (per-channel),\n      RPC (per-call), voice (per-session), asset streaming.\n- [ ] Flow control policy per stream type: priorities, quota limits, fairness rules.\n- [ ] Backpressure handling: how stalls propagate, when to drop.\n- [ ] QUIC-over-TCP fallback path for restrictive firewalls.\n\n### Verification\n\nA sustained 500-client session with 30 Hz state replication plus voice plus asset streaming\nmaintains documented per-stream priorities under network stress.\n\n### References\n\n- [docs/design/design-review.md P1 #23](../../design/design-review.md)\n- [docs/design/networking/network-transport.md](../../design/networking/network-transport.md)\n- [ADR-0010 QUIC unified transport](../../decisions/adr/ADR-0010-quic-unified-transport.md)\n",
+      "domain": "networking",
+      "effort": "M",
+      "id": "BL-0022",
+      "labels": [
+        "coverage:design",
+        "domain:networking",
+        "p1",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P1",
+      "title": "BL-0022: Specify QUIC stream multiplexing policy",
+      "title_short": "Specify QUIC stream multiplexing policy"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Specify replication delta compression\n\n### Context\n\n`networking/network-transport.md` names delta compression for state replication but does not choose\nan algorithm. Bit-packing, RLE, and rkyv-diff are candidates.\n\n### Acceptance criteria\n\n- [ ] Delta algorithm chosen: field-level diffing or rkyv-style archive diff or bit-packing.\n- [ ] Baseline strategy documented (full snapshot every N frames, or first-tick baseline).\n- [ ] ACK mechanism specified (per-baseline ACKs, missing-ack retransmission).\n- [ ] Bandwidth target documented (≤ 100 KB/s per client at 30 Hz, 500-entity scene).\n\n### Verification\n\nA 500-entity 30 Hz benchmark consumes ≤ 100 KB/s per client.\n\n### References\n\n- [docs/design/design-review.md P1 #24](../../design/design-review.md)\n- [docs/requirements/networking/state-replication.md](../../requirements/networking/state-replication.md)\n- [docs/user-stories/networking/non-functional.md](../../user-stories/networking/non-functional.md)\n  US-8.NFR.2\n",
+      "domain": "networking",
+      "effort": "L",
+      "id": "BL-0023",
+      "labels": [
+        "coverage:design",
+        "domain:networking",
+        "p1",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P1",
+      "title": "BL-0023: Specify replication delta compression",
+      "title_short": "Specify replication delta compression"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Specify save schema versioning and migration\n\n### Context\n\n`game-framework/save-system.md` has `MigrationRegistry` declared but not specified. The 2026-04-12\nreview §3.7 / P1 #25 noted: stable GUID IDs, migration chain ordering, rollback on failure, autosave\nretention, and procedural-asset save handling are missing.\n\n### Acceptance criteria\n\n- [ ] Stable GUID IDs documented (per-component, per-asset).\n- [ ] Migration chain ordering: linear vs DAG, conflict policy.\n- [ ] Rollback-on-failure: save the original, write the new, swap atomically.\n- [ ] Autosave retention policy (keep N most recent, oldest evicted).\n- [ ] Procedural-asset save handling: serialize generation seeds, not generated artifacts.\n\n### Verification\n\nA save file written under v1 schema migrates cleanly to v2 with rollback test cases for\nmid-migration failure.\n\n### References\n\n- [docs/design/design-review.md §3.7 / P1 #25](../../design/design-review.md)\n- [docs/design/game-framework/save-system.md](../../design/game-framework/save-system.md)\n",
+      "domain": "game-framework",
+      "effort": "L",
+      "id": "BL-0024",
+      "labels": [
+        "coverage:design",
+        "domain:game-framework",
+        "p1",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P1",
+      "title": "BL-0024: Specify save schema versioning and migration",
+      "title_short": "Specify save schema versioning and migration"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Consolidate shader compilation into one service\n\n### Context\n\n`asset-processing.md`, `visual-editors.md`, and `build-deploy.md` each describe shader compilation\nindependently. The 2026-04-12 review P2 #55 recommended a single `ShaderCompiler` service in\n`harmonius_core` with the other docs becoming clients.\n\n### Acceptance criteria\n\n- [ ] New `core-runtime/shader-compiler.md` (or equivalent) defines the canonical service.\n- [ ] `asset-processing.md`, `visual-editors.md`, `build-deploy.md` reference the canonical\n      service.\n- [ ] No glslc subprocess invocation appears outside the canonical service.\n- [ ] Hot reload uses the same service.\n\n### Verification\n\n`grep -r 'glslc' docs/design/` shows references only inside the canonical service doc.\n\n### References\n\n- [docs/design/design-review.md P2 #55](../../design/design-review.md)\n- [ADR-0007 GLSL via glslc](../../decisions/adr/ADR-0007-glsl-shader-il-via-glslc.md)\n",
+      "domain": "tools",
+      "effort": "M",
+      "id": "BL-0025",
+      "labels": [
+        "coverage:design",
+        "domain:rendering",
+        "domain:tools",
+        "p2",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P2",
+      "title": "BL-0025: Consolidate shader compilation into one service",
+      "title_short": "Consolidate shader compilation into one service"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## `GameTime`, pause, and determinism for simulation primitives\n\n### Context\n\nThe 2026-04-12 review §3.4 / P1 #34 found that the four simulation primitives lack a unified time /\npause / determinism story:\n\n- Time-scale (slow-mo, pause, 0.5×) is not specified for grids or event logs.\n- Pause semantics are not unified — grids keep propagating unless callers stop calling.\n- Determinism seed plumbing is absent.\n\n### Acceptance criteria\n\n- [ ] `core-runtime/game-loop.md` defines `GameTime { tick: u64, elapsed_secs: f64,\n      time_scale: f32, paused: bool, seed: u64 }`.\n- [ ] All four simulation primitives consume `GameTime` for their tick advancement.\n- [ ] Pause semantics: when `paused`, primitives advance no state (callers respect the\n      flag).\n- [ ] Determinism seed flows through `GameTime.seed` per SC-8.\n- [ ] `canonical-owners.md` row for `GameTime` flips to `Owned`.\n\n### Verification\n\nPause toggles freeze grid propagation, timeline playback, and event-log threshold evaluation\nidentically. Replays with the same seed produce identical outputs.\n\n### References\n\n- [docs/design/design-review.md §3.4 / P1 #34](../../design/design-review.md)\n- [docs/design/integration/shared-conventions.md SC-8](../../design/integration/shared-conventions.md)\n",
+      "domain": "simulation",
+      "effort": "M",
+      "id": "BL-0026",
+      "labels": [
+        "coverage:design",
+        "domain:core-runtime",
+        "domain:simulation",
+        "p1",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P1",
+      "title": "BL-0026: GameTime, pause, and determinism for simulation primitives",
+      "title_short": "GameTime, pause, and determinism for simulation primitives"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Pick A* variant and nav-mesh parameters\n\n### Context\n\n`ai/navigation.md` mentions A* without specifying variant, heuristic, tie-breaker, or heap type.\nRecast-style nav-mesh generation has no citation or parameters.\n\n### Acceptance criteria\n\n- [ ] A* variant chosen (vanilla, Theta*, JPS) with heuristic and tie-breaker documented.\n- [ ] Heap type chosen (binary heap, Fibonacci, pairing) with rationale.\n- [ ] Nav-mesh generation: cell size, partition algorithm, filter thresholds, agent radius\n      handling, with Recast citation.\n- [ ] Companion test cases benchmark per-query latency against R-7.NFR.2 targets.\n\n### Verification\n\n500 A* queries per tick on a 50-tile NavMesh with p95 < 0.1 ms (R-7.NFR.2).\n\n### References\n\n- [docs/design/design-review.md P1 #22](../../design/design-review.md)\n- [docs/requirements/ai/navigation.md](../../requirements/ai/navigation.md)\n- [docs/requirements/ai/non-functional.md](../../requirements/ai/non-functional.md) R-7.NFR.2\n",
+      "domain": "ai",
+      "effort": "M",
+      "id": "BL-0027",
+      "labels": [
+        "coverage:design",
+        "domain:ai",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0027: Pick A* variant and nav-mesh parameters",
+      "title_short": "Pick A* variant and nav-mesh parameters"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Replication protocol for the four data primitives\n\n### Context\n\nThe 2026-04-12 review §3.3 noted that no network replication protocol exists for any of the four\ndata primitives (graphs, tables, attributes, containers). Authoritative state on the server cannot\nmirror to clients deterministically.\n\n### Acceptance criteria\n\n- [ ] `data-systems/composition.md` (or per-primitive docs) specifies the replication\n      contract for graphs, tables, attributes, containers.\n- [ ] Deterministic graph traversal documented for networked clients.\n- [ ] Author / authority / proxy roles named per primitive.\n- [ ] Companion test cases verify replication parity with the server-authoritative state.\n\n### Verification\n\nA networked test scene with all four primitives exhibits server / client state parity for 60\nseconds.\n\n### References\n\n- [docs/design/design-review.md §3.3](../../design/design-review.md#33-data-systems)\n- [docs/design/data-systems/composition.md](../../design/data-systems/composition.md)\n",
+      "domain": "data-systems",
+      "effort": "L",
+      "id": "BL-0028",
+      "labels": [
+        "coverage:design",
+        "domain:data-systems",
+        "domain:networking",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0028: Replication protocol for the four data primitives",
+      "title_short": "Replication protocol for the four data primitives"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Conflict-resolution spec for effects and containers\n\n### Context\n\nThe 2026-04-12 review §3.3 noted no conflict-resolution spec for simultaneous effect applications,\nsimultaneous threshold crossings, or failed mid-transaction container transfers.\n\n### Acceptance criteria\n\n- [ ] `attributes-effects.md` documents simultaneous-effect-application order and stack\n      composition rules.\n- [ ] Threshold-crossing tie-breaker rule specified.\n- [ ] `containers-slots.md` documents transactional transfer semantics: rollback policy,\n      partial-failure handling, atomicity guarantees.\n- [ ] Companion test cases cover each conflict scenario.\n\n### Verification\n\nConcurrent effect / container operations produce deterministic outcomes that match the documented\nrules.\n\n### References\n\n- [docs/design/design-review.md §3.3](../../design/design-review.md#33-data-systems)\n- [docs/design/data-systems/attributes-effects.md](../../design/data-systems/attributes-effects.md)\n- [docs/design/data-systems/containers-slots.md](../../design/data-systems/containers-slots.md)\n",
+      "domain": "data-systems",
+      "effort": "M",
+      "id": "BL-0029",
+      "labels": [
+        "coverage:design",
+        "domain:data-systems",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0029: Conflict-resolution spec for effects and containers",
+      "title_short": "Conflict-resolution spec for effects and containers"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Data tables full query and secondary-index API\n\n### Context\n\n`data-systems/data-tables.md` lacks a full query / secondary-index API: multi-column predicates,\nfiltered scans, joins, and indexed lookups. The 2026-04-12 review §3.3 flagged this as a gap that\nprevents authors from building inventory or quest queries efficiently.\n\n### Acceptance criteria\n\n- [ ] Query API documented: predicate combinators, multi-column filters, optional joins.\n- [ ] Secondary-index storage (sorted index per indexed column) documented.\n- [ ] `DefinitionAsset<T>` shared wrapper for definition-based components introduced.\n- [ ] Composition density performance profile (realistic RPG character / inventory scenarios)\n      documented.\n- [ ] Companion test cases cover query semantics and index maintenance.\n\n### Verification\n\nA 1 000-row crafting recipe table supports sub-millisecond multi-column predicate queries.\n\n### References\n\n- [docs/design/design-review.md §3.3 / P1 #33](../../design/design-review.md#33-data-systems)\n- [docs/design/data-systems/data-tables.md](../../design/data-systems/data-tables.md)\n",
+      "domain": "data-systems",
+      "effort": "M",
+      "id": "BL-0030",
+      "labels": [
+        "coverage:design",
+        "domain:data-systems",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0030: Data tables full query and secondary-index API",
+      "title_short": "Data tables full query and secondary-index API"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Grids vs BVH decision matrix\n\n### Context\n\nThe 2026-04-12 review §3.4 noted that the choice between `CellGrid` (uniform grid) and `BvhTree` for\nspatial queries is unstated. Subsystems pick whichever feels right.\n\n### Acceptance criteria\n\n- [ ] Decision matrix in `simulation/grids-volumes.md` or `core-runtime/spatial-index.md`:\n      when to use grid vs BVH (entity count, density, query type).\n- [ ] Cross-references from physics, AI, and audio integration docs that pick spatial\n      structures.\n\n### Verification\n\nA new subsystem author can pick the right spatial structure without consulting the team.\n\n### References\n\n- [docs/design/design-review.md §3.4](../../design/design-review.md#34-simulation)\n- [docs/design/core-runtime/spatial-index.md](../../design/core-runtime/spatial-index.md)\n",
+      "domain": "simulation",
+      "effort": "S",
+      "id": "BL-0031",
+      "labels": [
+        "coverage:design",
+        "domain:simulation",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0031: Grids vs BVH decision matrix",
+      "title_short": "Grids vs BVH decision matrix"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Canonical `AnimEvent` location\n\n### Context\n\n`AnimEvent` variants are listed per-consumer (audio, VFX, gameplay) instead of canonically in\n`animation/skeletal.md`. The 2026-04-12 review §3.8 flagged this.\n\n### Acceptance criteria\n\n- [ ] `animation/skeletal.md` defines the canonical `AnimEvent` enum with all variants.\n- [ ] Audio, VFX, and gameplay integration docs reference the canonical enum.\n- [ ] `canonical-owners.md` row for `AnimEvent` flips to `Owned`.\n\n### Verification\n\n`grep -rE 'enum AnimEvent' docs/design/` shows exactly one definition.\n\n### References\n\n- [docs/design/design-review.md §3.8](../../design/design-review.md#38-integration-layer)\n- [docs/design/animation/skeletal.md](../../design/animation/skeletal.md)\n",
+      "domain": "animation",
+      "effort": "S",
+      "id": "BL-0032",
+      "labels": [
+        "coverage:design",
+        "domain:animation",
+        "p2",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P2",
+      "title": "BL-0032: Canonical AnimEvent location",
+      "title_short": "Canonical AnimEvent location"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Adopt single channel-capacity formula in capacities doc\n\n### Context\n\n`shared-messaging-capacities.md` exists but per-pair docs assert capacities (64, 128, 256, 1024,\n4096) without referencing the formula `Capacity = producers × burst × safety_margin` (SC-7). This is\nan OKR-2 KR-2.4 contributor.\n\n### Acceptance criteria\n\n- [ ] Every pair doc that names a numeric capacity references the SC-7 formula and the\n      table entry in `shared-messaging-capacities.md`.\n- [ ] Pair docs missing FM-N fallback labels (SC-6) add them.\n- [ ] No pair doc redefines a capacity number; all flow from the table.\n\n### Verification\n\n`grep -rE '\\| 64 \\| ?$|\\| 128 \\| ?$|\\| 256 \\| ?$|\\| 1024 \\| ?$|\\| 4096 \\|' docs/design/integration/`\nshows references only via the shared table.\n\n### References\n\n- [docs/design/integration/shared-conventions.md SC-6 / SC-7](../../design/integration/shared-conventions.md)\n- [docs/design/integration/shared-messaging-capacities.md](../../design/integration/shared-messaging-capacities.md)\n",
+      "domain": "integration",
+      "effort": "S",
+      "id": "BL-0033",
+      "labels": [
+        "coverage:design",
+        "domain:integration",
+        "p3",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P3",
+      "title": "BL-0033: Adopt single channel-capacity formula in capacities doc",
+      "title_short": "Adopt single channel-capacity formula in capacities doc"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Deepen `tools/undo-redo.md`\n\n### Context\n\n`tools/undo-redo.md` exists but covers only the basic stack. The 2026-04-12 review §3.7 P2 #52\nrecommended adding memory budget, persistent history, network sync for collaborative undo, and gizmo\nselection coupling.\n\n### Acceptance criteria\n\n- [ ] Memory budget per session documented (cap, eviction policy).\n- [ ] Persistent history (across editor restarts) specified.\n- [ ] Network sync for collaborative undo specified (CRDT semantics).\n- [ ] Gizmo selection coupling documented (how transformations enter the undo stack).\n\n### Verification\n\nA 1-hour multi-user editing session retains undo history, respects the documented memory budget, and\nreconciles concurrent edits.\n\n### References\n\n- [docs/design/design-review.md §3.7 / P2 #52](../../design/design-review.md)\n- [docs/design/tools/undo-redo.md](../../design/tools/undo-redo.md)\n",
+      "domain": "tools",
+      "effort": "M",
+      "id": "BL-0034",
+      "labels": [
+        "coverage:design",
+        "domain:tools",
+        "p3",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P3",
+      "title": "BL-0034: Deepen tools/undo-redo.md",
+      "title_short": "Deepen tools/undo-redo.md"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Add IME support spec to `input.md`\n\n### Context\n\n`input/input.md` has no IME story. CJK text input is broken without IME composition events.\nPer-platform IME APIs (TSF on Windows, NSTextInputContext on macOS, IBus on Linux) need abstraction.\n\n### Acceptance criteria\n\n- [ ] IME composition state model documented (preedit, candidates, commit).\n- [ ] Per-platform mapping documented (TSF / NSTextInputContext / IBus / Wayland\n      text-input-v3).\n- [ ] UI integration: text widgets receive composition + commit events.\n- [ ] Test cases cover Japanese, Korean, and Chinese IME flows.\n\n### Verification\n\nA text widget accepts Japanese input via Microsoft IME, macOS Hiragana, and Linux ibus without\ndropped composition.\n\n### References\n\n- [docs/design/design-review.md §3.6 / P2 #57](../../design/design-review.md#36-ai--audio--input--ui--networking)\n- [docs/design/input/input.md](../../design/input/input.md)\n",
+      "domain": "input",
+      "effort": "M",
+      "id": "BL-0035",
+      "labels": [
+        "coverage:design",
+        "domain:input",
+        "p3",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P3",
+      "title": "BL-0035: Add IME support spec to input.md",
+      "title_short": "Add IME support spec to input.md"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Specify audio ducking (voice > SFX > music)\n\n### Context\n\n`audio/audio.md` has no ducking spec. Industry standard is voice > SFX > music ducking with\nconfigurable thresholds.\n\n### Acceptance criteria\n\n- [ ] Ducking algorithm documented: priority levels, attack / release times, threshold\n      configuration.\n- [ ] Per-source priority enum exposed.\n- [ ] Cross-references to mixer graph in `audio.md` and audio integration docs.\n\n### Verification\n\nConcurrent voice + SFX + music produces audible ducking matching the documented thresholds.\n\n### References\n\n- [docs/design/design-review.md §3.6 / P2 #57](../../design/design-review.md#36-ai--audio--input--ui--networking)\n- [docs/design/audio/audio.md](../../design/audio/audio.md)\n",
+      "domain": "audio",
+      "effort": "S",
+      "id": "BL-0036",
+      "labels": [
+        "coverage:design",
+        "domain:audio",
+        "p3",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P3",
+      "title": "BL-0036: Specify audio ducking (voice > SFX > music)",
+      "title_short": "Specify audio ducking (voice > SFX > music)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Specify HRTF SOFA profile loading\n\n### Context\n\n`audio/audio.md` mentions HRTF spatialization but does not document SOFA (Spatially Oriented Format\nfor Acoustics) profile loading.\n\n### Acceptance criteria\n\n- [ ] SOFA loader documented (file format parsing, error handling, fallback).\n- [ ] Profile-switching behavior at runtime documented.\n- [ ] Asset pipeline integration: SOFA files become engine assets via the asset pipeline.\n\n### Verification\n\nLoading a SOFA file from disk produces correct head-related impulse responses; switching profiles at\nruntime causes no audio glitches.\n\n### References\n\n- [docs/design/design-review.md §3.6 / P2 #57](../../design/design-review.md#36-ai--audio--input--ui--networking)\n- [docs/design/audio/audio.md](../../design/audio/audio.md)\n",
+      "domain": "audio",
+      "effort": "S",
+      "id": "BL-0037",
+      "labels": [
+        "coverage:design",
+        "domain:audio",
+        "p3",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P3",
+      "title": "BL-0037: Specify HRTF SOFA profile loading",
+      "title_short": "Specify HRTF SOFA profile loading"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Complete anti-cheat surface (input, teleport, reconciliation)\n\n### Context\n\nThe 2026-04-12 review §3.6 found anti-cheat partial: movement and damage validators exist, but input\nvalidation, teleport detection thresholds, and reconciliation bounds are missing.\n\n### Acceptance criteria\n\n- [ ] Input validation: per-action rate limits, per-frame action caps.\n- [ ] Teleport detection: position-delta thresholds, server reconcile distance bounds.\n- [ ] Reconciliation bounds: maximum client / server divergence before snap.\n- [ ] Companion test cases include adversarial scenarios.\n\n### Verification\n\nAdversarial test scenarios (high-rate input, teleport, drift) trigger documented mitigations without\nfalse positives in normal play.\n\n### References\n\n- [docs/design/design-review.md §3.6](../../design/design-review.md#36-ai--audio--input--ui--networking)\n- [docs/design/networking/network-services.md](../../design/networking/network-services.md)\n- [docs/user-stories/networking/non-functional.md](../../user-stories/networking/non-functional.md)\n  US-8.NFR.7\n",
+      "domain": "networking",
+      "effort": "M",
+      "id": "BL-0038",
+      "labels": [
+        "coverage:design",
+        "domain:networking",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0038: Complete anti-cheat surface (input, teleport, reconciliation)",
+      "title_short": "Complete anti-cheat surface (input, teleport, reconciliation)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Define WCAG compliance test plan\n\n### Context\n\nThe 2026-04-12 review §3.6 noted WCAG compliance is aspirational with no automated checks defined.\nAccessibility duplicates core UI event routing via `AccessibilityTree` instead of hooking into it.\n\n### Acceptance criteria\n\n- [ ] `ui/ui-framework.md` (or new `ui/accessibility.md`) documents the accessibility model:\n      hooks into core UI event routing rather than parallel structure.\n- [ ] WCAG 2.2 AA conformance tests listed: contrast ratios, keyboard navigation, focus\n      indicators, ARIA-equivalent semantic exposure to screen readers.\n- [ ] Automated accessibility check integration documented (axe-core equivalent or custom).\n- [ ] Companion test cases cover keyboard-only workflows.\n\n### Verification\n\nA keyboard-only walkthrough of an editor scene reaches every interactive element with visible focus\nindicators. Screen reader announces every label correctly.\n\n### References\n\n- [docs/design/design-review.md §3.6 / P2 #57](../../design/design-review.md#36-ai--audio--input--ui--networking)\n- [docs/design/ui/ui-framework.md](../../design/ui/ui-framework.md)\n",
+      "domain": "ui",
+      "effort": "M",
+      "id": "BL-0039",
+      "labels": [
+        "coverage:design",
+        "domain:ui",
+        "p3",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P3",
+      "title": "BL-0039: Define WCAG compliance test plan",
+      "title_short": "Define WCAG compliance test plan"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Drain residual async/await prose in design tree\n\n### Context\n\nThe 2026-04-12 review P0 #6 mostly closed the async-purge work for game-runtime code. Per\n[ADR-0004](../../decisions/adr/ADR-0004-no-async-in-engine.md), engine / editor / game server are\nsync. Backend services on Kubernetes may use Tokio.\n\nA grep for `async fn|\\.await|tokio::|Future<` across `docs/design/` still hits ~30 files, mostly in\nmigration-table prose, RF / TODO sections, or test expected outputs. This issue finishes that\ncleanup.\n\n### Acceptance criteria\n\n- [ ] All RF / TODO prose that says \"replace async with sync\" is either applied (and the\n      RF marked APPLIED) or moved to a backlog issue.\n- [ ] All migration-comparison tables are clearly labeled as historical.\n- [ ] `networking/network-infrastructure.md` (TiKV examples) is the only legitimate\n      async/await source in the design tree, scoped per ADR-0004 to backend services.\n\n### Verification\n\n`grep -rE 'async fn|\\.await|tokio::|Future<' docs/design/` returns hits only in\n`network-infrastructure.md`, the `constraints.md` prohibition text, the design-review status update,\nand explicitly-historical migration sections.\n\n### References\n\n- [ADR-0004 No async in engine](../../decisions/adr/ADR-0004-no-async-in-engine.md)\n- [docs/design/design-review.md P0 #6](../../design/design-review.md)\n- [docs/coverage/audits/2026-05-audit.md](../../coverage/audits/2026-05-audit.md)\n",
+      "domain": "cross-cutting",
+      "effort": "M",
+      "id": "BL-0040",
+      "labels": [
+        "coverage:design",
+        "domain:cross-cutting",
+        "p2",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P2",
+      "title": "BL-0040: Drain residual async/await prose in design tree",
+      "title_short": "Drain residual async/await prose in design tree"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Add Align / Separate / ObstacleAvoid / Hide / Interpose primitives\n\n### Context\n\n`ai/steering-crowds.md` is missing classic steering primitives (`Align`, `Separate`, `Cohesion`\noutside flocking, `ObstacleAvoid`, `Hide`, `Interpose`). The 2026-04-12 review §3.6 / P2 #57 flagged\nthis.\n\n### Acceptance criteria\n\n- [ ] Each primitive documented with input parameters and output force.\n- [ ] Composition rules documented (priority sums, weighted blends).\n- [ ] Companion test cases cover each primitive in isolation and in composition.\n\n### Verification\n\nA flock of 100 agents with composed primitives behaves consistently with the documented algorithms.\n\n### References\n\n- [docs/design/design-review.md §3.6 / P2 #57](../../design/design-review.md)\n- [docs/design/ai/steering-crowds.md](../../design/ai/steering-crowds.md)\n",
+      "domain": "ai",
+      "effort": "S",
+      "id": "BL-0041",
+      "labels": [
+        "coverage:design",
+        "domain:ai",
+        "p3",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P3",
+      "title": "BL-0041: Add Align / Separate / ObstacleAvoid / Hide / Interpose primitives",
+      "title_short": "Add Align / Separate / ObstacleAvoid / Hide / Interpose primitives"
+    },
+    {
+      "blocked_by": [
+        "BL-0014"
+      ],
+      "blocks": [],
+      "body": "## Adopt `FrameContext` across integration docs\n\n### Context\n\nAfter [BL-0014](BL-0014-frameworld-promote.md) declares the canonical `FrameContext` type,\nintegration docs must adopt it. Today, several integration docs reference `InterpAlpha` ad-hoc with\nslight variations (`profiler-game-loop.md`, `rendering-physics.md`, `timelines-camera.md`).\n\n### Acceptance criteria\n\n- [ ] Every integration doc that references frame index, interp alpha, game time, or seed\n      uses `FrameContext` by name.\n- [ ] Ad-hoc copies removed.\n- [ ] No new types in integration docs duplicate `FrameContext` fields.\n\n### Verification\n\n`grep -rE 'frame_index.*: u64|interp_alpha.*: f32' docs/design/integration/` shows only references\nto `FrameContext`, no redefinitions.\n\n### References\n\n- [docs/design/design-review.md P3 #67](../../design/design-review.md)\n- [BL-0014 FrameContext promote](BL-0014-frameworld-promote.md)\n",
+      "domain": "integration",
+      "effort": "M",
+      "id": "BL-0042",
+      "labels": [
+        "coverage:design",
+        "domain:integration",
+        "p2",
+        "status:triage",
+        "type:tech-debt"
+      ],
+      "priority": "P2",
+      "title": "BL-0042: Adopt FrameContext across integration docs",
+      "title_short": "Adopt FrameContext across integration docs"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Audit `architecture.md` Module Reference for parity\n\n### Context\n\nThe 2026-05-20 deslop pass refreshed `architecture.md` Module Reference. A second-pass audit should\nverify every design / requirement / feature / user-story file on disk has a row in the matching\ntables, and that no listed file is missing on disk.\n\n### Acceptance criteria\n\n- [ ] Every file under `docs/design/{domain}/` has a row in the corresponding architecture\n      Design Documents table.\n- [ ] Every file under `docs/requirements/{domain}/` has a row in the corresponding\n      Requirements table.\n- [ ] Every file under `docs/user-stories/{domain}/` has a row in the corresponding User\n      Stories table.\n- [ ] Every linked file in `architecture.md` exists on disk.\n- [ ] Audit findings recorded in `coverage/audits/2026-Q3-architecture-audit.md`.\n\n### Verification\n\nA diff between the architecture Module Reference and the filesystem shows zero discrepancies.\n\n### References\n\n- [docs/architecture.md](../../architecture.md)\n- [docs/coverage/index.md](../../coverage/index.md)\n",
+      "domain": "meta",
+      "effort": "M",
+      "id": "BL-0043",
+      "labels": [
+        "coverage:audit",
+        "domain:meta",
+        "p1",
+        "status:triage",
+        "type:doc"
+      ],
+      "priority": "P1",
+      "title": "BL-0043: Audit architecture.md Module Reference for parity",
+      "title_short": "Audit architecture.md Module Reference for parity"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Backfill thin requirement files (≤ 4 SHALL statements)\n\n### Context\n\nThe 2026-05 audit identified several requirement files with three or fewer `R-X.Y.Z` statements:\n`localization-editor.md` (3), `fog-of-war.md` (4), `animation/first-person.md` (4),\n`asset-import.md` (5). These are too thin to drive design or implementation.\n\n### Acceptance criteria\n\n- [ ] Each thin file expanded to at least eight `R-X.Y.Z` statements with Rationale and\n      Verification per the requirements folder rules.\n- [ ] User stories in the corresponding `user-stories/` files re-checked for matching\n      coverage.\n- [ ] `requirements/README.md` counts updated.\n\n### Verification\n\n`grep -c 'SHALL' docs/requirements/*/{localization-editor,fog-of-war,first-person,asset-import}.md`\nshows ≥ 8 each.\n\n### References\n\n- [docs/coverage/audits/2026-05-audit.md](../../coverage/audits/2026-05-audit.md)\n- [docs/requirements/AGENTS.md](../../requirements/AGENTS.md)\n",
+      "domain": "meta",
+      "effort": "L",
+      "id": "BL-0044",
+      "labels": [
+        "coverage:reqs",
+        "domain:meta",
+        "p2",
+        "status:triage",
+        "type:requirement"
+      ],
+      "priority": "P2",
+      "title": "BL-0044: Backfill thin requirement files (≤ 4 SHALL statements)",
+      "title_short": "Backfill thin requirement files (≤ 4 SHALL statements)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Backfill thin user-story files\n\n### Context\n\nThe 2026-05 audit identified user-story files with fewer than ten stories: `event-logs.md` (8),\n`ui-rendering.md` (7), `localization-editor.md` (6), `containers-slots.md` (10 borderline),\n`scripting.md` (8), `animation/first-person.md` (8).\n\n### Acceptance criteria\n\n- [ ] Each file expanded to at least 12 stories with persona references.\n- [ ] Stories follow the AGENTS rule: granular, \"As a … I want … so that …\".\n- [ ] No umbrella / parent compound stories (also see BL-0047).\n- [ ] `user-stories/README.md` counts updated.\n\n### Verification\n\nEach affected file has ≥ 12 numbered stories with persona table.\n\n### References\n\n- [docs/coverage/audits/2026-05-audit.md](../../coverage/audits/2026-05-audit.md)\n- [docs/user-stories/AGENTS.md](../../user-stories/AGENTS.md)\n",
+      "domain": "meta",
+      "effort": "L",
+      "id": "BL-0045",
+      "labels": [
+        "coverage:stories",
+        "domain:meta",
+        "p2",
+        "status:triage",
+        "type:user-story"
+      ],
+      "priority": "P2",
+      "title": "BL-0045: Backfill thin user-story files",
+      "title_short": "Backfill thin user-story files"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Apply `[game-specific]` tag consistently\n\n### Context\n\nPer `user-stories/AGENTS.md` rule 8, game-specific stories must carry the `[game-specific]` tag. The\n2026-05 audit found this tag applied inconsistently — mostly only in `game-framework/`. Many stories\nelsewhere are also game-specific (e.g., physics `vehicle-physics.md`, animation `first-person.md`\nmotion).\n\n### Acceptance criteria\n\n- [ ] Audit pass over all user-story files; tag every game-specific story.\n- [ ] Engine-primitive stories have no tag.\n- [ ] Audit recorded in `coverage/audits/`.\n\n### Verification\n\nA spot-check of 20 random stories shows correct tagging.\n\n### References\n\n- [docs/user-stories/AGENTS.md](../../user-stories/AGENTS.md) Rule 8\n- [docs/coverage/audits/2026-05-audit.md](../../coverage/audits/2026-05-audit.md)\n",
+      "domain": "meta",
+      "effort": "M",
+      "id": "BL-0046",
+      "labels": [
+        "coverage:audit",
+        "domain:meta",
+        "p3",
+        "status:triage",
+        "type:user-story"
+      ],
+      "priority": "P3",
+      "title": "BL-0046: Apply [game-specific] tag consistently",
+      "title_short": "Apply [game-specific] tag consistently"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Remove umbrella / parent compound stories\n\n### Context\n\nPer `user-stories/AGENTS.md` rule 3, each story is granular: 1 persona + 1 action + 1 use case + 1\nfeature. The 2026-05 audit found ~100 files with umbrella / parent rollup stories that combine\nmultiple actions or use cases.\n\n### Acceptance criteria\n\n- [ ] Each compound story split into granular stories or removed.\n- [ ] Verify no story uses words like \"various\" or \"multiple\" to combine actions.\n- [ ] `user-stories/README.md` counts updated.\n\n### Verification\n\nA grep for compound-story patterns (`,`-laden actions, \"and\" connectors) shows zero hits in\npost-cleanup story bodies.\n\n### References\n\n- [docs/user-stories/AGENTS.md](../../user-stories/AGENTS.md) Rule 3\n- [docs/coverage/audits/2026-05-audit.md](../../coverage/audits/2026-05-audit.md)\n",
+      "domain": "meta",
+      "effort": "M",
+      "id": "BL-0047",
+      "labels": [
+        "coverage:audit",
+        "domain:meta",
+        "p3",
+        "status:triage",
+        "type:user-story"
+      ],
+      "priority": "P3",
+      "title": "BL-0047: Remove umbrella / parent compound stories",
+      "title_short": "Remove umbrella / parent compound stories"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Sync `requirements` / `user-stories` / `features` README counts\n\n### Context\n\nEach of `requirements/README.md`, `user-stories/README.md`, `features/README.md` carries a Summary\ntable with files-per-domain and total counts. The 2026-05 audit found these tables drift from the\nfilesystem as files are added or removed.\n\nThe deslop pass updated some counts in passing (Core Runtime 9 → 11 files; AI 8 → 9; networking\nstory totals adjusted; rendering requirements +36 from gpu-runtime). A clean re-tally is still\nneeded.\n\n### Acceptance criteria\n\n- [ ] Programmatic recount of each domain's file count and SHALL / story / feature count.\n- [ ] All three README Summary tables match the filesystem to the unit.\n- [ ] Counts in `architecture.md` Design Summary verified.\n- [ ] Audit recorded in `coverage/audits/`.\n\n### Verification\n\nA diff script comparing README counts to filesystem counts shows zero discrepancies.\n\n### References\n\n- [docs/requirements/README.md](../../requirements/README.md)\n- [docs/user-stories/README.md](../../user-stories/README.md)\n- [docs/features/README.md](../../features/README.md)\n- [docs/architecture.md](../../architecture.md) Design Summary\n",
+      "domain": "meta",
+      "effort": "S",
+      "id": "BL-0048",
+      "labels": [
+        "coverage:audit",
+        "domain:meta",
+        "p2",
+        "status:triage",
+        "type:doc"
+      ],
+      "priority": "P2",
+      "title": "BL-0048: Sync requirements / user-stories / features README counts",
+      "title_short": "Sync requirements / user-stories / features README counts"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Reconcile plan frontmatter `status` with progress files\n\n### Context\n\nAll 141 plan body files carry `status: not_started` in their YAML frontmatter. Progress stubs report\n96 `code_complete`, 23 `started`, 12 `submitted`, 10 `not_started`. The deslop pass added\n[plans/AGENTS.md](../../plans/AGENTS.md) clarifying that progress files are the source of truth —\nbut the contradiction in the plan-body files still creates noise.\n\n### Acceptance criteria\n\n- [ ] Either: rewrite plan-body frontmatter to either drop `status` (intent only) or sync\n      with progress; pick one and apply uniformly.\n- [ ] Document the chosen approach in `plans/AGENTS.md`.\n- [ ] Coverage matrices read from progress files only.\n\n### Verification\n\nA spot-check of 20 random plans shows consistent frontmatter; no plan body claims `not_started`\nwhile its progress file says `code_complete`.\n\n### References\n\n- [docs/plans/AGENTS.md](../../plans/AGENTS.md) \"Status authority\"\n- [docs/plans/index.md](../../plans/index.md)\n",
+      "domain": "plans",
+      "effort": "L",
+      "id": "BL-0049",
+      "labels": [
+        "coverage:audit",
+        "domain:plans",
+        "p2",
+        "status:triage",
+        "type:plan"
+      ],
+      "priority": "P2",
+      "title": "BL-0049: Reconcile plan frontmatter status with progress files",
+      "title_short": "Reconcile plan frontmatter status with progress files"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Decompose audio domain into mid-level designs\n\n### Context\n\n`design/audio/` has only one file (`audio.md`) covering audio runtime, mixing, streaming, spatial\naudio, codecs, voice chat, and HRTF. The 2026-05 audit and the\n[design coverage roadmap](../../design/coverage-roadmap.md) propose splitting into:\n\n- `audio-runtime.md` — real-time mixer thread, command queue, lifecycle\n- `audio-mixing.md` — mixer graph, buses, ducking (BL-0036)\n- `audio-streaming.md` — file streaming, decoder, ring buffers\n- `audio-spatial.md` — HRTF (BL-0037), positional audio, occlusion\n- `audio-codecs.md` — supported codecs, profile loading\n\n### Acceptance criteria\n\n- [ ] Five new design docs replace the monolithic `audio.md`.\n- [ ] Each has a companion `*-test-cases.md`.\n- [ ] `architecture.md` Audio section updated to list all five.\n- [ ] Existing cross-references from integration docs updated.\n\n### Verification\n\n`audio.md` becomes a short overview file pointing at the five sub-docs; each sub-doc is\nself-contained and shorter than 1 000 lines.\n\n### References\n\n- [docs/design/coverage-roadmap.md](../../design/coverage-roadmap.md)\n- [docs/coverage/audits/2026-05-audit.md](../../coverage/audits/2026-05-audit.md)\n",
+      "domain": "audio",
+      "effort": "XL",
+      "id": "BL-0050",
+      "labels": [
+        "coverage:design",
+        "domain:audio",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0050: Decompose audio domain into mid-level designs",
+      "title_short": "Decompose audio domain into mid-level designs"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Decompose input domain into mid-level designs\n\n### Context\n\n`design/input/` has only one file (`input.md`) covering devices, action mapping, gestures, haptics,\nVR input, and IME (BL-0035). The 2026-05 audit and the\n[design coverage roadmap](../../design/coverage-roadmap.md) propose splitting into:\n\n- `input-devices.md` — keyboard, mouse, controller, touch device abstraction\n- `input-actions.md` — action mapping, contexts, runtime rebinding\n- `input-gestures.md` — touch gestures, multi-touch\n- `input-haptics.md` — rumble, force feedback\n- `input-ime.md` — IME composition / commit (BL-0035)\n\n### Acceptance criteria\n\n- [ ] Five new design docs replace the monolithic `input.md`.\n- [ ] Each has a companion `*-test-cases.md`.\n- [ ] `architecture.md` Input section updated.\n- [ ] Existing cross-references updated.\n\n### Verification\n\n`input.md` becomes a short overview pointing at the five sub-docs.\n\n### References\n\n- [docs/design/coverage-roadmap.md](../../design/coverage-roadmap.md)\n- [BL-0035 Input IME support](BL-0035-input-ime-support.md)\n",
+      "domain": "input",
+      "effort": "XL",
+      "id": "BL-0051",
+      "labels": [
+        "coverage:design",
+        "domain:input",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0051: Decompose input domain into mid-level designs",
+      "title_short": "Decompose input domain into mid-level designs"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Decompose UI domain (layout, rendering, accessibility)\n\n### Context\n\n`design/ui/` has only `ui-framework.md`. The 2026-05 audit and the\n[design coverage roadmap](../../design/coverage-roadmap.md) propose three new docs:\n\n- `ui-framework.md` (kept; trimmed) — widget framework, lifecycle, event routing\n- `ui-layout.md` — Flexbox-style or constraint-based layout engine\n- `ui-rendering.md` — text shaping, glyph atlas, batching, scissor, masking\n- `ui-accessibility.md` — WCAG plan (BL-0039), keyboard nav, screen reader\n\n### Acceptance criteria\n\n- [ ] Three new design docs alongside the trimmed `ui-framework.md`.\n- [ ] Each has a companion `*-test-cases.md`.\n- [ ] `architecture.md` UI section updated.\n\n### Verification\n\nA reader can compose a custom widget without consulting the framework code; each sub-doc is\nself-contained.\n\n### References\n\n- [docs/design/coverage-roadmap.md](../../design/coverage-roadmap.md)\n- [BL-0039 WCAG compliance](BL-0039-accessibility-wcag.md)\n",
+      "domain": "ui",
+      "effort": "XL",
+      "id": "BL-0052",
+      "labels": [
+        "coverage:design",
+        "domain:ui",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0052: Decompose UI domain (layout, rendering, accessibility)",
+      "title_short": "Decompose UI domain (layout, rendering, accessibility)"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Author attributes ↔ rendering integration\n\n### Context\n\nThe 2026-04-12 review §3.8 listed `attributes-rendering` as a missing integration pair. Attributes\n(health, status effects, buffs) drive rendering features (damage flash, status icons, debuff\noverlays). No integration doc currently specifies the contract.\n\n### Acceptance criteria\n\n- [ ] New `design/integration/attributes-effects-rendering.md` defines the contract.\n- [ ] Companion `*-test-cases.md`.\n- [ ] References `shared-conventions.md` SC-1..SC-14 per the integration template.\n\n### Verification\n\nA new attribute-driven shader effect (e.g., poison overlay) can be implemented by reading this\nsingle integration doc.\n\n### References\n\n- [docs/design/design-review.md §3.8](../../design/design-review.md#38-integration-layer)\n- [docs/design/integration/shared-conventions.md](../../design/integration/shared-conventions.md)\n",
+      "domain": "integration",
+      "effort": "M",
+      "id": "BL-0053",
+      "labels": [
+        "coverage:design",
+        "domain:integration",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0053: Author attributes ↔ rendering integration",
+      "title_short": "Author attributes ↔ rendering integration"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Author event-logs ↔ animation integration\n\n### Context\n\nThe 2026-04-12 review §3.8 listed `event-logs-animation` as a missing integration pair. Event logs\nfeed animation triggers (replay, AI memory animation, action history); no integration doc specifies\nthe contract.\n\n### Acceptance criteria\n\n- [ ] New `design/integration/event-logs-animation.md` defines the contract.\n- [ ] Companion `*-test-cases.md`.\n- [ ] References `shared-conventions.md` SC-1..SC-14.\n- [ ] `AnimEvent` references the canonical owner per BL-0032.\n\n### Verification\n\nA replay viewer can drive animation playback by reading event logs through this integration.\n\n### References\n\n- [docs/design/design-review.md §3.8](../../design/design-review.md#38-integration-layer)\n- [BL-0032 AnimEvent canonical](BL-0032-anim-event-canonical.md)\n",
+      "domain": "integration",
+      "effort": "M",
+      "id": "BL-0054",
+      "labels": [
+        "coverage:design",
+        "domain:integration",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0054: Author event-logs ↔ animation integration",
+      "title_short": "Author event-logs ↔ animation integration"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## Author vfx ↔ audio integration\n\n### Context\n\nThe 2026-04-12 review §3.8 listed `vfx-audio` as a missing integration pair. VFX events (explosions,\nimpacts, fire) drive audio playback; audio events (loud sounds) drive VFX (camera shake, particle\nbursts). No integration doc specifies the contract.\n\n### Acceptance criteria\n\n- [ ] New `design/integration/vfx-audio.md` defines the contract.\n- [ ] Companion `*-test-cases.md`.\n- [ ] References `shared-conventions.md` SC-1..SC-14.\n\n### Verification\n\nAn effect graph node that emits a sound and a sound event that emits VFX both compile and run\nend-to-end via this integration.\n\n### References\n\n- [docs/design/design-review.md §3.8](../../design/design-review.md#38-integration-layer)\n- [docs/design/integration/shared-conventions.md](../../design/integration/shared-conventions.md)\n",
+      "domain": "integration",
+      "effort": "M",
+      "id": "BL-0055",
+      "labels": [
+        "coverage:design",
+        "domain:integration",
+        "p2",
+        "status:triage",
+        "type:design"
+      ],
+      "priority": "P2",
+      "title": "BL-0055: Author vfx ↔ audio integration",
+      "title_short": "Author vfx ↔ audio integration"
+    }
+  ],
+  "labels": [
+    {
+      "color": "bfd4f2",
+      "description": "Audit-driven cleanup",
+      "name": "coverage:audit"
+    },
+    {
+      "color": "bfd4f2",
+      "description": "Closes a design-coverage gap",
+      "name": "coverage:design"
+    },
+    {
+      "color": "bfd4f2",
+      "description": "Closes a requirements-coverage gap",
+      "name": "coverage:reqs"
+    },
+    {
+      "color": "bfd4f2",
+      "description": "Closes a user-story coverage gap",
+      "name": "coverage:stories"
+    },
+    {
+      "color": "bfd4f2",
+      "description": "Closes a test-case coverage gap",
+      "name": "coverage:tests"
+    },
+    {
+      "color": "fef2c0",
+      "description": "AI domain",
+      "name": "domain:ai"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Animation domain",
+      "name": "domain:animation"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Audio domain",
+      "name": "domain:audio"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Business docs domain",
+      "name": "domain:business"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Content pipeline domain",
+      "name": "domain:content-pipeline"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Core runtime domain",
+      "name": "domain:core-runtime"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Cross-cutting requirements",
+      "name": "domain:cross-cutting"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Data systems domain",
+      "name": "domain:data-systems"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Decisions ADR/PDR domain",
+      "name": "domain:decisions"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Design-review backlog migration",
+      "name": "domain:design-review"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Game framework domain",
+      "name": "domain:game-framework"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Geometry domain",
+      "name": "domain:geometry"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Input domain",
+      "name": "domain:input"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Integration design pairs",
+      "name": "domain:integration"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Meta program (decisions, OKRs, backlog, coverage)",
+      "name": "domain:meta"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Networking domain",
+      "name": "domain:networking"
+    },
+    {
+      "color": "fef2c0",
+      "description": "OKRs program",
+      "name": "domain:okrs"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Physics domain",
+      "name": "domain:physics"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Plans / progress program",
+      "name": "domain:plans"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Platform domain",
+      "name": "domain:platform"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Rendering domain",
+      "name": "domain:rendering"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Simulation domain",
+      "name": "domain:simulation"
+    },
+    {
+      "color": "fef2c0",
+      "description": "Tools / Editor domain",
+      "name": "domain:tools"
+    },
+    {
+      "color": "fef2c0",
+      "description": "UI / 2D domain",
+      "name": "domain:ui"
+    },
+    {
+      "color": "fef2c0",
+      "description": "VFX domain",
+      "name": "domain:vfx"
+    },
+    {
+      "color": "c5def5",
+      "description": "New design doc with companion test-cases",
+      "name": "effort:l"
+    },
+    {
+      "color": "c5def5",
+      "description": "Multiple sections of one doc; small",
+      "name": "effort:m"
+    },
+    {
+      "color": "c5def5",
+      "description": "Single doc; one section; tiny",
+      "name": "effort:s"
+    },
+    {
+      "color": "c5def5",
+      "description": "Multi-doc refactor or coordinated cross-tree edits",
+      "name": "effort:xl"
+    },
+    {
+      "color": "b60205",
+      "description": "Blocks an in-flight ADR/release",
+      "name": "p0"
+    },
+    {
+      "color": "d93f0b",
+      "description": "Required for the current OKR cycle",
+      "name": "p1"
+    },
+    {
+      "color": "fbca04",
+      "description": "Required for the next OKR cycle",
+      "name": "p2"
+    },
+    {
+      "color": "c2e0c6",
+      "description": "Track only; do not staff",
+      "name": "p3"
+    },
+    {
+      "color": "d4c5f9",
+      "description": "Has unmet blocked_by issue(s)",
+      "name": "status:blocked"
+    },
+    {
+      "color": "c2e0c6",
+      "description": "Acceptance criteria met",
+      "name": "status:done"
+    },
+    {
+      "color": "fbca04",
+      "description": "Actively being worked",
+      "name": "status:in-progress"
+    },
+    {
+      "color": "0e8a16",
+      "description": "Sized; can be picked up",
+      "name": "status:ready"
+    },
+    {
+      "color": "1d76db",
+      "description": "Submitted for review",
+      "name": "status:review"
+    },
+    {
+      "color": "ededed",
+      "description": "Newly filed; not yet sized or scheduled",
+      "name": "status:triage"
+    },
+    {
+      "color": "5319e7",
+      "description": "Authoring or amending an Architecture Decision Record",
+      "name": "type:adr"
+    },
+    {
+      "color": "ee0701",
+      "description": "Documentation contradicts implementation or itself",
+      "name": "type:bug"
+    },
+    {
+      "color": "0075ca",
+      "description": "Design doc work",
+      "name": "type:design"
+    },
+    {
+      "color": "bfdadc",
+      "description": "Documentation update",
+      "name": "type:doc"
+    },
+    {
+      "color": "1d76db",
+      "description": "Feature index/spec changes",
+      "name": "type:feature"
+    },
+    {
+      "color": "5319e7",
+      "description": "OSS-stack, K8s, deployment, observability",
+      "name": "type:infra"
+    },
+    {
+      "color": "5319e7",
+      "description": "Authoring or amending a Product Decision Record",
+      "name": "type:pdr"
+    },
+    {
+      "color": "1d76db",
+      "description": "Implementation plan or progress changes",
+      "name": "type:plan"
+    },
+    {
+      "color": "0e8a16",
+      "description": "R-X.Y.Z creation, rewrite, or audit",
+      "name": "type:requirement"
+    },
+    {
+      "color": "fbca04",
+      "description": "Cleanup, deduplication, redundancy removal",
+      "name": "type:tech-debt"
+    },
+    {
+      "color": "0e8a16",
+      "description": "US-X.Y.Z creation, rewrite, or audit",
+      "name": "type:user-story"
+    }
+  ]
+}

@@ -1,14 +1,19 @@
 # Backlog Project Boards
 
-GitHub Projects model for the backlog. Boards are *views* over the issue set, not authoritative
-storage. The markdown files in [issues/](issues/) are the source of truth.
+GitHub Projects v2 is the home for backlog views. The board is created by
+[`scripts/seed-project.sh`](scripts/seed-project.sh) and configured manually for columns, swimlanes,
+and automation.
 
-## Boards
+## Board
 
 ### Engine Roadmap (primary)
 
-Single project that contains every backlog issue. Filtered, swimlaned, and grouped by the views
-below.
+Single GitHub Project under the repo owner that contains every `BL-*` issue. Filtered, swimlaned,
+and grouped by the views below. Created by:
+
+```bash
+bash docs/backlog/scripts/seed-project.sh
+```
 
 | Column          | Filter                              |
 |-----------------|-------------------------------------|
@@ -21,8 +26,8 @@ below.
 
 ### Foundation (sub-board)
 
-Filter: `domain:core-runtime` OR `domain:integration` OR `domain:meta`. Use this board for
-ADR/PDR/SC follow-up and canonical-owner cleanup. Driven by 2026-Q3 OKRs.
+Filter: `domain:core-runtime` OR `domain:integration` OR `domain:meta`. Use this view for ADR / PDR
+follow-up and canonical-owner cleanup. Driven by 2026-Q3 OKRs.
 
 ### Mid-level systems (sub-board)
 
@@ -54,7 +59,9 @@ Filter: any `coverage:*` label. Drives matrix completion and folder-rule audits.
 
 ## Automation
 
-These rules run on the GitHub project once the labels are mirrored:
+Automation is configured in the GitHub Projects UI (Workflows tab) or via the GraphQL API. The
+[`seed-project.sh`](scripts/seed-project.sh) script does the structural part only — the rules below
+are applied by hand on first setup.
 
 | Trigger                                          | Action                          |
 |--------------------------------------------------|---------------------------------|
@@ -63,24 +70,22 @@ These rules run on the GitHub project once the labels are mirrored:
 | Issue closes (`status:done`)                     | Move to Done column             |
 | Issue gets `status:blocked`                      | Move to Blocked column          |
 | New issue with no `status:*`                     | Move to Triage column           |
-| All `blocked_by` close                           | Suggest moving to `status:ready` |
+| All `blocked_by` close                           | Suggest moving to `status:ready`|
 
-Automation rules are advisory in this doc — the workflow plugin or a GitHub Actions workflow under
-`.github/workflows/` is the implementation venue and out of scope here.
+## Source-of-truth contract
 
-## Mirroring policy
+The Engine Roadmap board is a *view* over GitHub Issues, not authoritative storage. Issues
+themselves carry the canonical state ([`AGENTS.md`](AGENTS.md)).
 
-1. Each `BL-NNNN` markdown file maps to one GitHub issue with a stable title prefix
-   `BL-NNNN: …`.
-2. The markdown body is the canonical body. Light editorial differences in the GitHub
-   issue body are tolerated; substantive changes round-trip back to the markdown file.
-3. Closed GitHub issues set `status: done` in the markdown frontmatter.
-4. Re-opened GitHub issues revert to the prior status if known, or `triage` otherwise.
-5. Labels on the GitHub side track [labels.md](labels.md) verbatim.
+- Issue body changes flow through GitHub Issues, not the project board.
+- Status, priority, and effort live on issue labels, not project columns.
+- Project columns derive from labels via the automations above.
+- Re-running [`seed-project.sh`](scripts/seed-project.sh) is safe: missing items are
+  added, present items are not duplicated.
 
 ## Out of scope
 
-- Burndown charts and velocity targets — [docs/okrs/](../okrs/index.md) holds the
+- Burndown charts and velocity targets — [`docs/okrs/`](../okrs/index.md) holds the
   outcome targets.
 - Time tracking — not modeled.
-- Branch policy — see root [AGENTS.md](../../AGENTS.md).
+- Branch policy — see root [`AGENTS.md`](../../AGENTS.md).

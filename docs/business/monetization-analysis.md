@@ -302,7 +302,7 @@ The previous version of this section modeled per-user managed-hosting costs usin
 prices (RDS, ECS, S3, CloudFront, Lambda, DynamoDB). That model conflicts with the current OSS
 stack. A new per-user cost model rebased on Kubernetes node sizing plus the OSS bundle (TiKV,
 Garage, Pingora, Vector, Prometheus, Grafana, Loki) is tracked under
-[BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) and the
+[BL-0044](https://github.com/cjhowe-us/harmonius/issues?q=BL-0044) and the
 [2026-Q3 OKRs](../okrs/2026-q3.md). Until then, the published managed-hosting price ($29 / user /
 month) is the only canonical figure; underlying cost composition is treated as commercially
 sensitive.

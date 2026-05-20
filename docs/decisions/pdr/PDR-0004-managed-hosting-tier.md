@@ -49,7 +49,7 @@ SLA guarantees beyond the standard 99.9%.
 - Managed hosting is a deployment of the open-source Helm chart, not a separate codebase.
   Drift between hosted and self-host paths is forbidden.
 - Per-user cost model rebases on Kubernetes node sizing plus OSS bundle resource usage.
-  Tracked under [BL-0044](../../backlog/issues/BL-0044-thin-requirement-files.md) and the
+  Tracked under [BL-0044](https://github.com/cjhowe-us/harmonius/issues?q=BL-0044) and the
   [2026-Q3 OKRs](../../okrs/2026-q3.md).
 - Customer data export must be one command, exporting to the Helm-chart-compatible format so
   any customer can take their data elsewhere.

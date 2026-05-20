@@ -33,7 +33,7 @@ Owner: [`core-runtime/primitives.md`](core-runtime/primitives.md).
 | `GenerationalIndex`           | `core-runtime/primitives.md`           | Owned                 | —                                                             |
 | `SortedVecMap<K, V>`          | `core-runtime/primitives.md`           | Owned                 | —                                                             |
 | `RingBuffer<T, N>`            | `core-runtime/primitives.md`           | Owned                 | —                                                             |
-| `DirtyRegionSet`              | `core-runtime/primitives.md`           | Pending consolidation | [BL-0044](../backlog/issues/BL-0044-thin-requirement-files.md) |
+| `DirtyRegionSet`              | `core-runtime/primitives.md`           | Pending consolidation | [BL-0044](https://github.com/cjhowe-us/harmonius/issues?q=BL-0044) |
 | `DispatchTable<F>`            | `core-runtime/primitives.md`           | Owned                 | —                                                             |
 | `BudgetAllocator`             | `core-runtime/primitives.md`           | Owned                 | —                                                             |
 | `DeterministicRng`            | `core-runtime/primitives.md`           | Owned                 | —                                                             |
@@ -43,9 +43,9 @@ Owner: [`core-runtime/primitives.md`](core-runtime/primitives.md).
 
 | Type                          | Owner doc                                            | Status                  | Backlog                                                                  |
 |-------------------------------|------------------------------------------------------|-------------------------|--------------------------------------------------------------------------|
-| `UniformGrid<T>`              | `core-runtime/spatial-index.md`                      | Pending split-rename    | [BL-0004](../backlog/issues/BL-0004-uniformgrid-rename.md)               |
-| `CellGrid` (gameplay)         | `simulation/grids-volumes.md`                        | Pending split-rename    | [BL-0004](../backlog/issues/BL-0004-uniformgrid-rename.md)               |
-| `AoiGrid` (networking)        | `networking/network-transport.md`                    | Pending split-rename    | [BL-0004](../backlog/issues/BL-0004-uniformgrid-rename.md)               |
+| `UniformGrid<T>`              | `core-runtime/spatial-index.md`                      | Pending split-rename    | [BL-0004](https://github.com/cjhowe-us/harmonius/issues?q=BL-0004)               |
+| `CellGrid` (gameplay)         | `simulation/grids-volumes.md`                        | Pending split-rename    | [BL-0004](https://github.com/cjhowe-us/harmonius/issues?q=BL-0004)               |
+| `AoiGrid` (networking)        | `networking/network-transport.md`                    | Pending split-rename    | [BL-0004](https://github.com/cjhowe-us/harmonius/issues?q=BL-0004)               |
 | `BvhTree`                     | `core-runtime/spatial-index.md`                      | Owned                   | —                                                                        |
 | `PhysicsBvh`                  | `physics/foundation.md`                              | Owned                   | —                                                                        |
 | `SpatialIndex` trait          | `core-runtime/spatial-index.md`                      | Owned                   | —                                                                        |
@@ -84,7 +84,7 @@ Owner: [`core-runtime/error.md`](core-runtime/error.md).
 
 `CompileError` is currently defined in `error.md`, `game-loop.md`, `scripting.md`, and
 `algorithms.md`. The owner is `error.md`; remove the others. See
-[BL-0007](../backlog/issues/BL-0007-compileerror-single-owner.md).
+[BL-0007](https://github.com/cjhowe-us/harmonius/issues?q=BL-0007).
 
 ## Frame and time
 
@@ -99,8 +99,8 @@ Owner: [`core-runtime/error.md`](core-runtime/error.md).
 
 `FrameContext` and `GameTime` carry frame index, interpolation alpha, deterministic seed, pause
 flag, and budgets. Promoting these to canonical types removes ad-hoc copies in integration docs. See
-[BL-0014](../backlog/issues/BL-0014-frameworld-promote.md) and
-[BL-0026](../backlog/issues/BL-0026-game-time-pause-determinism.md).
+[BL-0014](https://github.com/cjhowe-us/harmonius/issues?q=BL-0014) and
+[BL-0026](https://github.com/cjhowe-us/harmonius/issues?q=BL-0026).
 
 ## Hot reload protocol
 
@@ -140,36 +140,36 @@ hot-reload triggering.
 
 | Type                       | Owner doc                                       | Status                 | Backlog                                                                  |
 |----------------------------|-------------------------------------------------|------------------------|--------------------------------------------------------------------------|
-| `ConditionExpr`            | `data-systems/composition.md`                   | Pending consolidation  | [BL-0005](../backlog/issues/BL-0005-conditionexpr-registry-scope.md)     |
-| `ConditionRegistry`        | `data-systems/composition.md`                   | Pending consolidation  | [BL-0005](../backlog/issues/BL-0005-conditionexpr-registry-scope.md)     |
-| `ModOp` / `ModifierOp`     | `core-runtime/primitives.md`                    | Pending consolidation  | [BL-0001](../backlog/issues/BL-0001-modop-unification.md)                |
+| `ConditionExpr`            | `data-systems/composition.md`                   | Pending consolidation  | [BL-0005](https://github.com/cjhowe-us/harmonius/issues?q=BL-0005)     |
+| `ConditionRegistry`        | `data-systems/composition.md`                   | Pending consolidation  | [BL-0005](https://github.com/cjhowe-us/harmonius/issues?q=BL-0005)     |
+| `ModOp` / `ModifierOp`     | `core-runtime/primitives.md`                    | Pending consolidation  | [BL-0001](https://github.com/cjhowe-us/harmonius/issues?q=BL-0001)                |
 | `NodeStatus` (generic)     | `data-systems/directed-graphs.md`               | Pending split-rename   | quest-specific `QuestNodeStatus` to live in game-specific code           |
-| `DefinitionAsset<T>`       | `data-systems/composition.md`                   | Pending creation       | [BL-0030](../backlog/issues/BL-0030-data-tables-query-api.md)            |
-| `BlackboardComponent`      | `core-runtime/ecs.md`                           | Pending consolidation  | [BL-0006](../backlog/issues/BL-0006-blackboard-as-component.md)          |
+| `DefinitionAsset<T>`       | `data-systems/composition.md`                   | Pending creation       | [BL-0030](https://github.com/cjhowe-us/harmonius/issues?q=BL-0030)            |
+| `BlackboardComponent`      | `core-runtime/ecs.md`                           | Pending consolidation  | [BL-0006](https://github.com/cjhowe-us/harmonius/issues?q=BL-0006)          |
 
 ## Rendering shared types
 
 | Type                       | Owner doc                                       | Status                 | Backlog                                                                  |
 |----------------------------|-------------------------------------------------|------------------------|--------------------------------------------------------------------------|
-| `Material`                 | `rendering/render-pipeline.md`                  | Pending creation       | [BL-0009](../backlog/issues/BL-0009-material-type-unification.md)        |
-| `ShadingModel`             | `rendering/rendering-core.md`                   | Pending consolidation  | [BL-0002](../backlog/issues/BL-0002-shadingmodel-rename.md)              |
+| `Material`                 | `rendering/render-pipeline.md`                  | Pending creation       | [BL-0009](https://github.com/cjhowe-us/harmonius/issues?q=BL-0009)        |
+| `ShadingModel`             | `rendering/rendering-core.md`                   | Pending consolidation  | [BL-0002](https://github.com/cjhowe-us/harmonius/issues?q=BL-0002)              |
 | `MaterialGraph`            | `rendering/render-styles.md`                    | Owned                  | —                                                                        |
-| `CompiledMaterial`         | `rendering/render-pipeline.md`                  | Pending creation       | [BL-0009](../backlog/issues/BL-0009-material-type-unification.md)        |
-| `MeshletAsset`             | `rendering/meshlets.md`                         | Pending creation       | [BL-0011](../backlog/issues/BL-0011-meshlet-asset-pipeline.md)           |
-| `PsoCache`                 | `rendering/pipeline-state-cache.md`             | Pending creation       | [BL-0010](../backlog/issues/BL-0010-pso-cache-design.md)                 |
-| `RenderLayerMask`          | `rendering/rendering-core.md`                   | Pending consolidation  | [BL-0012](../backlog/issues/BL-0012-2d-3d-render-graph-merge.md)         |
+| `CompiledMaterial`         | `rendering/render-pipeline.md`                  | Pending creation       | [BL-0009](https://github.com/cjhowe-us/harmonius/issues?q=BL-0009)        |
+| `MeshletAsset`             | `rendering/meshlets.md`                         | Pending creation       | [BL-0011](https://github.com/cjhowe-us/harmonius/issues?q=BL-0011)           |
+| `PsoCache`                 | `rendering/pipeline-state-cache.md`             | Pending creation       | [BL-0010](https://github.com/cjhowe-us/harmonius/issues?q=BL-0010)                 |
+| `RenderLayerMask`          | `rendering/rendering-core.md`                   | Pending consolidation  | [BL-0012](https://github.com/cjhowe-us/harmonius/issues?q=BL-0012)         |
 | `Camera2D`                 | `rendering/camera-rendering.md`                 | Owned                  | —                                                                        |
 | `CameraComponent`          | `game-framework/camera.md`                      | Owned                  | —                                                                        |
-| `Swapchain` (trait)        | `rendering/render-pipeline.md`                  | Pending creation       | [BL-0010](../backlog/issues/BL-0010-pso-cache-design.md) (related)       |
+| `Swapchain` (trait)        | `rendering/render-pipeline.md`                  | Pending creation       | [BL-0010](https://github.com/cjhowe-us/harmonius/issues?q=BL-0010) (related)       |
 
 ## Audio and networking shared types
 
 | Type                       | Owner doc                                       | Status                 | Backlog                                                                  |
 |----------------------------|-------------------------------------------------|------------------------|--------------------------------------------------------------------------|
-| `VoiceStream` (transport)  | `networking/network-services.md`                | Pending consolidation  | [BL-0003](../backlog/issues/BL-0003-voicestream-ownership.md)            |
-| `VoiceStream` (codec)      | `audio/audio.md`                                | Pending consolidation  | [BL-0003](../backlog/issues/BL-0003-voicestream-ownership.md)            |
+| `VoiceStream` (transport)  | `networking/network-services.md`                | Pending consolidation  | [BL-0003](https://github.com/cjhowe-us/harmonius/issues?q=BL-0003)            |
+| `VoiceStream` (codec)      | `audio/audio.md`                                | Pending consolidation  | [BL-0003](https://github.com/cjhowe-us/harmonius/issues?q=BL-0003)            |
 | `AudioCommand`             | `audio/audio.md`                                | Owned                  | —                                                                        |
-| `AnimEvent`                | `animation/skeletal.md`                         | Pending consolidation  | [BL-0032](../backlog/issues/BL-0032-anim-event-canonical.md)             |
+| `AnimEvent`                | `animation/skeletal.md`                         | Pending consolidation  | [BL-0032](https://github.com/cjhowe-us/harmonius/issues?q=BL-0032)             |
 | `AnimationLodTier`         | `animation/skeletal.md`                         | Owned                  | —                                                                        |
 
 ## Tooling and platform shared types

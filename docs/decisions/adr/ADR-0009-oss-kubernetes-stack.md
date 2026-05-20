@@ -49,7 +49,7 @@ managed hosting customers — same Helm chart, just running on EKS.
 - Observability stack is Vector + Loki + Prometheus + Grafana. CloudWatch is not used.
 - Console SDK builds run on shared build servers in customer-controlled clusters.
 - Per-user managed-hosting cost models that previously used AWS list pricing must be rebuilt on K8s
-  node sizing; tracked under [BL-0044](../../backlog/issues/BL-0044-thin-requirement-files.md) and
+  node sizing; tracked under [BL-0044](https://github.com/cjhowe-us/harmonius/issues?q=BL-0044) and
   [docs/okrs/2026-q3.md](../../okrs/2026-q3.md).
 
 ## Alternatives Considered

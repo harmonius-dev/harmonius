@@ -48,11 +48,11 @@ if convenient.
 - TLS is mandatory. Plaintext development connections require explicit deviation.
 - Voice chat shares the QUIC connection with state replication. Codec and spatialization live
   in audio; transport and stream multiplexing live in networking.
-  See [BL-0003](../../backlog/issues/BL-0003-voicestream-ownership.md) and
-  [BL-0022](../../backlog/issues/BL-0022-quic-stream-multiplexing.md).
+  See [BL-0003](https://github.com/cjhowe-us/harmonius/issues?q=BL-0003) and
+  [BL-0022](https://github.com/cjhowe-us/harmonius/issues?q=BL-0022).
 - Backwards compatibility with TCP-only firewalls requires QUIC-over-TCP fallback or an HTTPS
   proxy, both tracked under
-  [BL-0022](../../backlog/issues/BL-0022-quic-stream-multiplexing.md).
+  [BL-0022](https://github.com/cjhowe-us/harmonius/issues?q=BL-0022).
 
 ## Alternatives Considered
 
