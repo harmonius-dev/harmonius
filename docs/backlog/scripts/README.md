@@ -76,7 +76,21 @@ bash docs/backlog/scripts/seed-project.sh -n | head
 - Confirm the issue catalog at
   [`https://github.com/cjhowe-us/harmonius/issues?q=BL-`](https://github.com/cjhowe-us/harmonius/issues?q=BL-)
 - Confirm the project at the GitHub Projects tab on the repo owner.
-- Update [`../AGENTS.md`](../AGENTS.md) `Counts (snapshot)` if the seeded counts diverge.
+- Update [`../index.md`](../index.md) `Snapshot` table if the seeded counts diverge.
+
+### 2026-05-20 seed log
+
+Initial materialization on `cursor/deslop-docs-corpus-e306`:
+
+| Step                | Result                                                       |
+|---------------------|--------------------------------------------------------------|
+| `seed-labels.sh`    | 55 created, 0 updated                                        |
+| `seed-issues.sh`    | 55 created, 0 skipped                                        |
+| `seed-project.sh`   | Deferred — token lacked `project` and `read:project` scopes  |
+
+Re-running `seed-issues.sh` is now a no-op (all 55 titles match existing issues). Re-running
+`seed-labels.sh` updates color and description for any drift. `seed-project.sh` will run cleanly
+after `gh auth refresh -s project,read:project --hostname github.com`.
 
 ## Re-seeding
 

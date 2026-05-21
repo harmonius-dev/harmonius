@@ -10,14 +10,25 @@ taxonomy, [`projects.md`](projects.md) for the GitHub Projects board model, and
 
 ## Snapshot 2026-05-20
 
-| Status         | Count |
-|----------------|------:|
-| Seeded entries |    55 |
-| GitHub state   | run [`seed-issues.sh`](scripts/seed-issues.sh) to materialize |
+| Status                           | Count |
+|----------------------------------|------:|
+| Seed entries in `seed.json`      |    55 |
+| GitHub labels (canonical)        |    55 |
+| GitHub issues (live)             |    55 |
+| Engine Roadmap GitHub Project    | deferred (needs `project,read:project` scopes) |
 
-55 issues seeded into `seed.json` by the 2026-05 deslop pass. The scripts mirror them into GitHub.
-After mirror, refer to GitHub for live status. The
-[2026-05 audit](../coverage/audits/2026-05-audit.md) breaks down the seed by priority and domain.
+The 2026-05 deslop pass authored the 55 entries in `seed.json` and materialized them into GitHub via
+[`scripts/seed-labels.sh`](scripts/seed-labels.sh) and
+[`scripts/seed-issues.sh`](scripts/seed-issues.sh). All 55 issues exist with `BL-NNNN: …` titles and
+the labels listed in the seed. From this point on, **GitHub is the source of truth**; updates flow
+through GitHub directly.
+
+The Engine Roadmap GitHub Project is deferred until the operator's `gh` token includes `project` and
+`read:project` scopes. Run [`scripts/seed-project.sh`](scripts/seed-project.sh) after
+`gh auth refresh -s project,read:project --hostname github.com` completes.
+
+The [2026-05 audit](../coverage/audits/2026-05-audit.md) breaks down the seed by priority and
+domain.
 
 ## Filtered views (GitHub search URLs)
 
