@@ -2,7 +2,7 @@
 authors = ["Harmonius Contributors"]
 description = "Container, grid, stacking, socket, and transfer validation primitives"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "harmonius_containers"
 repository = "https://github.com/cjhowe-us/harmonius"
 rust-version = "1.80"

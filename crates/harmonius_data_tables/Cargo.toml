@@ -3,7 +3,7 @@ name = "harmonius_data_tables"
 version = "0.1.0"
 edition = "2021"
 description = "Schema-driven typed data tables for Harmonius gameplay data"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 
 [dependencies]
 bumpalo = "3.19.0"

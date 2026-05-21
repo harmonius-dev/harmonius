@@ -1,4 +1,5 @@
 [package]
+license = "Apache-2.0"
 description = "Binary, text, migration, and binary-companion serialization for Harmonius."
 edition = "2021"
 name = "harmonius_serialize"

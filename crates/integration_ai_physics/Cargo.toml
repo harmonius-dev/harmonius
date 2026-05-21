@@ -2,7 +2,7 @@
 authors = ["Harmonius Contributors"]
 description = "AI ↔ physics integration contracts and deterministic CPU test harness"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "integration_ai_physics"
 readme = "README.md"
 repository = "https://github.com/cjhowe-us/harmonius"

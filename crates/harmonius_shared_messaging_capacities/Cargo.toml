@@ -1,4 +1,5 @@
 [package]
+license = "Apache-2.0"
 edition = "2021"
 name = "harmonius_shared_messaging_capacities"
 rust-version = "1.85"

@@ -1,4 +1,5 @@
 [package]
+license = "Apache-2.0"
 edition = "2021"
 name = "harmonius_editor_core"
 rust-version = "1.85"

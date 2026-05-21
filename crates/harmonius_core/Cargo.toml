@@ -2,7 +2,7 @@
 authors = ["Harmonius Contributors"]
 description = "Core memory management and platform I/O primitives for Harmonius"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "harmonius_core"
 readme = "README.md"
 repository = "https://github.com/cjhowe-us/harmonius"

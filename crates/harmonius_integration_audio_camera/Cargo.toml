@@ -1,4 +1,5 @@
 [package]
+license = "Apache-2.0"
 edition = "2021"
 name = "harmonius_integration_audio_camera"
 rust-version = "1.85"

@@ -2,7 +2,7 @@
 authors = ["Harmonius Contributors"]
 description = "Editor ↔ animation integration types and failure-mode policy"
 edition = "2024"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "harmonius_integration_editor_animation"
 repository = "https://github.com/cjhowe-us/harmonius"
 rust-version = "1.85"

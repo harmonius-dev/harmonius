@@ -2,7 +2,7 @@
 authors = ["Harmonius Contributors"]
 description = "Deterministic math and render-queue helpers for the Harmonius rendering core."
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "harmonius_rendering_core"
 repository = "https://github.com/cjhowe-us/harmonius"
 rust-version = "1.74"
