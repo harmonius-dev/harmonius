@@ -1,0 +1,52 @@
+name: Sync project Status from issue labels
+
+# Triggers on every label change and on issue open/reopen so the project field
+# stays in sync regardless of which event first attaches a status:* label.
+on:
+  issues:
+    types: [labeled, unlabeled, opened, reopened]
+
+# GITHUB_TOKEN only needs read on contents/issues for the sync step.
+# issues:write is required for the failure notification step (gh issue create).
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync:
+    # Skip non-BL issues entirely; no GraphQL calls are made.
+    if: startsWith(github.event.issue.title, 'BL-')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Sync Status field
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
+          # Hard-coded IDs for Engine Roadmap project #3 (cjhowe-us).
+          # If the project is re-created, update these six values here and in
+          # the OPTION_ID table inside sync-project-status.sh.
+          # The correct IDs are printed at the end of seed-project.sh output.
+          PROJECT_ID: PVT_kwHOAb6er84BYVxM
+          STATUS_FIELD_ID: PVTSSF_lAHOAb6er84BYVxMzhTcUFo
+          ISSUE_NODE_ID: ${{ github.event.issue.node_id }}
+          LABELS: ${{ toJson(github.event.issue.labels.*.name) }}
+        run: bash .github/workflows/sync-project-status.sh
+
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ISSUE_NUM="${{ github.event.issue.number }}"
+          REPO="${{ github.repository }}"
+          RUN_URL="${{ github.server_url }}/$REPO"
+          RUN_URL="$RUN_URL/actions/runs/${{ github.run_id }}"
+          gh issue create \
+            --repo "$REPO" \
+            --title "sync-project-status failed on issue #$ISSUE_NUM" \
+            --body "Workflow run: $RUN_URL" \
+            --label "status:blocked" \
+            --label "domain:meta"
