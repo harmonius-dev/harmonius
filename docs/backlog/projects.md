@@ -51,41 +51,78 @@ Once views are created in the UI, these filters group the same set of items diff
 | Application        | `label:domain:game-framework`, `…tools`, `…content-pipeline`, `…platform`            |
 | Coverage and audits| any `label:coverage:*`                                                                |
 
-## Automation
+## Manual UI follow-up
 
-GitHub Projects v2 currently exposes the workflow listing and deletion mutations only. Enabling and
-editing built-in workflows requires the GitHub web UI on the **Workflows** tab of the project.
+GitHub does not expose mutations for enabling project workflows or creating views. Both must be
+configured once through the GitHub Projects web UI. Each item below has a deep link plus a short
+step list. Total time: ~5 minutes.
 
-Recommended one-time setup (each workflow takes one click in the UI):
+### Step 1 — Enable three workflows
 
-| Built-in workflow             | Configure to                                       |
-|-------------------------------|----------------------------------------------------|
-| `Item added to project`       | Set `Status` to `Triage`                           |
-| `Item closed`                 | Set `Status` to `Done`                             |
-| `Pull request merged`         | Set `Status` to `Done`                             |
-| `Auto-add sub-issues`         | Already enabled by default; leave on               |
+Open the project's Workflows tab: <https://github.com/users/cjhowe-us/projects/3/workflows>. Three
+of the six built-in workflows need configuring:
 
-Any further label-driven transitions (e.g. flipping `Status` based on `status:in-progress` labels)
-require either a custom GitHub Actions workflow under `.github/workflows/` or manual updates inside
-the project. Tracked as a future enhancement under OKR-4 / KR-4.5 follow-up — not blocking the
-present cycle.
+#### Item added to project — set `Status` to `Triage`
 
-## Views
+1. Open <https://github.com/users/cjhowe-us/projects/3/workflows/6>.
+2. Toggle **Status** at the top to **On**.
+3. Under **When**, leave `Item is added to project` selected.
+4. Under **Set value**, pick field `Status`, value `Triage`.
+5. Click **Save and turn on workflow**.
 
-Default view: *table* showing all 55 items with their fields. Recommended additional views to create
-in the UI:
+#### Item closed — set `Status` to `Done`
 
-| View name        | Layout | Group by   | Filter / sort                                  |
-|------------------|--------|------------|------------------------------------------------|
-| Roadmap          | Board  | `Status`   | swim-lane by `Priority`                         |
-| Foundation       | Board  | `Status`   | filter: `Foundation` sub-board (above)          |
-| Mid-level        | Board  | `Status`   | filter: `Mid-level systems` sub-board           |
-| Domain           | Board  | `Status`   | filter: `Domain systems` sub-board              |
-| Application      | Board  | `Status`   | filter: `Application` sub-board                 |
-| Coverage         | Table  | `Priority` | filter: any `coverage:*` label                   |
+1. Open <https://github.com/users/cjhowe-us/projects/3/workflows/1>.
+2. Toggle **Status** to **On**.
+3. Under **When**, leave `An item in the project is closed` selected.
+4. Under **Set value**, pick field `Status`, value `Done`.
+5. Click **Save and turn on workflow**.
 
-Creating views via the API is not yet supported. The `Roadmap` view in particular gives the column /
-swimlane experience documented above — three clicks in the UI to set up.
+#### Pull request merged — set `Status` to `Done`
+
+1. Open <https://github.com/users/cjhowe-us/projects/3/workflows/2>.
+2. Toggle **Status** to **On**.
+3. Under **When**, leave `A pull request in the project is merged` selected.
+4. Under **Set value**, pick field `Status`, value `Done`.
+5. Click **Save and turn on workflow**.
+
+The other three workflows can stay at their defaults: `Auto-close issue` (#3), `Auto-add sub-issues`
+(#4, already enabled), and `Pull request linked to issue` (#5).
+
+### Step 2 — Create the Roadmap view
+
+The canonical board view: columns by Status, swimlanes by Priority.
+
+1. Open <https://github.com/users/cjhowe-us/projects/3>.
+2. Click the **+** tab in the tab strip (right of the existing view tabs).
+3. Pick **Board** layout, then **Save**.
+4. Double-click the new tab header and rename it to `Roadmap`.
+5. Click the **down-arrow** on the `Roadmap` tab to open view options.
+6. **Group by** → `Status` (gives the six columns).
+7. **Slice by** → `Priority` (gives the swimlanes).
+8. The view auto-saves; the green `Saved` indicator confirms.
+
+### Step 3 (optional) — Sub-board views per domain
+
+Each sub-board is the Roadmap view with a label filter. Repeat Step 2 with a different filter for
+each row below.
+
+| View name           | Layout | Group by | Slice by | Filter (paste into the filter bar)                                                                        |
+|---------------------|--------|----------|----------|-----------------------------------------------------------------------------------------------------------|
+| Foundation          | Board  | Status   | Priority | `label:"domain:core-runtime","domain:integration","domain:meta"`                                          |
+| Mid-level systems   | Board  | Status   | Priority | `label:"domain:rendering","domain:physics","domain:geometry","domain:ui","domain:input"`                  |
+| Domain systems      | Board  | Status   | Priority | `label:"domain:ai","domain:animation","domain:audio","domain:networking","domain:vfx","domain:simulation","domain:data-systems"` |
+| Application         | Board  | Status   | Priority | `label:"domain:game-framework","domain:tools","domain:content-pipeline","domain:platform"`                |
+| Coverage and audits | Table  | Priority | —        | `label:"coverage:audit","coverage:design","coverage:reqs","coverage:stories","coverage:tests"`            |
+
+After creating each view, drag the tab into your preferred order in the tab strip.
+
+### Beyond the built-in workflows
+
+Label-driven transitions (e.g. flip `Status=In Progress` when an issue gets the `status:in-progress`
+label) are not part of the built-in workflows. If wanted, add a GitHub Actions workflow under
+`.github/workflows/` that listens for `issues.labeled` and calls `updateProjectV2ItemFieldValue`.
+Tracked as a future enhancement under OKR-4 / KR-4.5 follow-up — not blocking the present cycle.
 
 ## Source-of-truth contract
 
