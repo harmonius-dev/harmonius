@@ -6,11 +6,12 @@ on:
   issues:
     types: [labeled, unlabeled, opened, reopened]
 
-# GITHUB_TOKEN only needs read on contents/issues for the sync step.
-# issues:write is required for the failure notification step (gh issue create).
+# projects:write lets GITHUB_TOKEN call the Projects v2 GraphQL mutations.
+# issues:write is needed for the failure notification step (gh issue create).
 permissions:
   contents: read
   issues: write
+  projects: write
 
 jobs:
   sync:
@@ -24,7 +25,6 @@ jobs:
 
       - name: Sync Status field
         env:
-          GH_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
           # Hard-coded IDs for Engine Roadmap project #3 (cjhowe-us).
           # If the project is re-created, update these six values here and in
           # the OPTION_ID table inside sync-project-status.sh.
@@ -37,8 +37,6 @@ jobs:
 
       - name: Report failure
         if: failure()
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           ISSUE_NUM="${{ github.event.issue.number }}"
           REPO="${{ github.repository }}"
