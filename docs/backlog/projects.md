@@ -126,8 +126,8 @@ script [`sync-project-status.sh`](../../.github/workflows/sync-project-status.sh
 `gh api graphql` to call `updateProjectV2ItemFieldValue` whenever a `BL-*` issue gains or loses a
 `status:*` label. Tracked as BL-0056; ties into OKR-4 / KR-4.5.
 
-The workflow requires a fine-grained PAT stored as the `PROJECT_SYNC_TOKEN` repo secret (Issues:
-Read, Projects: Read and write). Rotate the token every 90 days.
+The workflow uses the `GITHUB_TOKEN` provided by GitHub Actions (`projects: write` permission
+declared in the workflow file). No extra secrets are required.
 
 ## Source-of-truth contract
 
