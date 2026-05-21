@@ -1,76 +1,91 @@
 # Backlog Project Boards
 
-GitHub Projects v2 is the home for backlog views. The board is created by
-[`scripts/seed-project.sh`](scripts/seed-project.sh) and configured manually for columns, swimlanes,
-and automation.
+GitHub Projects v2 is the home for backlog views. The Engine Roadmap project is created and
+populated by [`scripts/seed-project.sh`](scripts/seed-project.sh). Field configuration (`Status`,
+`Priority`) and per-item field values are applied by `seed-project.sh` via the GraphQL
+`updateProjectV2Field` and `updateProjectV2ItemFieldValue` mutations. View layout and workflow
+automation are the remaining GitHub-UI configuration steps because GitHub does not currently expose
+them through the GraphQL API.
 
 ## Board
 
 ### Engine Roadmap (primary)
 
-Single GitHub Project under the repo owner that contains every `BL-*` issue. Filtered, swimlaned,
-and grouped by the views below. Created by:
+Single GitHub Project (`#3` under `cjhowe-us`, <https://github.com/users/cjhowe-us/projects/3>) that
+contains every `BL-*` issue.
 
 ```bash
 bash docs/backlog/scripts/seed-project.sh
 ```
 
-| Column          | Filter                              |
-|-----------------|-------------------------------------|
-| Triage          | `status:triage`                     |
-| Ready           | `status:ready`                      |
-| In Progress     | `status:in-progress`                |
-| Review          | `status:review`                     |
-| Blocked         | `status:blocked`                    |
-| Done            | `status:done` (collapsed by default) |
+The script creates the project (idempotent), links every `BL-*` issue, configures the `Status` field
+with the six column values, creates the `Priority` field, and sets `Status=Triage` plus
+`Priority=PN` on every item from the issue's labels.
 
-### Foundation (sub-board)
+### Status field (column model)
 
-Filter: `domain:core-runtime` OR `domain:integration` OR `domain:meta`. Use this view for ADR / PDR
-follow-up and canonical-owner cleanup. Driven by 2026-Q3 OKRs.
+The `Status` field's six options correspond to the project board columns:
 
-### Mid-level systems (sub-board)
+| Column      | Color  | Description                                  |
+|-------------|--------|----------------------------------------------|
+| Triage      | Gray   | Newly filed; not yet sized or scheduled       |
+| Ready       | Green  | Sized; can be picked up                       |
+| In Progress | Yellow | Actively being worked                         |
+| Review      | Blue   | Submitted for review                          |
+| Blocked     | Purple | Has unmet `blocked_by`                        |
+| Done        | Green  | Acceptance criteria met                       |
 
-Filter: `domain:rendering` OR `domain:physics` OR `domain:geometry` OR `domain:ui` OR
-`domain:input`. Drives the mid/low-level design coverage roadmap.
+### Priority field (swimlane model)
 
-### Domain systems (sub-board)
+Single-select with options `P0`, `P1`, `P2`, `P3`. Used for swim-laning views.
 
-Filter: `domain:ai` OR `domain:animation` OR `domain:audio` OR `domain:networking` OR `domain:vfx`
-OR `domain:simulation` OR `domain:data-systems`. Per-domain feature work.
+### Sub-board filters (configured per view via the GitHub UI)
 
-### Application (sub-board)
+Once views are created in the UI, these filters group the same set of items differently.
 
-Filter: `domain:game-framework` OR `domain:tools` OR `domain:content-pipeline` OR `domain:platform`.
-Editor, save, and shipping concerns.
-
-### Coverage and audits (sub-board)
-
-Filter: any `coverage:*` label. Drives matrix completion and folder-rule audits.
-
-## Swimlanes (in any board)
-
-| Swimlane | Filter      |
-|----------|-------------|
-| P0       | `p0`        |
-| P1       | `p1`        |
-| P2       | `p2`        |
-| P3       | `p3`        |
+| Sub-board          | Filter                                                                                |
+|--------------------|---------------------------------------------------------------------------------------|
+| Foundation         | `label:domain:core-runtime` OR `label:domain:integration` OR `label:domain:meta`     |
+| Mid-level systems  | `label:domain:rendering`, `…physics`, `…geometry`, `…ui`, `…input`                   |
+| Domain systems     | `label:domain:ai`, `…animation`, `…audio`, `…networking`, `…vfx`, `…simulation`, `…data-systems` |
+| Application        | `label:domain:game-framework`, `…tools`, `…content-pipeline`, `…platform`            |
+| Coverage and audits| any `label:coverage:*`                                                                |
 
 ## Automation
 
-Automation is configured in the GitHub Projects UI (Workflows tab) or via the GraphQL API. The
-[`seed-project.sh`](scripts/seed-project.sh) script does the structural part only — the rules below
-are applied by hand on first setup.
+GitHub Projects v2 currently exposes the workflow listing and deletion mutations only. Enabling and
+editing built-in workflows requires the GitHub web UI on the **Workflows** tab of the project.
 
-| Trigger                                          | Action                          |
-|--------------------------------------------------|---------------------------------|
-| Issue gets `status:in-progress`                  | Move to In Progress column      |
-| Issue gets `status:review`                       | Move to Review column           |
-| Issue closes (`status:done`)                     | Move to Done column             |
-| Issue gets `status:blocked`                      | Move to Blocked column          |
-| New issue with no `status:*`                     | Move to Triage column           |
-| All `blocked_by` close                           | Suggest moving to `status:ready`|
+Recommended one-time setup (each workflow takes one click in the UI):
+
+| Built-in workflow             | Configure to                                       |
+|-------------------------------|----------------------------------------------------|
+| `Item added to project`       | Set `Status` to `Triage`                           |
+| `Item closed`                 | Set `Status` to `Done`                             |
+| `Pull request merged`         | Set `Status` to `Done`                             |
+| `Auto-add sub-issues`         | Already enabled by default; leave on               |
+
+Any further label-driven transitions (e.g. flipping `Status` based on `status:in-progress` labels)
+require either a custom GitHub Actions workflow under `.github/workflows/` or manual updates inside
+the project. Tracked as a future enhancement under OKR-4 / KR-4.5 follow-up — not blocking the
+present cycle.
+
+## Views
+
+Default view: *table* showing all 55 items with their fields. Recommended additional views to create
+in the UI:
+
+| View name        | Layout | Group by   | Filter / sort                                  |
+|------------------|--------|------------|------------------------------------------------|
+| Roadmap          | Board  | `Status`   | swim-lane by `Priority`                         |
+| Foundation       | Board  | `Status`   | filter: `Foundation` sub-board (above)          |
+| Mid-level        | Board  | `Status`   | filter: `Mid-level systems` sub-board           |
+| Domain           | Board  | `Status`   | filter: `Domain systems` sub-board              |
+| Application      | Board  | `Status`   | filter: `Application` sub-board                 |
+| Coverage         | Table  | `Priority` | filter: any `coverage:*` label                   |
+
+Creating views via the API is not yet supported. The `Roadmap` view in particular gives the column /
+swimlane experience documented above — three clicks in the UI to set up.
 
 ## Source-of-truth contract
 
@@ -78,8 +93,9 @@ The Engine Roadmap board is a *view* over GitHub Issues, not authoritative stora
 themselves carry the canonical state ([`AGENTS.md`](AGENTS.md)).
 
 - Issue body changes flow through GitHub Issues, not the project board.
-- Status, priority, and effort live on issue labels, not project columns.
-- Project columns derive from labels via the automations above.
+- Status, priority, and effort live on issue labels (canonical) and on project fields
+  (mirror).
+- Project columns derive from the `Status` field. Project swimlanes derive from `Priority`.
 - Re-running [`seed-project.sh`](scripts/seed-project.sh) is safe: missing items are
   added, present items are not duplicated.
 
