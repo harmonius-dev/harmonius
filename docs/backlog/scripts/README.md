@@ -86,11 +86,10 @@ Initial materialization on `cursor/deslop-docs-corpus-e306`:
 |---------------------|--------------------------------------------------------------|
 | `seed-labels.sh`    | 55 created, 0 updated                                        |
 | `seed-issues.sh`    | 55 created, 0 skipped                                        |
-| `seed-project.sh`   | Deferred — token lacked `project` and `read:project` scopes  |
+| `seed-project.sh`   | Engine Roadmap project #3 created, 55 items linked           |
 
-Re-running `seed-issues.sh` is now a no-op (all 55 titles match existing issues). Re-running
-`seed-labels.sh` updates color and description for any drift. `seed-project.sh` will run cleanly
-after `gh auth refresh -s project,read:project --hostname github.com`.
+Re-running any script is now a no-op for the catalog (titles match existing issues, labels match by
+name, items already linked to the project). Updates flow through GitHub directly.
 
 ## Re-seeding
 

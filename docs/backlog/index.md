@@ -10,22 +10,21 @@ taxonomy, [`projects.md`](projects.md) for the GitHub Projects board model, and
 
 ## Snapshot 2026-05-20
 
-| Status                           | Count |
-|----------------------------------|------:|
-| Seed entries in `seed.json`      |    55 |
-| GitHub labels (canonical)        |    55 |
-| GitHub issues (live)             |    55 |
-| Engine Roadmap GitHub Project    | deferred (needs `project,read:project` scopes) |
+| Stage                                  | Count | Live at |
+|----------------------------------------|------:|---------|
+| Seed entries in `seed.json`            |    55 | [seed.json](seed.json) |
+| GitHub labels                          |    55 | <https://github.com/cjhowe-us/harmonius/labels> |
+| GitHub issues                          |    55 | <https://github.com/cjhowe-us/harmonius/issues?q=BL-+in%3Atitle> |
+| Engine Roadmap GitHub Project (#3)     |     1 | <https://github.com/users/cjhowe-us/projects/3> |
+| Project items                          |    55 | every BL-* issue linked to the board |
 
-The 2026-05 deslop pass authored the 55 entries in `seed.json` and materialized them into GitHub via
-[`scripts/seed-labels.sh`](scripts/seed-labels.sh) and
-[`scripts/seed-issues.sh`](scripts/seed-issues.sh). All 55 issues exist with `BL-NNNN: …` titles and
-the labels listed in the seed. From this point on, **GitHub is the source of truth**; updates flow
-through GitHub directly.
+The 2026-05 deslop pass authored the 55 entries in `seed.json` and materialized the full backlog
+(labels, issues, project board) via the three seed scripts. From this point on,
+**GitHub is the source of truth**; updates flow through GitHub directly.
 
-The Engine Roadmap GitHub Project is deferred until the operator's `gh` token includes `project` and
-`read:project` scopes. Run [`scripts/seed-project.sh`](scripts/seed-project.sh) after
-`gh auth refresh -s project,read:project --hostname github.com` completes.
+Manual configuration follow-up on the project board (per [`projects.md`](projects.md)): configure
+columns, swimlanes, and automation rules through the GitHub Projects UI. The structural part —
+project creation and item linking — is done.
 
 The [2026-05 audit](../coverage/audits/2026-05-audit.md) breaks down the seed by priority and
 domain.
