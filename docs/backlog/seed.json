@@ -1001,6 +1001,24 @@
       "priority": "P2",
       "title": "BL-0055: Author vfx ↔ audio integration",
       "title_short": "Author vfx ↔ audio integration"
+    },
+    {
+      "blocked_by": [],
+      "blocks": [],
+      "body": "## GitHub Actions workflow to sync project Status from issue labels\n\n### Context\n\nGitHub's built-in project workflows cover three transitions: item added → Triage,\nitem closed → Done, and PR merged → Done. Label-driven transitions\n(e.g. `status:in-progress` → Status: In Progress) are not covered. This issue\ntracks the Actions workflow that closes that gap by listening for `issues.labeled`\nevents on `BL-*` issues and calling `updateProjectV2ItemFieldValue`.\n\nTies into OKR-4 / KR-4.5 (Engine Roadmap project automation completeness).\n\n### Acceptance criteria\n\n- [ ] `.github/workflows/sync-project-status.yml` and\n      `.github/workflows/sync-project-status.sh` are merged to `main`.\n- [ ] `PROJECT_SYNC_TOKEN` repo secret is set (manual UI step; see Phase 1).\n- [ ] At least one green Actions run confirmed after labeling a `BL-*` issue.\n- [ ] `docs/backlog/projects.md` “Beyond the built-in workflows” section\n      references the new workflow.\n\n### Verification\n\nAdd `status:in-progress` to a `BL-*` issue in the Engine Roadmap project;\nthe Status field updates to In Progress within ~5 s. Remove the label; Status\nis unchanged (no-op, exit 0).\n\n### References\n\n- [docs/backlog/projects.md](projects.md)\n- [.github/workflows/sync-project-status.yml](../../../.github/workflows/sync-project-status.yml)\n- [docs/okrs/2026-q3.md](../../okrs/2026-q3.md) — OKR-4 KR-4.5\n",
+      "domain": "meta",
+      "effort": "M",
+      "id": "BL-0056",
+      "labels": [
+        "domain:meta",
+        "effort:m",
+        "p3",
+        "status:triage",
+        "type:infra"
+      ],
+      "priority": "P3",
+      "title": "BL-0056: GitHub Actions workflow to sync project Status from issue labels",
+      "title_short": "GitHub Actions workflow to sync project Status from issue labels"
     }
   ],
   "labels": [
