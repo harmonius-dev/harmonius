@@ -2,7 +2,7 @@
 authors = ["Harmonius"]
 description = "Animation–physics integration contracts (root motion, ragdoll data, clamps)."
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "harmonius_integration_animation_physics"
 repository = "https://github.com/cjhowe-us/harmonius"
 rust-version = "1.85"

@@ -1,7 +1,7 @@
 [package]
 description = "Directed graph primitives for Harmonius data systems"
 edition = "2024"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "harmonius_graph"
 repository = "https://github.com/cjhowe-us/harmonius"
 version = "0.1.0"

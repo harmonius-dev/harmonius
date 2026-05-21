@@ -1,4 +1,5 @@
 [package]
+license = "Apache-2.0"
 description = "Deterministic CPU-side procedural animation building blocks for Harmonius."
 edition = "2021"
 name = "harmonius_animation"

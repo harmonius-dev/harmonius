@@ -2,7 +2,7 @@
 authors = ["Harmonius Contributors"]
 description = "Containers/slots and rendering integration helpers (transforms, layers, snap hysteresis)"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "containers_slots_rendering"
 repository = "https://github.com/cjhowe-us/harmonius"
 rust-version = "1.80"

@@ -3,7 +3,7 @@ name = "net-physics"
 version = "0.1.0"
 edition = "2024"
 description = "Networking ↔ physics integration primitives (snapshots, rollback, interpolation)."
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 repository = "https://github.com/cjhowe/harmonius"
 
 [dependencies]

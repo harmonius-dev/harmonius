@@ -3,7 +3,7 @@ name = "harmonius_input"
 version = "0.1.0"
 edition = "2024"
 description = "Input device abstraction, action mapping, gestures, haptics, and VR input (PLAN-input-input)"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 
 [dependencies]
 glam = { version = "0.29", default-features = false, features = ["std"] }

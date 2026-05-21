@@ -2,7 +2,7 @@
 authors = ["Harmonius Contributors"]
 description = "Platform telemetry client: consent, buffering, batching, and schema catalog"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "platform-telemetry"
 readme = "README.md"
 repository = "https://github.com/cjhowe-us/harmonius"

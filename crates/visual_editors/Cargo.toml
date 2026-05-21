@@ -2,7 +2,7 @@
 authors = ["Harmonius Contributors"]
 description = "Visual editor graph IR, validation, and compilation helpers"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "visual_editors"
 version = "0.1.0"
 

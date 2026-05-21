@@ -1,7 +1,7 @@
 [package]
 description = "Localization runtime: baked tables, locale switching, and string lookup"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "harmonius_localization"
 readme = "README.md"
 version = "0.1.0"

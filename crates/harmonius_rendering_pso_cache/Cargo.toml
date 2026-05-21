@@ -1,4 +1,5 @@
 [package]
+license = "Apache-2.0"
 description = "Pipeline state object (PSO) cache structures for Harmonius rendering plans."
 edition = "2021"
 name = "harmonius_rendering_pso_cache"

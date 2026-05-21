@@ -3,7 +3,7 @@ name = "harmonius-integration-ai-data-tables"
 version = "0.1.0"
 edition = "2021"
 description = "AI behavior and data tables integration (IR-2.1.x)"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 repository = "https://github.com/cjhowe-us/harmonius"
 
 [dependencies]

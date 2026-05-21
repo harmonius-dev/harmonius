@@ -2,7 +2,7 @@
 authors = ["Harmonius Contributors"]
 description = "Integration contracts for AI perception and spatial awareness (IR-1.10.x)."
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 name = "harmonius-integration-ai-sa"
 repository = "https://github.com/cjhowe-us/harmonius"
 version = "0.1.0"
