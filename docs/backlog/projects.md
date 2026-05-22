@@ -126,8 +126,18 @@ script [`sync-project-status.sh`](../../.github/workflows/sync-project-status.sh
 `gh api graphql` to call `updateProjectV2ItemFieldValue` whenever a `BL-*` issue gains or loses a
 `status:*` label. Tracked as BL-0056; ties into OKR-4 / KR-4.5.
 
-The workflow uses the `GITHUB_TOKEN` provided by GitHub Actions (`projects: write` permission
-declared in the workflow file). No extra secrets are required.
+The workflow authenticates with a [GitHub App](https://github.com/organizations/harmonius-dev/settings/apps)
+named `harmonius-project-sync` (Organization → Projects: Read and write; Repository → Issues:
+Read; Repository → Metadata: Read). The App is installed on the `harmonius-dev` org, and the
+workflow uses [`actions/create-github-app-token`](https://github.com/actions/create-github-app-token)
+to mint a short-lived installation token at runtime. Two repo secrets supply the credentials:
+`HARMONIUS_PROJECT_APP_ID` (the numeric App ID) and `HARMONIUS_PROJECT_APP_PRIVATE_KEY` (the
+PEM contents downloaded when the App's private key was generated). Installation tokens expire
+in ~1 hour and require no manual rotation.
+
+`GITHUB_TOKEN` itself cannot grant Projects v2 access — there is no `projects` permission key
+in [the available `GITHUB_TOKEN` scopes](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#permissions),
+which is why the App-based path is required.
 
 ## Source-of-truth contract
 
