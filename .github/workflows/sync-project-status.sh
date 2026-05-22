@@ -4,23 +4,34 @@
 # Invoked by sync-project-status.yml on issue label events (labeled, unlabeled,
 # opened, reopened) for issues whose title starts with "BL-".
 #
-# Uses the GITHUB_TOKEN injected automatically by GitHub Actions (projects:write
-# permission declared in the workflow). No extra secrets are required.
-#
-# Environment variables injected by the workflow:
+# Required environment variables (injected by the workflow):
+#   GH_TOKEN        — GitHub App installation token from the
+#                     harmonius-project-sync App (Org:Projects:Read/Write,
+#                     Repo:Issues:Read). Minted by actions/create-github-app-token.
 #   PROJECT_ID      — node ID of the Engine Roadmap project v2
 #   STATUS_FIELD_ID — single-select field node ID for the "Status" field
 #   ISSUE_NODE_ID   — GitHub global node ID of the triggering issue
 #   LABELS          — JSON array of the issue's current label names
 #
-# Hard-coded option IDs match those emitted by seed-project.sh for project #3
-# (PVT_kwHOAb6er84BYVxM). If the project is re-created, update all six
-# OPTION_ID assignments below and the env block in sync-project-status.yml.
+# Hard-coded option IDs match those emitted by seed-project.sh. Status option
+# IDs are stable across project transfers (they survived the cjhowe-us →
+# harmonius-dev move), so only PROJECT_ID and STATUS_FIELD_ID in the workflow
+# env block need updating if the project is re-created.
 #
 # Priority tie-breaking: when an issue carries multiple status:* labels the
 # most-progressed one wins (done > review > blocked > in-progress > ready > triage).
 
 set -euo pipefail
+
+# Fail fast with a clear message when the token is absent. With App-based
+# auth this almost always means actions/create-github-app-token failed or the
+# HARMONIUS_PROJECT_APP_* secrets are missing.
+if [[ -z "${GH_TOKEN:-}" ]]; then
+  echo "ERROR: GH_TOKEN is not set. Check that the App installation token" \
+    "step succeeded and HARMONIUS_PROJECT_APP_ID +" \
+    "HARMONIUS_PROJECT_APP_PRIVATE_KEY repo secrets exist." >&2
+  exit 1
+fi
 
 # --- label → option ID lookup table ----------------------------------------
 declare -A OPTION_ID
