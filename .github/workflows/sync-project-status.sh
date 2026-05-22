@@ -4,10 +4,8 @@
 # Invoked by sync-project-status.yml on issue label events (labeled, unlabeled,
 # opened, reopened) for issues whose title starts with "BL-".
 #
-# Uses the GITHUB_TOKEN injected automatically by GitHub Actions (projects:write
-# permission declared in the workflow). No extra secrets are required.
-#
-# Environment variables injected by the workflow:
+# Required environment variables (injected by the workflow):
+#   GH_TOKEN        — fine-grained PAT with Issues:Read + Projects:Read/Write
 #   PROJECT_ID      — node ID of the Engine Roadmap project v2
 #   STATUS_FIELD_ID — single-select field node ID for the "Status" field
 #   ISSUE_NODE_ID   — GitHub global node ID of the triggering issue
@@ -21,6 +19,13 @@
 # most-progressed one wins (done > review > blocked > in-progress > ready > triage).
 
 set -euo pipefail
+
+# Fail fast with a clear message when the token secret is absent.
+if [[ -z "${GH_TOKEN:-}" ]]; then
+  echo "ERROR: GH_TOKEN is not set." \
+    "Add PROJECT_SYNC_TOKEN as a repo secret." >&2
+  exit 1
+fi
 
 # --- label → option ID lookup table ----------------------------------------
 declare -A OPTION_ID
