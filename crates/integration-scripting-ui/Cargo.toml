@@ -1,8 +1,0 @@
-[package]
-license = "Apache-2.0"
-edition = "2021"
-name = "integration-scripting-ui"
-version = "0.1.0"
-
-[lib]
-path = "src/lib.rs"

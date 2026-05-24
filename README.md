@@ -65,21 +65,7 @@ vendor lock-in.
   CLI
 - **Deterministic fixed timestep** — 30/60/120 fps tiers with rollback-friendly semantics for
   replays, netcode, and testing
-- **Per-frame performance budget** — per-subsystem and per-thread allocations documented in
-  [docs/design/performance-budget.md](docs/design/performance-budget.md)
 - **Pair-wise integration specs** — 50 subsystem-pair contracts define every cross-domain edge
-
-## Supported Platforms
-
-| OS | Graphics | I/O | GPU Assets | Status |
-|----|----------|-----|------------|--------|
-| macOS | Metal 4 | GCD dispatch_io | Metal I/O | Design |
-| Windows | Direct3D 12 | IOCP | DirectStorage | Design |
-| Linux | Vulkan 1.4 | io_uring | Staging buffer | Design |
-| iOS | Metal 4 | GCD dispatch_io | Metal I/O | Design |
-| Android | Vulkan 1.4 | io_uring | Staging buffer | Design |
-| Switch | Platform SDK | Platform SDK | Platform SDK | Planned |
-| Xbox | Direct3D 12 | Platform SDK | Platform SDK | Planned |
 
 ## Philosophy
 
@@ -108,49 +94,3 @@ one frame. Everything in concert.
    pay AWS directly, no vendor lock-in
 6. **Privacy-respecting AI** — cloud AI backends (Claude, Cursor, Copilot) use the customer's own
    API keys; engine is a thin client, never a proxy
-
-## Architecture
-
-15 subsystems across 6 layers. See [docs/architecture.md](docs/architecture.md) for clickable
-diagrams, frame data flow, and links to every design document, test case, feature, requirement, and
-user story per module.
-
-## Documentation
-
-| Directory | Contents |
-|-----------|----------|
-| [docs/architecture.md](docs/architecture.md) | Engine overview with Mermaid diagrams |
-| [docs/glossary.md](docs/glossary.md) | Harmonius-specific terminology |
-| [docs/design/](docs/design/) | Design documents with API pseudocode and test cases |
-| [docs/design/constraints.md](docs/design/constraints.md) | Project-wide design constraints |
-| [docs/design/performance-budget.md](docs/design/performance-budget.md) | Per-frame budgets |
-| [docs/design/integration/](docs/design/integration/) | Pair-wise subsystem integration specs |
-| [docs/features/](docs/features/) | Feature definitions organized by domain |
-| [docs/requirements/](docs/requirements/) | Functional and non-functional requirements |
-| [docs/user-stories/](docs/user-stories/) | User stories across personas |
-| [docs/business/](docs/business/) | Domain decomposition, GTM, monetization |
-
-### Reading Order
-
-For a complete picture, read in this order:
-
-1. **Orientation** — this README, then [architecture.md](docs/architecture.md) and
-   [glossary.md](docs/glossary.md)
-2. **Ground rules** — [constraints.md](docs/design/constraints.md) and
-   [performance-budget.md](docs/design/performance-budget.md)
-3. **Core runtime** — [core-runtime/](docs/design/core-runtime/): ECS, game loop, spatial index,
-   memory/IO, change detection, serialization
-4. **Platform & infrastructure** — [platform/](docs/design/platform/),
-   [rendering/](docs/design/rendering/), [physics/](docs/design/physics/),
-   [audio/](docs/design/audio/), [input/](docs/design/input/)
-5. **Generic primitives** — [data-systems/](docs/design/data-systems/) (graphs, tables, attributes,
-   containers) and [simulation/](docs/design/simulation/) (grids, awareness, timelines, events)
-6. **Domain systems** — [animation/](docs/design/animation/), [ai/](docs/design/ai/),
-   [vfx/](docs/design/vfx/), [ui/](docs/design/ui/), [networking/](docs/design/networking/)
-7. **Application layer** — [game-framework/](docs/design/game-framework/),
-   [tools/](docs/design/tools/), [content-pipeline/](docs/design/content-pipeline/)
-8. **Integration** — [high-level.md](docs/design/integration/high-level.md), then pair-wise specs
-   between subsystem pairs
-9. **Audits** — [design-review.md](docs/design/design-review.md); test-case coverage audit doc is
-   not in-tree yet (link removed for MD057).
-10. **Business** — [business/](docs/business/): domain decomposition, go-to-market, monetization

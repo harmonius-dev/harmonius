@@ -1,9 +1,0 @@
-[package]
-license = "Apache-2.0"
-edition = "2021"
-name = "integration_ui_physics"
-rust-version = "1.85"
-version = "0.1.0"
-
-[lib]
-path = "src/lib.rs"

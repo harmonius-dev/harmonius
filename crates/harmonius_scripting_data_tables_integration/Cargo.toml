@@ -1,9 +1,0 @@
-[package]
-license = "Apache-2.0"
-description = "Scripting ↔ data tables integration (IR-2.9.x)."
-edition = "2021"
-name = "harmonius_scripting_data_tables_integration"
-version = "0.1.0"
-
-[dependencies]
-rkyv = { version = "0.8.10", features = ["std"] }
