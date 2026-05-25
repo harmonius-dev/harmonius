@@ -1,31 +1,27 @@
 # HarmoniusSlang.cmake Low-level Slang shader compilation (.slang → .metallib)
-# for Ninja builds. Used internally by HarmoniusModule.cmake; may also be
-# called directly.
+# for Ninja builds. Used internally by HarmoniusModule.cmake; may also be called
+# directly.
 #
-# slangc is invoked once per slanglib target with `-target metallib`; it
-# shells out to xcrun metal / metallib internally and emits an Apple-loadable
+# slangc is invoked once per slanglib target with `-target metallib`; it shells
+# out to xcrun metal / metallib internally and emits an Apple-loadable
 # .metallib. Replaces the previous .metal → .air → .metallib pipeline.
 #
-# Public API:
-#   harmonius_add_slanglib(<TARGET>
-#     SOURCES      <.slang-file ...>
-#     [OUTPUT_NAME <name>]           # default: "${TARGET}"
-#     [INCLUDE_DIRS <dir ...>])
-#   harmonius_slanglib_link_libraries(<TARGET> <dep> ...)
+# Public API: harmonius_add_slanglib(<TARGET> SOURCES      <.slang-file ...>
+# [OUTPUT_NAME <name>]           # default: "${TARGET}" [INCLUDE_DIRS <dir
+# ...>]) harmonius_slanglib_link_libraries(<TARGET> <dep> ...)
 
 cmake_minimum_required(VERSION 4.0)
 
 find_package(slang CONFIG REQUIRED)
 
 # Resolve the slangc compiler binary. vcpkg installs it under
-# tools/shader-slang/ which is not on PATH; the HINTS path is derived from
-# the directory holding slangConfig.cmake (lib/cmake/slang/).
+# tools/shader-slang/ which is not on PATH; the HINTS path is derived from the
+# directory holding slangConfig.cmake (lib/cmake/slang/).
 if(NOT HARMONIUS_SLANGC)
   find_program(
     HARMONIUS_SLANGC
     NAMES slangc
-    HINTS "${slang_DIR}/../../../tools/shader-slang"
-    REQUIRED)
+    HINTS "${slang_DIR}/../../../tools/shader-slang" REQUIRED)
   message(STATUS "HARMONIUS_SLANGC: ${HARMONIUS_SLANGC}")
 endif()
 
@@ -35,16 +31,13 @@ endif()
 # Create a named custom CMake target that compiles one or more .slang sources
 # into a single .metallib via slangc -target metallib.
 #
-# Properties set on the target:
-#   HARMONIUS_SLANGLIB_FILE  — absolute path to the produced .metallib
-#   HARMONIUS_SLANGLIB_NAME  — output name (without .metallib)
-#   HARMONIUS_SLANGLIB_DEPS  — other harmonius_add_slanglib targets depended on
+# Properties set on the target: HARMONIUS_SLANGLIB_FILE  — absolute path to the
+# produced .metallib HARMONIUS_SLANGLIB_NAME  — output name (without .metallib)
+# HARMONIUS_SLANGLIB_DEPS  — other harmonius_add_slanglib targets depended on
 #
-# Usage:
-#   harmonius_add_slanglib(<TARGET>
-#     SOURCES      <.slang-file ...>
-#     [OUTPUT_NAME <name>]           # default: "${TARGET}"
-#     [INCLUDE_DIRS <dir ...>])
+# Usage: harmonius_add_slanglib(<TARGET> SOURCES      <.slang-file ...>
+# [OUTPUT_NAME <name>]           # default: "${TARGET}" [INCLUDE_DIRS <dir
+# ...>])
 # ---------------------------------------------------------------------------
 function(harmonius_add_slanglib _target)
   cmake_parse_arguments(_S "" "OUTPUT_NAME" "SOURCES;INCLUDE_DIRS" ${ARGN})

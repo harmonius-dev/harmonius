@@ -1,5 +1,5 @@
-# HarmoniusModule.cmake Top-level API for mixed Swift 6.3 / C++26 / Slang
-# shader libraries.
+# HarmoniusModule.cmake Top-level API for mixed Swift 6.3 / C++26 / Slang shader
+# libraries.
 #
 # Public API: harmonius_add_module(<TARGET> [SWIFT_SOURCES <file ...>]
 # [CXX_SOURCES   <file ...>] [SLANG_SOURCES <file ...>] [SLANG_OUTPUT_NAME
