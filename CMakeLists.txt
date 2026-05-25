@@ -8,8 +8,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
 project(Harmonius LANGUAGES CXX Swift)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 include(InitializeSwift)
 include(AddSwift)
 
@@ -26,7 +24,8 @@ add_compile_options(
   "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -fexceptions>")
 
 if(CMAKE_OSX_SYSROOT)
-  add_compile_options("$<$<COMPILE_LANGUAGE:Swift>:SHELL:-sdk ${CMAKE_OSX_SYSROOT}>")
+  add_compile_options(
+    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-sdk ${CMAKE_OSX_SYSROOT}>")
 endif()
 
 add_subdirectory(app)
