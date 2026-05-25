@@ -24,7 +24,7 @@ function(harmonius_swift_cxx_apply_module _target)
     "${_target}"
     PRIVATE
       "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-cxx-interoperability-mode=default>"
-      "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -std=c++20>"
+      "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -std=c++26>"
       "$<$<COMPILE_LANGUAGE:Swift>:SHELL:\
 -index-store-path ${CMAKE_BINARY_DIR}/index-store/${_target}>")
 endfunction()

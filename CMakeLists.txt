@@ -22,6 +22,6 @@ set(CMAKE_Swift_COMPILATION_MODE incremental)
 # Global Swift ↔ C++ interop flags applied to all Swift compilation units.
 add_compile_options(
   "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-cxx-interoperability-mode=default>"
-  "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -std=c++20>")
+  "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -std=c++26>")
 
 add_subdirectory(app)
