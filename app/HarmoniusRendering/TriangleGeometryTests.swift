@@ -1,4 +1,3 @@
-import Foundation
 import HarmoniusRendering
 import Testing
 import simd

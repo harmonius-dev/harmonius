@@ -9,7 +9,7 @@ harmonius_add_module(
   SWIFT_SOURCES
   HarmoniusRendering/Metal4TriangleRenderer.swift
   HarmoniusRendering/TriangleGeometry.swift
-  NativeMetal/Metal4PipelineSupport.swift
+  HarmoniusApp/Metal4PipelineSupport.swift
   METAL_SOURCES
   Shaders/Triangle.metal
   METAL_INCLUDE_DIRS

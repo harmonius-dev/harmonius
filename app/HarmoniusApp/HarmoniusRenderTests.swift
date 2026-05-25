@@ -1,11 +1,11 @@
 import XCTest
 
+@MainActor
 final class HarmoniusRenderTests: XCTestCase {
   override func setUpWithError() throws {
     continueAfterFailure = false
   }
 
-  @MainActor
   func testTriangleRendersSnapshot() throws {
     let app = XCUIApplication()
     app.launch()

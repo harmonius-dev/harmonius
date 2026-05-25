@@ -9,6 +9,8 @@
 # link [FRAMEWORKS <name ...>]       # Apple frameworks, e.g. Metal SwiftUI )
 #
 # The created static library target has: Swift_MODULE_NAME        = <TARGET>
+# HARMONIUS_OWN_METALLIB_TARGETS  — metallib custom targets owned by module
+# HARMONIUS_MODULE_DEPS           — harmonius module targets this depends on
 
 cmake_minimum_required(VERSION 4.0)
 
@@ -104,6 +106,10 @@ CXX_SOURCES is required")
   # -------------------------------------------------------------------------
   if(_M_LIBRARIES)
     target_link_libraries("${_target}" PRIVATE ${_M_LIBRARIES})
+    set_property(
+      TARGET "${_target}"
+      APPEND
+      PROPERTY HARMONIUS_MODULE_DEPS "${_M_LIBRARIES}")
   endif()
 
   # -------------------------------------------------------------------------
@@ -130,5 +136,49 @@ CXX_SOURCES is required")
       "${_M_METAL_OUTPUT_NAME}"
       INCLUDE_DIRS
       ${_M_METAL_INCLUDE_DIRS})
+
+    # Record ownership so app bundle assembly can find this metallib
+    set_property(
+      TARGET "${_target}"
+      APPEND
+      PROPERTY HARMONIUS_OWN_METALLIB_TARGETS "${_metal_target}")
   endif()
+endfunction()
+
+# ---------------------------------------------------------------------------
+# Internal: recursively collect all HARMONIUS_OWN_METALLIB_TARGETS from a list
+# of harmonius module targets (following HARMONIUS_MODULE_DEPS).
+#
+# _harmonius_collect_module_metallibs(<out-var> <module-target> ...)
+# ---------------------------------------------------------------------------
+function(_harmonius_collect_module_metallibs _result_var)
+  set(_targets "")
+  set(_visited "")
+  set(_queue "${ARGN}")
+  while(_queue)
+    list(POP_FRONT _queue _mod)
+    if("${_mod}" IN_LIST _visited)
+      continue()
+    endif()
+    list(APPEND _visited "${_mod}")
+
+    if(NOT TARGET "${_mod}")
+      continue()
+    endif()
+
+    get_target_property(_own "${_mod}" HARMONIUS_OWN_METALLIB_TARGETS)
+    if(_own)
+      list(APPEND _targets ${_own})
+    endif()
+
+    get_target_property(_deps "${_mod}" HARMONIUS_MODULE_DEPS)
+    if(_deps)
+      list(APPEND _queue ${_deps})
+    endif()
+  endwhile()
+
+  list(REMOVE_DUPLICATES _targets)
+  set(${_result_var}
+      "${_targets}"
+      PARENT_SCOPE)
 endfunction()

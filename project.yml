@@ -62,8 +62,6 @@ targets:
         buildPhase: none
       - path: app/HarmoniusRendering
         buildPhase: none
-      - path: app/NativeMetal
-        buildPhase: none
     dependencies:
       - sdk: AppKit.framework
       - sdk: SwiftUI.framework
