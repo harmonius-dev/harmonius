@@ -1,14 +1,16 @@
 #pragma once
 
-#ifndef __SLANG__
+#if defined(__SLANG__)
+// Slang provides float2, float4, and uint2.
+#else
 #include <simd/simd.h>
-typedef float2 simd_float2;
-typedef float4 simd_float4;
-typedef uint2 simd_uint2;
+typedef simd_float2 float2;
+typedef simd_float4 float4;
+typedef simd_uint2 uint2;
 #endif
 
 #ifndef NS_ENUM
-#ifdef __SLANG__
+#if defined(__SLANG__)
 #define NS_ENUM(_type, _name) enum _name : _type
 #else
 #define NS_ENUM(_type, _name)                                                  \

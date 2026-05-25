@@ -1,0 +1,332 @@
+{
+  "tasks": [
+    {
+      "group": "build",
+      "label": "build:ios-simulator-debug",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "command": "cmake --preset ios-simulator-debug && cmake --build --preset ios-simulator-debug",
+        "options": {
+          "env": {
+            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
+          }
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
+    },
+    {
+      "group": "build",
+      "label": "build:ios-debug",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "command": "cmake --workflow --preset ios-debug",
+        "options": {
+          "env": {
+            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
+          }
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
+    },
+    {
+      "group": "build",
+      "label": "build:ios-release",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "command": "cmake --workflow --preset ios-release",
+        "options": {
+          "env": {
+            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
+          }
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
+    },
+    {
+      "group": {
+        "isDefault": true,
+        "kind": "build"
+      },
+      "label": "build:macos-debug",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "command": "cmake --workflow --preset macos-debug",
+        "options": {
+          "env": {
+            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
+          }
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
+    },
+    {
+      "group": "build",
+      "label": "build:macos-release",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "command": "cmake --workflow --preset macos-release",
+        "options": {
+          "env": {
+            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
+          }
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
+    },
+    {
+      "dependsOn": [
+        "xcodegen:generate"
+      ],
+      "dependsOrder": "sequence",
+      "group": "test",
+      "label": "test:ui",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "args": [
+          "test",
+          "-project",
+          "Harmonius.xcodeproj",
+          "-scheme",
+          "HarmoniusApp",
+          "-only-testing:HarmoniusUITests",
+          "-destination",
+          "platform=macOS",
+          "-derivedDataPath",
+          "build/xcodegen"
+        ],
+        "command": "xcodebuild",
+        "options": {
+          "env": {
+            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
+          }
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "dependsOn": [
+        "xcodegen:generate"
+      ],
+      "dependsOrder": "sequence",
+      "group": "test",
+      "label": "test:unit",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "args": [
+          "test",
+          "-project",
+          "Harmonius.xcodeproj",
+          "-scheme",
+          "HarmoniusApp",
+          "-only-testing:HarmoniusUnitTests",
+          "-destination",
+          "platform=macOS",
+          "-derivedDataPath",
+          "build/xcodegen"
+        ],
+        "command": "xcodebuild",
+        "options": {
+          "env": {
+            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
+          }
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "label": "xcodegen:generate",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "command": "xcodegen generate"
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "silent"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "dependsOn": [
+        "xcodegen:generate"
+      ],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "label": "xcode:build-app",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "args": [
+          "build",
+          "-project",
+          "Harmonius.xcodeproj",
+          "-scheme",
+          "HarmoniusApp",
+          "-configuration",
+          "Debug",
+          "-destination",
+          "platform=macOS",
+          "-derivedDataPath",
+          "build/xcodegen"
+        ],
+        "command": "xcodebuild",
+        "options": {
+          "env": {
+            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
+          }
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
+    },
+    {
+      "dependsOn": [
+        "xcodegen:generate"
+      ],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "label": "xcode:build-for-testing",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "args": [
+          "build-for-testing",
+          "-project",
+          "Harmonius.xcodeproj",
+          "-scheme",
+          "HarmoniusApp",
+          "-configuration",
+          "Debug",
+          "-destination",
+          "platform=macOS",
+          "-derivedDataPath",
+          "build/xcodegen"
+        ],
+        "command": "xcodebuild",
+        "options": {
+          "env": {
+            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
+          }
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
+    },
+    {
+      "dependsOn": [
+        "xcodegen:generate"
+      ],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "label": "xcode:build-app-release",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "osx": {
+        "args": [
+          "build",
+          "-project",
+          "Harmonius.xcodeproj",
+          "-scheme",
+          "HarmoniusApp",
+          "-configuration",
+          "Release",
+          "-destination",
+          "platform=macOS",
+          "-derivedDataPath",
+          "build/xcodegen"
+        ],
+        "command": "xcodebuild",
+        "options": {
+          "env": {
+            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
+          }
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
+    }
+  ],
+  "version": "2.0.0"
+}

@@ -1,0 +1,49 @@
+{
+  "configurations": [
+    {
+      "cwd": "${workspaceFolder}",
+      "name": "HarmoniusApp (macOS)",
+      "osx": {
+        "program": "build/xcodegen/Build/Products/Debug/HarmoniusApp.app",
+        "request": "launch",
+        "type": "lldb"
+      },
+      "preLaunchTask": "xcode:build-app",
+      "request": "launch",
+      "type": "lldb"
+    },
+    {
+      "cwd": "${workspaceFolder}",
+      "name": "HarmoniusUnitTests",
+      "osx": {
+        "args": [
+          "build/xcodegen/Build/Products/Debug/HarmoniusApp.app/Contents/PlugIns/HarmoniusUnitTests.xctest"
+        ],
+        "env": {
+          "DEVELOPER_DIR": "${env:DEVELOPER_DIR}",
+          "DYLD_FRAMEWORK_PATH": "${env:DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/Library/Frameworks:${env:DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+          "TEST_HOST": "build/xcodegen/Build/Products/Debug/HarmoniusApp.app/Contents/MacOS/HarmoniusApp"
+        },
+        "program": "${env:DEVELOPER_DIR}/usr/bin/xctest",
+        "request": "launch",
+        "type": "lldb"
+      },
+      "preLaunchTask": "xcode:build-for-testing",
+      "request": "launch",
+      "type": "lldb"
+    },
+    {
+      "cwd": "${workspaceFolder}",
+      "name": "HarmoniusUITests",
+      "osx": {
+        "program": "build/xcodegen/Build/Products/Debug/HarmoniusUITests-Runner.app",
+        "request": "launch",
+        "type": "lldb"
+      },
+      "preLaunchTask": "xcode:build-for-testing",
+      "request": "launch",
+      "type": "lldb"
+    }
+  ],
+  "version": "0.2.0"
+}
