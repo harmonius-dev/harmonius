@@ -104,8 +104,7 @@ jobs:
               EXTRA+=(-DHARMONIUS_CODESIGN_ENTITLEMENTS="$HARMONIUS_ENTITLEMENTS_FILE")
             fi
             if [[ -n "${HARMONIUS_PROVISIONING_PROFILE_FILE:-}" ]]; then
-              EXTRA+=(-DHARMONIUS_PROVISIONING_PROFILE_FILE=\
-"$HARMONIUS_PROVISIONING_PROFILE_FILE")
+              EXTRA+=(-DHARMONIUS_PROVISIONING_PROFILE_FILE="$HARMONIUS_PROVISIONING_PROFILE_FILE")
             fi
           fi
           cmake --preset ${{ matrix.preset }} "${EXTRA[@]}"
