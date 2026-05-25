@@ -2,7 +2,10 @@
   "dependencies": [
     "cgltf",
     "meshoptimizer",
-    "shader-slang"
+    {
+      "name": "shader-slang",
+      "platform": "(osx | windows | linux) & !uwp & !android & !ios"
+    }
   ],
   "description": "Harmonius dependencies",
   "name": "harmonius",
