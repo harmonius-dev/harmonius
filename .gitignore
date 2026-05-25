@@ -1,2 +1,7 @@
-target/
 .rumdl_cache/
+target/
+build/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+.cache/

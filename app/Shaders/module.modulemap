@@ -1,0 +1,4 @@
+module HarmoniusShaderTypes {
+  header "ShaderTypes.h"
+  export *
+}

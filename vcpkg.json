@@ -1,0 +1,10 @@
+{
+  "dependencies": [
+    "cgltf",
+    "meshoptimizer",
+    "shader-slang"
+  ],
+  "description": "Harmonius dependencies",
+  "name": "harmonius",
+  "version-string": "0.1.0"
+}
