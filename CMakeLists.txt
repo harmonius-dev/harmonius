@@ -4,11 +4,12 @@ if(POLICY CMP0157)
   cmake_policy(SET CMP0157 NEW)
 endif()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
+include(HarmoniusApplePlatform)
+
 project(Harmonius LANGUAGES CXX Swift)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
 include(InitializeSwift)
 include(AddSwift)

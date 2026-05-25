@@ -64,4 +64,6 @@ finalized (call harmonius_bundle_finalize) before codesigning.")
 
   add_custom_target("${_target}_signed" ALL DEPENDS "${_signed_stamp}")
   add_dependencies("${_target}_signed" "${_target}_bundle")
+  set_target_properties("${_target}_signed"
+                        PROPERTIES HARMONIUS_BUNDLE_STAMP "${_signed_stamp}")
 endfunction()
