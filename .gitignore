@@ -5,3 +5,4 @@ build/
 *.xcworkspace/
 xcuserdata/
 .cache/
+compile_commands.json

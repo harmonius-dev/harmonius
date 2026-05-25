@@ -2,7 +2,8 @@ include(HarmoniusModule)
 
 # ---------------------------------------------------------------------------
 # HarmoniusRendering — Metal 4 renderer, geometry helpers, pipeline support.
-# Owns Triangle.metal → default.metallib (loaded via makeDefaultLibrary).
+# Owns Triangle.slang → default.metallib (compiled via slangc, loaded via
+# makeDefaultLibrary).
 # ---------------------------------------------------------------------------
 harmonius_add_module(
   HarmoniusRendering
@@ -10,9 +11,9 @@ harmonius_add_module(
   HarmoniusRendering/Metal4TriangleRenderer.swift
   HarmoniusRendering/TriangleGeometry.swift
   HarmoniusApp/Metal4PipelineSupport.swift
-  METAL_SOURCES
-  Shaders/Triangle.metal
-  METAL_INCLUDE_DIRS
+  SLANG_SOURCES
+  Shaders/Triangle.slang
+  SLANG_INCLUDE_DIRS
   Shaders
   INCLUDE_DIRS
   Shaders
@@ -30,7 +31,7 @@ add_executable(
 target_link_libraries(HarmoniusApp PRIVATE HarmoniusRendering)
 target_link_libraries(HarmoniusApp PRIVATE "-framework SwiftUI"
                                            "-framework MetalKit")
-add_dependencies(HarmoniusApp HarmoniusRendering_metal)
+add_dependencies(HarmoniusApp HarmoniusRendering_slang)
 set_target_properties(HarmoniusApp PROPERTIES Swift_MODULE_NAME HarmoniusApp
                                               OUTPUT_NAME HarmoniusApp)
 harmonius_swift_cxx_apply_module(HarmoniusApp)

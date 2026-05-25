@@ -1,28 +1,28 @@
-# HarmoniusModule.cmake Top-level API for mixed Swift 6.3 / C++26 / Metal
-# libraries.
+# HarmoniusModule.cmake Top-level API for mixed Swift 6.3 / C++26 / Slang
+# shader libraries.
 #
 # Public API: harmonius_add_module(<TARGET> [SWIFT_SOURCES <file ...>]
-# [CXX_SOURCES   <file ...>] [METAL_SOURCES <file ...>] [METAL_OUTPUT_NAME
-# <name>]    # default: "default" when METAL_SOURCES set [METAL_INCLUDE_DIRS
+# [CXX_SOURCES   <file ...>] [SLANG_SOURCES <file ...>] [SLANG_OUTPUT_NAME
+# <name>]    # default: "default" when SLANG_SOURCES set [SLANG_INCLUDE_DIRS
 # <dir ...>] [INCLUDE_DIRS <dir ...>]      # added to C++ and Swift -Xcc -I
 # flags [LIBRARIES <target ...>]      # other harmonius_add_module targets to
 # link [FRAMEWORKS <name ...>]       # Apple frameworks, e.g. Metal SwiftUI )
 #
 # The created static library target has: Swift_MODULE_NAME        = <TARGET>
-# HARMONIUS_OWN_METALLIB_TARGETS  — metallib custom targets owned by module
+# HARMONIUS_OWN_SLANGLIB_TARGETS  — slanglib custom targets owned by module
 # HARMONIUS_MODULE_DEPS           — harmonius module targets this depends on
 
 cmake_minimum_required(VERSION 4.0)
 
-include(HarmoniusMetal)
+include(HarmoniusSlang)
 include(HarmoniusSwiftCXX)
 
 function(harmonius_add_module _target)
   cmake_parse_arguments(
     _M
     ""
-    "METAL_OUTPUT_NAME"
-    "SWIFT_SOURCES;CXX_SOURCES;METAL_SOURCES;METAL_INCLUDE_DIRS;INCLUDE_DIRS;LIBRARIES;FRAMEWORKS"
+    "SLANG_OUTPUT_NAME"
+    "SWIFT_SOURCES;CXX_SOURCES;SLANG_SOURCES;SLANG_INCLUDE_DIRS;INCLUDE_DIRS;LIBRARIES;FRAMEWORKS"
     ${ARGN})
 
   # -------------------------------------------------------------------------
@@ -120,38 +120,38 @@ CXX_SOURCES is required")
   endforeach()
 
   # -------------------------------------------------------------------------
-  # Metal sources → named metallib custom target
+  # Slang sources → named metallib custom target
   # -------------------------------------------------------------------------
-  if(_M_METAL_SOURCES)
-    if(NOT _M_METAL_OUTPUT_NAME)
-      set(_M_METAL_OUTPUT_NAME "default")
+  if(_M_SLANG_SOURCES)
+    if(NOT _M_SLANG_OUTPUT_NAME)
+      set(_M_SLANG_OUTPUT_NAME "default")
     endif()
 
-    set(_metal_target "${_target}_metal")
-    harmonius_add_metallib(
-      "${_metal_target}"
+    set(_slang_target "${_target}_slang")
+    harmonius_add_slanglib(
+      "${_slang_target}"
       SOURCES
-      ${_M_METAL_SOURCES}
+      ${_M_SLANG_SOURCES}
       OUTPUT_NAME
-      "${_M_METAL_OUTPUT_NAME}"
+      "${_M_SLANG_OUTPUT_NAME}"
       INCLUDE_DIRS
-      ${_M_METAL_INCLUDE_DIRS})
+      ${_M_SLANG_INCLUDE_DIRS})
 
-    # Record ownership so app bundle assembly can find this metallib
+    # Record ownership so app bundle assembly can find this slanglib
     set_property(
       TARGET "${_target}"
       APPEND
-      PROPERTY HARMONIUS_OWN_METALLIB_TARGETS "${_metal_target}")
+      PROPERTY HARMONIUS_OWN_SLANGLIB_TARGETS "${_slang_target}")
   endif()
 endfunction()
 
 # ---------------------------------------------------------------------------
-# Internal: recursively collect all HARMONIUS_OWN_METALLIB_TARGETS from a list
+# Internal: recursively collect all HARMONIUS_OWN_SLANGLIB_TARGETS from a list
 # of harmonius module targets (following HARMONIUS_MODULE_DEPS).
 #
-# _harmonius_collect_module_metallibs(<out-var> <module-target> ...)
+# _harmonius_collect_module_slanglibs(<out-var> <module-target> ...)
 # ---------------------------------------------------------------------------
-function(_harmonius_collect_module_metallibs _result_var)
+function(_harmonius_collect_module_slanglibs _result_var)
   set(_targets "")
   set(_visited "")
   set(_queue "${ARGN}")
@@ -166,7 +166,7 @@ function(_harmonius_collect_module_metallibs _result_var)
       continue()
     endif()
 
-    get_target_property(_own "${_mod}" HARMONIUS_OWN_METALLIB_TARGETS)
+    get_target_property(_own "${_mod}" HARMONIUS_OWN_SLANGLIB_TARGETS)
     if(_own)
       list(APPEND _targets ${_own})
     endif()
