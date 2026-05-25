@@ -1,0 +1,157 @@
+name: Harmonius
+options:
+  bundleIdPrefix: dev.harmonius
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  base:
+    SWIFT_VERSION: "6.3"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGNING_REQUIRED: NO
+    CODE_SIGNING_ALLOWED: NO
+
+cmakeBuild: &cmake_build |
+  set -euo pipefail
+  export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+  case "$PLATFORM_NAME" in
+    macosx) PLATFORM="macos" ;;
+    iphoneos) PLATFORM="ios" ;;
+    iphonesimulator) PLATFORM="ios-simulator" ;;
+    *) echo "error: Unknown platform $PLATFORM_NAME"; exit 1 ;;
+  esac
+  case "$CONFIGURATION" in
+    Debug) CONFIG="debug" ;;
+    Release) CONFIG="release" ;;
+    *) CONFIG="debug" ;;
+  esac
+  PRESET="${PLATFORM}-${CONFIG}"
+  cmake --preset "$PRESET" \
+    -DCMAKE_OSX_SYSROOT="$SDKROOT" \
+    -DCMAKE_OSX_ARCHITECTURES="$ARCHS" \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
+  cmake --build --preset "$PRESET" --target ${HARMONIUS_CMAKE_TARGETS}
+
+copyHostedTestBinary: &copy_hosted_test_binary |
+  set -euo pipefail
+  case "$PLATFORM_NAME" in
+    macosx) PLATFORM="macos" ;;
+    *) echo "error: Unknown platform $PLATFORM_NAME"; exit 1 ;;
+  esac
+  DEST="${CODESIGNING_FOLDER_PATH}/Contents/MacOS/${EXECUTABLE_NAME}"
+  mkdir -p "$(dirname "${DEST}")"
+  cp "${SRCROOT}/build/${PLATFORM}/app/${EXECUTABLE_NAME}" "${DEST}"
+
+targets:
+  HarmoniusApp:
+    type: application
+    platform: macOS
+    info:
+      path: app/Info.plist
+    sources:
+      - path: app/Shaders
+        buildPhase: none
+      - path: app/HarmoniusApp
+        buildPhase: none
+      - path: app/HarmoniusRendering
+        buildPhase: none
+      - path: app/NativeMetal
+        buildPhase: none
+    dependencies:
+      - sdk: AppKit.framework
+      - sdk: SwiftUI.framework
+      - sdk: Metal.framework
+      - sdk: MetalKit.framework
+      - sdk: QuartzCore.framework
+    preBuildScripts:
+      - name: CMake Build
+        basedOnDependencyAnalysis: false
+        script: *cmake_build
+    postBuildScripts:
+      - name: Copy Prebuilt Binary
+        script: |
+          set -euo pipefail
+          case "$PLATFORM_NAME" in
+            macosx) PLATFORM="macos" ;;
+            iphoneos) PLATFORM="ios" ;;
+            iphonesimulator) PLATFORM="ios-simulator" ;;
+            *) echo "error: Unknown platform $PLATFORM_NAME"; exit 1 ;;
+          esac
+          BINARY_DIR="${SRCROOT}/build/${PLATFORM}/app"
+          DEST="${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
+          mkdir -p "$(dirname "${DEST}")"
+          cp "${BINARY_DIR}/HarmoniusApp" "${DEST}"
+          RESOURCES="${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Contents/Resources"
+          mkdir -p "${RESOURCES}"
+          cp "${BINARY_DIR}/metallibs/default.metallib" "${RESOURCES}/default.metallib"
+    settings:
+      base:
+        HARMONIUS_CMAKE_TARGETS: HarmoniusApp
+        PRODUCT_BUNDLE_IDENTIFIER: dev.harmonius.App
+        LINK_WITH_STANDARD_LIBRARIES: NO
+        MACH_O_TYPE: mh_bundle
+    scheme:
+      testTargets:
+        - HarmoniusUnitTests
+        - HarmoniusUITests
+
+  HarmoniusUnitTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: app/HarmoniusRendering
+        buildPhase: none
+        includes:
+          - "**/*Tests.swift"
+    dependencies:
+      - target: HarmoniusApp
+    preBuildScripts:
+      - name: CMake Build
+        basedOnDependencyAnalysis: false
+        script: *cmake_build
+    postBuildScripts:
+      - name: Copy Prebuilt Binary
+        script: *copy_hosted_test_binary
+    settings:
+      base:
+        HARMONIUS_CMAKE_TARGETS: HarmoniusUnitTests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/HarmoniusApp.app/Contents/MacOS/HarmoniusApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        GENERATE_INFOPLIST_FILE: YES
+        LINK_WITH_STANDARD_LIBRARIES: NO
+        MACH_O_TYPE: mh_bundle
+
+  HarmoniusUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: app/HarmoniusApp
+        buildPhase: none
+        includes:
+          - "**/*Tests.swift"
+          - "**/SnapshotImageTesting.swift"
+        excludes:
+          - "**/__Snapshots__/**"
+    dependencies:
+      - target: HarmoniusApp
+    preBuildScripts:
+      - name: CMake Build
+        basedOnDependencyAnalysis: false
+        script: *cmake_build
+    postBuildScripts:
+      - name: Copy Prebuilt Binary
+        script: *copy_hosted_test_binary
+    settings:
+      base:
+        HARMONIUS_CMAKE_TARGETS: HarmoniusApp HarmoniusUITests
+        TEST_TARGET_NAME: HarmoniusApp
+        GENERATE_INFOPLIST_FILE: YES
+        LINK_WITH_STANDARD_LIBRARIES: NO
+        MACH_O_TYPE: mh_bundle

@@ -1,8 +1,4 @@
 include(HarmoniusModule)
-include(HarmoniusApp)
-include(HarmoniusCodeSign)
-include(HarmoniusBundle)
-include(HarmoniusIpa)
 
 # ---------------------------------------------------------------------------
 # HarmoniusRendering — Metal 4 renderer, geometry helpers, pipeline support.
@@ -26,54 +22,108 @@ harmonius_add_module(
   QuartzCore)
 
 # ---------------------------------------------------------------------------
-# HarmoniusAppLib — SwiftUI entry point, views, and Metal view bridge. Provides
-# HarmoniusApp which is started via HarmoniusApp.main() in the generated stub
-# created by harmonius_add_app_bundle.
+# HarmoniusApp executable — built by CMake, bundled by XcodeGen.
 # ---------------------------------------------------------------------------
-harmonius_add_module(
-  HarmoniusAppLib
-  SWIFT_SOURCES
-  HarmoniusAppLib/HarmoniusApp.swift
-  HarmoniusAppLib/ContentView.swift
-  HarmoniusAppLib/MetalView.swift
-  LIBRARIES
-  HarmoniusRendering
-  FRAMEWORKS
-  SwiftUI
-  MetalKit)
+add_executable(
+  HarmoniusApp HarmoniusApp/HarmoniusApp.swift HarmoniusApp/ContentView.swift
+               HarmoniusApp/MetalView.swift)
+target_link_libraries(HarmoniusApp PRIVATE HarmoniusRendering)
+target_link_libraries(HarmoniusApp PRIVATE "-framework SwiftUI"
+                                           "-framework MetalKit")
+add_dependencies(HarmoniusApp HarmoniusRendering_metal)
+set_target_properties(HarmoniusApp PROPERTIES Swift_MODULE_NAME HarmoniusApp
+                                              OUTPUT_NAME HarmoniusApp)
+harmonius_swift_cxx_apply_module(HarmoniusApp)
 
 # ---------------------------------------------------------------------------
-# App bundle — no source code; links modules and assembles Harmonius.app.
+# Tests — built by CMake, bundled by XcodeGen.
 # ---------------------------------------------------------------------------
-if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-  set(_harmonius_platform ios)
-  set(_harmonius_plist "${CMAKE_CURRENT_SOURCE_DIR}/Info-iOS.plist")
-else()
-  set(_harmonius_platform macos)
-  set(_harmonius_plist "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist")
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  if(APPLE)
+    if(NOT IS_ABSOLUTE "${CMAKE_OSX_SYSROOT}")
+      execute_process(
+        COMMAND xcrun --sdk "${CMAKE_OSX_SYSROOT}" --show-sdk-path
+        OUTPUT_VARIABLE _abs_sdk_path
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    else()
+      set(_abs_sdk_path "${CMAKE_OSX_SYSROOT}")
+    endif()
+
+    get_filename_component(_sdk_dir "${_abs_sdk_path}" DIRECTORY)
+    get_filename_component(_dev_dir "${_sdk_dir}" DIRECTORY)
+    set(_dev_frameworks_dir "${_dev_dir}/Library/Frameworks")
+    set(_dev_usr_lib_dir "${_dev_dir}/usr/lib")
+
+    execute_process(COMMAND ${CMAKE_Swift_COMPILER} -print-target-info
+                    OUTPUT_VARIABLE _swift_target_info)
+    string(JSON _runtime_paths GET "${_swift_target_info}" "paths"
+           "runtimeLibraryPaths")
+    string(JSON _first_runtime_path GET "${_runtime_paths}" 0)
+    get_filename_component(_toolchain_usr_lib_swift "${_first_runtime_path}"
+                           DIRECTORY)
+    get_filename_component(_toolchain_usr_lib "${_toolchain_usr_lib_swift}"
+                           DIRECTORY)
+    get_filename_component(_toolchain_usr "${_toolchain_usr_lib}" DIRECTORY)
+    set(_testing_macros_path
+        "${_toolchain_usr}/lib/swift/host/plugins/testing/libTestingMacros.dylib"
+    )
+  endif()
+
+  target_compile_options(HarmoniusRendering
+                         PRIVATE "$<$<COMPILE_LANGUAGE:Swift>:-enable-testing>")
+  add_library(
+    HarmoniusUnitTests MODULE HarmoniusRendering/TriangleGeometryTests.swift
+                              HarmoniusRendering/TestingEntryPoint.swift)
+  set_target_properties(
+    HarmoniusUnitTests
+    PROPERTIES Swift_MODULE_NAME HarmoniusUnitTests
+               OUTPUT_NAME HarmoniusUnitTests
+               PREFIX ""
+               SUFFIX "")
+  target_link_libraries(
+    HarmoniusUnitTests PRIVATE HarmoniusRendering "-framework Testing"
+                               "${_dev_usr_lib_dir}/lib_TestingInterop.dylib")
+  harmonius_swift_cxx_apply_module(HarmoniusUnitTests)
+  add_dependencies(HarmoniusUnitTests HarmoniusApp)
+  target_link_options(HarmoniusUnitTests PRIVATE
+                      "LINKER:-bundle_loader,$<TARGET_FILE:HarmoniusApp>")
+
+  if(APPLE)
+    target_compile_options(
+      HarmoniusUnitTests
+      PRIVATE
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-F ${_dev_frameworks_dir}>"
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-load-plugin-library ${_testing_macros_path}>"
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-enable-experimental-feature Extern>"
+    )
+    target_link_options(HarmoniusUnitTests PRIVATE
+                        "SHELL:-F ${_dev_frameworks_dir}")
+  endif()
+
+  # UI Tests
+  find_package(XCTest REQUIRED)
+  add_library(HarmoniusUITests MODULE HarmoniusApp/HarmoniusRenderTests.swift
+                                      HarmoniusApp/SnapshotImageTesting.swift)
+  set_target_properties(
+    HarmoniusUITests
+    PROPERTIES Swift_MODULE_NAME HarmoniusUITests
+               OUTPUT_NAME HarmoniusUITests
+               PREFIX ""
+               SUFFIX "")
+  harmonius_swift_cxx_apply_module(HarmoniusUITests)
+  target_link_libraries(
+    HarmoniusUITests PRIVATE ${XCTest_LIBRARIES}
+                             "${_dev_usr_lib_dir}/libXCTestSwiftSupport.dylib")
+  add_dependencies(HarmoniusUITests HarmoniusApp)
+  target_link_options(HarmoniusUITests PRIVATE
+                      "LINKER:-bundle_loader,$<TARGET_FILE:HarmoniusApp>")
+
+  if(APPLE)
+    target_compile_options(
+      HarmoniusUITests
+      PRIVATE "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-F ${_dev_frameworks_dir}>"
+              "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-I ${_dev_usr_lib_dir}>")
+    target_link_options(HarmoniusUITests PRIVATE
+                        "SHELL:-F ${_dev_frameworks_dir}")
+  endif()
 endif()
-
-harmonius_add_app_bundle(
-  Harmonius
-  PLATFORM
-  ${_harmonius_platform}
-  LIBRARIES
-  HarmoniusAppLib
-  INFO_PLIST
-  "${_harmonius_plist}"
-  ENTRY_MODULE
-  HarmoniusAppLib
-  ENTRY_POINT
-  HarmoniusApp)
-
-if(CMAKE_SYSTEM_NAME STREQUAL "iOS" AND HARMONIUS_PROVISIONING_PROFILE_FILE)
-  harmonius_bundle_set_provisioning_profile(Harmonius
-    "${HARMONIUS_PROVISIONING_PROFILE_FILE}")
-endif()
-
-harmonius_bundle_finalize(Harmonius)
-harmonius_codesign_bundle(Harmonius)
-harmonius_bundle_install(Harmonius DESTINATION .)
-
-# iOS: also produce an .ipa
-harmonius_package_ipa(Harmonius)

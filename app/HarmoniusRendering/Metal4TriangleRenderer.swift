@@ -1,5 +1,4 @@
 // HarmoniusShaderTypes is an internal C++ interop module (from Shaders/module.modulemap).
-// The 'internal import' hides it from consumers of HarmoniusRendering.
 internal import HarmoniusShaderTypes
 import Metal
 import MetalKit
@@ -21,6 +20,10 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
 
   private var frameNumber: UInt64 = 0
   private var viewportSize = SIMD2<UInt32>(repeating: 0)
+  private var hasPresentedFirstFrame = false
+
+  /// Called once on the main actor after the first drawable is presented.
+  public var didPresentFirstFrame: (() -> Void)?
 
   @MainActor
   public init?(view: MTKView) {
@@ -130,7 +133,7 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
     setViewport(for: renderEncoder)
 
     let vertexBuffer = triangleVertexBuffers[frameIndex]
-    writeTriangleData(to: vertexBuffer, frameNumber: Int(frameNumber))
+    writeTriangleData(to: vertexBuffer)
 
     argumentTable.setAddress(
       vertexBuffer.gpuAddress,
@@ -155,6 +158,11 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
     commandQueue.signalDrawable(drawable)
     drawable.present()
     commandQueue.signalEvent(sharedEvent, value: frameNumber)
+
+    if !hasPresentedFirstFrame {
+      hasPresentedFirstFrame = true
+      didPresentFirstFrame?()
+    }
   }
 
   private func updateViewportSize(_ size: CGSize) {
@@ -177,16 +185,11 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
     encoder.setViewport(viewport)
   }
 
-  private func writeTriangleData(to buffer: MTLBuffer, frameNumber: Int) {
-    let triangle = TriangleGeometry.frameData(rotationDegrees: frameNumber)
-    var frame = TriangleFrameData(
-      vertex0: triangle.vertex0,
-      vertex1: triangle.vertex1,
-      vertex2: triangle.vertex2
-    )
+  private func writeTriangleData(to buffer: MTLBuffer) {
+    var triangle = TriangleGeometry.frameData()
     buffer.contents().copyMemory(
-      from: &frame,
-      byteCount: MemoryLayout<TriangleFrameData>.stride
+      from: &triangle,
+      byteCount: MemoryLayout<TriangleData>.stride
     )
   }
 
@@ -197,7 +200,7 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
     try (0..<count).map { _ in
       guard
         let buffer = device.makeBuffer(
-          length: MemoryLayout<TriangleFrameData>.stride,
+          length: MemoryLayout<TriangleData>.stride,
           options: .storageModeShared
         )
       else {

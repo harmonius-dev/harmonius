@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ["v*"]
   workflow_dispatch:
 
 env:
@@ -14,6 +14,50 @@ env:
 # Require macOS 26 + Xcode 26 for Metal 4 and Swift 6.3.
 
 jobs:
+  test-macos:
+    name: macos-tests
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Select Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26.4.1"
+
+      - name: Install build tools
+        run: brew install ninja xcodegen
+
+      - name: Cache vcpkg installed tree
+        uses: actions/cache@v4
+        with:
+          path: build/macos/vcpkg_installed
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Run unit and UI tests
+        run: |
+          xcodebuild test \
+            -project Harmonius.xcodeproj \
+            -scheme HarmoniusApp \
+            -destination "platform=macOS" \
+            -derivedDataPath build/xcodegen \
+            -resultBundlePath build/xcodegen/test-results/HarmoniusApp.xcresult
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-test-results
+          path: build/xcodegen/test-results/HarmoniusApp.xcresult
+          if-no-files-found: warn
+
   build:
     name: ${{ matrix.preset }}
     runs-on: macos-26
@@ -43,7 +87,7 @@ jobs:
       - name: Select Xcode 26
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '26.4.1'
+          xcode-version: "26.4.1"
 
       - name: Install Ninja
         run: brew install ninja

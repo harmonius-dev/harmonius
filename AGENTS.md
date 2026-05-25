@@ -22,6 +22,62 @@ This handbook provides guidelines and best practices for agents working on the H
 - Wrap git commit messages to a 50 character line length limit for the first line, and a 72
   character line length limit for the rest of the commit message.
 
+## macOS build and test (xcodebuild)
+
+Use the XcodeGen project and `xcodebuild` on macOS. Generate the project first:
+
+```bash
+xcodegen generate
+```
+
+Build the app:
+
+```bash
+xcodebuild build \
+  -project Harmonius.xcodeproj \
+  -scheme HarmoniusApp \
+  -destination "platform=macOS" \
+  -derivedDataPath build/xcodegen
+```
+
+Built app: `build/xcodegen/Build/Products/Debug/HarmoniusApp.app`
+
+Run all unit and UI tests (same as CI):
+
+```bash
+xcodebuild test \
+  -project Harmonius.xcodeproj \
+  -scheme HarmoniusApp \
+  -destination "platform=macOS" \
+  -derivedDataPath build/xcodegen \
+  -resultBundlePath build/xcodegen/test-results/HarmoniusApp.xcresult
+```
+
+Unit tests only:
+
+```bash
+xcodebuild test \
+  -project Harmonius.xcodeproj \
+  -scheme HarmoniusApp \
+  -only-testing:HarmoniusUnitTests \
+  -destination "platform=macOS" \
+  -derivedDataPath build/xcodegen
+```
+
+UI snapshot tests only (prepend `SNAPSHOT_RECORD=1` to record baselines):
+
+```bash
+xcodebuild test \
+  -project Harmonius.xcodeproj \
+  -scheme HarmoniusApp \
+  -only-testing:HarmoniusUITests \
+  -destination "platform=macOS" \
+  -derivedDataPath build/xcodegen
+```
+
+The `HarmoniusApp` target runs a CMake pre-build script. Prefer `xcodebuild` over invoking CMake
+directly when building the app or running tests.
+
 ## Testing policy
 
 - **Test-driven development** — write failing tests first, then implement until tests green

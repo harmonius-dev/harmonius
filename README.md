@@ -4,6 +4,33 @@ An open-source, cross-platform game engine for real-time 2D, 3D, and XR games. B
 a single ECS, a single spatial index, and a single job system — because harmony is what emerges when
 every part composes cleanly into every other part.
 
+## Building and testing
+
+Harmonius builds and tests on macOS via XcodeGen and Xcode. CMake static libraries link into the app
+through an Xcode pre-build script (see [project.yml](project.yml)).
+
+### Prerequisites
+
+- macOS 26 + Xcode 26
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
+- Ninja — `brew install ninja`
+
+### Generate the Xcode project
+
+```bash
+xcodegen generate
+```
+
+This writes `Harmonius.xcodeproj` at the repo root.
+
+### Build and test in Xcode
+
+1. Open the project: `open Harmonius.xcodeproj`
+2. Select the **HarmoniusApp** scheme and press **⌘B** to build the app.
+3. Select the **HarmoniusApp** scheme and press **⌘U** to run unit and UI tests.
+
+See [docs/testing.md](docs/testing.md) for snapshot baselines, CI, and test target details.
+
 ## Who Harmonius Is For
 
 ### Artists

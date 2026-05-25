@@ -1,7 +1,6 @@
 import SwiftUI
 
-// @main is intentionally absent — the entry point calls HarmoniusApp.main()
-// from a generated main.swift stub via harmonius_add_app_bundle.
+@main
 public struct HarmoniusApp: App {
   public init() {}
 
