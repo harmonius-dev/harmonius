@@ -6,8 +6,8 @@
 # HARMONIUS_CODESIGN_IDENTITY 3. Default: "-" (ad-hoc, suitable for local dev
 # and CI without certs)
 #
-# Public API: harmonius_codesign_bundle(<TARGET> [IDENTITY <id>]
-# [ENTITLEMENTS <path>])
+# Public API: harmonius_codesign_bundle(<TARGET> [IDENTITY <id>] [ENTITLEMENTS
+# <path>])
 
 cmake_minimum_required(VERSION 4.0)
 
@@ -55,8 +55,8 @@ finalized (call harmonius_bundle_finalize) before codesigning.")
 
   add_custom_command(
     OUTPUT "${_signed_stamp}"
-    COMMAND codesign --force --deep --sign "${_CS_IDENTITY}" ${_entitlement_args}
-            "${_bdir}"
+    COMMAND codesign --force --deep --sign "${_CS_IDENTITY}"
+            ${_entitlement_args} "${_bdir}"
     COMMAND "${CMAKE_COMMAND}" -E touch "${_signed_stamp}"
     DEPENDS "${_stamp}"
     COMMENT "Signing ${_target}.app (identity: ${_CS_IDENTITY})"
@@ -64,6 +64,6 @@ finalized (call harmonius_bundle_finalize) before codesigning.")
 
   add_custom_target("${_target}_signed" ALL DEPENDS "${_signed_stamp}")
   add_dependencies("${_target}_signed" "${_target}_bundle")
-  set_target_properties("${_target}_signed"
-                        PROPERTIES HARMONIUS_BUNDLE_STAMP "${_signed_stamp}")
+  set_target_properties("${_target}_signed" PROPERTIES HARMONIUS_BUNDLE_STAMP
+                                                       "${_signed_stamp}")
 endfunction()
