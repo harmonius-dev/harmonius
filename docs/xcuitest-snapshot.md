@@ -1,30 +1,6 @@
 # XCUITest snapshot rendering
 
-See [testing.md](testing.md) for the full testing guide (unit tests, UI tests, and CI).
-
-This document remains as a focused reference for the UI snapshot workflow.
-
-## Snapshot test
-
-[HarmoniusRenderTests.swift](../app/HarmoniusApp/HarmoniusRenderTests.swift) launches `Harmonius`,
-waits for `metal-view-ready`, launches with `-HarmoniusSnapshotMode`, screenshots the `metal-view`
-render target, and compares against a reference PNG via
-[swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing).
-
-Reference images live under `app/HarmoniusApp/__Snapshots__/HarmoniusRenderTests/`.
-
-### Record or refresh baselines
-
-```bash
-SNAPSHOT_RECORD=1 xcodebuild test \
-  -project Harmonius.xcodeproj \
-  -scheme HarmoniusApp \
-  -only-testing:HarmoniusUITests \
-  -destination "platform=macOS" \
-  -derivedDataPath build/xcodegen
-```
-
-Commit the updated PNG under `__Snapshots__/`.
+See [testing.md](testing.md) for the UI snapshot workflow, baseline paths, and record commands.
 
 ## CUA verification
 

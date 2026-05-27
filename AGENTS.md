@@ -64,7 +64,7 @@ xcodebuild test \
   -derivedDataPath build/xcodegen
 ```
 
-UI snapshot tests only (prepend `SNAPSHOT_RECORD=1` to record baselines with SnapshotTesting):
+UI snapshot tests only (prepend `SNAPSHOT_RECORD=1` to record baselines):
 
 ```bash
 xcodebuild test \
