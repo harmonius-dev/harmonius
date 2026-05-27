@@ -8,18 +8,18 @@ and local development use the single **HarmoniusApp** scheme.
 | Target | Framework | Scope |
 | ------ | --------- | ----- |
 | HarmoniusUnitTests | swift-testing | Pure Swift geometry and helpers |
-| HarmoniusUITests | XCTest | End-to-end app launch + render snapshot |
+| HarmoniusUITests | XCUITest + SnapshotTesting | End-to-end app launch + render snapshot |
 
-CMake still builds production artifacts. XcodeGen links CMake static archives into the app and test
-bundles.
+CMake still builds production artifacts (`HarmoniusApp`, `HarmoniusRendering`). XcodeGen compiles
+test targets in Xcode and links the CMake-built `HarmoniusRendering` static library into unit tests.
 
 ```mermaid
 flowchart LR
   cmake[cmake --preset macos-debug] --> lib[libHarmoniusRendering.a<br/>HarmoniusApp]
   xgen[xcodegen generate] --> proj[Harmonius.xcodeproj]
-  lib --> unit[HarmoniusUnitTests]
+  lib --> unit[HarmoniusUnitTests<br/>Xcode + Swift Testing]
   lib --> app[HarmoniusApp.app]
-  app --> ui[HarmoniusUITests]
+  app --> ui[HarmoniusUITests<br/>Xcode + SnapshotTesting]
   unit --> scheme[HarmoniusApp scheme]
   ui --> scheme
 ```
@@ -74,18 +74,23 @@ test must be marked `public` in the CMake-built module (for example
 
 ## UI snapshot test
 
-UI tests and snapshot helpers are colocated under `app/HarmoniusApp/` (`*Tests.swift` and
-`SnapshotImageTesting.swift`).
+UI tests are colocated under `app/HarmoniusApp/` (`*Tests.swift`) and use XCUITest with
+[swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing).
 
 [HarmoniusRenderTests.swift](../app/HarmoniusApp/HarmoniusRenderTests.swift) launches `Harmonius`,
-waits for `metal-view-ready`, screenshots the `snapshot-content` accessibility element (fixed opaque
-background matching the Metal clear color), and compares against a reference PNG via
-[SnapshotImageTesting.swift](../app/HarmoniusApp/SnapshotImageTesting.swift). Capturing the content
-element instead of the full window keeps desktop wallpapers out of the snapshot.
+waits for `metal-view-ready`, launches with `-HarmoniusSnapshotMode` (fixed-size opaque Metal view,
+no title chrome), screenshots the `metal-view` element, and compares against a reference PNG via
+`assertSnapshot(of:as:)`. Capturing the content element instead of the full window keeps desktop
+wallpapers out of the snapshot.
 
 Reference images live under `app/HarmoniusApp/__Snapshots__/HarmoniusRenderTests/`.
 
+The UI test target clears Xcode's default `-module-alias Testing=_Testing_Unavailable` flag so
+SnapshotTesting can link against the Testing module while still using XCUITest.
+
 ### Record or refresh UI baselines
+
+Set `SNAPSHOT_RECORD=1` to record snapshots for the UI test suite:
 
 ```bash
 SNAPSHOT_RECORD=1 xcodebuild test \

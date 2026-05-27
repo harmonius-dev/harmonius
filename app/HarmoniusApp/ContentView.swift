@@ -6,28 +6,93 @@ struct ContentView: View {
   @State private var metalViewReady = false
 
   var body: some View {
+    Group {
+      if HarmoniusLaunchOptions.isSnapshotMode {
+        snapshotContent
+      } else {
+        standardContent
+      }
+    }
+    #if os(macOS)
+      .background(SnapshotWindowConfigurator())
+    #endif
+  }
+
+  private var standardContent: some View {
     VStack(spacing: 12) {
       Text("Harmonius")
         .font(.title.bold())
       Text("Metal 4 triangle (MTL4CommandQueue)")
         .font(.subheadline)
         .foregroundStyle(.secondary)
-      MetalView(isReady: $metalViewReady)
-        #if os(macOS)
-          .frame(minWidth: 960, minHeight: 540)
-        #endif
-      Text("ready")
-        .accessibilityIdentifier("metal-view-ready")
-        .accessibilityHidden(!metalViewReady)
-        .frame(width: 0, height: 0)
-        .opacity(0)
+      metalView
+      readinessMarker
     }
     .padding(24)
     .background(contentBackground)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("snapshot-content")
   }
+
+  private var snapshotContent: some View {
+    metalView
+      .frame(
+        width: HarmoniusLaunchOptions.snapshotMetalSize.width,
+        height: HarmoniusLaunchOptions.snapshotMetalSize.height
+      )
+      .background(contentBackground)
+      .accessibilityElement(children: .contain)
+      .accessibilityIdentifier("snapshot-content")
+      .overlay {
+        readinessMarker
+      }
+  }
+
+  private var metalView: some View {
+    MetalView(isReady: $metalViewReady)
+      #if os(macOS)
+        .frame(
+          minWidth: HarmoniusLaunchOptions.snapshotMetalSize.width,
+          minHeight: HarmoniusLaunchOptions.snapshotMetalSize.height
+        )
+      #endif
+  }
+
+  private var readinessMarker: some View {
+    Text("ready")
+      .accessibilityIdentifier("metal-view-ready")
+      .accessibilityHidden(!metalViewReady)
+      .frame(width: 0, height: 0)
+      .opacity(0)
+  }
 }
+
+#if os(macOS)
+  private struct SnapshotWindowConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+      let view = NSView(frame: .zero)
+      DispatchQueue.main.async {
+        guard HarmoniusLaunchOptions.isSnapshotMode, let window = view.window else {
+          return
+        }
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isOpaque = true
+        window.backgroundColor = NSColor(contentBackground)
+        window.hasShadow = false
+        window.setContentSize(
+          NSSize(
+            width: HarmoniusLaunchOptions.snapshotMetalSize.width,
+            height: HarmoniusLaunchOptions.snapshotMetalSize.height
+          )
+        )
+      }
+      return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+  }
+#endif
 
 #Preview {
   ContentView()

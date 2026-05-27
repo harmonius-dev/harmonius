@@ -7,8 +7,9 @@ This document remains as a focused reference for the UI snapshot workflow.
 ## Snapshot test
 
 [HarmoniusRenderTests.swift](../app/HarmoniusApp/HarmoniusRenderTests.swift) launches `Harmonius`,
-waits for `metal-view-ready`, screenshots the window, and compares against a reference PNG via
-[SnapshotImageTesting.swift](../app/HarmoniusApp/SnapshotImageTesting.swift).
+waits for `metal-view-ready`, launches with `-HarmoniusSnapshotMode`, screenshots the `metal-view`
+render target, and compares against a reference PNG via
+[swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing).
 
 Reference images live under `app/HarmoniusApp/__Snapshots__/HarmoniusRenderTests/`.
 

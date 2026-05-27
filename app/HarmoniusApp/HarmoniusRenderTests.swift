@@ -1,25 +1,35 @@
+import SnapshotTesting
 import XCTest
 
 @MainActor
 final class HarmoniusRenderTests: XCTestCase {
+  override func invokeTest() {
+    let record: SnapshotTestingConfiguration.Record =
+      ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1" ? .all : .never
+    withSnapshotTesting(record: record) {
+      super.invokeTest()
+    }
+  }
+
   override func setUpWithError() throws {
     continueAfterFailure = false
   }
 
   func testTriangleRendersSnapshot() throws {
     let app = XCUIApplication()
+    app.launchArguments.append("-HarmoniusSnapshotMode")
     app.launch()
 
     let ready = app.descendants(matching: .any)["metal-view-ready"]
     XCTAssertTrue(ready.waitForExistence(timeout: 10))
 
-    let content = app.descendants(matching: .any)["snapshot-content"]
-    XCTAssertTrue(content.waitForExistence(timeout: 2))
-    let screenshot = content.screenshot()
-    SnapshotImageTesting.assertSnapshot(
-      of: screenshot.image,
-      named: "triangle",
-      precision: 0.98
+    let metalView = app.descendants(matching: .any)["metal-view"]
+    XCTAssertTrue(metalView.waitForExistence(timeout: 2))
+
+    assertSnapshot(
+      of: metalView.screenshot().image,
+      as: .image(precision: 0.98),
+      named: "triangle"
     )
   }
 }

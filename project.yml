@@ -1,4 +1,10 @@
 name: Harmonius
+
+packages:
+  SnapshotTesting:
+    url: https://github.com/pointfreeco/swift-snapshot-testing
+    from: 1.19.2
+
 options:
   bundleIdPrefix: dev.harmonius
   deploymentTarget:
@@ -38,16 +44,6 @@ cmakeBuild: &cmake_build |
     -DCMAKE_OSX_ARCHITECTURES="$ARCHS" \
     -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
   cmake --build --preset "$PRESET" --target ${HARMONIUS_CMAKE_TARGETS}
-
-copyHostedTestBinary: &copy_hosted_test_binary |
-  set -euo pipefail
-  case "$PLATFORM_NAME" in
-    macosx) PLATFORM="macos" ;;
-    *) echo "error: Unknown platform $PLATFORM_NAME"; exit 1 ;;
-  esac
-  DEST="${CODESIGNING_FOLDER_PATH}/Contents/MacOS/${EXECUTABLE_NAME}"
-  mkdir -p "$(dirname "${DEST}")"
-  cp "${SRCROOT}/build/${PLATFORM}/app/${EXECUTABLE_NAME}" "${DEST}"
 
 targets:
   HarmoniusApp:
@@ -105,7 +101,6 @@ targets:
     platform: macOS
     sources:
       - path: app/HarmoniusRendering
-        buildPhase: none
         includes:
           - "**/*Tests.swift"
     dependencies:
@@ -114,42 +109,42 @@ targets:
       - name: CMake Build
         basedOnDependencyAnalysis: false
         script: *cmake_build
-    postBuildScripts:
-      - name: Copy Prebuilt Binary
-        script: *copy_hosted_test_binary
     settings:
       base:
-        HARMONIUS_CMAKE_TARGETS: HarmoniusUnitTests
+        HARMONIUS_CMAKE_TARGETS: HarmoniusRendering
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/HarmoniusApp.app/Contents/MacOS/HarmoniusApp
         BUNDLE_LOADER: $(TEST_HOST)
         GENERATE_INFOPLIST_FILE: YES
-        LINK_WITH_STANDARD_LIBRARIES: NO
-        MACH_O_TYPE: mh_bundle
+        SWIFT_INCLUDE_PATHS: $(SRCROOT)/build/macos/app
+        HEADER_SEARCH_PATHS: $(SRCROOT)/app/Shaders
+        OTHER_SWIFT_FLAGS:
+          - -cxx-interoperability-mode=default
+          - -Xcc
+          - -std=c++26
+          - -Xcc
+          - -I$(SRCROOT)/app/Shaders
+        OTHER_LDFLAGS:
+          - $(SRCROOT)/build/macos/app/libHarmoniusRendering.a
 
   HarmoniusUITests:
     type: bundle.ui-testing
     platform: macOS
     sources:
       - path: app/HarmoniusApp
-        buildPhase: none
         includes:
           - "**/*Tests.swift"
-          - "**/SnapshotImageTesting.swift"
         excludes:
           - "**/__Snapshots__/**"
     dependencies:
       - target: HarmoniusApp
+      - package: SnapshotTesting
     preBuildScripts:
       - name: CMake Build
         basedOnDependencyAnalysis: false
         script: *cmake_build
-    postBuildScripts:
-      - name: Copy Prebuilt Binary
-        script: *copy_hosted_test_binary
     settings:
       base:
-        HARMONIUS_CMAKE_TARGETS: HarmoniusApp HarmoniusUITests
+        HARMONIUS_CMAKE_TARGETS: HarmoniusApp
         TEST_TARGET_NAME: HarmoniusApp
         GENERATE_INFOPLIST_FILE: YES
-        LINK_WITH_STANDARD_LIBRARIES: NO
-        MACH_O_TYPE: mh_bundle
+        OTHER_SWIFT_FLAGS: ""
