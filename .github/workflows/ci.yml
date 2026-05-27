@@ -24,7 +24,7 @@ jobs:
         run: brew install swift-format
 
       - name: Lint Swift sources
-        run: swift-format lint --strict $(rg --files app -g '*.swift')
+        run: swift-format lint --strict $(git ls-files '*.swift')
 
   test-macos:
     name: macos-tests
