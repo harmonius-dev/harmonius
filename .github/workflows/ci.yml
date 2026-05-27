@@ -84,6 +84,7 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_KEY_P8_B64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+      HARMONIUS_SLANGC: ${{ github.workspace }}/build/macos/vcpkg_installed/arm64-osx/tools/shader-slang/slangc
       IOS_PROVISIONING_PROFILE_B64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
       IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
       P12_B64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}

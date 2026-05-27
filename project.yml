@@ -59,6 +59,9 @@ cmakeBuild: &cmake_build |
   if [[ -n "${SWIFT_TARGET:-}" ]]; then
     EXTRA+=(-DCMAKE_Swift_COMPILER_TARGET="$SWIFT_TARGET")
   fi
+  if [[ -n "${HARMONIUS_SLANGC:-}" ]]; then
+    EXTRA+=(-DHARMONIUS_SLANGC="$HARMONIUS_SLANGC")
+  fi
   cmake --preset "$PRESET" "${EXTRA[@]}"
   cmake --build --preset "$PRESET" --target ${HARMONIUS_CMAKE_TARGETS}
 
