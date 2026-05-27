@@ -9,6 +9,7 @@ options:
   bundleIdPrefix: dev.harmonius
   deploymentTarget:
     macOS: "26.0"
+    iOS: "26.0"
   createIntermediateGroups: true
   groupSortPosition: top
 
@@ -28,9 +29,20 @@ cmakeBuild: &cmake_build |
   set -euo pipefail
   export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
   case "$PLATFORM_NAME" in
-    macosx) PLATFORM="macos" ;;
-    iphoneos) PLATFORM="ios" ;;
-    iphonesimulator) PLATFORM="ios-simulator" ;;
+    macosx)
+      PLATFORM="macos"
+      DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET}"
+      ;;
+    iphoneos)
+      PLATFORM="ios"
+      DEPLOYMENT_TARGET="${IPHONEOS_DEPLOYMENT_TARGET}"
+      SWIFT_TARGET="arm64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}"
+      ;;
+    iphonesimulator)
+      PLATFORM="ios-simulator"
+      DEPLOYMENT_TARGET="${IPHONEOS_DEPLOYMENT_TARGET}"
+      SWIFT_TARGET="arm64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}-simulator"
+      ;;
     *) echo "error: Unknown platform $PLATFORM_NAME"; exit 1 ;;
   esac
   case "$CONFIGURATION" in
@@ -39,16 +51,21 @@ cmakeBuild: &cmake_build |
     *) CONFIG="debug" ;;
   esac
   PRESET="${PLATFORM}-${CONFIG}"
-  cmake --preset "$PRESET" \
-    -DCMAKE_OSX_SYSROOT="$SDKROOT" \
-    -DCMAKE_OSX_ARCHITECTURES="$ARCHS" \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
+  EXTRA=(
+    -DCMAKE_OSX_SYSROOT="$SDKROOT"
+    -DCMAKE_OSX_ARCHITECTURES="$ARCHS"
+    -DCMAKE_OSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET"
+  )
+  if [[ -n "${SWIFT_TARGET:-}" ]]; then
+    EXTRA+=(-DCMAKE_Swift_COMPILER_TARGET="$SWIFT_TARGET")
+  fi
+  cmake --preset "$PRESET" "${EXTRA[@]}"
   cmake --build --preset "$PRESET" --target ${HARMONIUS_CMAKE_TARGETS}
 
 targets:
   HarmoniusApp:
     type: application
-    platform: macOS
+    platform: [macOS, iOS]
     info:
       path: app/Info.plist
     sources:
@@ -73,21 +90,35 @@ targets:
         script: |
           set -euo pipefail
           case "$PLATFORM_NAME" in
-            macosx) PLATFORM="macos" ;;
-            iphoneos) PLATFORM="ios" ;;
-            iphonesimulator) PLATFORM="ios-simulator" ;;
+            macosx)
+              PLATFORM="macos"
+              SOURCE="${SRCROOT}/build/${PLATFORM}/app/HarmoniusApp"
+              RESOURCES="${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Contents/Resources"
+              ;;
+            iphoneos)
+              PLATFORM="ios"
+              SOURCE="${SRCROOT}/build/${PLATFORM}/app/HarmoniusApp.app/HarmoniusApp"
+              RESOURCES="${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}"
+              ;;
+            iphonesimulator)
+              PLATFORM="ios-simulator"
+              SOURCE="${SRCROOT}/build/${PLATFORM}/app/HarmoniusApp.app/HarmoniusApp"
+              RESOURCES="${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}"
+              ;;
             *) echo "error: Unknown platform $PLATFORM_NAME"; exit 1 ;;
           esac
           BINARY_DIR="${SRCROOT}/build/${PLATFORM}/app"
           DEST="${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
           mkdir -p "$(dirname "${DEST}")"
-          cp "${BINARY_DIR}/HarmoniusApp" "${DEST}"
-          RESOURCES="${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Contents/Resources"
+          cp "${SOURCE}" "${DEST}"
           mkdir -p "${RESOURCES}"
           cp "${BINARY_DIR}/metallibs/default.metallib" "${RESOURCES}/default.metallib"
     settings:
       base:
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0
         HARMONIUS_CMAKE_TARGETS: HarmoniusApp
+        PRODUCT_NAME: HarmoniusApp
         PRODUCT_BUNDLE_IDENTIFIER: dev.harmonius.App
         LINK_WITH_STANDARD_LIBRARIES: NO
         MACH_O_TYPE: mh_bundle
@@ -104,7 +135,7 @@ targets:
         includes:
           - "**/*Tests.swift"
     dependencies:
-      - target: HarmoniusApp
+      - target: HarmoniusApp_macOS
     preBuildScripts:
       - name: CMake Build
         basedOnDependencyAnalysis: false
@@ -136,7 +167,7 @@ targets:
         excludes:
           - "**/__Snapshots__/**"
     dependencies:
-      - target: HarmoniusApp
+      - target: HarmoniusApp_macOS
       - package: SnapshotTesting
     preBuildScripts:
       - name: CMake Build

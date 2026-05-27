@@ -59,7 +59,9 @@
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/ios/install",
         "CMAKE_OSX_DEPLOYMENT_TARGET": "26.0",
         "CMAKE_OSX_SYSROOT": "iphoneos",
+        "CMAKE_Swift_COMPILER_TARGET": "arm64-apple-ios26.0",
         "CMAKE_SYSTEM_NAME": "iOS",
+        "slang_DIR": "${sourceDir}/build/macos/vcpkg_installed/arm64-osx/share/slang",
         "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_MANIFEST_MODE": "ON"
       },
@@ -81,7 +83,9 @@
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/ios-simulator/install",
         "CMAKE_OSX_DEPLOYMENT_TARGET": "26.0",
         "CMAKE_OSX_SYSROOT": "iphonesimulator",
+        "CMAKE_Swift_COMPILER_TARGET": "arm64-apple-ios26.0-simulator",
         "CMAKE_SYSTEM_NAME": "iOS",
+        "slang_DIR": "${sourceDir}/build/macos/vcpkg_installed/arm64-osx/share/slang",
         "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_MANIFEST_MODE": "ON"
       },

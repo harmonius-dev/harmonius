@@ -105,14 +105,17 @@ Commit the updated PNG under `__Snapshots__/`.
 
 ## CI
 
-The `test-macos` job in [.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every push
-and pull request:
+The workflow in [.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request
+and `main` push:
 
-1. Generate the Xcode project with XcodeGen.
-2. Run `xcodebuild test -scheme HarmoniusApp`. (XcodeGen handles the CMake build via pre-build
-   scripts).
+1. `format` lints Swift files with `swift-format` on `macos-26-xlarge`.
+2. `test-macos` generates the Xcode project and runs `xcodebuild test` for
+   `HarmoniusApp_macOS`.
+3. `deploy-ios` archives `HarmoniusApp_iOS`, exports an IPA, and uploads it to App Store Connect
+   on successful `main` pushes.
 
-Test results upload as a GitHub Actions artifact (`macos-test-results`).
+Test results upload as a GitHub Actions artifact (`macos-test-results`). The exported IPA uploads
+as `ios-release-ipa`.
 
 ## CMake artifact paths
 
@@ -120,7 +123,7 @@ If CMake output layout changes, update [project.yml](../project.yml):
 
 | Artifact | Default path |
 | -------- | ------------ |
-| HarmoniusApp archive | `build/macos/app/HarmoniusApp` |
+| HarmoniusApp bundle | `build/macos/app/HarmoniusApp` |
 | HarmoniusRendering archive | `build/macos/app/libHarmoniusRendering.a` |
 | Swift module (import path) | `build/macos/app/` |
 
