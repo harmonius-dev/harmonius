@@ -44,12 +44,6 @@ struct ContentView: View {
 
   private var metalView: some View {
     MetalView()
-      #if os(macOS)
-        .frame(
-          minWidth: HarmoniusLaunchOptions.snapshotMetalSize.width,
-          minHeight: HarmoniusLaunchOptions.snapshotMetalSize.height
-        )
-      #endif
   }
 }
 

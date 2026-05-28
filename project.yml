@@ -22,8 +22,11 @@ settings:
     SWIFT_VERSION: "6.3"
     MACOSX_DEPLOYMENT_TARGET: "26.0"
     CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_IDENTITY[sdk=macosx*]: "-"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGNING_ALLOWED: YES
     CODE_SIGNING_REQUIRED: NO
-    CODE_SIGNING_ALLOWED: NO
+    DEVELOPMENT_TEAM: ""
 
 cmakeBuild: &cmake_build |
   set -euo pipefail
@@ -128,6 +131,8 @@ targets:
     settings:
       base:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_IDENTITY[sdk=macosx*]: "-"
         CURRENT_PROJECT_VERSION: 1
         HARMONIUS_CMAKE_TARGETS: HarmoniusApp
         MARKETING_VERSION: 1.0
