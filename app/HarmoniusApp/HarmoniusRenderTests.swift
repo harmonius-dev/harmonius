@@ -44,6 +44,7 @@ final class HarmoniusRenderTests: XCTestCase {
       if image.containsRenderedTriangle {
         return image
       }
+      Thread.sleep(forTimeInterval: 0.25)
     }
 
     XCTFail("Timed out waiting for the Metal triangle to render.")
