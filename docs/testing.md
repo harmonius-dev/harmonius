@@ -129,8 +129,9 @@ sage green across the upper bridge, muted warm orange/clay in the left grip, and
 charcoal in the right grip.
 
 This completes the image-selection decision. The durable vector source lives at
-[`AppIcon.svg`](../app/AssetSources/AppIcon.svg). It should remain the source of truth
-for generated asset catalog PNGs and Icon Composer/Liquid Glass imports.
+[`AppIcon.svg`](../app/AssetSources/AppIcon.svg). The Icon Composer import bridge lives at
+[`AppIcon.pdf`](../app/AssetSources/AppIcon.pdf), and the saved Composer document lives at
+[`AppIcon.icon`](../app/AssetSources/AppIcon.icon).
 
 Implementation notes:
 
@@ -146,20 +147,20 @@ Implementation notes:
 5. Prepare SVG/PDF vector inputs for Apple Icon Composer. Keep path count low and avoid
    texture, gradients, buttons, sticks, symbols, code marks, play icons, cubes, stones,
    and metallic effects.
-6. Use Icon Composer to place the vector layers into the app icon. Let the system/Liquid
+6. Use Icon Composer to place the vector layer into the app icon. Let the system/Liquid
    Glass background, lighting, and platform variants compose there instead of baking a
    border or background into the logo.
 7. Generated PNG app icon sizes are produced by
-   [`generate_app_assets.sh`](../scripts/generate_app_assets.sh) from the SVG source.
-   Do not hand-edit generated app icon PNGs.
+   [`generate_app_assets.sh`](../scripts/generate_app_assets.sh) from the Icon Composer
+   export. Do not hand-edit generated app icon PNGs.
 
-Manual Icon Composer step:
+Icon Composer source:
 
-1. Open Apple Icon Composer and create a new icon document.
-2. Import `app/AssetSources/AppIcon.svg` as the foreground vector artwork.
+1. Open `app/AssetSources/AppIcon.icon` in Apple Icon Composer.
+2. Keep `app/AssetSources/AppIcon.pdf` as the imported foreground artwork.
 3. Keep the imported controller mark borderless with a transparent outside and gaps.
 4. Use Icon Composer/Liquid Glass for background, lighting, and platform adaptation.
-5. Export the final Icon Composer package or platform assets from that document.
+5. Use `app/AssetSources/AppIcon-composer.png` as the 1024 px exported review image.
 
 ## CMake artifact paths
 

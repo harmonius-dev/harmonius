@@ -4,11 +4,17 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ASSET_ROOT="${ROOT}/app/Assets.xcassets"
 APP_ICON="${ASSET_ROOT}/AppIcon.appiconset"
-ICON_SOURCE="${ROOT}/app/AssetSources/AppIcon.svg"
+ICON_SOURCE="${ROOT}/app/AssetSources/AppIcon-composer.png"
+VECTOR_SOURCE="${ROOT}/app/AssetSources/AppIcon.svg"
 LAUNCH_BACKGROUND="${ASSET_ROOT}/LaunchBackground.colorset"
 
 if [[ ! -f "${ICON_SOURCE}" ]]; then
   echo "error: missing app icon source at ${ICON_SOURCE}" >&2
+  exit 1
+fi
+
+if [[ ! -f "${VECTOR_SOURCE}" ]]; then
+  echo "error: missing app icon vector source at ${VECTOR_SOURCE}" >&2
   exit 1
 fi
 
@@ -61,7 +67,6 @@ render_icon() {
   local pixels="$2"
 
   "${MAGICK[@]}" \
-    -background none \
     "${ICON_SOURCE}" \
     -resize "${pixels}x${pixels}" \
     -gravity center \
