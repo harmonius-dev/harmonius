@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if os(macOS)
+  import MetalKit
+#endif
+
 private let contentBackground = Color(red: 0.08, green: 0.09, blue: 0.12)
 
 struct ContentView: View {
@@ -65,11 +69,26 @@ struct ContentView: View {
         window.minSize = pointSize
         window.maxSize = pointSize
         window.setContentSize(pointSize)
+        requestSnapshotDraws(in: window.contentView)
+        DispatchQueue.main.async {
+          requestSnapshotDraws(in: window.contentView)
+        }
       }
       return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {}
+  }
+
+  @MainActor
+  private func requestSnapshotDraws(in view: NSView?) {
+    guard let view else { return }
+    if let metalView = view as? MTKView {
+      requestSnapshotDraw(in: metalView)
+    }
+    for subview in view.subviews {
+      requestSnapshotDraws(in: subview)
+    }
   }
 #endif
 

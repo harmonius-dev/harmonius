@@ -69,7 +69,7 @@ private func makeConfiguredMTKView(coordinator: MetalViewCoordinator) -> MTKView
 }
 
 @MainActor
-private func requestSnapshotDraw(in view: MTKView) {
+func requestSnapshotDraw(in view: MTKView) {
   guard HarmoniusLaunchOptions.isSnapshotMode else { return }
   view.drawableSize = HarmoniusLaunchOptions.snapshotMetalPixelSize
   #if os(macOS)
