@@ -20,14 +20,19 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Select Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.4.1'
+
       - name: Install Swift Format
         run: brew install swift-format
 
       - name: Lint Swift sources
         run: swift-format lint --strict $(git ls-files '*.swift')
 
-  test-macos:
-    name: macos-tests
+  macos-unit-tests:
+    name: macos-unit-tests
     runs-on: macos-26
     needs: format
     steps:
@@ -42,41 +47,117 @@ jobs:
           xcode-version: '26.4.1'
 
       - name: Install build tools
-        run: brew install ninja xcodegen
+        run: brew install imagemagick ninja xcodegen
 
       - name: Cache vcpkg installed tree
         uses: actions/cache@v4
         with:
           path: build/macos/vcpkg_installed
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          key: >-
+            vcpkg-${{ runner.os }}-${{
+            hashFiles('vcpkg.json', 'CMakePresets.json', 'project.yml')
+            }}
           restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: build/spm
+          key: >-
+            spm-${{ runner.os }}-${{
+            hashFiles('project.yml', '.github/workflows/ci.yml')
+            }}
+          restore-keys: spm-${{ runner.os }}-
 
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Run unit and UI tests
+      - name: Run unit tests
         run: |
           xcodebuild test \
             -project Harmonius.xcodeproj \
-            -scheme HarmoniusApp_macOS \
+            -scheme HarmoniusApp \
+            -only-testing:HarmoniusUnitTests \
             -destination 'platform=macOS,arch=arm64' \
             -derivedDataPath build/xcodegen \
+            -clonedSourcePackagesDirPath build/spm \
             -resultBundlePath build/xcodegen/test-results/HarmoniusApp.xcresult
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: macos-test-results
+          name: macos-unit-test-results
           path: build/xcodegen/test-results/HarmoniusApp.xcresult
+          if-no-files-found: warn
+
+  macos-ui-tests:
+    name: macos-ui-tests
+    runs-on: macos-26-xlarge
+    needs: format
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Select Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.4.1'
+
+      - name: Install build tools
+        run: brew install imagemagick ninja xcodegen
+
+      - name: Cache vcpkg installed tree
+        uses: actions/cache@v4
+        with:
+          path: build/macos/vcpkg_installed
+          key: >-
+            vcpkg-${{ runner.os }}-${{
+            hashFiles('vcpkg.json', 'CMakePresets.json', 'project.yml')
+            }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: build/spm
+          key: >-
+            spm-${{ runner.os }}-${{
+            hashFiles('project.yml', '.github/workflows/ci.yml')
+            }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Run UI tests
+        run: |
+          xcodebuild test \
+            -project Harmonius.xcodeproj \
+            -scheme HarmoniusApp \
+            -only-testing:HarmoniusUITests \
+            -destination 'platform=macOS,arch=arm64' \
+            -derivedDataPath build/xcodegen \
+            -clonedSourcePackagesDirPath build/spm \
+            -resultBundlePath build/xcodegen/test-results/HarmoniusUITests.xcresult
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-ui-test-results
+          path: build/xcodegen/test-results/HarmoniusUITests.xcresult
           if-no-files-found: warn
 
   deploy-ios:
     name: ios-release
-    runs-on: macos-26-xlarge
+    runs-on: macos-26
     needs:
       - format
-      - test-macos
+      - macos-unit-tests
+      - macos-ui-tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       APPLE_DISTRIBUTION_IDENTITY: ${{ secrets.APPLE_DISTRIBUTION_IDENTITY }}
@@ -85,7 +166,7 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_KEY_P8_B64: ${{ secrets.ASC_KEY_P8_BASE64 }}
       ASC_APPLE_ID: 6772846662
-      HARMONIUS_SLANGC: ${{ github.workspace }}/build/macos/vcpkg_installed/arm64-osx/tools/shader-slang/slangc
+      HARMONIUS_SLANGC_DIR: ${{ github.workspace }}/build/macos/vcpkg_installed/arm64-osx
       IOS_PROVISIONING_PROFILE_B64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
       IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
       P12_B64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
@@ -102,7 +183,7 @@ jobs:
           xcode-version: '26.4.1'
 
       - name: Install build tools
-        run: brew install ninja xcodegen
+        run: brew install imagemagick ninja xcodegen
 
       - name: Cache vcpkg installed tree
         uses: actions/cache@v4
@@ -110,8 +191,21 @@ jobs:
           path: |
             build/macos/vcpkg_installed
             build/ios/vcpkg_installed
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          key: >-
+            vcpkg-${{ runner.os }}-${{
+            hashFiles('vcpkg.json', 'CMakePresets.json', 'project.yml')
+            }}
           restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: build/spm
+          key: >-
+            spm-${{ runner.os }}-${{
+            hashFiles('project.yml', '.github/workflows/ci.yml')
+            }}
+          restore-keys: spm-${{ runner.os }}-
 
       - name: Import distribution certificate
         run: |
@@ -147,20 +241,23 @@ jobs:
         run: |
           BUILD_NUMBER=$((GITHUB_RUN_NUMBER * 10 + GITHUB_RUN_ATTEMPT))
           echo "CURRENT_PROJECT_VERSION=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "MARKETING_VERSION=1.0" >> "$GITHUB_ENV"
 
       - name: Archive iOS app
         run: |
+          export HARMONIUS_SLANGC="$HARMONIUS_SLANGC_DIR/tools/shader-slang/slangc"
           xcodebuild archive \
             -project Harmonius.xcodeproj \
-            -scheme HarmoniusApp_iOS \
+            -scheme HarmoniusApp \
             -destination 'generic/platform=iOS' \
             -archivePath build/ios/Harmonius.xcarchive \
+            -clonedSourcePackagesDirPath build/spm \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             CODE_SIGN_IDENTITY="$APPLE_DISTRIBUTION_IDENTITY" \
             PROVISIONING_PROFILE_SPECIFIER="$IOS_PROVISIONING_PROFILE_NAME" \
             CURRENT_PROJECT_VERSION="$CURRENT_PROJECT_VERSION" \
-            MARKETING_VERSION=1.0
+            MARKETING_VERSION="$MARKETING_VERSION"
 
       - name: Export IPA
         run: |
@@ -213,7 +310,7 @@ jobs:
             --apple-id "$ASC_APPLE_ID" \
             --bundle-id "dev.harmonius.App" \
             --bundle-version "$CURRENT_PROJECT_VERSION" \
-            --bundle-short-version-string "1.0" \
+            --bundle-short-version-string "$MARKETING_VERSION" \
             --apiKey "$ASC_KEY_ID" \
             --apiIssuer "$ASC_ISSUER_ID"
           rm -f "$KEYDIR/AuthKey_${ASC_KEY_ID}.p8"

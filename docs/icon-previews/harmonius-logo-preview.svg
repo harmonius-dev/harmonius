@@ -1,0 +1,30 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 1024 1024"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">Harmonius greyscale harmonic loop logo preview</title>
+  <desc id="desc">
+    A greyscale harmonic loop mark with a play triangle in the right lobe.
+  </desc>
+  <rect width="1024" height="1024" fill="#241136" />
+  <circle cx="512" cy="512" r="392" fill="#B8FF2E" opacity="0.18" />
+  <g
+    fill="none"
+    stroke="#F2F0E8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path
+      d="M184 512 C268 360 390 360 512 512 C634 664 756 664 840 512"
+      stroke-width="142"
+    />
+    <path
+      d="M184 512 C268 664 390 664 512 512 C634 360 756 360 840 512"
+      stroke-width="96"
+    />
+  </g>
+  <circle cx="364" cy="512" r="54" fill="#2C2C30" />
+  <path d="M594 432 L714 512 L594 592 Z" fill="#2C2C30" />
+</svg>

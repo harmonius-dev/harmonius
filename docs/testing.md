@@ -1,7 +1,7 @@
 # Testing
 
-Harmonius runs unit tests (swift-testing) and UI snapshot tests (XCUITest) via XcodeGen on macOS. CI
-and local development use the single **HarmoniusApp** scheme.
+Harmonius runs unit tests (swift-testing) and UI snapshot tests (XCUITest) via XcodeGen
+on macOS. CI and local development use the unified **HarmoniusApp** scheme.
 
 ## Test targets
 
@@ -41,6 +41,7 @@ xcodebuild test \
   -project Harmonius.xcodeproj \
   -scheme HarmoniusApp \
   -destination "platform=macOS" \
+  -clonedSourcePackagesDirPath build/spm \
   -derivedDataPath build/xcodegen
 ```
 
@@ -52,6 +53,7 @@ xcodebuild test \
   -scheme HarmoniusApp \
   -only-testing:HarmoniusUnitTests \
   -destination "platform=macOS" \
+  -clonedSourcePackagesDirPath build/spm \
   -derivedDataPath build/xcodegen
 ```
 
@@ -98,6 +100,7 @@ SNAPSHOT_RECORD=1 xcodebuild test \
   -scheme HarmoniusApp \
   -only-testing:HarmoniusUITests \
   -destination "platform=macOS" \
+  -clonedSourcePackagesDirPath build/spm \
   -derivedDataPath build/xcodegen
 ```
 
@@ -108,14 +111,14 @@ Commit the updated PNG under `__Snapshots__/`.
 The workflow in [.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request
 and `main` push:
 
-1. `format` lints Swift files with `swift-format` on `macos-26`.
-2. `test-macos` generates the Xcode project and runs `xcodebuild test` for
-   `HarmoniusApp_macOS`.
-3. `deploy-ios` archives `HarmoniusApp_iOS`, exports an IPA, and uploads it to App Store Connect
-   on successful `main` pushes from `macos-26-xlarge`.
+1. `format` selects Xcode 26 and lints Swift files with `swift-format` on `macos-26`.
+2. `macos-unit-tests` runs only `HarmoniusUnitTests` on `macos-26`.
+3. `macos-ui-tests` runs only `HarmoniusUITests` on `macos-26-xlarge`.
+4. `deploy-ios` archives `HarmoniusApp`, exports an IPA, and uploads it to App Store Connect
+   on successful `main` pushes from `macos-26`.
 
-Test results upload as a GitHub Actions artifact (`macos-test-results`). The exported IPA uploads as
-`ios-release-ipa`.
+Test results upload as GitHub Actions artifacts (`macos-unit-test-results` and
+`macos-ui-test-results`). The exported IPA uploads as `ios-release-ipa`.
 
 ## CMake artifact paths
 
