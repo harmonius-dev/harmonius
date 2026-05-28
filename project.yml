@@ -54,9 +54,10 @@ cmakeBuild: &cmake_build |
     *) CONFIG="debug" ;;
   esac
   PRESET="${PLATFORM}-${CONFIG}"
+  CMAKE_ARCHS="${ARCHS// /;}"
   EXTRA=(
     -DCMAKE_OSX_SYSROOT="$SDKROOT"
-    -DCMAKE_OSX_ARCHITECTURES="$ARCHS"
+    -DCMAKE_OSX_ARCHITECTURES="$CMAKE_ARCHS"
     -DCMAKE_OSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET"
   )
   if [[ -n "${SWIFT_TARGET:-}" ]]; then
