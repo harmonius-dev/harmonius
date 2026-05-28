@@ -311,7 +311,6 @@ jobs:
       - macos-ui-tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
-      APPLE_DISTRIBUTION_IDENTITY: ${{ secrets.APPLE_DISTRIBUTION_IDENTITY }}
       APPLE_INSTALLER_IDENTITY: ${{ secrets.APPLE_INSTALLER_DISTRIBUTION_IDENTITY }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       ASC_APPLE_ID: 6772846662
@@ -399,7 +398,6 @@ jobs:
             CODE_SIGNING_REQUIRED=YES \
             CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            "CODE_SIGN_IDENTITY[sdk=macosx*]=$APPLE_DISTRIBUTION_IDENTITY" \
             CURRENT_PROJECT_VERSION="$CURRENT_PROJECT_VERSION" \
             MARKETING_VERSION="$MARKETING_VERSION"
 
@@ -419,8 +417,6 @@ jobs:
             <false/>
             <key>method</key>
             <string>app-store-connect</string>
-            <key>signingCertificate</key>
-            <string>$APPLE_DISTRIBUTION_IDENTITY</string>
             <key>signingStyle</key>
             <string>automatic</string>
             <key>teamID</key>
