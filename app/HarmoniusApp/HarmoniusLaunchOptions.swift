@@ -1,12 +1,9 @@
 import CoreGraphics
 import Foundation
 
-#if os(macOS)
-  import AppKit
-#endif
-
 enum HarmoniusLaunchOptions {
   static let snapshotModeArgument = "-HarmoniusSnapshotMode"
+  static let snapshotScale: CGFloat = 1
   static let snapshotMetalPixelSize = CGSize(width: 1280, height: 720)
 
   static var isSnapshotMode: Bool {
@@ -15,10 +12,10 @@ enum HarmoniusLaunchOptions {
 
   #if os(macOS)
     static var snapshotMetalSize: CGSize {
-      snapshotMetalSize(backingScaleFactor: NSScreen.main?.backingScaleFactor ?? 1)
+      snapshotMetalSize(scale: snapshotScale)
     }
 
-    static func snapshotMetalSize(backingScaleFactor scale: CGFloat) -> CGSize {
+    static func snapshotMetalSize(scale: CGFloat) -> CGSize {
       let normalizedScale = max(scale, 1)
       return CGSize(
         width: snapshotMetalPixelSize.width / normalizedScale,
