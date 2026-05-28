@@ -22,7 +22,11 @@ final class HarmoniusRenderTests: XCTestCase {
 
     let ready = app.descendants(matching: .any)["metal-view-ready"]
     if !ready.waitForExistence(timeout: 10) {
-      if ProcessInfo.processInfo.environment["CI"] == "true" {
+      let isCI = ProcessInfo.processInfo.environment["CI"] == "true"
+      let isGitHubActions = FileManager.default.currentDirectoryPath.hasPrefix(
+        "/Users/runner/work/"
+      )
+      if isCI || isGitHubActions {
         throw XCTSkip("Metal view did not present a frame on the CI runner.")
       }
       XCTFail("Metal view did not present a frame.")
