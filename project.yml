@@ -79,6 +79,7 @@ targets:
         buildPhase: resources
       - path: app/Resources/LaunchScreen.storyboard
         buildPhase: resources
+        destinationFilters: [iOS]
       - path: .
         buildPhase: none
         excludes:
