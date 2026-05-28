@@ -12,7 +12,6 @@ options:
     iOS: "26.0"
   createIntermediateGroups: true
   groupSortPosition: top
-  preGenCommand: bash scripts/generate_app_assets.sh
 
 configs:
   Debug: debug

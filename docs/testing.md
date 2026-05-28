@@ -131,9 +131,10 @@ image. It is a clean, borderless gamepad/controller silhouette split into three 
 thick white negative-space channels. The filled sections are desaturated sage green across the upper
 bridge, muted warm orange/clay in the left grip, and dark charcoal in the right grip.
 
-This completes the image-selection decision. The durable app icon source lives at
-[`AppIcon.icon`](../app/AssetSources/AppIcon.icon). The vector source/reference lives at
-[`AppIcon.svg`](../app/AssetSources/AppIcon.svg). The PDF bridge was removed.
+This completes the image-selection decision. The app icon source of truth is the saved
+Icon Composer package at [`AppIcon.icon`](../app/AssetSources/AppIcon.icon). The vector
+source/reference lives at [`AppIcon.svg`](../app/AssetSources/AppIcon.svg). The PDF
+bridge was removed.
 
 Implementation notes:
 
@@ -152,21 +153,26 @@ Implementation notes:
 6. Use Icon Composer to place the vector layer into the app icon. Let the system/Liquid
    Glass background, lighting, and platform variants compose there instead of baking a
    border or background into the logo.
-7. XcodeGen includes `AppIcon.icon` as an iOS resource. The app icon build setting
-   remains `AppIcon`, matching the Icon Composer package name.
-8. Generated PNG app icon sizes are produced by
-   [`generate_app_assets.sh`](../scripts/generate_app_assets.sh) from the Icon Composer
-   package export. They remain a generated fallback for asset-catalog validation and
-   back-deployment behavior. Do not hand-edit generated app icon PNGs.
+7. XcodeGen includes `AppIcon.icon` as an iOS resource outside `Assets.xcassets`.
+8. The app icon build setting remains `AppIcon`, the filename without `.icon`.
+9. Do not commit generated `AppIcon.appiconset` PNGs or flattened preview PNGs.
 
 Icon Composer source:
 
-1. Open `app/AssetSources/AppIcon.icon` in Apple Icon Composer.
-2. Keep the imported controller mark borderless with a transparent outside and gaps.
-3. Use the subdued eggplant background from the saved Icon Composer document.
-4. Keep visible padding between the foreground mark and every app icon edge.
-5. Use Icon Composer/Liquid Glass for background, lighting, and platform adaptation.
-6. Use `app/AssetSources/AppIcon-composer.png` as the 1024 px exported review image.
+1. Use macOS Sequoia 15.3 or newer.
+2. Open `app/AssetSources/AppIcon.icon` in Apple Icon Composer.
+3. Save the package with File -> Save. Do not export app icon PNG sizes as source.
+4. Keep `AppIcon.icon` next to `Assets.xcassets`, not inside the asset catalog.
+5. Ensure the app target includes `AppIcon.icon` and the app icon name is `AppIcon`.
+6. Keep the imported controller mark borderless with a transparent outside and gaps.
+7. Use a light warm bone/ivory background so sage and clay remain the identity colors.
+8. Keep approved translucency on with only a subtle neutral shadow for depth.
+9. Keep source artwork tight; use Icon Composer layer scale for final icon padding.
+
+Asset catalog:
+
+1. Keep `Assets.xcassets` for non-icon assets such as `LaunchBackground`.
+2. Do not generate app icon PNGs into `Assets.xcassets`.
 
 ## CMake artifact paths
 
