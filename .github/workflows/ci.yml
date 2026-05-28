@@ -84,6 +84,7 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_KEY_P8_B64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+      ASC_APPLE_ID: 6772846662
       HARMONIUS_SLANGC: ${{ github.workspace }}/build/macos/vcpkg_installed/arm64-osx/tools/shader-slang/slangc
       IOS_PROVISIONING_PROFILE_B64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
       IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
@@ -209,6 +210,10 @@ jobs:
           xcrun altool --upload-app \
             --type ios \
             --file "$IPA_PATH" \
+            --apple-id "$ASC_APPLE_ID" \
+            --bundle-id "dev.harmonius.App" \
+            --bundle-version "$CURRENT_PROJECT_VERSION" \
+            --bundle-short-version-string "1.0" \
             --apiKey "$ASC_KEY_ID" \
             --apiIssuer "$ASC_ISSUER_ID"
           rm -f "$KEYDIR/AuthKey_${ASC_KEY_ID}.p8"
