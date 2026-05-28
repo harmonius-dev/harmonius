@@ -18,6 +18,7 @@ harmonius_add_module(
   INCLUDE_DIRS
   Shaders
   FRAMEWORKS
+  CoreGraphics
   Metal
   MetalKit
   QuartzCore)
@@ -30,6 +31,7 @@ add_executable(
                HarmoniusApp/HarmoniusLaunchOptions.swift HarmoniusApp/MetalView.swift)
 target_link_libraries(HarmoniusApp PRIVATE HarmoniusRendering)
 target_link_libraries(HarmoniusApp PRIVATE "-framework SwiftUI"
+                                           "-framework CoreGraphics"
                                            "-framework MetalKit")
 add_dependencies(HarmoniusApp HarmoniusRendering_slang)
 set_target_properties(HarmoniusApp PROPERTIES Swift_MODULE_NAME HarmoniusApp

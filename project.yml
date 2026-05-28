@@ -88,6 +88,7 @@ targets:
       - sdk: UIKit.framework
         destinationFilters: [iOS]
       - sdk: SwiftUI.framework
+      - sdk: CoreGraphics.framework
       - sdk: Metal.framework
       - sdk: MetalKit.framework
       - sdk: QuartzCore.framework
