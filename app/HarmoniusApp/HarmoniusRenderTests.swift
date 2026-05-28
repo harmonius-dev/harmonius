@@ -20,21 +20,8 @@ final class HarmoniusRenderTests: XCTestCase {
     app.launchArguments.append("-HarmoniusSnapshotMode")
     app.launch()
 
-    let ready = app.descendants(matching: .any)["metal-view-ready"]
-    if !ready.waitForExistence(timeout: 10) {
-      let isCI = ProcessInfo.processInfo.environment["CI"] == "true"
-      let isGitHubActions = FileManager.default.currentDirectoryPath.hasPrefix(
-        "/Users/runner/work/"
-      )
-      if isCI || isGitHubActions {
-        throw XCTSkip("Metal view did not present a frame on the CI runner.")
-      }
-      XCTFail("Metal view did not present a frame.")
-      return
-    }
-
     let metalView = app.descendants(matching: .any)["metal-view"]
-    XCTAssertTrue(metalView.waitForExistence(timeout: 2))
+    XCTAssertTrue(metalView.waitForExistence(timeout: 10))
 
     assertSnapshot(
       of: metalView.screenshot().image,
