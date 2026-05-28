@@ -9,7 +9,7 @@ can confirm rendering outside the test runner:
 
 1. Launch `build/xcodegen/Build/Products/Debug/HarmoniusApp.app`
    (`bundle_id`: `dev.harmonius.App`).
-2. Poll accessibility until `metal-view-ready` is visible.
+2. Poll accessibility until `metal-view` is visible.
 3. Screenshot the app window and confirm the triangle is visible.
 
 This step is local-only and is not part of CI.

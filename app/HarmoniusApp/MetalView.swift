@@ -8,19 +8,14 @@ import SwiftUI
 @MainActor
 final class MetalViewCoordinator: NSObject, MTKViewDelegate {
   private var renderer: Metal4TriangleRenderer?
-  private var onFirstFrame: (() -> Void)?
 
-  func configure(view: MTKView, onFirstFrame: @escaping () -> Void) {
-    self.onFirstFrame = onFirstFrame
+  func configure(view: MTKView) {
     guard let device = view.device else { return }
     guard device.supportsFamily(.metal4) else {
       NSLog("Metal 4 is required for Harmonius.")
       return
     }
     guard let renderer = Metal4TriangleRenderer(view: view) else { return }
-    renderer.didPresentFirstFrame = {
-      onFirstFrame()
-    }
     self.renderer = renderer
   }
 
@@ -38,10 +33,7 @@ final class MetalViewCoordinator: NSObject, MTKViewDelegate {
 }
 
 @MainActor
-private func makeConfiguredMTKView(
-  coordinator: MetalViewCoordinator,
-  onFirstFrame: @escaping () -> Void
-) -> MTKView {
+private func makeConfiguredMTKView(coordinator: MetalViewCoordinator) -> MTKView {
   let view = MTKView()
   view.device = MTLCreateSystemDefaultDevice()
   view.colorPixelFormat = .bgra8Unorm
@@ -57,7 +49,7 @@ private func makeConfiguredMTKView(
     view.isAccessibilityElement = true
     view.accessibilityIdentifier = "metal-view"
   #endif
-  coordinator.configure(view: view, onFirstFrame: onFirstFrame)
+  coordinator.configure(view: view)
   return view
 }
 
@@ -67,28 +59,20 @@ private func makeConfiguredMTKView(
 
 #if os(macOS)
   struct MetalView: NSViewRepresentable {
-    @Binding var isReady: Bool
-
     func makeCoordinator() -> MetalViewCoordinator { MetalViewCoordinator() }
 
     func makeNSView(context: Context) -> MTKView {
-      makeConfiguredMTKView(coordinator: context.coordinator) {
-        isReady = true
-      }
+      makeConfiguredMTKView(coordinator: context.coordinator)
     }
 
     func updateNSView(_ nsView: MTKView, context: Context) {}
   }
 #elseif os(iOS)
   struct MetalView: UIViewRepresentable {
-    @Binding var isReady: Bool
-
     func makeCoordinator() -> MetalViewCoordinator { MetalViewCoordinator() }
 
     func makeUIView(context: Context) -> MTKView {
-      makeConfiguredMTKView(coordinator: context.coordinator) {
-        isReady = true
-      }
+      makeConfiguredMTKView(coordinator: context.coordinator)
     }
 
     func updateUIView(_ uiView: MTKView, context: Context) {}

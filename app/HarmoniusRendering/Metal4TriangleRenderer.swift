@@ -20,10 +20,6 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
 
   private var frameNumber: UInt64 = 0
   private var viewportSize = SIMD2<UInt32>(repeating: 0)
-  private var hasPresentedFirstFrame = false
-
-  /// Called once on the main actor after the first drawable is presented.
-  public var didPresentFirstFrame: (() -> Void)?
 
   @MainActor
   public init?(view: MTKView) {
@@ -158,11 +154,6 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
     commandQueue.signalDrawable(drawable)
     drawable.present()
     commandQueue.signalEvent(sharedEvent, value: frameNumber)
-
-    if !hasPresentedFirstFrame {
-      hasPresentedFirstFrame = true
-      didPresentFirstFrame?()
-    }
   }
 
   private func updateViewportSize(_ size: CGSize) {

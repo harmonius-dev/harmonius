@@ -180,9 +180,3 @@ If CMake output layout changes, update [project.yml](../project.yml):
 | HarmoniusApp bundle | `build/macos/app/HarmoniusApp` |
 | HarmoniusRendering archive | `build/macos/app/libHarmoniusRendering.a` |
 | Swift module (import path) | `build/macos/app/` |
-
-## Readiness signal
-
-The renderer fires `didPresentFirstFrame` after the first drawable is presented. `ContentView`
-exposes a hidden `Text` with accessibility identifier `metal-view-ready` once the Metal view has
-presented.
