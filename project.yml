@@ -76,6 +76,9 @@ targets:
         buildPhase: resources
       - path: .
         buildPhase: none
+        excludes:
+          - build/**
+          - vcpkg/**
     dependencies:
       - sdk: AppKit.framework
         destinationFilters: [macOS]

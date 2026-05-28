@@ -84,8 +84,8 @@ test must be marked `public` in the CMake-built module (for example
 3. Call `assertSnapshot(of:as:named:)` on `metalView.screenshot().image` at precision `0.98`.
 
 Snapshot mode is implemented in [ContentView.swift](../app/HarmoniusApp/ContentView.swift) and
-[HarmoniusLaunchOptions.swift](../app/HarmoniusApp/HarmoniusLaunchOptions.swift). It shows a 960×540
-`metal-view` and configures an opaque window without title chrome.
+[HarmoniusLaunchOptions.swift](../app/HarmoniusApp/HarmoniusLaunchOptions.swift). It shows a
+960×540 `metal-view` and configures an opaque window without title chrome.
 
 Reference PNGs live under `app/HarmoniusApp/__Snapshots__/HarmoniusRenderTests/`. SnapshotTesting
 names files `{testFunction}.{named}.png` (for example `testTriangleRendersSnapshot.triangle.png`).
@@ -117,7 +117,8 @@ and `main` push:
 4. `deploy-ios` archives `HarmoniusApp`, exports an IPA, and uploads it to App Store Connect
    on successful `main` pushes from `macos-26`.
 
-CI caches the vcpkg installed trees and Swift package checkouts across repeated runs.
+CI caches the vcpkg installed trees across repeated runs. Swift packages resolve fresh per job
+because cached checkout directories can become invalid across Xcode runner updates.
 
 Test results upload as GitHub Actions artifacts (`macos-unit-test-results` and
 `macos-ui-test-results`). The exported IPA uploads as `ios-release-ipa`.

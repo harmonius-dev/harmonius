@@ -59,16 +59,6 @@ jobs:
             }}
           restore-keys: vcpkg-${{ runner.os }}-
 
-      - name: Cache Swift packages
-        uses: actions/cache@v4
-        with:
-          path: build/spm
-          key: >-
-            spm-${{ runner.os }}-${{
-            hashFiles('project.yml', '.github/workflows/ci.yml')
-            }}
-          restore-keys: spm-${{ runner.os }}-
-
       - name: Generate Xcode project
         run: xcodegen generate
 
@@ -118,16 +108,6 @@ jobs:
             hashFiles('vcpkg.json', 'CMakePresets.json', 'project.yml')
             }}
           restore-keys: vcpkg-${{ runner.os }}-
-
-      - name: Cache Swift packages
-        uses: actions/cache@v4
-        with:
-          path: build/spm
-          key: >-
-            spm-${{ runner.os }}-${{
-            hashFiles('project.yml', '.github/workflows/ci.yml')
-            }}
-          restore-keys: spm-${{ runner.os }}-
 
       - name: Generate Xcode project
         run: xcodegen generate
@@ -196,16 +176,6 @@ jobs:
             hashFiles('vcpkg.json', 'CMakePresets.json', 'project.yml')
             }}
           restore-keys: vcpkg-${{ runner.os }}-
-
-      - name: Cache Swift packages
-        uses: actions/cache@v4
-        with:
-          path: build/spm
-          key: >-
-            spm-${{ runner.os }}-${{
-            hashFiles('project.yml', '.github/workflows/ci.yml')
-            }}
-          restore-keys: spm-${{ runner.os }}-
 
       - name: Import distribution certificate
         run: |
