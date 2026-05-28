@@ -139,6 +139,8 @@ The macOS release job expects these GitHub Actions secrets:
 | `ASC_ISSUER_ID` | App Store Connect API issuer |
 | `ASC_KEY_ID` | App Store Connect API key |
 | `ASC_KEY_P8_BASE64` | App Store Connect API private key |
+| `MACOS_PROVISIONING_PROFILE_BASE64` | Mac App Store provisioning profile |
+| `MACOS_PROVISIONING_PROFILE_NAME` | Mac App Store profile name |
 
 ## App icon plan
 
