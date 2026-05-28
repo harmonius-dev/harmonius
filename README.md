@@ -11,9 +11,21 @@ through an Xcode pre-build script (see [project.yml](project.yml)).
 
 ### Prerequisites
 
+For macOS app builds:
+
 - macOS 26 + Xcode 26
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
 - Ninja — `brew install ninja`
+
+For Linux native development:
+
+- CMake 4.0 or newer
+- Ninja and a C++ compiler toolchain
+- Vulkan loader, headers, tools, validation layers, and Mesa Vulkan drivers
+- X11, XCB, RandR, Xcursor, Xi, Xinerama, Xrender, Xfixes, and XKB common headers
+
+Run `./scripts/setup_environment.sh` to install supported host dependencies. See
+[docs/environment-setup.md](docs/environment-setup.md) for Linux Vulkan and X11 setup details.
 
 ### Generate the Xcode project
 
