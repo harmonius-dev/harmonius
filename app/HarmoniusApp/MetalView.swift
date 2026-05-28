@@ -35,22 +35,51 @@ final class MetalViewCoordinator: NSObject, MTKViewDelegate {
 @MainActor
 private func makeConfiguredMTKView(coordinator: MetalViewCoordinator) -> MTKView {
   let view = MTKView()
+  let isSnapshotMode = HarmoniusLaunchOptions.isSnapshotMode
   view.device = MTLCreateSystemDefaultDevice()
   view.colorPixelFormat = .bgra8Unorm
   view.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
   view.preferredFramesPerSecond = 60
-  view.enableSetNeedsDisplay = false
-  view.isPaused = false
+  view.enableSetNeedsDisplay = isSnapshotMode
+  view.isPaused = isSnapshotMode
+  if isSnapshotMode {
+    view.drawableSize = HarmoniusLaunchOptions.snapshotMetalPixelSize
+    view.framebufferOnly = false
+  }
   view.delegate = coordinator
   #if os(macOS)
+    if isSnapshotMode {
+      view.wantsLayer = true
+      view.layer?.contentsScale = HarmoniusLaunchOptions.snapshotScale
+    }
     view.setAccessibilityElement(true)
     view.setAccessibilityIdentifier("metal-view")
   #else
+    if isSnapshotMode {
+      view.contentScaleFactor = HarmoniusLaunchOptions.snapshotScale
+    }
     view.isAccessibilityElement = true
     view.accessibilityIdentifier = "metal-view"
   #endif
   coordinator.configure(view: view)
+  DispatchQueue.main.async {
+    requestSnapshotDraw(in: view)
+  }
   return view
+}
+
+@MainActor
+private func requestSnapshotDraw(in view: MTKView) {
+  guard HarmoniusLaunchOptions.isSnapshotMode else { return }
+  view.drawableSize = HarmoniusLaunchOptions.snapshotMetalPixelSize
+  #if os(macOS)
+    view.wantsLayer = true
+    view.layer?.contentsScale = HarmoniusLaunchOptions.snapshotScale
+    view.needsDisplay = true
+  #else
+    view.setNeedsDisplay()
+  #endif
+  view.draw()
 }
 
 // ---------------------------------------------------------------------------
@@ -65,7 +94,9 @@ private func makeConfiguredMTKView(coordinator: MetalViewCoordinator) -> MTKView
       makeConfiguredMTKView(coordinator: context.coordinator)
     }
 
-    func updateNSView(_ nsView: MTKView, context: Context) {}
+    func updateNSView(_ nsView: MTKView, context: Context) {
+      requestSnapshotDraw(in: nsView)
+    }
   }
 #elseif os(iOS)
   struct MetalView: UIViewRepresentable {
@@ -75,6 +106,8 @@ private func makeConfiguredMTKView(coordinator: MetalViewCoordinator) -> MTKView
       makeConfiguredMTKView(coordinator: context.coordinator)
     }
 
-    func updateUIView(_ uiView: MTKView, context: Context) {}
+    func updateUIView(_ uiView: MTKView, context: Context) {
+      requestSnapshotDraw(in: uiView)
+    }
   }
 #endif

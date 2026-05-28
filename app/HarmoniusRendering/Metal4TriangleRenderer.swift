@@ -161,6 +161,9 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
   }
 
   private func updateViewportSize(_ size: CGSize) {
+    guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else {
+      return
+    }
     viewportSize = SIMD2<UInt32>(UInt32(size.width), UInt32(size.height))
     viewportSizeBuffer.contents().copyMemory(
       from: [viewportSize],
