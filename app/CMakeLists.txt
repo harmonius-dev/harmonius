@@ -9,6 +9,7 @@ harmonius_add_module(
   HarmoniusRendering
   SWIFT_SOURCES
   HarmoniusRendering/Metal4TriangleRenderer.swift
+  HarmoniusRendering/MetalTriangleRenderer.swift
   HarmoniusRendering/TriangleGeometry.swift
   HarmoniusApp/Metal4PipelineSupport.swift
   SLANG_SOURCES

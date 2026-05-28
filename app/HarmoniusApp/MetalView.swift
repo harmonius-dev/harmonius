@@ -8,9 +8,14 @@ import SwiftUI
 @MainActor
 final class MetalViewCoordinator: NSObject, MTKViewDelegate {
   private var renderer: Metal4TriangleRenderer?
+  private var snapshotRenderer: MetalTriangleRenderer?
 
   func configure(view: MTKView) {
     guard let device = view.device else { return }
+    if HarmoniusLaunchOptions.isSnapshotMode {
+      snapshotRenderer = MetalTriangleRenderer(view: view)
+      return
+    }
     guard device.supportsFamily(.metal4) else {
       NSLog("Metal 4 is required for Harmonius.")
       return
@@ -22,12 +27,14 @@ final class MetalViewCoordinator: NSObject, MTKViewDelegate {
   nonisolated func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
     MainActor.assumeIsolated {
       renderer?.mtkView(view, drawableSizeWillChange: size)
+      snapshotRenderer?.mtkView(view, drawableSizeWillChange: size)
     }
   }
 
   nonisolated func draw(in view: MTKView) {
     MainActor.assumeIsolated {
       renderer?.draw(in: view)
+      snapshotRenderer?.draw(in: view)
     }
   }
 }
