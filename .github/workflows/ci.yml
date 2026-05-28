@@ -471,7 +471,7 @@ jobs:
             --component "$APP_PATH" \
             /Applications \
             "$PKG_PATH"
-          productutil --check-signature "$PKG_PATH"
+          pkgutil --check-signature "$PKG_PATH"
           echo "PKG_PATH=$PKG_PATH" >> "$GITHUB_ENV"
 
       - name: Upload to App Store Connect
