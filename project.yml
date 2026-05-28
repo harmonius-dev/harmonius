@@ -71,6 +71,9 @@ targets:
     type: application
     supportedDestinations: [macOS, iOS]
     sources:
+      - path: app/AssetSources/AppIcon.icon
+        buildPhase: resources
+        destinationFilters: [iOS]
       - path: app/Assets.xcassets
         buildPhase: resources
         destinationFilters: [iOS]
@@ -92,20 +95,8 @@ targets:
     info:
       path: app/Info.plist
       properties:
-        CFBundleIconName: AppIcon
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
-        UILaunchScreen:
-          UIColorName: LaunchBackground
-        UIRequiredDeviceCapabilities:
-          - arm64
-          - metal
-        UIStatusBarStyle: UIStatusBarStyleLightContent
-        UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationPortraitUpsideDown
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
     preBuildScripts:
       - name: CMake Build
         basedOnDependencyAnalysis: false
@@ -143,8 +134,10 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]: AppIcon
         ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphonesimulator*]: AppIcon
         CURRENT_PROJECT_VERSION: 1
-        MARKETING_VERSION: 1.0
         HARMONIUS_CMAKE_TARGETS: HarmoniusApp
+        INFOPLIST_FILE[sdk=iphoneos*]: app/Info-iOS.plist
+        INFOPLIST_FILE[sdk=iphonesimulator*]: app/Info-iOS.plist
+        MARKETING_VERSION: 1.0
         PRODUCT_NAME: HarmoniusApp
         PRODUCT_BUNDLE_IDENTIFIER: dev.harmonius.App
         LINK_WITH_STANDARD_LIBRARIES: NO

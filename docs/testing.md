@@ -117,21 +117,23 @@ and `main` push:
 4. `deploy-ios` archives `HarmoniusApp`, exports an IPA, and uploads it to App Store Connect
    on successful `main` pushes from `macos-26`.
 
+CI caches the vcpkg installed trees and Swift package checkouts across repeated runs.
+The iOS archive uses [Info-iOS.plist](../app/Info-iOS.plist) so App Store metadata,
+launch assets, app icon metadata, and CI-provided build numbers are isolated from macOS.
+
 Test results upload as GitHub Actions artifacts (`macos-unit-test-results` and
 `macos-ui-test-results`). The exported IPA uploads as `ios-release-ipa`.
 
 ## App icon plan
 
-The selected winner is the middleground controller mark from the final user-selected
-reference image. It is a clean, borderless gamepad/controller silhouette split into three
-organic pieces by thick white negative-space channels. The filled sections are desaturated
-sage green across the upper bridge, muted warm orange/clay in the left grip, and dark
-charcoal in the right grip.
+The selected winner is the middleground controller mark from the final user-selected reference
+image. It is a clean, borderless gamepad/controller silhouette split into three organic pieces by
+thick white negative-space channels. The filled sections are desaturated sage green across the upper
+bridge, muted warm orange/clay in the left grip, and dark charcoal in the right grip.
 
-This completes the image-selection decision. The durable vector source lives at
-[`AppIcon.svg`](../app/AssetSources/AppIcon.svg). The Icon Composer import bridge lives at
-[`AppIcon.pdf`](../app/AssetSources/AppIcon.pdf), and the saved Composer document lives at
-[`AppIcon.icon`](../app/AssetSources/AppIcon.icon).
+This completes the image-selection decision. The durable app icon source lives at
+[`AppIcon.icon`](../app/AssetSources/AppIcon.icon). The vector source/reference lives at
+[`AppIcon.svg`](../app/AssetSources/AppIcon.svg). The PDF bridge was removed.
 
 Implementation notes:
 
@@ -144,23 +146,27 @@ Implementation notes:
 4. Preserve a WCAG-aware contrast relationship. Charcoal must remain clearly separated
    from the lighter sections; sage and clay stay desaturated but distinct, with enough
    lightness separation for small icon sizes.
-5. Prepare SVG/PDF vector inputs for Apple Icon Composer. Keep path count low and avoid
-   texture, gradients, buttons, sticks, symbols, code marks, play icons, cubes, stones,
-   and metallic effects.
+5. Prepare SVG vector inputs for Apple Icon Composer. Keep path count low and avoid
+   texture, gradients, buttons, sticks, symbols, code marks, play icons, cubes,
+   stones, and metallic effects.
 6. Use Icon Composer to place the vector layer into the app icon. Let the system/Liquid
    Glass background, lighting, and platform variants compose there instead of baking a
    border or background into the logo.
-7. Generated PNG app icon sizes are produced by
+7. XcodeGen includes `AppIcon.icon` as an iOS resource. The app icon build setting
+   remains `AppIcon`, matching the Icon Composer package name.
+8. Generated PNG app icon sizes are produced by
    [`generate_app_assets.sh`](../scripts/generate_app_assets.sh) from the Icon Composer
-   export. Do not hand-edit generated app icon PNGs.
+   package export. They remain a generated fallback for asset-catalog validation and
+   back-deployment behavior. Do not hand-edit generated app icon PNGs.
 
 Icon Composer source:
 
 1. Open `app/AssetSources/AppIcon.icon` in Apple Icon Composer.
-2. Keep `app/AssetSources/AppIcon.pdf` as the imported foreground artwork.
-3. Keep the imported controller mark borderless with a transparent outside and gaps.
-4. Use Icon Composer/Liquid Glass for background, lighting, and platform adaptation.
-5. Use `app/AssetSources/AppIcon-composer.png` as the 1024 px exported review image.
+2. Keep the imported controller mark borderless with a transparent outside and gaps.
+3. Use the subdued eggplant background from the saved Icon Composer document.
+4. Keep visible padding between the foreground mark and every app icon edge.
+5. Use Icon Composer/Liquid Glass for background, lighting, and platform adaptation.
+6. Use `app/AssetSources/AppIcon-composer.png` as the 1024 px exported review image.
 
 ## CMake artifact paths
 

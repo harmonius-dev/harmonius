@@ -5,18 +5,35 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ASSET_ROOT="${ROOT}/app/Assets.xcassets"
 APP_ICON="${ASSET_ROOT}/AppIcon.appiconset"
 ICON_SOURCE="${ROOT}/app/AssetSources/AppIcon-composer.png"
-VECTOR_SOURCE="${ROOT}/app/AssetSources/AppIcon.svg"
+ICON_PACKAGE="${ROOT}/app/AssetSources/AppIcon.icon"
 LAUNCH_BACKGROUND="${ASSET_ROOT}/LaunchBackground.colorset"
 
-if [[ ! -f "${ICON_SOURCE}" ]]; then
-  echo "error: missing app icon source at ${ICON_SOURCE}" >&2
+if [[ ! -d "${ICON_PACKAGE}" ]]; then
+  echo "error: missing Icon Composer source at ${ICON_PACKAGE}" >&2
   exit 1
 fi
 
-if [[ ! -f "${VECTOR_SOURCE}" ]]; then
-  echo "error: missing app icon vector source at ${VECTOR_SOURCE}" >&2
+DEVELOPER_DIR_PATH="${DEVELOPER_DIR:-$(xcode-select -p)}"
+if [[ "${DEVELOPER_DIR_PATH}" == */Contents/Developer ]]; then
+  XCODE_CONTENTS="${DEVELOPER_DIR_PATH%/Developer}"
+else
+  XCODE_CONTENTS="${DEVELOPER_DIR_PATH}/Contents"
+fi
+ICTOOL="${XCODE_CONTENTS}/Applications/Icon Composer.app/Contents/Executables/ictool"
+if [[ ! -x "${ICTOOL}" ]]; then
+  echo "error: Xcode ictool is required to export the Icon Composer app icon" >&2
   exit 1
 fi
+
+"${ICTOOL}" \
+  "${ICON_PACKAGE}" \
+  --export-image \
+  --output-file "${ICON_SOURCE}" \
+  --platform iOS \
+  --rendition Default \
+  --width 1024 \
+  --height 1024 \
+  --scale 1
 
 rm -rf "${ASSET_ROOT}"
 mkdir -p "${APP_ICON}" "${LAUNCH_BACKGROUND}"
