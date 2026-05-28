@@ -4,7 +4,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ASSET_ROOT="${ROOT}/app/Assets.xcassets"
 APP_ICON="${ASSET_ROOT}/AppIcon.appiconset"
+ICON_SOURCE="${ROOT}/app/AssetSources/AppIcon.svg"
 LAUNCH_BACKGROUND="${ASSET_ROOT}/LaunchBackground.colorset"
+
+if [[ ! -f "${ICON_SOURCE}" ]]; then
+  echo "error: missing app icon source at ${ICON_SOURCE}" >&2
+  exit 1
+fi
 
 rm -rf "${ASSET_ROOT}"
 mkdir -p "${APP_ICON}" "${LAUNCH_BACKGROUND}"
@@ -41,9 +47,6 @@ cat > "${LAUNCH_BACKGROUND}/Contents.json" <<'JSON'
 }
 JSON
 
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "${tmpdir}"' EXIT
-
 if command -v magick >/dev/null 2>&1; then
   MAGICK=(magick)
 elif command -v convert >/dev/null 2>&1; then
@@ -56,24 +59,14 @@ fi
 render_icon() {
   local filename="$1"
   local pixels="$2"
-  local left_x=$((pixels * 27 / 100))
-  local right_x=$((pixels * 62 / 100))
-  local top_y=$((pixels * 21 / 100))
-  local bottom_y=$((pixels * 79 / 100))
-  local bar_left=$((pixels * 35 / 100))
-  local bar_right=$((pixels * 65 / 100))
-  local bar_top=$((pixels * 45 / 100))
-  local bar_bottom=$((pixels * 56 / 100))
-  local stem_width=$((pixels * 11 / 100))
 
   "${MAGICK[@]}" \
-    -size "${pixels}x${pixels}" \
-    gradient:"#121a36-#34215f" \
-    -fill "#e8f0ff" \
-    -draw "rectangle ${left_x},${top_y} $((left_x + stem_width)),${bottom_y}" \
-    -draw "rectangle ${right_x},${top_y} $((right_x + stem_width)),${bottom_y}" \
-    -draw "rectangle ${bar_left},${bar_top} ${bar_right},${bar_bottom}" \
-    "${APP_ICON}/${filename}"
+    -background none \
+    "${ICON_SOURCE}" \
+    -resize "${pixels}x${pixels}" \
+    -gravity center \
+    -extent "${pixels}x${pixels}" \
+    "PNG32:${APP_ICON}/${filename}"
 }
 
 render_icon "iphone-20x20@2x.png" 40

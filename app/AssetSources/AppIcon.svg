@@ -1,12 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <defs>
-    <linearGradient id="background" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#121a36"/>
-      <stop offset="1" stop-color="#34215f"/>
-    </linearGradient>
-  </defs>
-  <rect fill="url(#background)" height="1024" rx="192" width="1024"/>
-  <rect fill="#e8f0ff" height="594" rx="34" width="116" x="276" y="215"/>
-  <rect fill="#e8f0ff" height="594" rx="34" width="116" x="632" y="215"/>
-  <rect fill="#e8f0ff" height="126" rx="30" width="380" x="322" y="449"/>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  height="1024"
+  role="img"
+  viewBox="0 0 1024 1024"
+  width="1024"
+>
+  <title>Harmonius controller mark</title>
+  <desc>
+    Borderless controller silhouette split into sage, clay, and charcoal pieces.
+  </desc>
+  <g id="controller-mark">
+    <path
+      id="upper-bridge"
+      fill="#8b957e"
+      d="
+        M 172 382
+        C 196 286 262 220 341 211
+        C 424 202 469 282 522 291
+        C 582 301 642 219 724 211
+        C 808 203 859 270 883 370
+        C 887 386 881 393 865 392
+        C 733 389 641 448 559 512
+        C 524 539 471 539 430 512
+        C 354 462 271 418 182 398
+        C 171 396 168 391 172 382
+        Z"
+    />
+    <path
+      id="left-grip"
+      fill="#cf7a45"
+      d="
+        M 156 407
+        C 248 405 346 443 443 512
+        C 485 542 506 568 504 610
+        C 502 646 481 666 442 675
+        C 392 686 365 727 333 782
+        C 299 841 223 847 180 801
+        C 130 747 121 650 132 544
+        C 137 492 145 450 156 407
+        Z"
+    />
+    <path
+      id="right-grip"
+      fill="#303336"
+      d="
+        M 834 407
+        C 848 406 854 413 858 427
+        C 879 519 891 674 846 765
+        C 809 839 735 848 691 789
+        C 653 738 628 686 584 675
+        C 547 665 524 651 524 612
+        C 524 574 546 543 586 512
+        C 668 450 758 410 834 407
+        Z"
+    />
+  </g>
 </svg>

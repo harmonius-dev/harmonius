@@ -120,6 +120,47 @@ and `main` push:
 Test results upload as GitHub Actions artifacts (`macos-unit-test-results` and
 `macos-ui-test-results`). The exported IPA uploads as `ios-release-ipa`.
 
+## App icon plan
+
+The selected winner is the middleground controller mark from the final user-selected
+reference image. It is a clean, borderless gamepad/controller silhouette split into three
+organic pieces by thick white negative-space channels. The filled sections are desaturated
+sage green across the upper bridge, muted warm orange/clay in the left grip, and dark
+charcoal in the right grip.
+
+This completes the image-selection decision. The durable vector source lives at
+[`AppIcon.svg`](../app/AssetSources/AppIcon.svg). It should remain the source of truth
+for generated asset catalog PNGs and Icon Composer/Liquid Glass imports.
+
+Implementation notes:
+
+1. Use the final selected raster/reference image as the source of truth.
+2. Vectorize into clean paths that preserve the exact silhouette, broad controller grips,
+   soft upper bridge, large phase-aligned negative-space split channels, three-piece
+   layout, rounded corners, and simple fill regions.
+3. Remove any background or border. The final vector is only the controller silhouette
+   pieces, with transparent outside/background and transparent negative-space gaps.
+4. Preserve a WCAG-aware contrast relationship. Charcoal must remain clearly separated
+   from the lighter sections; sage and clay stay desaturated but distinct, with enough
+   lightness separation for small icon sizes.
+5. Prepare SVG/PDF vector inputs for Apple Icon Composer. Keep path count low and avoid
+   texture, gradients, buttons, sticks, symbols, code marks, play icons, cubes, stones,
+   and metallic effects.
+6. Use Icon Composer to place the vector layers into the app icon. Let the system/Liquid
+   Glass background, lighting, and platform variants compose there instead of baking a
+   border or background into the logo.
+7. Generated PNG app icon sizes are produced by
+   [`generate_app_assets.sh`](../scripts/generate_app_assets.sh) from the SVG source.
+   Do not hand-edit generated app icon PNGs.
+
+Manual Icon Composer step:
+
+1. Open Apple Icon Composer and create a new icon document.
+2. Import `app/AssetSources/AppIcon.svg` as the foreground vector artwork.
+3. Keep the imported controller mark borderless with a transparent outside and gaps.
+4. Use Icon Composer/Liquid Glass for background, lighting, and platform adaptation.
+5. Export the final Icon Composer package or platform assets from that document.
+
 ## CMake artifact paths
 
 If CMake output layout changes, update [project.yml](../project.yml):
