@@ -70,17 +70,11 @@ targets:
     type: application
     supportedDestinations: [macOS, iOS]
     sources:
-      - path: app/AssetSources/AppIcon.icon
+      - path: app/Resources/AppIcon.icon
         buildPhase: resources
-        destinationFilters: [iOS]
-      - path: app/Assets.xcassets
+      - path: app/Resources/Assets.xcassets
         buildPhase: resources
-        destinationFilters: [iOS]
-      - path: app/Shaders
-        buildPhase: none
-      - path: app/HarmoniusApp
-        buildPhase: none
-      - path: app/HarmoniusRendering
+      - path: .
         buildPhase: none
     dependencies:
       - sdk: AppKit.framework
@@ -130,12 +124,9 @@ targets:
           cp "${BINARY_DIR}/metallibs/default.metallib" "${RESOURCES}/default.metallib"
     settings:
       base:
-        ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]: AppIcon
-        ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphonesimulator*]: AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CURRENT_PROJECT_VERSION: 1
         HARMONIUS_CMAKE_TARGETS: HarmoniusApp
-        INFOPLIST_FILE[sdk=iphoneos*]: app/Info-iOS.plist
-        INFOPLIST_FILE[sdk=iphonesimulator*]: app/Info-iOS.plist
         MARKETING_VERSION: 1.0
         PRODUCT_NAME: HarmoniusApp
         PRODUCT_BUNDLE_IDENTIFIER: dev.harmonius.App

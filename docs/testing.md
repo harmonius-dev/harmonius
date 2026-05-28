@@ -1,7 +1,7 @@
 # Testing
 
-Harmonius runs unit tests (swift-testing) and UI snapshot tests (XCUITest) via XcodeGen
-on macOS. CI and local development use the unified **HarmoniusApp** scheme.
+Harmonius runs unit tests (swift-testing) and UI snapshot tests (XCUITest) via XcodeGen on macOS. CI
+and local development use the unified **HarmoniusApp** scheme.
 
 ## Test targets
 
@@ -118,8 +118,6 @@ and `main` push:
    on successful `main` pushes from `macos-26`.
 
 CI caches the vcpkg installed trees and Swift package checkouts across repeated runs.
-The iOS archive uses [Info-iOS.plist](../app/Info-iOS.plist) so App Store metadata,
-launch assets, app icon metadata, and CI-provided build numbers are isolated from macOS.
 
 Test results upload as GitHub Actions artifacts (`macos-unit-test-results` and
 `macos-ui-test-results`). The exported IPA uploads as `ios-release-ipa`.
@@ -131,9 +129,8 @@ image. It is a clean, borderless gamepad/controller silhouette split into three 
 thick white negative-space channels. The filled sections are desaturated sage green across the upper
 bridge, muted warm orange/clay in the left grip, and dark charcoal in the right grip.
 
-This completes the image-selection decision. The app icon source of truth is the saved
-Icon Composer package at [`AppIcon.icon`](../app/AssetSources/AppIcon.icon). The PDF
-bridge was removed.
+This completes the image-selection decision. The app icon source of truth is the saved Icon Composer
+package at [`AppIcon.icon`](../app/Resources/AppIcon.icon). The PDF bridge was removed.
 
 Implementation notes:
 
