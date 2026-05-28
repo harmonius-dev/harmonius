@@ -47,6 +47,10 @@ final class HarmoniusRenderTests: XCTestCase {
       Thread.sleep(forTimeInterval: 0.25)
     }
 
+    let attachment = XCTAttachment(image: image)
+    attachment.name = "Last Metal snapshot before timeout"
+    attachment.lifetime = .keepAlways
+    add(attachment)
     XCTFail("Timed out waiting for the Metal triangle to render.")
     return image
   }
