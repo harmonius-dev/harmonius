@@ -34,9 +34,13 @@ final class MetalViewCoordinator: NSObject, MTKViewDelegate {
 
 @MainActor
 private func makeConfiguredMTKView(coordinator: MetalViewCoordinator) -> MTKView {
-  let view = MTKView()
+  let device = MTLCreateSystemDefaultDevice()
   let isSnapshotMode = HarmoniusLaunchOptions.isSnapshotMode
-  view.device = MTLCreateSystemDefaultDevice()
+  let frame =
+    isSnapshotMode
+    ? CGRect(origin: .zero, size: HarmoniusLaunchOptions.snapshotMetalSize)
+    : .zero
+  let view = MTKView(frame: frame, device: device)
   view.colorPixelFormat = .bgra8Unorm
   view.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
   view.preferredFramesPerSecond = 60
