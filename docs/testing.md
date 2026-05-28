@@ -80,12 +80,13 @@ test must be marked `public` in the CMake-built module (for example
 [swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing).
 
 1. Append `-HarmoniusSnapshotMode` and launch the app.
-2. Wait for `metal-view-ready`, then `metal-view`.
+2. Wait for the real `metal-view` accessibility element.
 3. Call `assertSnapshot(of:as:named:)` on `metalView.screenshot().image` at precision `0.98`.
 
 Snapshot mode is implemented in [ContentView.swift](../app/HarmoniusApp/ContentView.swift) and
-[HarmoniusLaunchOptions.swift](../app/HarmoniusApp/HarmoniusLaunchOptions.swift). It shows a
-960×540 `metal-view` and configures an opaque window without title chrome.
+[HarmoniusLaunchOptions.swift](../app/HarmoniusApp/HarmoniusLaunchOptions.swift). It configures an
+opaque, non-resizable window without title chrome. The window point size is derived from the
+display scale so raw screenshots produce a consistent 1920×1080 PNG baseline.
 
 Reference PNGs live under `app/HarmoniusApp/__Snapshots__/HarmoniusRenderTests/`. SnapshotTesting
 names files `{testFunction}.{named}.png` (for example `testTriangleRendersSnapshot.triangle.png`).

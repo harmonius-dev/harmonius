@@ -80,12 +80,13 @@ struct ContentView: View {
         window.isOpaque = true
         window.backgroundColor = NSColor(contentBackground)
         window.hasShadow = false
-        window.setContentSize(
-          NSSize(
-            width: HarmoniusLaunchOptions.snapshotMetalSize.width,
-            height: HarmoniusLaunchOptions.snapshotMetalSize.height
-          )
+        window.styleMask.remove(.resizable)
+        let pointSize = HarmoniusLaunchOptions.snapshotMetalSize(
+          backingScaleFactor: window.backingScaleFactor
         )
+        window.minSize = pointSize
+        window.maxSize = pointSize
+        window.setContentSize(pointSize)
       }
       return view
     }
