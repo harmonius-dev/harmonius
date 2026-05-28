@@ -132,8 +132,7 @@ thick white negative-space channels. The filled sections are desaturated sage gr
 bridge, muted warm orange/clay in the left grip, and dark charcoal in the right grip.
 
 This completes the image-selection decision. The app icon source of truth is the saved
-Icon Composer package at [`AppIcon.icon`](../app/AssetSources/AppIcon.icon). The vector
-source/reference lives at [`AppIcon.svg`](../app/AssetSources/AppIcon.svg). The PDF
+Icon Composer package at [`AppIcon.icon`](../app/AssetSources/AppIcon.icon). The PDF
 bridge was removed.
 
 Implementation notes:
@@ -147,10 +146,9 @@ Implementation notes:
 4. Preserve a WCAG-aware contrast relationship. Charcoal must remain clearly separated
    from the lighter sections; sage and clay stay desaturated but distinct, with enough
    lightness separation for small icon sizes.
-5. Prepare SVG vector inputs for Apple Icon Composer. Keep path count low and avoid
-   texture, gradients, buttons, sticks, symbols, code marks, play icons, cubes,
-   stones, and metallic effects.
-6. Use Icon Composer to place the vector layer into the app icon. Let the system/Liquid
+5. Keep path count low and avoid texture, gradients, buttons, sticks, symbols,
+   code marks, play icons, cubes, stones, and metallic effects.
+6. Use Icon Composer to place the artwork into the app icon. Let the system/Liquid
    Glass background, lighting, and platform variants compose there instead of baking a
    border or background into the logo.
 7. XcodeGen includes `AppIcon.icon` as an iOS resource outside `Assets.xcassets`.
