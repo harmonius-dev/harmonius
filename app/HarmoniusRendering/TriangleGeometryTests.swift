@@ -3,7 +3,7 @@ import Testing
 import simd
 
 private enum TriangleGeometryFixtures {
-  static let radius: Float = 350
+  static let radius: Float = 240
   static let red = SIMD4<Float>(1, 0, 0, 1)
   static let green = SIMD4<Float>(0, 1, 0, 1)
   static let blue = SIMD4<Float>(0, 0, 1, 1)

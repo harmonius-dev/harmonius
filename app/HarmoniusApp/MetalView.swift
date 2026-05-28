@@ -37,7 +37,7 @@ private func makeConfiguredMTKView(coordinator: MetalViewCoordinator) -> MTKView
   let view = MTKView()
   view.device = MTLCreateSystemDefaultDevice()
   view.colorPixelFormat = .bgra8Unorm
-  view.clearColor = MTLClearColor(red: 0.08, green: 0.09, blue: 0.12, alpha: 1)
+  view.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
   view.preferredFramesPerSecond = 60
   view.enableSetNeedsDisplay = false
   view.isPaused = false
