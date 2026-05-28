@@ -7,7 +7,7 @@ import Foundation
 
 enum HarmoniusLaunchOptions {
   static let snapshotModeArgument = "-HarmoniusSnapshotMode"
-  static let snapshotMetalPixelSize = CGSize(width: 1920, height: 1080)
+  static let snapshotMetalPixelSize = CGSize(width: 1280, height: 720)
 
   static var isSnapshotMode: Bool {
     ProcessInfo.processInfo.arguments.contains(snapshotModeArgument)
