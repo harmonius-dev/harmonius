@@ -7,6 +7,8 @@ import SwiftUI
 private let contentBackground = Color(red: 0.08, green: 0.09, blue: 0.12)
 
 struct ContentView: View {
+  @State private var snapshotPointSize = HarmoniusLaunchOptions.snapshotCapturePixelSize
+
   var body: some View {
     Group {
       if HarmoniusLaunchOptions.isSnapshotMode {
@@ -35,14 +37,14 @@ struct ContentView: View {
   private var snapshotContent: some View {
     metalView
       .frame(
-        width: HarmoniusLaunchOptions.snapshotMetalSize.width,
-        height: HarmoniusLaunchOptions.snapshotMetalSize.height
+        width: snapshotPointSize.width,
+        height: snapshotPointSize.height
       )
       .background(contentBackground)
       .accessibilityElement(children: .contain)
       .accessibilityIdentifier("snapshot-content")
       #if os(macOS)
-        .background(SnapshotWindowConfigurator())
+        .background(SnapshotWindowConfigurator(pointSize: $snapshotPointSize))
       #endif
   }
 
@@ -53,6 +55,8 @@ struct ContentView: View {
 
 #if os(macOS)
   private struct SnapshotWindowConfigurator: NSViewRepresentable {
+    @Binding var pointSize: CGSize
+
     func makeNSView(context: Context) -> NSView {
       let view = NSView(frame: .zero)
       DispatchQueue.main.async {
@@ -65,10 +69,15 @@ struct ContentView: View {
         window.backgroundColor = NSColor(contentBackground)
         window.hasShadow = false
         window.styleMask.remove(.resizable)
-        let pointSize = HarmoniusLaunchOptions.snapshotMetalSize
-        window.minSize = pointSize
-        window.maxSize = pointSize
-        window.setContentSize(pointSize)
+        let pixelRect = CGRect(
+          origin: .zero,
+          size: HarmoniusLaunchOptions.snapshotCapturePixelSize
+        )
+        let scaledPointSize = window.convertFromBacking(pixelRect).size
+        pointSize = scaledPointSize
+        window.minSize = scaledPointSize
+        window.maxSize = scaledPointSize
+        window.setContentSize(scaledPointSize)
         requestSnapshotDraws(in: window.contentView)
         DispatchQueue.main.async {
           requestSnapshotDraws(in: window.contentView)

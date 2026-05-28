@@ -2,6 +2,9 @@ import Foundation
 import HarmoniusRendering
 import MetalKit
 import SwiftUI
+#if os(iOS)
+  import UIKit
+#endif
 
 // MetalViewCoordinator drives the Metal 4 renderer from either platform.
 // @MainActor: MTKView properties and delegate methods are main-actor-isolated.
@@ -45,7 +48,7 @@ private func makeConfiguredMTKView(coordinator: MetalViewCoordinator) -> MTKView
   let isSnapshotMode = HarmoniusLaunchOptions.isSnapshotMode
   let frame =
     isSnapshotMode
-    ? CGRect(origin: .zero, size: HarmoniusLaunchOptions.snapshotMetalSize)
+    ? CGRect(origin: .zero, size: currentSnapshotPointSize())
     : .zero
   let view = MTKView(frame: frame, device: device)
   view.colorPixelFormat = .bgra8Unorm
@@ -77,6 +80,25 @@ private func makeConfiguredMTKView(coordinator: MetalViewCoordinator) -> MTKView
     requestSnapshotDraw(in: view)
   }
   return view
+}
+
+private func currentSnapshotPointSize() -> CGSize {
+  #if os(macOS)
+    let pixelRect = CGRect(
+      origin: .zero,
+      size: HarmoniusLaunchOptions.snapshotCapturePixelSize
+    )
+    return NSScreen.main?.convertRectFromBacking(pixelRect).size
+      ?? HarmoniusLaunchOptions.snapshotCapturePixelSize
+  #elseif os(iOS)
+    let scale = UIScreen.main.scale
+    return CGSize(
+      width: HarmoniusLaunchOptions.snapshotCapturePixelSize.width / scale,
+      height: HarmoniusLaunchOptions.snapshotCapturePixelSize.height / scale
+    )
+  #else
+    return HarmoniusLaunchOptions.snapshotCapturePixelSize
+  #endif
 }
 
 @MainActor
