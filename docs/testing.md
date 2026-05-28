@@ -118,12 +118,29 @@ and `main` push:
 3. `macos-ui-tests` runs only `HarmoniusUITests` on `macos-26-xlarge`.
 4. `deploy-ios` archives `HarmoniusApp`, exports an IPA, and uploads it to App Store Connect
    on successful `main` pushes from `macos-26`.
+5. `deploy-macos` archives `HarmoniusApp`, exports a Mac App Store package, uploads it to App Store
+   Connect, and waits for processing on successful `main` pushes from `macos-26`.
 
 CI caches the vcpkg installed trees across repeated runs. Swift packages resolve fresh per job
 because cached checkout directories can become invalid across Xcode runner updates.
 
 Test results upload as GitHub Actions artifacts (`macos-unit-test-results` and
-`macos-ui-test-results`). The exported IPA uploads as `ios-release-ipa`.
+`macos-ui-test-results`). Release exports upload as `ios-release-ipa` and `macos-release-pkg`.
+
+The macOS release job expects these GitHub Actions secrets:
+
+| Secret | Purpose |
+| ------ | ------- |
+| `APPLE_CERTIFICATE_P12_BASE64` | App and installer certificate bundle |
+| `APPLE_CERTIFICATE_PASSPHRASE` | Distribution certificate passphrase |
+| `APPLE_DISTRIBUTION_IDENTITY` | App signing identity |
+| `APPLE_INSTALLER_DISTRIBUTION_IDENTITY` | Installer signing identity selector |
+| `APPLE_TEAM_ID` | Apple Developer Program team |
+| `ASC_ISSUER_ID` | App Store Connect API issuer |
+| `ASC_KEY_ID` | App Store Connect API key |
+| `ASC_KEY_P8_BASE64` | App Store Connect API private key |
+| `MACOS_PROVISIONING_PROFILE_BASE64` | Mac App Store provisioning profile |
+| `MACOS_PROVISIONING_PROFILE_NAME` | Mac App Store provisioning profile name |
 
 ## App icon plan
 
