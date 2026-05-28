@@ -95,6 +95,10 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
     else {
       return
     }
+    if let colorAttachment = renderPassDescriptor.colorAttachments[0] {
+      colorAttachment.loadAction = .clear
+      colorAttachment.clearColor = view.clearColor
+    }
 
     frameNumber &+= 1
     let frameIndex = Int(frameNumber % UInt64(TriangleVertexLayout.maxFramesInFlight))
