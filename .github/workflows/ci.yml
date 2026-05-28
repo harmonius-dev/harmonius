@@ -319,6 +319,8 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_KEY_P8_B64: ${{ secrets.ASC_KEY_P8_BASE64 }}
       HARMONIUS_SLANGC_DIR: ${{ github.workspace }}/build/macos/vcpkg_installed/arm64-osx
+      INSTALLER_P12_B64: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_P12_BASE64 }}
+      INSTALLER_P12_PASS: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_PASSPHRASE }}
       MACOS_PROVISIONING_PROFILE_B64: ${{ secrets.MACOS_PROVISIONING_PROFILE_BASE64 }}
       MACOS_PROVISIONING_PROFILE_NAME: ${{ secrets.MACOS_PROVISIONING_PROFILE_NAME }}
       P12_B64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
@@ -334,6 +336,8 @@ jobs:
             ASC_ISSUER_ID
             ASC_KEY_ID
             ASC_KEY_P8_B64
+            INSTALLER_P12_B64
+            INSTALLER_P12_PASS
             MACOS_PROVISIONING_PROFILE_B64
             MACOS_PROVISIONING_PROFILE_NAME
             P12_B64
@@ -396,9 +400,13 @@ jobs:
           P12_PASS="$(printf '%s' "$P12_PASS" | tr -d '\n')"
           security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" \
             -P "$P12_PASS" -T /usr/bin/codesign -T /usr/bin/security
+          echo "$INSTALLER_P12_B64" | base64 --decode > "$RUNNER_TEMP/installer.p12"
+          INSTALLER_P12_PASS="$(printf '%s' "$INSTALLER_P12_PASS" | tr -d '\n')"
+          security import "$RUNNER_TEMP/installer.p12" -k "$KEYCHAIN" \
+            -P "$INSTALLER_P12_PASS" -T /usr/bin/codesign -T /usr/bin/security
           security set-key-partition-list -S apple-tool:,apple: \
             -s -k ci-keychain "$KEYCHAIN"
-          rm -f "$RUNNER_TEMP/cert.p12"
+          rm -f "$RUNNER_TEMP/cert.p12" "$RUNNER_TEMP/installer.p12"
           echo "KEYCHAIN_PATH=$KEYCHAIN" >> "$GITHUB_ENV"
 
       - name: Install provisioning profile

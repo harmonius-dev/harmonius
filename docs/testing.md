@@ -131,9 +131,11 @@ The macOS release job expects these GitHub Actions secrets:
 
 | Secret | Purpose |
 | ------ | ------- |
-| `APPLE_CERTIFICATE_P12_BASE64` | App and installer certificate bundle |
+| `APPLE_CERTIFICATE_P12_BASE64` | App signing certificate bundle |
 | `APPLE_CERTIFICATE_PASSPHRASE` | Distribution certificate passphrase |
 | `APPLE_DISTRIBUTION_IDENTITY` | App signing identity |
+| `APPLE_INSTALLER_CERTIFICATE_P12_BASE64` | Installer certificate bundle |
+| `APPLE_INSTALLER_CERTIFICATE_PASSPHRASE` | Installer certificate passphrase |
 | `APPLE_INSTALLER_DISTRIBUTION_IDENTITY` | Installer signing identity selector |
 | `APPLE_TEAM_ID` | Apple Developer Program team |
 | `ASC_ISSUER_ID` | App Store Connect API issuer |
