@@ -462,46 +462,16 @@ jobs:
       - name: Export macOS package
         if: steps.macos_release_config.outputs.configured == 'true'
         run: |
-          EXPORT_OPTIONS="$RUNNER_TEMP/exportOptions.plist"
-          cat > "$EXPORT_OPTIONS" <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>installerSigningCertificate</key>
-            <string>$APPLE_INSTALLER_IDENTITY</string>
-            <key>manageAppVersionAndBuildNumber</key>
-            <false/>
-            <key>method</key>
-            <string>app-store-connect</string>
-            <key>provisioningProfiles</key>
-            <dict>
-              <key>dev.harmonius.App</key>
-              <string>$MACOS_PROVISIONING_PROFILE_NAME</string>
-            </dict>
-            <key>signingCertificate</key>
-            <string>$APPLE_DISTRIBUTION_IDENTITY</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>teamID</key>
-            <string>$APPLE_TEAM_ID</string>
-            <key>uploadSymbols</key>
-            <true/>
-          </dict>
-          </plist>
-          EOF
-          xcodebuild -exportArchive \
-            -archivePath build/macos/Harmonius.xcarchive \
-            -exportOptionsPlist "$EXPORT_OPTIONS" \
-            -exportPath build/macos/export
-          shopt -s nullglob
-          PKGS=(build/macos/export/*.pkg)
-          if [[ ${#PKGS[@]} -ne 1 ]]; then
-            echo "error: expected one PKG, found ${#PKGS[@]}"
-            exit 1
-          fi
-          echo "PKG_PATH=${PKGS[0]}" >> "$GITHUB_ENV"
+          APP_PATH="build/macos/Harmonius.xcarchive/Products/Applications/HarmoniusApp.app"
+          PKG_PATH="build/macos/export/HarmoniusApp.pkg"
+          mkdir -p build/macos/export
+          productbuild \
+            --sign "$APPLE_INSTALLER_IDENTITY" \
+            --component "$APP_PATH" \
+            /Applications \
+            "$PKG_PATH"
+          productutil --check-signature "$PKG_PATH"
+          echo "PKG_PATH=$PKG_PATH" >> "$GITHUB_ENV"
 
       - name: Upload to App Store Connect
         if: steps.macos_release_config.outputs.configured == 'true'
