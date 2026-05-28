@@ -79,10 +79,27 @@ targets:
     dependencies:
       - sdk: AppKit.framework
         destinationFilters: [macOS]
+      - sdk: UIKit.framework
+        destinationFilters: [iOS]
       - sdk: SwiftUI.framework
       - sdk: Metal.framework
       - sdk: MetalKit.framework
       - sdk: QuartzCore.framework
+    info:
+      path: app/Info.plist
+      properties:
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UILaunchScreen: {}
+        UIRequiredDeviceCapabilities:
+          - arm64
+          - metal
+        UIStatusBarStyle: UIStatusBarStyleLightContent
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
     preBuildScripts:
       - name: CMake Build
         basedOnDependencyAnalysis: false
@@ -120,7 +137,6 @@ targets:
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 1.0
         HARMONIUS_CMAKE_TARGETS: HarmoniusApp
-        INFOPLIST_FILE: app/Info.plist
         PRODUCT_NAME: HarmoniusApp
         PRODUCT_BUNDLE_IDENTIFIER: dev.harmonius.App
         LINK_WITH_STANDARD_LIBRARIES: NO

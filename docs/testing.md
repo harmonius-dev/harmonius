@@ -109,9 +109,9 @@ The workflow in [.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on 
 and `main` push:
 
 1. `format` lints Swift files with `swift-format` on `macos-26`.
-2. `test-macos` generates the Xcode project and runs `xcodebuild test` for
-   `HarmoniusApp_macOS`.
-3. `deploy-ios` archives `HarmoniusApp_iOS`, exports an IPA, and uploads it to App Store Connect
+2. `test-macos` generates the Xcode project and runs `xcodebuild test` for `HarmoniusApp`.
+3. `deploy-ios` archives `HarmoniusApp` for iOS, exports an IPA, and uploads it to App Store
+   Connect
    on successful `main` pushes from `macos-26-xlarge`.
 
 Test results upload as a GitHub Actions artifact (`macos-test-results`). The exported IPA uploads as

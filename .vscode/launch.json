@@ -4,7 +4,7 @@
       "cwd": "${workspaceFolder}",
       "name": "HarmoniusApp (macOS)",
       "osx": {
-        "program": "build/xcodegen/Build/Products/Debug/HarmoniusApp.app/Contents/MacOS/HarmoniusApp",
+        "program": "build/xcodegen/Build/Products/Debug/HarmoniusApp.app",
         "request": "launch",
         "type": "lldb"
       },
@@ -35,7 +35,7 @@
       "cwd": "${workspaceFolder}",
       "name": "HarmoniusUITests",
       "osx": {
-        "program": "build/xcodegen/Build/Products/Debug/HarmoniusUITests-Runner.app/Contents/MacOS/HarmoniusUITests-Runner",
+        "program": "build/xcodegen/Build/Products/Debug/HarmoniusUITests-Runner.app",
         "request": "launch",
         "type": "lldb"
       },

@@ -58,7 +58,7 @@ jobs:
         run: |
           xcodebuild test \
             -project Harmonius.xcodeproj \
-            -scheme HarmoniusApp_macOS \
+            -scheme HarmoniusApp \
             -destination 'platform=macOS,arch=arm64' \
             -derivedDataPath build/xcodegen \
             -resultBundlePath build/xcodegen/test-results/HarmoniusApp.xcresult
@@ -152,7 +152,7 @@ jobs:
         run: |
           xcodebuild archive \
             -project Harmonius.xcodeproj \
-            -scheme HarmoniusApp_iOS \
+            -scheme HarmoniusApp \
             -destination 'generic/platform=iOS' \
             -archivePath build/ios/Harmonius.xcarchive \
             CODE_SIGN_STYLE=Manual \
