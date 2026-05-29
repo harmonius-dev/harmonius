@@ -22,71 +22,59 @@ This handbook provides guidelines and best practices for agents working on the H
 - Wrap git commit messages to a 50 character line length limit for the first line, and a 72
   character line length limit for the rest of the commit message.
 
-## macOS build and test (xcodebuild)
+## Build and test workflow
 
-Use the XcodeGen project and `xcodebuild` on macOS. Generate the project first:
+Use `scripts/dev.sh` as the canonical interface for builds, tests, Appium, and
+release validation. Do not hand-expand the dependency order in VS Code, CI, or
+LLM instructions.
 
-```bash
-xcodegen generate
-```
-
-Build the app:
+Bootstrap the host platform:
 
 ```bash
-xcodebuild build \
-  -project Harmonius.xcodeproj \
-  -scheme HarmoniusApp \
-  -destination "platform=macOS" \
-  -derivedDataPath build/xcodegen
+./scripts/dev.sh bootstrap macos
 ```
 
-Built app: `build/xcodegen/Build/Products/Debug/HarmoniusApp.app`
-
-Run all unit and UI tests (same as CI):
+Build the SwiftPM package:
 
 ```bash
-xcodebuild test \
-  -project Harmonius.xcodeproj \
-  -scheme HarmoniusApp \
-  -destination "platform=macOS" \
-  -derivedDataPath build/xcodegen \
-  -resultBundlePath build/xcodegen/test-results/HarmoniusApp.xcresult
+./scripts/dev.sh compile-spm macos debug
 ```
 
-Unit tests only:
+Build the macOS app bundle with XcodeGen and Xcode:
 
 ```bash
-xcodebuild test \
-  -project Harmonius.xcodeproj \
-  -scheme HarmoniusApp \
-  -only-testing:HarmoniusUnitTests \
-  -destination "platform=macOS" \
-  -derivedDataPath build/xcodegen
+./scripts/dev.sh bundle macos debug
 ```
 
-UI snapshot tests only (prepend `SNAPSHOT_RECORD=1` to record baselines):
+Run package tests:
 
 ```bash
-xcodebuild test \
-  -project Harmonius.xcodeproj \
-  -scheme HarmoniusApp \
-  -only-testing:HarmoniusUITests \
-  -destination "platform=macOS" \
-  -derivedDataPath build/xcodegen
+./scripts/dev.sh test-unit
+./scripts/dev.sh test-render
 ```
 
-The `HarmoniusApp` target runs a CMake pre-build script. Prefer `xcodebuild` over invoking CMake
-directly when building the app or running tests.
+Run Appium UI smoke tests:
+
+```bash
+./scripts/dev.sh test-ui-macos
+./scripts/dev.sh test-ui-ios-simulator
+```
+
+Run the main quality gate:
+
+```bash
+./scripts/dev.sh full-check
+```
 
 ## Testing policy
 
 - **Test-driven development** — write failing tests first, then implement until tests green
 - **NO MOCKING** — mocking is explicitly forbidden in all languages; no mock libraries, no mock
   objects
-- **Real dependencies** — always prefer real objects over fakes; only use fakes when no other option
-  exists
-- **Fakes only when necessary** — write a full fake that emulates real behavior; implement the same
-  interface, trait, or protocol
+- **Real dependencies** — always prefer real objects over fakes; only use fakes when no other
+  option exists
+- **Fakes only when necessary** — write a full fake that emulates real behavior; implement the
+  same interface, trait, or protocol
 - **Pure functions** — maximize pure functions that take input and return output with no side
   effects
 - **Immutable test data** — use constants for test fixtures; never mutate shared test state

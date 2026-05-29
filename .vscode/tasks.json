@@ -1,117 +1,274 @@
 {
   "tasks": [
     {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh bootstrap macos"
+      ],
+      "command": "bash",
       "group": "build",
-      "label": "build:ios-simulator-debug",
+      "label": "dev:bootstrap",
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "osx": {
-        "command": "cmake --preset ios-simulator-debug && cmake --build --preset ios-simulator-debug",
-        "options": {
-          "env": {
-            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
-          }
-        }
       },
       "presentation": {
         "panel": "shared",
         "reveal": "always"
       },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": [],
       "type": "shell"
     },
     {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh format"
+      ],
+      "command": "bash",
       "group": "build",
-      "label": "build:ios-debug",
+      "label": "dev:format",
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "osx": {
-        "command": "cmake --workflow --preset ios-debug",
-        "options": {
-          "env": {
-            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
-          }
-        }
       },
       "presentation": {
         "panel": "shared",
         "reveal": "always"
       },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": [],
       "type": "shell"
     },
     {
-      "group": "build",
-      "label": "build:ios-release",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "osx": {
-        "command": "cmake --workflow --preset ios-release",
-        "options": {
-          "env": {
-            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
-          }
-        }
-      },
-      "presentation": {
-        "panel": "shared",
-        "reveal": "always"
-      },
-      "problemMatcher": [
-        "$gcc"
+      "dependsOn": [
+        "spm:build:macos-debug",
+        "bundle:macos-debug"
       ],
-      "type": "shell"
-    },
-    {
+      "dependsOrder": "sequence",
       "group": {
         "isDefault": true,
         "kind": "build"
       },
-      "label": "build:macos-debug",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "osx": {
-        "command": "cmake --workflow --preset macos-debug",
-        "options": {
-          "env": {
-            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
-          }
-        }
-      },
-      "presentation": {
-        "panel": "shared",
-        "reveal": "always"
-      },
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "type": "shell"
+      "label": "dev:compile",
+      "problemMatcher": []
     },
     {
+      "dependsOn": [
+        "test:unit",
+        "test:render",
+        "test:ui:macos",
+        "test:ui:ios-simulator"
+      ],
+      "dependsOrder": "sequence",
+      "group": "test",
+      "label": "dev:test",
+      "problemMatcher": []
+    },
+    {
+      "dependsOn": [
+        "run:macos"
+      ],
+      "dependsOrder": "sequence",
       "group": "build",
-      "label": "build:macos-release",
+      "label": "dev:run:macos",
+      "problemMatcher": []
+    },
+    {
+      "dependsOn": [
+        "debug:macos"
+      ],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "label": "dev:debug:macos",
+      "problemMatcher": []
+    },
+    {
+      "dependsOn": [
+        "run:ios-simulator"
+      ],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "label": "dev:run:ios-simulator",
+      "problemMatcher": []
+    },
+    {
+      "dependsOn": [
+        "debug:ios-simulator"
+      ],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "label": "dev:debug:ios-simulator",
+      "problemMatcher": []
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh full-check"
+      ],
+      "command": "bash",
+      "group": "test",
+      "label": "dev:full-check",
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "osx": {
-        "command": "cmake --workflow --preset macos-release",
-        "options": {
-          "env": {
-            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
-          }
-        }
       },
       "presentation": {
         "panel": "shared",
         "reveal": "always"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh archive ios"
+      ],
+      "command": "bash",
+      "group": "build",
+      "label": "archive:ios",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh archive macos"
+      ],
+      "command": "bash",
+      "group": "build",
+      "label": "archive:macos",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh release-validate"
+      ],
+      "command": "bash",
+      "group": "test",
+      "label": "release:validate",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh appium-bootstrap"
+      ],
+      "command": "bash",
+      "hide": true,
+      "label": "appium:bootstrap",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh bootstrap ios"
+      ],
+      "command": "bash",
+      "hide": true,
+      "label": "deps:ios",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh bootstrap ios-simulator"
+      ],
+      "command": "bash",
+      "hide": true,
+      "label": "deps:ios-simulator",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh bootstrap linux"
+      ],
+      "command": "bash",
+      "hide": true,
+      "label": "deps:linux",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh bootstrap macos"
+      ],
+      "command": "bash",
+      "hide": true,
+      "label": "deps:macos",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh package-graph"
+      ],
+      "command": "bash",
+      "dependsOn": [
+        "deps:macos"
+      ],
+      "hide": true,
+      "label": "package:graph",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh compile-spm macos debug"
+      ],
+      "command": "bash",
+      "dependsOn": [
+        "package:graph"
+      ],
+      "hide": true,
+      "label": "spm:build:macos-debug",
+      "options": {
+        "cwd": "${workspaceFolder}"
       },
       "problemMatcher": [
         "$gcc"
@@ -119,212 +276,238 @@
       "type": "shell"
     },
     {
-      "dependsOn": [
-        "xcodegen:generate"
+      "args": [
+        "-lc",
+        "./scripts/dev.sh build-tests"
       ],
-      "dependsOrder": "sequence",
-      "group": "test",
-      "label": "test:ui",
+      "command": "bash",
+      "dependsOn": [
+        "spm:build:macos-debug"
+      ],
+      "hide": true,
+      "label": "spm:build-tests",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "osx": {
-        "args": [
-          "test",
-          "-project",
-          "Harmonius.xcodeproj",
-          "-scheme",
-          "HarmoniusApp",
-          "-only-testing:HarmoniusUITests",
-          "-destination",
-          "platform=macOS",
-          "-derivedDataPath",
-          "build/xcodegen"
-        ],
-        "command": "xcodebuild",
-        "options": {
-          "env": {
-            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
-          }
-        }
-      },
-      "presentation": {
-        "panel": "shared",
-        "reveal": "always"
-      },
-      "problemMatcher": [],
-      "type": "shell"
-    },
-    {
-      "dependsOn": [
-        "xcodegen:generate"
+      "problemMatcher": [
+        "$gcc"
       ],
-      "dependsOrder": "sequence",
-      "group": "test",
-      "label": "test:unit",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "osx": {
-        "args": [
-          "test",
-          "-project",
-          "Harmonius.xcodeproj",
-          "-scheme",
-          "HarmoniusApp",
-          "-only-testing:HarmoniusUnitTests",
-          "-destination",
-          "platform=macOS",
-          "-derivedDataPath",
-          "build/xcodegen"
-        ],
-        "command": "xcodebuild",
-        "options": {
-          "env": {
-            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
-          }
-        }
-      },
-      "presentation": {
-        "panel": "shared",
-        "reveal": "always"
-      },
-      "problemMatcher": [],
       "type": "shell"
     },
     {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh xcodegen"
+      ],
+      "command": "bash",
+      "hide": true,
       "label": "xcodegen:generate",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "osx": {
-        "command": "xcodegen generate"
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh bundle macos debug"
+      ],
+      "command": "bash",
+      "dependsOn": [
+        "spm:build:macos-debug",
+        "xcodegen:generate"
+      ],
+      "dependsOrder": "sequence",
+      "hide": true,
+      "label": "bundle:macos-debug",
+      "options": {
+        "cwd": "${workspaceFolder}"
       },
-      "presentation": {
-        "panel": "shared",
-        "reveal": "silent"
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh bundle ios-simulator debug"
+      ],
+      "command": "bash",
+      "dependsOn": [
+        "deps:ios-simulator",
+        "xcodegen:generate"
+      ],
+      "dependsOrder": "sequence",
+      "hide": true,
+      "label": "bundle:ios-simulator-debug",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh run macos"
+      ],
+      "command": "bash",
+      "dependsOn": [
+        "bundle:macos-debug"
+      ],
+      "hide": true,
+      "label": "run:macos",
+      "options": {
+        "cwd": "${workspaceFolder}"
       },
       "problemMatcher": [],
       "type": "shell"
     },
     {
-      "dependsOn": [
-        "xcodegen:generate"
+      "args": [
+        "-lc",
+        "./scripts/dev.sh debug macos"
       ],
-      "dependsOrder": "sequence",
-      "group": "build",
-      "label": "xcode:build-app",
+      "command": "bash",
+      "dependsOn": [
+        "bundle:macos-debug"
+      ],
+      "hide": true,
+      "label": "debug:macos",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "osx": {
-        "args": [
-          "build",
-          "-project",
-          "Harmonius.xcodeproj",
-          "-scheme",
-          "HarmoniusApp",
-          "-configuration",
-          "Debug",
-          "-destination",
-          "platform=macOS",
-          "-derivedDataPath",
-          "build/xcodegen"
-        ],
-        "command": "xcodebuild",
-        "options": {
-          "env": {
-            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
-          }
-        }
-      },
-      "presentation": {
-        "panel": "shared",
-        "reveal": "always"
-      },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": [],
       "type": "shell"
     },
     {
-      "dependsOn": [
-        "xcodegen:generate"
+      "args": [
+        "-lc",
+        "./scripts/dev.sh run ios-simulator"
       ],
-      "dependsOrder": "sequence",
-      "group": "build",
-      "label": "xcode:build-for-testing",
+      "command": "bash",
+      "dependsOn": [
+        "bundle:ios-simulator-debug"
+      ],
+      "hide": true,
+      "label": "run:ios-simulator",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "osx": {
-        "args": [
-          "build-for-testing",
-          "-project",
-          "Harmonius.xcodeproj",
-          "-scheme",
-          "HarmoniusApp",
-          "-configuration",
-          "Debug",
-          "-destination",
-          "platform=macOS",
-          "-derivedDataPath",
-          "build/xcodegen"
-        ],
-        "command": "xcodebuild",
-        "options": {
-          "env": {
-            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
-          }
-        }
-      },
-      "presentation": {
-        "panel": "shared",
-        "reveal": "always"
-      },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": [],
       "type": "shell"
     },
     {
-      "dependsOn": [
-        "xcodegen:generate"
+      "args": [
+        "-lc",
+        "./scripts/dev.sh debug ios-simulator"
       ],
-      "dependsOrder": "sequence",
-      "group": "build",
-      "label": "xcode:build-app-release",
+      "command": "bash",
+      "dependsOn": [
+        "bundle:ios-simulator-debug"
+      ],
+      "hide": true,
+      "label": "debug:ios-simulator",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "osx": {
-        "args": [
-          "build",
-          "-project",
-          "Harmonius.xcodeproj",
-          "-scheme",
-          "HarmoniusApp",
-          "-configuration",
-          "Release",
-          "-destination",
-          "platform=macOS",
-          "-derivedDataPath",
-          "build/xcodegen"
-        ],
-        "command": "xcodebuild",
-        "options": {
-          "env": {
-            "DEVELOPER_DIR": "${env:DEVELOPER_DIR}"
-          }
-        }
-      },
-      "presentation": {
-        "panel": "shared",
-        "reveal": "always"
-      },
-      "problemMatcher": [
-        "$gcc"
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh test-unit"
       ],
+      "command": "bash",
+      "dependsOn": [
+        "spm:build:macos-debug"
+      ],
+      "hide": true,
+      "label": "test:unit",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh test-render"
+      ],
+      "command": "bash",
+      "dependsOn": [
+        "spm:build:macos-debug"
+      ],
+      "hide": true,
+      "label": "test:render",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh test-ui-macos"
+      ],
+      "command": "bash",
+      "dependsOn": [
+        "appium:bootstrap",
+        "bundle:macos-debug"
+      ],
+      "dependsOrder": "sequence",
+      "hide": true,
+      "label": "test:ui:macos",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh test-ui-ios-simulator"
+      ],
+      "command": "bash",
+      "dependsOn": [
+        "appium:bootstrap",
+        "bundle:ios-simulator-debug"
+      ],
+      "dependsOrder": "sequence",
+      "hide": true,
+      "label": "test:ui:ios-simulator",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh debug-appium-tests-prep"
+      ],
+      "command": "bash",
+      "dependsOn": [
+        "appium:bootstrap",
+        "bundle:macos-debug",
+        "spm:build-tests"
+      ],
+      "dependsOrder": "sequence",
+      "hide": true,
+      "label": "debug:appium-tests-prep",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
       "type": "shell"
     }
   ],

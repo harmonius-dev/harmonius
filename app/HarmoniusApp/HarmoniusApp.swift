@@ -1,3 +1,4 @@
+import HarmoniusAppCore
 import SwiftUI
 
 @main

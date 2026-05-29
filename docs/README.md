@@ -1,13 +1,18 @@
 # Harmonius Engine Documentation
 
-Welcome to the Harmonius game engine documentation. This is the starting point for understanding the
-engine's design, capabilities, and how to use it.
+Welcome to the Harmonius game engine documentation. This is the starting point
+for understanding the engine's design, capabilities, and how to use it.
 
 ## Quick Start
 
-- **Just getting started?** → [Engine Overview](./overview/README.md) — all 17 engine domains with
-  topic breakdowns and integration guidance.
-- **Looking for a specific topic?** → Navigate the domain READMEs in [overview/](./overview/).
+- **Just getting started?** → [Engine Overview](./overview/README.md) covers
+  all 17 engine domains with topic breakdowns and integration guidance.
+- **Working locally?** → [Environment Setup](./environment-setup.md) and
+  [Testing](./testing.md) cover the Bash, SwiftPM, XcodeGen, and Appium flow.
+- **Using an LLM agent?** → [Agent Workflows](./agent-workflows.md) lists the
+  public VS Code tasks and matching Bash commands.
+- **Looking for a specific topic?** → Navigate the domain READMEs in
+  [overview/](./overview/).
 
 ## Documentation Structure
 
@@ -65,11 +70,12 @@ Cross-domain integration happens through well-defined contracts:
 - **Animation → Rendering** — Skeletal animation drives mesh deformation.
 - **Physics → Audio** — Impact velocities drive sound volume and pitch.
 - **AI → Rendering** — Perception results influence behavior; behavior drives visual effects.
-- **Networking → Simulation** — Client prediction mirrors server authority; reconciliation corrects
-  divergence.
+- **Networking → Simulation** — Client prediction mirrors server authority;
+  reconciliation corrects divergence.
 
-Each domain README lists "Integration risks" — fragile contracts requiring careful coordination. See
-[overview/README.md](./overview/README.md) for guidance on managing these risks.
+Each domain README lists "Integration risks" for fragile contracts requiring
+careful coordination. See [overview/README.md](./overview/README.md) for
+guidance on managing these risks.
 
 ## Reading Recommendations
 
@@ -83,5 +89,5 @@ Each domain README lists "Integration risks" — fragile contracts requiring car
 
 ## Contributing
 
-All documentation lives in `docs/` as Markdown. See [AGENTS.md](../AGENTS.md) for rules on
-formatting, line lengths, and link conventions.
+All documentation lives in `docs/` as Markdown. See [AGENTS.md](../AGENTS.md)
+for rules on formatting, line lengths, and link conventions.

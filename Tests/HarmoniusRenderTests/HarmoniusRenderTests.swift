@@ -3,6 +3,7 @@ import CoreGraphics
 import Foundation
 import HarmoniusRendering
 internal import HarmoniusShaderTypes
+import HarmoniusShaders
 import Metal
 import SnapshotTesting
 import Testing
@@ -95,10 +96,10 @@ private func renderTriangleTexture(device: MTLDevice) throws -> MTLTexture {
 }
 
 private func makeShaderLibrary(device: MTLDevice) throws -> MTLLibrary {
-  guard let metallibPath = ProcessInfo.processInfo.environment["HARMONIUS_METALLIB_PATH"] else {
-    throw RenderSnapshotError.missingResource("HARMONIUS_METALLIB_PATH")
+  if let metallibPath = ProcessInfo.processInfo.environment["HARMONIUS_METALLIB_PATH"] {
+    return try device.makeLibrary(URL: URL(fileURLWithPath: metallibPath))
   }
-  return try device.makeLibrary(URL: URL(fileURLWithPath: metallibPath))
+  return try HarmoniusShaderResources.makeDefaultLibrary(device: device)
 }
 
 private func makePipelineState(
@@ -145,10 +146,11 @@ private func makeTriangleBuffer(device: MTLDevice) throws -> MTLBuffer {
 }
 
 private func makeViewportBuffer(device: MTLDevice) throws -> MTLBuffer {
-  var viewport = hlslpp.uint2()
-  viewport[0] = UInt32(renderSize.width)
-  viewport[1] = UInt32(renderSize.height)
-  let length = MemoryLayout<hlslpp.uint2>.stride
+  var viewport = HarmoniusUInt2(
+    x: UInt32(renderSize.width),
+    y: UInt32(renderSize.height)
+  )
+  let length = MemoryLayout<HarmoniusUInt2>.stride
   let buffer = withUnsafeBytes(of: &viewport) { bytes in
     device.makeBuffer(
       bytes: bytes.baseAddress!,

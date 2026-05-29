@@ -1,5 +1,10 @@
 {
-  "cmake.mergedCompileCommands": "${workspaceFolder}/compile_commands.json",
-  "sweetpad.build.xcodeWorkspacePath": "Harmonius.xcodeproj/project.xcworkspace",
-  "sweetpad.xcodegen.autogenerate": true
+  "files.exclude": {
+    "**/.build": true,
+    "**/build": true
+  },
+  "sourcekit-lsp.serverPath": "sourcekit-lsp",
+  "sweetpad.build.xcodeProjectPath": "Harmonius.xcodeproj",
+  "sweetpad.xcodegen.autogenerate": false,
+  "swift.path": "swift"
 }

@@ -6,8 +6,8 @@ NS_ENUM(uint32_t, InputBufferIndex) {
 };
 
 typedef struct {
-  float2 position;
-  float4 color;
+  HarmoniusFloat2 position;
+  HarmoniusFloat4 color;
 } VertexData;
 
 typedef struct {

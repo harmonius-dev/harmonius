@@ -1,0 +1,5 @@
+module CCGLTF [system] {
+  header "cgltf.h"
+  header "cgltf_write.h"
+  export *
+}

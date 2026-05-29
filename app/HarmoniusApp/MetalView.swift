@@ -7,7 +7,9 @@ import SwiftUI
 // @MainActor: MTKView properties and delegate methods are main-actor-isolated.
 @MainActor
 final class MetalViewCoordinator: NSObject, MTKViewDelegate {
-  private var renderer: Metal4TriangleRenderer?
+  #if os(macOS)
+    private var renderer: Metal4TriangleRenderer?
+  #endif
   private var snapshotRenderer: MetalTriangleRenderer?
 
   func configure(view: MTKView) {
@@ -16,24 +18,32 @@ final class MetalViewCoordinator: NSObject, MTKViewDelegate {
       snapshotRenderer = MetalTriangleRenderer(view: view)
       return
     }
-    guard device.supportsFamily(.metal4) else {
-      NSLog("Metal 4 is required for Harmonius.")
-      return
-    }
-    guard let renderer = Metal4TriangleRenderer(view: view) else { return }
-    self.renderer = renderer
+    #if os(macOS)
+      guard device.supportsFamily(.metal4) else {
+        NSLog("Metal 4 is required for Harmonius.")
+        return
+      }
+      guard let renderer = Metal4TriangleRenderer(view: view) else { return }
+      self.renderer = renderer
+    #else
+      snapshotRenderer = MetalTriangleRenderer(view: view)
+    #endif
   }
 
   nonisolated func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
     MainActor.assumeIsolated {
-      renderer?.mtkView(view, drawableSizeWillChange: size)
+      #if os(macOS)
+        renderer?.mtkView(view, drawableSizeWillChange: size)
+      #endif
       snapshotRenderer?.mtkView(view, drawableSizeWillChange: size)
     }
   }
 
   nonisolated func draw(in view: MTKView) {
     MainActor.assumeIsolated {
-      renderer?.draw(in: view)
+      #if os(macOS)
+        renderer?.draw(in: view)
+      #endif
       snapshotRenderer?.draw(in: view)
     }
   }

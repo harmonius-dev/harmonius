@@ -1,47 +1,52 @@
 # Harmonius
 
-An open-source, cross-platform game engine for real-time 2D, 3D, and XR games. Built in Rust around
-a single ECS, a single spatial index, and a single job system — because harmony is what emerges when
-every part composes cleanly into every other part.
+An open-source, cross-platform game engine for real-time 2D, 3D, and XR games.
+Built in Rust around a single ECS, a single spatial index, and a single job
+system — because harmony is what emerges when every part composes cleanly into
+every other part.
 
-## Building and testing
+## Building and Testing
 
-Harmonius builds and tests on macOS via XcodeGen and Xcode. CMake static libraries link into the app
-through an Xcode pre-build script (see [project.yml](project.yml)).
+Harmonius uses SwiftPM as the source of truth for Swift targets, shader
+artifacts, package tests, render snapshots, and Appium UI tests. XcodeGen still
+owns Apple app bundles, resources, signing, schemes, archives, and destinations.
+
+Bash is the canonical automation layer. VS Code tasks, CI jobs, and LLM agents
+should call `scripts/dev.sh` instead of hand-expanding dependency order.
 
 ### Prerequisites
 
-For macOS app builds:
+For macOS and iOS development:
 
 - macOS 26 + Xcode 26
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
-- Ninja — `brew install ninja`
+- XcodeGen: `brew install xcodegen`
+- `swift-format`, `jq`, `pkg-config`, and `appium`
 
-For Linux native development:
+For Linux package development:
 
-- CMake 4.0 or newer
-- Ninja and a C++ compiler toolchain
-- Vulkan loader, headers, tools, validation layers, and Mesa Vulkan drivers
-- X11, XCB, RandR, Xcursor, Xi, Xinerama, Xrender, Xfixes, and XKB common headers
+- Swift 6.3 or newer
+- `pkg-config`, Git, certificates, and a C/C++ compiler toolchain
+- Vulkan and X11 development packages for future native Linux rendering work
 
-Run `./scripts/setup_environment.sh` to install supported host dependencies. See
-[docs/environment-setup.md](docs/environment-setup.md) for Linux Vulkan and X11 setup details.
+Run `./scripts/setup_environment.sh` to install supported host dependencies.
+See [docs/environment-setup.md](docs/environment-setup.md) for details.
 
-### Generate the Xcode project
+### Common Commands
 
 ```bash
-xcodegen generate
+./scripts/dev.sh bootstrap macos
+./scripts/dev.sh package-graph
+./scripts/dev.sh compile-spm macos debug
+./scripts/dev.sh bundle macos debug
+./scripts/dev.sh test
+./scripts/dev.sh full-check
 ```
 
-This writes `Harmonius.xcodeproj` at the repo root.
+VS Code exposes the same flow through aggregate tasks such as `dev:bootstrap`,
+`dev:compile`, `dev:test`, `dev:run:macos`, and `dev:full-check`.
 
-### Build and test in Xcode
-
-1. Open the project: `open Harmonius.xcodeproj`
-2. Select the **HarmoniusApp** scheme and press **⌘B** to build the app.
-3. Select the **HarmoniusApp** scheme and press **⌘U** to run unit and UI tests.
-
-See [docs/testing.md](docs/testing.md) for snapshot baselines, CI, and test target details.
+See [docs/testing.md](docs/testing.md) for test targets and snapshots. See
+[docs/agent-workflows.md](docs/agent-workflows.md) for LLM workflow cards.
 
 ## Who Harmonius Is For
 
@@ -71,9 +76,10 @@ vendor lock-in.
 
 ## What Makes Harmonius Different
 
-- **Everything compiles to Rust** — visual graphs (logic, materials, AI, animation, VFX) become real
-  Rust source, compiled via bundled rustc into a shared middleman `.dylib` for editor hot-reload and
-  statically linked into ship builds. One language, one compiler, one type system.
+- **Everything compiles to Rust** — visual graphs for logic, materials, AI,
+  animation, and VFX become real Rust source, compiled via bundled rustc into a
+  shared middleman `.dylib` for editor hot-reload and statically linked into
+  ship builds. One language, one compiler, one type system.
 - **Composition over inheritance** — the engine has no "quest" or "inventory" subsystem, only
   generic primitives that compose into any mechanic. Puzzle games and MMO shooters built from the
   same blocks.
@@ -100,8 +106,8 @@ vendor lock-in.
 - **Platform-native I/O** — io_uring (Linux), IOCP + DirectStorage (Windows), GCD + Metal I/O
   (Apple); main thread polls completions; zero blocking operations
 - **Custom windowing** — NSWindow, Win32, X11/Wayland directly; no winit
-- **HLSL shader pipeline** — all shaders authored in HLSL, compiled via DXC + Metal Shader Converter
-  CLI
+- **HLSL shader pipeline** — all shaders authored in HLSL, compiled via DXC
+  and Metal Shader Converter CLI
 - **Deterministic fixed timestep** — 30/60/120 fps tiers with rollback-friendly semantics for
   replays, netcode, and testing
 - **Pair-wise integration specs** — 50 subsystem-pair contracts define every cross-domain edge
@@ -129,7 +135,7 @@ one frame. Everything in concert.
 2. **No-code-first** — all user-facing authoring is visual
 3. **Production-grade Rust** — stable Rust only, zero nightly, modern GPU graphics
 4. **Open source** — Apache 2.0 with open asset store and community marketplace
-5. **Self-hosted infrastructure** — all services open source with 1-click AWS deployment; customers
-   pay AWS directly, no vendor lock-in
+5. **Self-hosted infrastructure** — all services open source with 1-click AWS
+   deployment; customers pay AWS directly, no vendor lock-in
 6. **Privacy-respecting AI** — cloud AI backends (Claude, Cursor, Copilot) use the customer's own
    API keys; engine is a thin client, never a proxy

@@ -1,12 +1,28 @@
 #pragma once
 
 #if defined(__SLANG__)
-// Slang provides float2, float4, and uint2.
+#define HarmoniusFloat2 float2
+#define HarmoniusFloat4 float4
+#define HarmoniusUInt2 uint2
 #else
-#include <hlsl++.h>
-using float2 = hlslpp::float2;
-using float4 = hlslpp::float4;
-using uint2 = hlslpp::uint2;
+#include <stdint.h>
+
+typedef struct __attribute__((aligned(8))) {
+  float x;
+  float y;
+} HarmoniusFloat2;
+
+typedef struct __attribute__((aligned(16))) {
+  float x;
+  float y;
+  float z;
+  float w;
+} HarmoniusFloat4;
+
+typedef struct __attribute__((aligned(8))) {
+  uint32_t x;
+  uint32_t y;
+} HarmoniusUInt2;
 #endif
 
 #ifndef NS_ENUM

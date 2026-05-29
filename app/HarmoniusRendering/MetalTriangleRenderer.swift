@@ -1,5 +1,6 @@
-// HarmoniusShaderTypes is an internal C++ interop module (from Shaders/module.modulemap).
 internal import HarmoniusShaderTypes
+// HarmoniusShaderTypes is an internal C++ interop module (from Shaders/module.modulemap).
+import HarmoniusShaders
 import Metal
 import MetalKit
 
@@ -19,7 +20,9 @@ public final class MetalTriangleRenderer: NSObject, MTKViewDelegate {
     }
     guard
       let commandQueue = device.makeCommandQueue(),
-      let defaultLibrary = device.makeDefaultLibrary()
+      let defaultLibrary = try? HarmoniusShaderResources.makeDefaultLibrary(
+        device: device
+      )
     else {
       return nil
     }
@@ -40,7 +43,7 @@ public final class MetalTriangleRenderer: NSObject, MTKViewDelegate {
         options: .storageModeShared
       ),
       let viewportSizeBuffer = device.makeBuffer(
-        length: MemoryLayout<hlslpp.uint2>.stride,
+        length: MemoryLayout<HarmoniusUInt2>.stride,
         options: .storageModeShared
       )
     else {
@@ -119,9 +122,7 @@ public final class MetalTriangleRenderer: NSObject, MTKViewDelegate {
     }
     viewportWidth = UInt32(size.width)
     viewportHeight = UInt32(size.height)
-    var viewportSize = hlslpp.uint2()
-    viewportSize[0] = viewportWidth
-    viewportSize[1] = viewportHeight
+    var viewportSize = HarmoniusUInt2(x: viewportWidth, y: viewportHeight)
     withUnsafeBytes(of: &viewportSize) { bytes in
       viewportSizeBuffer.contents().copyMemory(
         from: bytes.baseAddress!,

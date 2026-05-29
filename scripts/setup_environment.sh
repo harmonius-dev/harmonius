@@ -64,7 +64,7 @@ install_macos() {
     exit 1
   fi
 
-  local packages=(cmake ninja xcodegen)
+  local packages=(jq pkg-config swift-format xcodegen)
   for pkg in "${packages[@]}"; do
     if brew list --versions "$pkg" >/dev/null 2>&1; then
       echo "[ok] $pkg already installed"
@@ -79,7 +79,6 @@ install_debian_linux() {
   local packages=(
     build-essential
     ca-certificates
-    cmake
     git
     libvulkan-dev
     libx11-dev
@@ -94,7 +93,6 @@ install_debian_linux() {
     libxrandr-dev
     libxrender-dev
     mesa-vulkan-drivers
-    ninja-build
     pkg-config
     vulkan-tools
     vulkan-validationlayers
@@ -106,7 +104,6 @@ install_debian_linux() {
 
 install_fedora_linux() {
   local packages=(
-    cmake
     gcc-c++
     git
     libX11-devel
@@ -121,7 +118,6 @@ install_fedora_linux() {
     libxkbcommon-devel
     libxkbcommon-x11-devel
     mesa-vulkan-drivers
-    ninja-build
     pkgconf-pkg-config
     vulkan-headers
     vulkan-loader-devel
@@ -135,7 +131,6 @@ install_fedora_linux() {
 install_arch_linux() {
   local packages=(
     base-devel
-    cmake
     git
     libx11
     libxcb
@@ -148,7 +143,6 @@ install_arch_linux() {
     libxkbcommon-x11
     libxrandr
     libxrender
-    ninja
     pkgconf
     vulkan-devel
     vulkan-tools
@@ -184,7 +178,7 @@ install_linux() {
         *arch*) install_arch_linux ;;
         *)
           echo "Unsupported Linux distribution: ${PRETTY_NAME:-$ID}" >&2
-          echo "Install CMake, Ninja, Vulkan SDK packages, and X11 dev headers." >&2
+          echo "Install Swift, pkg-config, Vulkan SDK packages, and X11 dev headers." >&2
           exit 1
           ;;
       esac
@@ -192,20 +186,9 @@ install_linux() {
   esac
 }
 
-check_cmake_version() {
-  if ! have cmake; then
-    echo "cmake was not found after setup." >&2
-    exit 1
-  fi
-
-  local version major
-  version="$(cmake --version | awk 'NR==1 {print $3}')"
-  major="${version%%.*}"
-  if [[ "$major" =~ ^[0-9]+$ && "$major" -lt 4 ]]; then
-    cat >&2 <<MSG
-CMake ${version} is installed, but Harmonius requires CMake 4.0 or newer.
-Install a newer CMake from Kitware, Homebrew, pipx, or your distro backports.
-MSG
+check_swift_version() {
+  if ! have swift; then
+    echo "swift was not found after setup." >&2
     exit 1
   fi
 }
@@ -221,6 +204,7 @@ initialize_repo() {
   run git submodule update --init --recursive
 
   if [[ "$(uname -s)" == "Darwin" ]]; then
+    run ./scripts/dev.sh bootstrap macos
     run xcodegen generate
   else
     echo "[info] Linux Vulkan/X11 prerequisites are installed."
@@ -242,7 +226,7 @@ case "$(uname -s)" in
 esac
 
 if [[ "$dry_run" -eq 0 ]]; then
-  check_cmake_version
+  check_swift_version
 fi
 initialize_repo
 

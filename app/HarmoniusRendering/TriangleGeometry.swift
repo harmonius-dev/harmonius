@@ -31,11 +31,11 @@ public enum TriangleGeometry {
     )
   }
 
-  private static func point(radius: Float, angle: Float) -> hlslpp.float2 {
-    var value = hlslpp.float2()
-    value[0] = radius * cosf(angle)
-    value[1] = radius * sinf(angle)
-    return value
+  private static func point(radius: Float, angle: Float) -> HarmoniusFloat2 {
+    HarmoniusFloat2(
+      x: radius * cosf(angle),
+      y: radius * sinf(angle)
+    )
   }
 
   private static func color(
@@ -43,12 +43,12 @@ public enum TriangleGeometry {
     green: Float,
     blue: Float,
     alpha: Float
-  ) -> hlslpp.float4 {
-    var value = hlslpp.float4()
-    value[0] = red
-    value[1] = green
-    value[2] = blue
-    value[3] = alpha
-    return value
+  ) -> HarmoniusFloat4 {
+    HarmoniusFloat4(
+      x: red,
+      y: green,
+      z: blue,
+      w: alpha
+    )
   }
 }

@@ -1,117 +1,116 @@
 # Testing
 
-Harmonius uses CMake/CTest for Swift Testing execution. XcodeGen still verifies
-the app bundle, but tests are not generated as Xcode-owned bundles.
+Harmonius uses SwiftPM for unit, render, snapshot, and Appium UI tests.
+XcodeGen verifies Apple app bundles and provides app artifacts for Appium.
 
 ## Test Targets
 
 | Target | Framework | Scope |
-| ------ | --------- | ----- |
-| `HarmoniusUnitTests` | Swift Testing | Geometry and pure rendering data |
-| `HarmoniusRenderTests` | Swift Testing + SnapshotTesting | Real Metal texture snapshots |
-
-CMake builds production artifacts, Swift Testing executables, and the
-Point-Free SnapshotTesting library used by render snapshots.
+| --- | --- | --- |
+| `HarmoniusUnitTests` | Swift Testing | Geometry and pure render data |
+| `HarmoniusRenderTests` | Swift Testing + SnapshotTesting | Metal snapshots |
+| `HarmoniusAppiumTests` | XCTest + Swift WebDriver | Appium smoke UI |
 
 ## Prerequisites
 
-- macOS 26 + Xcode 26 (Metal 4, Swift 6.3)
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
-- Ninja (`brew install ninja`)
+- macOS 26 + Xcode 26 for Apple app and Metal coverage.
+- `swift-format`, `jq`, `pkg-config`, XcodeGen, and Appium.
+- vcpkg submodule initialized by `scripts/dev.sh bootstrap <platform>`.
+- Appium `mac2` and `xcuitest` drivers from `scripts/dev.sh appium-bootstrap`.
 
-## Run locally
-
-Configure and build CMake, then run CTest.
-
-```bash
-cmake --preset macos-debug
-cmake --build --preset macos-debug
-ctest --test-dir build/macos --output-on-failure
-```
-
-Verify the Xcode app bundle separately:
+## Local Commands
 
 ```bash
-xcodegen generate
-xcodebuild build \
-  -project Harmonius.xcodeproj \
-  -scheme HarmoniusApp \
-  -destination "platform=macOS" \
-  -derivedDataPath build/xcodegen
+./scripts/dev.sh test-unit
+./scripts/dev.sh test-render
+./scripts/dev.sh test-render-record
+./scripts/dev.sh test-ui-macos
+./scripts/dev.sh test-ui-ios-simulator
+./scripts/dev.sh test
 ```
 
-## Unit tests
+Use `./scripts/dev.sh full-check` before opening a pull request. The full check
+runs no-JS, line-length, JSON sorting, Swift formatting, package graph, build,
+unit tests, render tests, and `git diff --check`.
 
-Unit tests are colocated with source under `app/HarmoniusRendering/`. Files
-ending in `Tests.swift` use Swift Testing (`import Testing`, `@Test`, and
-`#expect`).
+## Unit Tests
+
+Unit tests live under `Tests/HarmoniusUnitTests/`. Files use Swift Testing with
+`import Testing`, `@Test`, and `#expect`.
 
 Current coverage:
 
-1. `TriangleVertexLayout.maxFramesInFlight`
-2. `TriangleGeometry.frameData()` vertex colors
-3. Vertex positions on the expected circle radius
-4. Equilateral triangle side lengths
-
-Add a new `@Test` function in a `*Tests.swift` file next to the code under
-test. Public API under test must be marked `public` in the CMake-built module.
+1. `TriangleVertexLayout.maxFramesInFlight`.
+2. `TriangleGeometry.frameData()` primary colors.
+3. Vertex positions on the expected `240` radius circle.
+4. Equilateral triangle side lengths.
 
 ## Render Snapshot Test
 
-[HarmoniusRenderTests.swift](../app/HarmoniusApp/HarmoniusRenderTests.swift)
-uses Swift Testing and
-[swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing).
+[HarmoniusRenderTests.swift](../Tests/HarmoniusRenderTests/HarmoniusRenderTests.swift)
+uses Swift Testing and SnapshotTesting.
 
 1. Create a real `MTLDevice`.
-2. Load the Slang-built `default.metallib`.
+2. Load the SwiftPM-generated `default.metallib`.
 3. Render the triangle into a real offscreen `MTLTexture`.
 4. Convert that texture to an `NSImage`.
-5. Call `assertSnapshot(of:as:named:)` at precision `0.98`.
+5. Compare the PNG at snapshot precision `0.98`.
 
-Reference PNGs live under `app/HarmoniusApp/__Snapshots__/HarmoniusRenderTests/`.
-SnapshotTesting names files `{testFunction}.{named}.png`.
+Reference PNGs live under:
 
-### Record Or Refresh Baselines
-
-```bash
-SNAPSHOT_RECORD=1 ctest --test-dir build/macos --output-on-failure
+```text
+Tests/HarmoniusRenderTests/__Snapshots__/HarmoniusRenderTests/
 ```
 
-Commit the updated PNG under `__Snapshots__/`.
+Snapshot dimensions stay explicit: render `960x540`, compare `480x270`.
+
+## Record Or Refresh Baselines
+
+```bash
+./scripts/dev.sh test-render-record
+```
+
+Commit the updated PNG under the `__Snapshots__/` directory.
+
+## Appium UI Tests
+
+Appium replaces the Xcode UI test runner. Test code must stay in Swift and use
+`swift-webdriver`; do not add JavaScript or TypeScript harnesses.
+
+1. `test-ui-macos` builds the macOS bundle, starts Appium, and uses `mac2`.
+2. `test-ui-ios-simulator` builds the simulator bundle and uses `xcuitest`.
+3. Both flows assert a stable SwiftUI accessibility identifier.
+4. Both flows capture a screenshot and always delete the Appium session.
 
 ## CI
 
-The workflow in [.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request
-and `main` push:
+The workflow in [.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on
+pull requests, `main` pushes, and manual dispatch.
 
-1. `format` selects Xcode 26 and lints Swift files with `swift-format` on `macos-26`.
-2. `macos-tests` builds CMake targets, runs CTest, and builds the Xcode app.
-3. `deploy-ios` archives `HarmoniusApp`, exports an IPA, and uploads it to App Store Connect
-   on successful `main` pushes from `macos-26`.
-4. `deploy-macos` archives `HarmoniusApp`, exports a Mac App Store package, uploads it to App Store
-   Connect, and waits for processing on successful `main` pushes from `macos-26`.
+1. `quality` runs package graph checks and `scripts/dev.sh full-check`.
+2. `apple-tests` builds the macOS bundle and runs SwiftPM tests.
+3. `apple-tests` runs Appium smoke tests for macOS and iOS simulator.
+4. Release jobs archive iOS and macOS apps with `scripts/dev.sh archive`.
 
-CI caches the vcpkg installed tree across repeated runs. Release exports upload
-as `ios-release-ipa` and `macos-release-pkg`.
+CI caches vcpkg installed trees across repeated runs. Release exports upload as
+`ios-release-ipa` and `macos-release-pkg`.
 
 The macOS release job expects these GitHub Actions secrets:
 
 | Secret | Purpose |
-| ------ | ------- |
-| `APPLE_CERTIFICATE_P12_BASE64` | App signing certificate bundle |
-| `APPLE_CERTIFICATE_PASSPHRASE` | Distribution certificate passphrase |
+| --- | --- |
+| `APPLE_CERTIFICATE_P12_BASE64` | App certificate bundle |
+| `APPLE_CERTIFICATE_PASSPHRASE` | App certificate passphrase |
 | `APPLE_DISTRIBUTION_IDENTITY` | App signing identity |
-| `APPLE_INSTALLER_CERTIFICATE_P12_BASE64` | Installer certificate bundle |
-| `APPLE_INSTALLER_CERTIFICATE_PASSPHRASE` | Installer certificate passphrase |
-| `APPLE_INSTALLER_DISTRIBUTION_IDENTITY` | Installer signing identity selector |
-| `APPLE_TEAM_ID` | Apple Developer Program team |
-| `ASC_ISSUER_ID` | App Store Connect API issuer |
-| `ASC_KEY_ID` | App Store Connect API key |
-| `ASC_KEY_P8_BASE64` | App Store Connect API private key |
-| `MACOS_PROVISIONING_PROFILE_BASE64` | Mac App Store provisioning profile |
+| `APPLE_INSTALLER_DISTRIBUTION_IDENTITY` | Installer identity |
+| `APPLE_TEAM_ID` | Apple Developer team |
+| `ASC_ISSUER_ID` | App Store Connect issuer |
+| `ASC_KEY_ID` | App Store Connect key |
+| `ASC_KEY_P8_BASE64` | App Store Connect private key |
+| `MACOS_PROVISIONING_PROFILE_BASE64` | Mac App Store profile |
 | `MACOS_PROVISIONING_PROFILE_NAME` | Mac App Store profile name |
 
-## App icon plan
+## App Icon Plan
 
 The selected winner is the middleground controller mark from the final user-selected reference
 image. It is a clean, borderless gamepad/controller silhouette split into three organic pieces by
@@ -157,13 +156,3 @@ Asset catalog:
 
 1. Keep `Assets.xcassets` for non-icon assets such as `LaunchBackground`.
 2. Do not generate app icon PNGs into `Assets.xcassets`.
-
-## CMake artifact paths
-
-If CMake output layout changes, update [project.yml](../project.yml):
-
-| Artifact | Default path |
-| -------- | ------------ |
-| HarmoniusApp bundle | `build/macos/app/HarmoniusApp` |
-| HarmoniusRendering archive | `build/macos/app/libHarmoniusRendering.a` |
-| Swift module (import path) | `build/macos/app/` |

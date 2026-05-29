@@ -6,10 +6,12 @@ import SwiftUI
 
 private let contentBackground = Color(red: 0.08, green: 0.09, blue: 0.12)
 
-struct ContentView: View {
+public struct ContentView: View {
   @State private var snapshotPointSize = HarmoniusLaunchOptions.snapshotCapturePixelSize
 
-  var body: some View {
+  public init() {}
+
+  public var body: some View {
     Group {
       if HarmoniusLaunchOptions.isSnapshotMode {
         snapshotContent

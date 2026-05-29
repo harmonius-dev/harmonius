@@ -2,44 +2,44 @@
   "configurations": [
     {
       "cwd": "${workspaceFolder}",
-      "name": "HarmoniusApp (macOS)",
-      "osx": {
-        "program": "build/xcodegen/Build/Products/Debug/HarmoniusApp.app",
-        "request": "launch",
-        "type": "lldb"
-      },
-      "preLaunchTask": "xcode:build-app",
+      "name": "Debug macOS App",
+      "preLaunchTask": "dev:debug:macos",
+      "program": "${workspaceFolder}/build/debug-macos-app/Contents/MacOS/HarmoniusApp",
       "request": "launch",
       "type": "lldb"
     },
     {
       "cwd": "${workspaceFolder}",
-      "name": "HarmoniusUnitTests",
-      "osx": {
-        "args": [
-          "build/xcodegen/Build/Products/Debug/HarmoniusApp.app/Contents/PlugIns/HarmoniusUnitTests.xctest"
-        ],
-        "env": {
-          "DYLD_FRAMEWORK_PATH": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks:/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
-          "TEST_HOST": "build/xcodegen/Build/Products/Debug/HarmoniusApp.app/Contents/MacOS/HarmoniusApp"
-        },
-        "program": "/Applications/Xcode.app/Contents/Developer/usr/bin/xctest",
-        "request": "launch",
-        "type": "lldb"
-      },
-      "preLaunchTask": "xcode:build-for-testing",
+      "name": "Debug iOS Simulator App",
+      "pid": "${command:pickProcess}",
+      "preLaunchTask": "dev:debug:ios-simulator",
+      "request": "attach",
+      "type": "lldb"
+    },
+    {
+      "args": [
+        "HarmoniusUnitTests"
+      ],
+      "cwd": "${workspaceFolder}",
+      "name": "Debug SwiftPM Unit Tests",
+      "preLaunchTask": "spm:build-tests",
+      "program": "${workspaceFolder}/build/debug-swiftpm-tests",
       "request": "launch",
       "type": "lldb"
     },
     {
+      "args": [
+        "HarmoniusAppiumTests"
+      ],
       "cwd": "${workspaceFolder}",
-      "name": "HarmoniusUITests",
-      "osx": {
-        "program": "build/xcodegen/Build/Products/Debug/HarmoniusUITests-Runner.app",
-        "request": "launch",
-        "type": "lldb"
+      "env": {
+        "APPIUM_SERVER_URL": "http://127.0.0.1:4723",
+        "HARMONIUS_APPIUM_APP": "${workspaceFolder}/build/debug-macos-app",
+        "HARMONIUS_APPIUM_PLATFORM": "macos"
       },
-      "preLaunchTask": "xcode:build-for-testing",
+      "name": "Debug Swift Appium Tests",
+      "preLaunchTask": "debug:appium-tests-prep",
+      "program": "${workspaceFolder}/build/debug-swiftpm-tests",
       "request": "launch",
       "type": "lldb"
     }

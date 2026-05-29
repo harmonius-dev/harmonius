@@ -1,0 +1,692 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "${script_dir}/.." && pwd)"
+
+usage() {
+  cat <<'MSG'
+Usage: scripts/dev.sh <command> [args]
+
+Commands:
+  bootstrap [macos|ios|ios-simulator|linux]
+  appium-bootstrap
+  package-graph
+  compile-spm <macos|ios|ios-simulator|linux> <debug|release>
+  xcodegen
+  bundle <macos|ios|ios-simulator> <debug|release>
+  test-unit
+  test-render
+  test-render-record
+  build-tests
+  test-ui-macos
+  test-ui-ios-simulator
+  debug-appium-tests-prep
+  test
+  run <macos|ios-simulator>
+  debug <macos|ios-simulator>
+  archive <ios|macos>
+  release-validate
+  full-check
+MSG
+}
+
+die() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+have() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+repo_cd() {
+  cd "$repo_root"
+}
+
+host_platform() {
+  case "$(uname -s)" in
+    Darwin) echo "macos" ;;
+    Linux) echo "linux" ;;
+    *) die "unsupported host $(uname -s)" ;;
+  esac
+}
+
+triplet_for_platform() {
+  case "$1" in
+    ios) echo "arm64-ios" ;;
+    ios-simulator) echo "arm64-ios-simulator" ;;
+    linux) echo "x64-linux" ;;
+    macos) echo "arm64-osx" ;;
+    *) die "unknown platform $1" ;;
+  esac
+}
+
+sdk_for_platform() {
+  case "$1" in
+    ios) echo "iphoneos" ;;
+    ios-simulator) echo "iphonesimulator" ;;
+    macos) echo "macosx" ;;
+    *) die "no Apple SDK for platform $1" ;;
+  esac
+}
+
+configuration_for_mode() {
+  case "$1" in
+    debug) echo "Debug" ;;
+    release) echo "Release" ;;
+    *) die "unknown build mode $1" ;;
+  esac
+}
+
+swift_configuration_for_mode() {
+  case "$1" in
+    debug) echo "debug" ;;
+    release) echo "release" ;;
+    *) die "unknown build mode $1" ;;
+  esac
+}
+
+destination_for_platform() {
+  case "$1" in
+    ios) echo "generic/platform=iOS" ;;
+    ios-simulator) echo "platform=iOS Simulator,name=iPhone 17" ;;
+    macos) echo "platform=macOS,arch=arm64" ;;
+    *) die "no Xcode destination for platform $1" ;;
+  esac
+}
+
+build_dir_for_platform() {
+  echo "$repo_root/build/$1"
+}
+
+vcpkg_root() {
+  echo "$repo_root/vcpkg"
+}
+
+vcpkg_binary() {
+  echo "$(vcpkg_root)/vcpkg"
+}
+
+vcpkg_install_root_for_platform() {
+  echo "$(build_dir_for_platform "$1")/vcpkg_installed"
+}
+
+vcpkg_prefix_for_platform() {
+  local platform="$1"
+  local triplet
+  triplet="$(triplet_for_platform "$platform")"
+  echo "$(vcpkg_install_root_for_platform "$platform")/$triplet"
+}
+
+pkgconfig_dir_for_platform() {
+  local platform="$1"
+  local triplet
+  triplet="$(triplet_for_platform "$platform")"
+  echo "$repo_root/build/pkgconfig/$triplet"
+}
+
+pkg_config_path_for_platform() {
+  local platform="$1"
+  local prefix
+  prefix="$(vcpkg_prefix_for_platform "$platform")"
+  printf '%s:%s:%s' \
+    "$(pkgconfig_dir_for_platform "$platform")" \
+    "$prefix/lib/pkgconfig" \
+    "$prefix/share/pkgconfig"
+}
+
+with_pkg_config_path() {
+  local platform="$1"
+  shift
+  PKG_CONFIG_PATH="$(pkg_config_path_for_platform "$platform")" "$@"
+}
+
+ensure_submodules() {
+  repo_cd
+  git submodule update --init --recursive
+}
+
+ensure_vcpkg_bootstrap() {
+  local binary
+  binary="$(vcpkg_binary)"
+  if [[ -x "$binary" ]]; then
+    return
+  fi
+  repo_cd
+  "$(vcpkg_root)/bootstrap-vcpkg.sh"
+}
+
+install_vcpkg_triplet() {
+  local platform="$1"
+  local triplet
+  local install_root
+  triplet="$(triplet_for_platform "$platform")"
+  install_root="$(vcpkg_install_root_for_platform "$platform")"
+  ensure_vcpkg_bootstrap
+  repo_cd
+  "$(vcpkg_binary)" install \
+    --overlay-triplets="$repo_root/vcpkg/triplets" \
+    --overlay-triplets="$repo_root/vcpkg/triplets/community" \
+    --triplet="$triplet" \
+    --x-install-root="$install_root"
+}
+
+ensure_vcpkg_for_platform() {
+  local platform="$1"
+  install_vcpkg_triplet "$platform"
+  if [[ "$platform" == "ios" || "$platform" == "ios-simulator" ]]; then
+    install_vcpkg_triplet "macos"
+  fi
+}
+
+write_pc_file() {
+  local path="$1"
+  local content="$2"
+  mkdir -p "$(dirname "$path")"
+  printf '%s\n' "$content" > "$path"
+}
+
+generate_pkgconfig_shims() {
+  local platform="$1"
+  local prefix
+  local out_dir
+  prefix="$(vcpkg_prefix_for_platform "$platform")"
+  out_dir="$(pkgconfig_dir_for_platform "$platform")"
+  mkdir -p "$out_dir"
+
+  write_pc_file "$out_dir/hlslpp.pc" "\
+prefix=$prefix
+includedir=\${prefix}/include
+hlslppincludedir=\${prefix}/include/hlslpp
+
+Name: hlslpp
+Description: HLSL-style C++ math headers from vcpkg
+Version: 3.8
+Cflags: -I\${includedir} -I\${hlslppincludedir}
+Libs:"
+
+  write_pc_file "$out_dir/cgltf.pc" "\
+prefix=$prefix
+includedir=\${prefix}/include
+
+Name: cgltf
+Description: Header-only glTF loader from vcpkg
+Version: 1.15
+Cflags: -I\${includedir}
+Libs:"
+
+  write_pc_file "$out_dir/meshoptimizer.pc" "\
+prefix=$prefix
+includedir=\${prefix}/include
+libdir=\${prefix}/lib
+
+Name: meshoptimizer
+Description: Mesh optimization library from vcpkg
+Version: 1.1.1
+Cflags: -I\${includedir}
+Libs: -L\${libdir} -lmeshoptimizer"
+
+  write_pc_file "$out_dir/shader-slang.pc" "\
+prefix=$prefix
+libdir=\${prefix}/lib
+toolbindir=\${prefix}/tools/shader-slang
+
+Name: shader-slang
+Description: Slang shader compiler from vcpkg
+Version: 2026.7.1
+Cflags:
+Libs: -L\${libdir} -lslang"
+}
+
+validate_pkgconfig_shims() {
+  local platform="$1"
+  local dependency
+  for dependency in hlslpp cgltf meshoptimizer; do
+    with_pkg_config_path "$platform" pkg-config --cflags --libs "$dependency" \
+      >/dev/null
+  done
+}
+
+ensure_pkgconfig_for_platform() {
+  local platform="$1"
+  generate_pkgconfig_shims "$platform"
+  validate_pkgconfig_shims "$platform"
+}
+
+bootstrap_platform() {
+  local platform="${1:-$(host_platform)}"
+  ensure_submodules
+  ensure_vcpkg_for_platform "$platform"
+  ensure_pkgconfig_for_platform "$platform"
+}
+
+appium_bootstrap() {
+  if ! have appium; then
+    if have npm; then
+      npm install -g appium
+    else
+      die "Appium is missing and npm is unavailable for host-tool install"
+    fi
+  fi
+  ensure_appium_driver mac2
+  ensure_appium_driver xcuitest
+  appium driver list --installed
+}
+
+ensure_appium_driver() {
+  local driver="$1"
+  if appium driver list --installed --json | grep -q "\"$driver\""; then
+    return
+  fi
+  appium driver install "$driver" >/dev/null
+}
+
+swift_package() {
+  local platform="${HARMONIUS_SWIFTPM_PLATFORM:-macos}"
+  with_pkg_config_path "$platform" swift package "$@"
+}
+
+swift_test() {
+  local platform="${HARMONIUS_SWIFTPM_PLATFORM:-macos}"
+  with_pkg_config_path "$platform" swift test "$@"
+}
+
+swift_build() {
+  local platform="$1"
+  local mode="$2"
+  local configuration
+  configuration="$(swift_configuration_for_mode "$mode")"
+  bootstrap_platform "$platform"
+  with_pkg_config_path "$platform" swift build \
+    --configuration "$configuration"
+}
+
+link_swiftpm_test_executable() {
+  local executable
+  executable="$(find "$repo_root/.build" \
+    -path '*HarmoniusPackageTests.xctest/Contents/MacOS/HarmoniusPackageTests' \
+    -type f \
+    -print \
+    -quit 2>/dev/null)"
+  [[ -n "$executable" ]] || return
+  ln -sfn "$executable" "$repo_root/build/debug-swiftpm-tests"
+}
+
+build_tests() {
+  bootstrap_platform "macos"
+  with_pkg_config_path "macos" swift build --build-tests
+  mkdir -p "$repo_root/build"
+  link_swiftpm_test_executable
+}
+
+package_graph() {
+  bootstrap_platform "macos"
+  swift_package resolve
+  swift_package describe --type json >/dev/null
+}
+
+shader_artifact_path() {
+  find "$repo_root/.build" \
+    -path '*HarmoniusShaderPlugin*' \
+    -name default.metallib \
+    -type f \
+    -print \
+    -quit 2>/dev/null
+}
+
+ensure_shader_artifact() {
+  local platform="${1:-macos}"
+  local mode="${2:-debug}"
+  swift_build "$platform" "$mode" >/dev/null
+  local artifact
+  artifact="$(shader_artifact_path)"
+  [[ -n "$artifact" ]] || die "default.metallib was not generated"
+  printf '%s\n' "$artifact"
+}
+
+run_xcodegen() {
+  have xcodegen || die "xcodegen is required"
+  repo_cd
+  xcodegen generate
+}
+
+bundle_app() {
+  local platform="$1"
+  local mode="$2"
+  local configuration
+  local destination
+  configuration="$(configuration_for_mode "$mode")"
+  destination="$(destination_for_platform "$platform")"
+  bootstrap_platform "$platform"
+  run_xcodegen
+  repo_cd
+  PKG_CONFIG_PATH="$(pkg_config_path_for_platform "$platform")" xcodebuild build \
+    -project Harmonius.xcodeproj \
+    -scheme HarmoniusApp \
+    -configuration "$configuration" \
+    -destination "$destination" \
+    -derivedDataPath build/xcodegen \
+    -clonedSourcePackagesDirPath build/spm
+  if [[ "$platform" == "macos" && "$mode" == "debug" ]]; then
+    mkdir -p "$repo_root/build"
+    ln -sfn "$(macos_app_path)" "$repo_root/build/debug-macos-app"
+  fi
+}
+
+macos_app_path() {
+  echo "$repo_root/build/xcodegen/Build/Products/Debug/HarmoniusApp.app"
+}
+
+ios_simulator_app_path() {
+  echo "$repo_root/build/xcodegen/Build/Products/Debug-iphonesimulator/HarmoniusApp.app"
+}
+
+run_app() {
+  local platform="$1"
+  case "$platform" in
+    macos)
+      bundle_app macos debug
+      open "$(macos_app_path)"
+      ;;
+    ios-simulator)
+      bundle_app ios-simulator debug
+      xcrun simctl boot "iPhone 17" >/dev/null 2>&1 || true
+      xcrun simctl install booted "$(ios_simulator_app_path)"
+      xcrun simctl launch booted dev.harmonius.App
+      ;;
+    *) die "run supports macos or ios-simulator" ;;
+  esac
+}
+
+debug_app() {
+  local platform="$1"
+  case "$platform" in
+    macos)
+      bundle_app macos debug
+      ;;
+    ios-simulator)
+      bundle_app ios-simulator debug
+      xcrun simctl boot "iPhone 17" >/dev/null 2>&1 || true
+      xcrun simctl install booted "$(ios_simulator_app_path)"
+      xcrun simctl launch booted dev.harmonius.App
+      ;;
+    *) die "debug supports macos or ios-simulator" ;;
+  esac
+}
+
+test_unit() {
+  bootstrap_platform "macos"
+  swift_test --filter HarmoniusUnitTests
+}
+
+test_render() {
+  bootstrap_platform "macos"
+  HARMONIUS_METALLIB_PATH="$(ensure_shader_artifact macos debug)" \
+    swift_test --filter HarmoniusRenderTests
+}
+
+test_render_record() {
+  bootstrap_platform "macos"
+  HARMONIUS_METALLIB_PATH="$(ensure_shader_artifact macos debug)" \
+    SNAPSHOT_RECORD=1 \
+    swift_test --filter HarmoniusRenderTests
+}
+
+wait_for_appium() {
+  local url="$1"
+  local attempts=60
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    if curl --silent --fail "$url/status" >/dev/null; then
+      return
+    fi
+    sleep 1
+  done
+  die "Appium server did not become ready at $url"
+}
+
+ensure_appium_server_running() {
+  local url="${APPIUM_SERVER_URL:-http://127.0.0.1:4723}"
+  local log_dir="$repo_root/build/logs/appium"
+  if curl --silent --fail "$url/status" >/dev/null; then
+    return
+  fi
+  mkdir -p "$log_dir"
+  appium --address 127.0.0.1 --port 4723 \
+    --log "$log_dir/debug.log" \
+    >/dev/null 2>&1 &
+  echo "$!" > "$log_dir/debug.pid"
+  wait_for_appium "$url"
+}
+
+cleanup_appium_server() {
+  if [[ -n "${HARMONIUS_APPIUM_PID:-}" ]]; then
+    kill "$HARMONIUS_APPIUM_PID" >/dev/null 2>&1 || true
+  fi
+}
+
+with_appium_server() {
+  local log_name="$1"
+  shift
+  local url="${APPIUM_SERVER_URL:-http://127.0.0.1:4723}"
+  local log_dir="$repo_root/build/logs/appium"
+  HARMONIUS_APPIUM_PID=""
+  mkdir -p "$log_dir"
+  if [[ -z "${APPIUM_SERVER_URL:-}" ]]; then
+    appium --address 127.0.0.1 --port 4723 \
+      --log "$log_dir/$log_name.log" &
+    HARMONIUS_APPIUM_PID="$!"
+    trap cleanup_appium_server EXIT
+  fi
+  wait_for_appium "$url"
+  APPIUM_SERVER_URL="$url" "$@"
+}
+
+test_appium_platform() {
+  local platform="$1"
+  local app_path
+  case "$platform" in
+    macos)
+      bundle_app macos debug
+      app_path="$(macos_app_path)"
+      ;;
+    ios-simulator)
+      bundle_app ios-simulator debug
+      xcrun simctl boot "iPhone 17" >/dev/null 2>&1 || true
+      xcrun simctl bootstatus "iPhone 17" -b
+      app_path="$(ios_simulator_app_path)"
+      ;;
+    *) die "unsupported Appium platform $platform" ;;
+  esac
+
+  HARMONIUS_APPIUM_APP="$app_path" \
+    HARMONIUS_APPIUM_PLATFORM="$platform" \
+    swift_test --filter HarmoniusAppiumTests
+}
+
+test_ui_macos() {
+  appium_bootstrap
+  with_appium_server macos test_appium_platform macos
+}
+
+test_ui_ios_simulator() {
+  appium_bootstrap
+  with_appium_server ios-simulator test_appium_platform ios-simulator
+}
+
+debug_appium_tests_prep() {
+  appium_bootstrap
+  bundle_app macos debug
+  build_tests
+  ensure_appium_server_running
+}
+
+test_all() {
+  test_unit
+  test_render
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    test_ui_macos
+  fi
+}
+
+archive_app() {
+  local platform="$1"
+  case "$platform" in
+    ios)
+      bootstrap_platform ios
+      run_xcodegen
+      PKG_CONFIG_PATH="$(pkg_config_path_for_platform ios)" xcodebuild archive \
+        -project Harmonius.xcodeproj \
+        -scheme HarmoniusApp \
+        -destination 'generic/platform=iOS' \
+        -archivePath build/ios/Harmonius.xcarchive \
+        -clonedSourcePackagesDirPath build/spm
+      ;;
+    macos)
+      bootstrap_platform macos
+      run_xcodegen
+      PKG_CONFIG_PATH="$(pkg_config_path_for_platform macos)" xcodebuild archive \
+        -project Harmonius.xcodeproj \
+        -scheme HarmoniusApp \
+        -destination 'generic/platform=macOS' \
+        -archivePath build/macos/Harmonius.xcarchive \
+        -clonedSourcePackagesDirPath build/spm
+      ;;
+    *) die "archive supports ios or macos" ;;
+  esac
+}
+
+release_validate() {
+  local required=(
+    APPLE_TEAM_ID
+    ASC_ISSUER_ID
+    ASC_KEY_ID
+    ASC_KEY_P8_BASE64
+  )
+  local name
+  for name in "${required[@]}"; do
+    [[ -n "${!name:-}" ]] || die "missing release environment $name"
+  done
+  package_graph
+}
+
+format_swift() {
+  have swift-format || die "swift-format is required"
+  repo_cd
+  git ls-files --cached --others --exclude-standard -z '*.swift' \
+    | xargs -0 swift-format format --in-place
+}
+
+lint_swift() {
+  have swift-format || die "swift-format is required"
+  repo_cd
+  git ls-files --cached --others --exclude-standard -z '*.swift' \
+    | xargs -0 swift-format lint --strict
+}
+
+lint_no_js() {
+  repo_cd
+  local matches
+  matches="$(find . \
+    -path './.build' -prune -o \
+    -path './.git' -prune -o \
+    -path './build' -prune -o \
+    -path './vcpkg' -prune -o \
+    -type f \( \
+      -name '*.cjs' -o \
+      -name '*.js' -o \
+      -name '*.mjs' -o \
+      -name '*.ts' -o \
+      -name 'jest.config.*' -o \
+      -name 'mocha.*' -o \
+      -name 'playwright.config.*' \
+    \) -print)"
+  [[ -z "$matches" ]] || die "JavaScript or TypeScript files found: $matches"
+}
+
+lint_line_length() {
+  repo_cd
+  {
+    git diff --name-only -z --diff-filter=ACMR
+    git ls-files --others --exclude-standard -z
+  } | while IFS= read -r -d '' file; do
+    [[ -f "$file" ]] || continue
+    case "$file" in
+      *.icns|*.icon|*.jpg|*.jpeg|*.pdf|*.png) continue ;;
+      vcpkg/*) continue ;;
+    esac
+    awk 'length($0) > 100 { printf "%s:%d:%d\n", FILENAME, FNR, length($0) }' \
+      "$file"
+  done | awk 'BEGIN { failed = 0 } { failed = 1; print } END { exit failed }'
+}
+
+lint_json_sort() {
+  have jq || die "jq is required for JSON key sorting checks"
+  repo_cd
+  local failed=0
+  local file
+  while IFS= read -r -d '' file; do
+    [[ -f "$file" ]] || continue
+    local temp
+    temp="$(mktemp)"
+    jq -S . "$file" > "$temp"
+    if ! cmp -s "$file" "$temp"; then
+      echo "$file is not sorted with jq -S" >&2
+      failed=1
+    fi
+    rm -f "$temp"
+  done < <(
+    git diff --name-only -z --diff-filter=ACMR -- '*.json'
+    git ls-files --others --exclude-standard -z '*.json'
+  )
+  [[ "$failed" -eq 0 ]]
+}
+
+full_check() {
+  lint_no_js
+  lint_line_length
+  lint_json_sort
+  lint_swift
+  package_graph
+  swift_build macos debug
+  test_unit
+  test_render
+  git diff --check
+}
+
+main() {
+  local command="${1:-}"
+  [[ -n "$command" ]] || {
+    usage
+    exit 2
+  }
+  shift || true
+
+  case "$command" in
+    appium-bootstrap) appium_bootstrap "$@" ;;
+    archive) archive_app "$@" ;;
+    bootstrap) bootstrap_platform "${1:-$(host_platform)}" ;;
+    build-tests) build_tests "$@" ;;
+    bundle) bundle_app "$@" ;;
+    compile-spm) swift_build "$@" ;;
+    debug) debug_app "$@" ;;
+    debug-appium-tests-prep) debug_appium_tests_prep "$@" ;;
+    format) format_swift "$@" ;;
+    full-check) full_check "$@" ;;
+    help|-h|--help) usage ;;
+    package-graph) package_graph "$@" ;;
+    release-validate) release_validate "$@" ;;
+    run) run_app "$@" ;;
+    test) test_all "$@" ;;
+    test-render) test_render "$@" ;;
+    test-render-record) test_render_record "$@" ;;
+    test-ui-ios-simulator) test_ui_ios_simulator "$@" ;;
+    test-ui-macos) test_ui_macos "$@" ;;
+    test-unit) test_unit "$@" ;;
+    xcodegen) run_xcodegen "$@" ;;
+    *) die "unknown command $command" ;;
+  esac
+}
+
+main "$@"
