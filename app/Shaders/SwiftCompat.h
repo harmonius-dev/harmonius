@@ -3,7 +3,6 @@
 #if defined(__SLANG__)
 // Slang provides float2, float4, and uint2.
 #else
-#include <stdint.h>
 #include <hlsl++.h>
 using float2 = hlslpp::float2;
 using float4 = hlslpp::float4;

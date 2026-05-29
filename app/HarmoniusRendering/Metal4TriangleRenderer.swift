@@ -166,7 +166,9 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
     }
     viewportWidth = UInt32(size.width)
     viewportHeight = UInt32(size.height)
-    var viewportSize = hlslpp.uint2(SIMD4<UInt32>(viewportWidth, viewportHeight, 0, 0))
+    var viewportSize = hlslpp.uint2()
+    viewportSize[0] = viewportWidth
+    viewportSize[1] = viewportHeight
     withUnsafeBytes(of: &viewportSize) { bytes in
       viewportSizeBuffer.contents().copyMemory(
         from: bytes.baseAddress!,

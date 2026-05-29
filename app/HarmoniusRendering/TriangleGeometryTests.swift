@@ -4,9 +4,23 @@ import Testing
 
 private enum TriangleGeometryFixtures {
   static let radius: Float = 240
-  static var red: hlslpp.float4 { hlslpp.float4(SIMD4<Float>(1, 0, 0, 1)) }
-  static var green: hlslpp.float4 { hlslpp.float4(SIMD4<Float>(0, 1, 0, 1)) }
-  static var blue: hlslpp.float4 { hlslpp.float4(SIMD4<Float>(0, 0, 1, 1)) }
+  static var red: hlslpp.float4 { color(red: 1, green: 0, blue: 0, alpha: 1) }
+  static var green: hlslpp.float4 { color(red: 0, green: 1, blue: 0, alpha: 1) }
+  static var blue: hlslpp.float4 { color(red: 0, green: 0, blue: 1, alpha: 1) }
+
+  private static func color(
+    red: Float,
+    green: Float,
+    blue: Float,
+    alpha: Float
+  ) -> hlslpp.float4 {
+    var value = hlslpp.float4()
+    value[0] = red
+    value[1] = green
+    value[2] = blue
+    value[3] = alpha
+    return value
+  }
 }
 
 @Test func maxFramesInFlightIsThree() {

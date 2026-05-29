@@ -11,9 +11,9 @@ public enum TriangleGeometry {
     let angle0: Float = 0
     let angle1 = angle0 + (2 * Float.pi / 3)
     let angle2 = angle0 + (4 * Float.pi / 3)
-    let red = hlslpp.float4(SIMD4<Float>(1, 0, 0, 1))
-    let green = hlslpp.float4(SIMD4<Float>(0, 1, 0, 1))
-    let blue = hlslpp.float4(SIMD4<Float>(0, 0, 1, 1))
+    let red = color(red: 1, green: 0, blue: 0, alpha: 1)
+    let green = color(red: 0, green: 1, blue: 0, alpha: 1)
+    let blue = color(red: 0, green: 0, blue: 1, alpha: 1)
 
     return TriangleData(
       vertex0: VertexData(
@@ -32,6 +32,23 @@ public enum TriangleGeometry {
   }
 
   private static func point(radius: Float, angle: Float) -> hlslpp.float2 {
-    hlslpp.float2(SIMD4<Float>(radius * cosf(angle), radius * sinf(angle), 0, 0))
+    var value = hlslpp.float2()
+    value[0] = radius * cosf(angle)
+    value[1] = radius * sinf(angle)
+    return value
+  }
+
+  private static func color(
+    red: Float,
+    green: Float,
+    blue: Float,
+    alpha: Float
+  ) -> hlslpp.float4 {
+    var value = hlslpp.float4()
+    value[0] = red
+    value[1] = green
+    value[2] = blue
+    value[3] = alpha
+    return value
   }
 }

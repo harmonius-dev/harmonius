@@ -145,9 +145,9 @@ private func makeTriangleBuffer(device: MTLDevice) throws -> MTLBuffer {
 }
 
 private func makeViewportBuffer(device: MTLDevice) throws -> MTLBuffer {
-  var viewport = hlslpp.uint2(
-    SIMD4<UInt32>(UInt32(renderSize.width), UInt32(renderSize.height), 0, 0)
-  )
+  var viewport = hlslpp.uint2()
+  viewport[0] = UInt32(renderSize.width)
+  viewport[1] = UInt32(renderSize.height)
   let length = MemoryLayout<hlslpp.uint2>.stride
   let buffer = withUnsafeBytes(of: &viewport) { bytes in
     device.makeBuffer(
