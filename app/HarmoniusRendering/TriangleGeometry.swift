@@ -1,35 +1,37 @@
-import Foundation
+import Darwin
 public import HarmoniusShaderTypes
-import simd
 
 public enum TriangleVertexLayout {
   public static let maxFramesInFlight = 3
 }
 
 public enum TriangleGeometry {
-  private static let red = SIMD4<Float>(1, 0, 0, 1)
-  private static let green = SIMD4<Float>(0, 1, 0, 1)
-  private static let blue = SIMD4<Float>(0, 0, 1, 1)
-
   public static func frameData() -> TriangleData {
     let radius: Float = 240
     let angle0: Float = 0
-    let angle1 = angle0 + (2 * .pi / 3)
-    let angle2 = angle0 + (4 * .pi / 3)
+    let angle1 = angle0 + (2 * Float.pi / 3)
+    let angle2 = angle0 + (4 * Float.pi / 3)
+    let red = hlslpp.float4(SIMD4<Float>(1, 0, 0, 1))
+    let green = hlslpp.float4(SIMD4<Float>(0, 1, 0, 1))
+    let blue = hlslpp.float4(SIMD4<Float>(0, 0, 1, 1))
 
     return TriangleData(
       vertex0: VertexData(
-        position: SIMD2(radius * cos(angle0), radius * sin(angle0)),
+        position: point(radius: radius, angle: angle0),
         color: red
       ),
       vertex1: VertexData(
-        position: SIMD2(radius * cos(angle1), radius * sin(angle1)),
+        position: point(radius: radius, angle: angle1),
         color: green
       ),
       vertex2: VertexData(
-        position: SIMD2(radius * cos(angle2), radius * sin(angle2)),
+        position: point(radius: radius, angle: angle2),
         color: blue
       )
     )
+  }
+
+  private static func point(radius: Float, angle: Float) -> hlslpp.float2 {
+    hlslpp.float2(SIMD4<Float>(radius * cosf(angle), radius * sinf(angle), 0, 0))
   }
 }

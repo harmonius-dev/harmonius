@@ -2,7 +2,6 @@
 internal import HarmoniusShaderTypes
 import Metal
 import MetalKit
-import simd
 
 public final class MetalTriangleRenderer: NSObject, MTKViewDelegate {
   private let commandQueue: MTLCommandQueue
@@ -10,7 +9,8 @@ public final class MetalTriangleRenderer: NSObject, MTKViewDelegate {
   private let triangleVertexBuffer: MTLBuffer
   private let viewportSizeBuffer: MTLBuffer
 
-  private var viewportSize = SIMD2<UInt32>(repeating: 0)
+  private var viewportWidth: UInt32 = 0
+  private var viewportHeight: UInt32 = 0
 
   @MainActor
   public init?(view: MTKView) {
@@ -40,7 +40,7 @@ public final class MetalTriangleRenderer: NSObject, MTKViewDelegate {
         options: .storageModeShared
       ),
       let viewportSizeBuffer = device.makeBuffer(
-        length: MemoryLayout<SIMD2<UInt32>>.stride,
+        length: MemoryLayout<hlslpp.uint2>.stride,
         options: .storageModeShared
       )
     else {
@@ -117,19 +117,23 @@ public final class MetalTriangleRenderer: NSObject, MTKViewDelegate {
     else {
       return
     }
-    viewportSize = SIMD2<UInt32>(UInt32(size.width), UInt32(size.height))
-    viewportSizeBuffer.contents().copyMemory(
-      from: [viewportSize],
-      byteCount: MemoryLayout<SIMD2<UInt32>>.stride
-    )
+    viewportWidth = UInt32(size.width)
+    viewportHeight = UInt32(size.height)
+    var viewportSize = hlslpp.uint2(SIMD4<UInt32>(viewportWidth, viewportHeight, 0, 0))
+    withUnsafeBytes(of: &viewportSize) { bytes in
+      viewportSizeBuffer.contents().copyMemory(
+        from: bytes.baseAddress!,
+        byteCount: bytes.count
+      )
+    }
   }
 
   private func setViewport(for encoder: MTLRenderCommandEncoder) {
     let viewport = MTLViewport(
       originX: 0,
       originY: 0,
-      width: Double(viewportSize.x),
-      height: Double(viewportSize.y),
+      width: Double(viewportWidth),
+      height: Double(viewportHeight),
       znear: 0,
       zfar: 1
     )
@@ -138,10 +142,12 @@ public final class MetalTriangleRenderer: NSObject, MTKViewDelegate {
 
   private func writeTriangleData() {
     var triangle = TriangleGeometry.frameData()
-    triangleVertexBuffer.contents().copyMemory(
-      from: &triangle,
-      byteCount: MemoryLayout<TriangleData>.stride
-    )
+    withUnsafeBytes(of: &triangle) { bytes in
+      triangleVertexBuffer.contents().copyMemory(
+        from: bytes.baseAddress!,
+        byteCount: bytes.count
+      )
+    }
   }
 
   private static func compileRenderPipeline(

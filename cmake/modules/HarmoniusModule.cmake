@@ -2,11 +2,10 @@
 # libraries.
 #
 # Public API: harmonius_add_module(<TARGET> [SWIFT_SOURCES <file ...>]
-# [CXX_SOURCES   <file ...>] [SLANG_SOURCES <file ...>] [SLANG_OUTPUT_NAME
-# <name>]    # default: "default" when SLANG_SOURCES set [SLANG_INCLUDE_DIRS
-# <dir ...>] [INCLUDE_DIRS <dir ...>]      # added to C++ and Swift -Xcc -I
-# flags [LIBRARIES <target ...>]      # other harmonius_add_module targets to
-# link [FRAMEWORKS <name ...>]       # Apple frameworks, e.g. Metal SwiftUI )
+# [CXX_SOURCES <file ...>] [SLANG_SOURCES <file ...>]
+# [SHADER_TYPE_SOURCES <shared-header ...>] [SLANG_OUTPUT_NAME <name>]
+# [SLANG_INCLUDE_DIRS <dir ...>] [INCLUDE_DIRS <dir ...>]
+# [LIBRARIES <target ...>] [FRAMEWORKS <name ...>])
 #
 # The created static library target has: Swift_MODULE_NAME        = <TARGET>
 # HARMONIUS_OWN_SLANGLIB_TARGETS  — slanglib custom targets owned by module
@@ -18,11 +17,20 @@ include(HarmoniusSlang)
 include(HarmoniusSwiftCXX)
 
 function(harmonius_add_module _target)
+  set(_module_multi_args
+      SWIFT_SOURCES
+      CXX_SOURCES
+      SLANG_SOURCES
+      SHADER_TYPE_SOURCES
+      SLANG_INCLUDE_DIRS
+      INCLUDE_DIRS
+      LIBRARIES
+      FRAMEWORKS)
   cmake_parse_arguments(
     _M
     ""
     "SLANG_OUTPUT_NAME"
-    "SWIFT_SOURCES;CXX_SOURCES;SLANG_SOURCES;SLANG_INCLUDE_DIRS;INCLUDE_DIRS;LIBRARIES;FRAMEWORKS"
+    "${_module_multi_args}"
     ${ARGN})
 
   # -------------------------------------------------------------------------
@@ -48,7 +56,17 @@ function(harmonius_add_module _target)
     endif()
   endforeach()
 
-  set(_all_srcs ${_swift_srcs} ${_cxx_srcs})
+  set(_shader_type_srcs "")
+  foreach(_s IN LISTS _M_SHADER_TYPE_SOURCES)
+    cmake_path(IS_RELATIVE _s _rel)
+    if(_rel)
+      list(APPEND _shader_type_srcs "${CMAKE_CURRENT_SOURCE_DIR}/${_s}")
+    else()
+      list(APPEND _shader_type_srcs "${_s}")
+    endif()
+  endforeach()
+
+  set(_all_srcs ${_swift_srcs} ${_cxx_srcs} ${_shader_type_srcs})
   if(NOT _all_srcs)
     message(
       FATAL_ERROR
@@ -60,6 +78,10 @@ CXX_SOURCES is required")
   # Static library
   # -------------------------------------------------------------------------
   add_library("${_target}" STATIC ${_all_srcs})
+  if(_shader_type_srcs)
+    set_source_files_properties(${_shader_type_srcs} PROPERTIES HEADER_FILE_ONLY TRUE)
+    source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${_shader_type_srcs})
+  endif()
 
   set_target_properties("${_target}" PROPERTIES Swift_MODULE_NAME "${_target}")
 
@@ -132,6 +154,8 @@ CXX_SOURCES is required")
       "${_slang_target}"
       SOURCES
       ${_M_SLANG_SOURCES}
+      TYPE_SOURCES
+      ${_shader_type_srcs}
       OUTPUT_NAME
       "${_M_SLANG_OUTPUT_NAME}"
       INCLUDE_DIRS

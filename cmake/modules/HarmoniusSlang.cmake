@@ -6,9 +6,10 @@
 # out to xcrun metal / metallib internally and emits an Apple-loadable
 # .metallib. Replaces the previous .metal → .air → .metallib pipeline.
 #
-# Public API: harmonius_add_slanglib(<TARGET> SOURCES      <.slang-file ...>
-# [OUTPUT_NAME <name>]           # default: "${TARGET}" [INCLUDE_DIRS <dir
-# ...>]) harmonius_slanglib_link_libraries(<TARGET> <dep> ...)
+# Public API: harmonius_add_slanglib(<TARGET> SOURCES <.slang-file ...>
+# [TYPE_SOURCES <shared-header ...>] [DEPENDS <file ...>]
+# [OUTPUT_NAME <name>] # default: "${TARGET}" [INCLUDE_DIRS <dir ...>])
+# harmonius_slanglib_link_libraries(<TARGET> <dep> ...)
 
 cmake_minimum_required(VERSION 4.0)
 
@@ -35,12 +36,17 @@ endif()
 # produced .metallib HARMONIUS_SLANGLIB_NAME  — output name (without .metallib)
 # HARMONIUS_SLANGLIB_DEPS  — other harmonius_add_slanglib targets depended on
 #
-# Usage: harmonius_add_slanglib(<TARGET> SOURCES      <.slang-file ...>
-# [OUTPUT_NAME <name>]           # default: "${TARGET}" [INCLUDE_DIRS <dir
-# ...>])
+# Usage: harmonius_add_slanglib(<TARGET> SOURCES <.slang-file ...>
+# [TYPE_SOURCES <shared-header ...>] [DEPENDS <file ...>]
+# [OUTPUT_NAME <name>] # default: "${TARGET}" [INCLUDE_DIRS <dir ...>])
 # ---------------------------------------------------------------------------
 function(harmonius_add_slanglib _target)
-  cmake_parse_arguments(_S "" "OUTPUT_NAME" "SOURCES;INCLUDE_DIRS" ${ARGN})
+  cmake_parse_arguments(
+    _S
+    ""
+    "OUTPUT_NAME"
+    "SOURCES;TYPE_SOURCES;DEPENDS;INCLUDE_DIRS"
+    ${ARGN})
   if(NOT _S_SOURCES)
     message(FATAL_ERROR "harmonius_add_slanglib: SOURCES is required")
   endif()
@@ -54,7 +60,31 @@ function(harmonius_add_slanglib _target)
     if(_rel)
       set(_src "${CMAKE_CURRENT_SOURCE_DIR}/${_src}")
     endif()
+    cmake_path(GET _src EXTENSION LAST_ONLY _ext)
+    if(NOT _ext STREQUAL ".slang")
+      message(
+        FATAL_ERROR
+          "harmonius_add_slanglib(${_target}): ${_src} is not a .slang file")
+    endif()
     list(APPEND _abs_srcs "${_src}")
+  endforeach()
+
+  set(_abs_type_srcs "")
+  foreach(_src IN LISTS _S_TYPE_SOURCES)
+    cmake_path(IS_RELATIVE _src _rel)
+    if(_rel)
+      set(_src "${CMAKE_CURRENT_SOURCE_DIR}/${_src}")
+    endif()
+    list(APPEND _abs_type_srcs "${_src}")
+  endforeach()
+
+  set(_abs_deps "")
+  foreach(_src IN LISTS _S_DEPENDS)
+    cmake_path(IS_RELATIVE _src _rel)
+    if(_rel)
+      set(_src "${CMAKE_CURRENT_SOURCE_DIR}/${_src}")
+    endif()
+    list(APPEND _abs_deps "${_src}")
   endforeach()
 
   set(_inc_flags "")
@@ -74,7 +104,7 @@ function(harmonius_add_slanglib _target)
             "${CMAKE_CURRENT_BINARY_DIR}/metallibs"
     COMMAND "${HARMONIUS_SLANGC}" -target metallib -o "${_lib}" ${_inc_flags}
             ${_abs_srcs}
-    DEPENDS ${_abs_srcs}
+    DEPENDS ${_abs_srcs} ${_abs_type_srcs} ${_abs_deps}
     COMMENT "Slang compile ${_S_OUTPUT_NAME}.metallib"
     VERBATIM COMMAND_EXPAND_LISTS)
 

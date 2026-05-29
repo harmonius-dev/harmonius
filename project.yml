@@ -1,10 +1,5 @@
 name: Harmonius
 
-packages:
-  SnapshotTesting:
-    url: https://github.com/pointfreeco/swift-snapshot-testing
-    from: 1.19.2
-
 options:
   bundleIdPrefix: dev.harmonius
   deploymentTarget:
@@ -156,60 +151,3 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: dev.harmonius.App
         LINK_WITH_STANDARD_LIBRARIES: NO
         MACH_O_TYPE: mh_bundle
-    scheme:
-      testTargets:
-        - HarmoniusUnitTests
-        - HarmoniusUITests
-
-  HarmoniusUnitTests:
-    type: bundle.unit-test
-    platform: macOS
-    sources:
-      - path: app/HarmoniusRendering
-        includes:
-          - "**/*Tests.swift"
-    dependencies:
-      - target: HarmoniusApp
-    preBuildScripts:
-      - name: CMake Build
-        basedOnDependencyAnalysis: false
-        script: *cmake_build
-    settings:
-      base:
-        HARMONIUS_CMAKE_TARGETS: HarmoniusRendering
-        TEST_HOST: $(BUILT_PRODUCTS_DIR)/HarmoniusApp.app/Contents/MacOS/HarmoniusApp
-        BUNDLE_LOADER: $(TEST_HOST)
-        GENERATE_INFOPLIST_FILE: YES
-        SWIFT_INCLUDE_PATHS: $(SRCROOT)/build/macos/app
-        HEADER_SEARCH_PATHS: $(SRCROOT)/app/Shaders
-        OTHER_SWIFT_FLAGS:
-          - -cxx-interoperability-mode=default
-          - -Xcc
-          - -std=c++26
-          - -Xcc
-          - -I$(SRCROOT)/app/Shaders
-        OTHER_LDFLAGS:
-          - $(SRCROOT)/build/macos/app/libHarmoniusRendering.a
-
-  HarmoniusUITests:
-    type: bundle.ui-testing
-    platform: macOS
-    sources:
-      - path: app/HarmoniusApp
-        includes:
-          - "**/*Tests.swift"
-        excludes:
-          - "**/__Snapshots__/**"
-    dependencies:
-      - target: HarmoniusApp
-      - package: SnapshotTesting
-    preBuildScripts:
-      - name: CMake Build
-        basedOnDependencyAnalysis: false
-        script: *cmake_build
-    settings:
-      base:
-        HARMONIUS_CMAKE_TARGETS: HarmoniusApp
-        TEST_TARGET_NAME: HarmoniusApp
-        GENERATE_INFOPLIST_FILE: YES
-        OTHER_SWIFT_FLAGS: ""

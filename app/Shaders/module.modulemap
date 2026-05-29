@@ -1,4 +1,5 @@
 module HarmoniusShaderTypes {
   header "ShaderTypes.h"
+  header "SwiftCompat.h"
   export *
 }

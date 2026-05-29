@@ -3,7 +3,6 @@ internal import HarmoniusShaderTypes
 import Metal
 import MetalKit
 import QuartzCore
-import simd
 
 public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
   private let device: MTLDevice
@@ -19,7 +18,8 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
   private let defaultLibrary: MTLLibrary
 
   private var frameNumber: UInt64 = 0
-  private var viewportSize = SIMD2<UInt32>(repeating: 0)
+  private var viewportWidth: UInt32 = 0
+  private var viewportHeight: UInt32 = 0
 
   @MainActor
   public init?(view: MTKView) {
@@ -53,7 +53,7 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
         count: TriangleVertexLayout.maxFramesInFlight
       )
       viewportSizeBuffer = device.makeBuffer(
-        length: MemoryLayout<SIMD2<UInt32>>.stride,
+        length: MemoryLayout<hlslpp.uint2>.stride,
         options: .storageModeShared
       )!
       renderPipelineState = try Self.compileRenderPipeline(
@@ -164,19 +164,23 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
     guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else {
       return
     }
-    viewportSize = SIMD2<UInt32>(UInt32(size.width), UInt32(size.height))
-    viewportSizeBuffer.contents().copyMemory(
-      from: [viewportSize],
-      byteCount: MemoryLayout<SIMD2<UInt32>>.stride
-    )
+    viewportWidth = UInt32(size.width)
+    viewportHeight = UInt32(size.height)
+    var viewportSize = hlslpp.uint2(SIMD4<UInt32>(viewportWidth, viewportHeight, 0, 0))
+    withUnsafeBytes(of: &viewportSize) { bytes in
+      viewportSizeBuffer.contents().copyMemory(
+        from: bytes.baseAddress!,
+        byteCount: bytes.count
+      )
+    }
   }
 
   private func setViewport(for encoder: any MTL4RenderCommandEncoder) {
     let viewport = MTLViewport(
       originX: 0,
       originY: 0,
-      width: Double(viewportSize.x),
-      height: Double(viewportSize.y),
+      width: Double(viewportWidth),
+      height: Double(viewportHeight),
       znear: 0,
       zfar: 1
     )
@@ -185,10 +189,12 @@ public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
 
   private func writeTriangleData(to buffer: MTLBuffer) {
     var triangle = TriangleGeometry.frameData()
-    buffer.contents().copyMemory(
-      from: &triangle,
-      byteCount: MemoryLayout<TriangleData>.stride
-    )
+    withUnsafeBytes(of: &triangle) { bytes in
+      buffer.contents().copyMemory(
+        from: bytes.baseAddress!,
+        byteCount: bytes.count
+      )
+    }
   }
 
   private static func makeTriangleBuffers(

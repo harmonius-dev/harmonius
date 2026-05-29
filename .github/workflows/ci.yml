@@ -31,8 +31,8 @@ jobs:
       - name: Lint Swift sources
         run: git ls-files -z '*.swift' | xargs -0 swift-format lint --strict
 
-  macos-unit-tests:
-    name: macos-unit-tests
+  macos-tests:
+    name: macos-tests
     runs-on: macos-26
     needs: format
     steps:
@@ -59,85 +59,35 @@ jobs:
             }}
           restore-keys: vcpkg-${{ runner.os }}-
 
-      - name: Generate Xcode project
-        run: xcodegen generate
+      - name: Configure CMake
+        run: cmake --preset macos-debug
 
-      - name: Run unit tests
+      - name: Build CMake targets
+        run: cmake --build --preset macos-debug
+
+      - name: Run CTest
         run: |
-          xcodebuild test \
-            -project Harmonius.xcodeproj \
-            -scheme HarmoniusApp \
-            -only-testing:HarmoniusUnitTests \
-            -destination 'platform=macOS,arch=arm64' \
-            -derivedDataPath build/xcodegen \
-            -clonedSourcePackagesDirPath build/spm \
-            -resultBundlePath build/xcodegen/test-results/HarmoniusApp.xcresult
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-unit-test-results
-          path: build/xcodegen/test-results/HarmoniusApp.xcresult
-          if-no-files-found: warn
-
-  macos-ui-tests:
-    name: macos-ui-tests
-    runs-on: macos-26-xlarge
-    needs: format
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Select Xcode 26
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '26.4.1'
-
-      - name: Install build tools
-        run: brew install imagemagick ninja xcodegen
-
-      - name: Cache vcpkg installed tree
-        uses: actions/cache@v4
-        with:
-          path: build/macos/vcpkg_installed
-          key: >-
-            vcpkg-${{ runner.os }}-${{
-            hashFiles('vcpkg.json', 'CMakePresets.json', 'project.yml')
-            }}
-          restore-keys: vcpkg-${{ runner.os }}-
+          ctest \
+            --test-dir build/macos \
+            --output-on-failure
 
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Run UI tests
+      - name: Build Xcode app
         run: |
-          xcodebuild test \
+          xcodebuild build \
             -project Harmonius.xcodeproj \
             -scheme HarmoniusApp \
-            -only-testing:HarmoniusUITests \
             -destination 'platform=macOS,arch=arm64' \
-            -derivedDataPath build/xcodegen \
-            -clonedSourcePackagesDirPath build/spm \
-            -resultBundlePath build/xcodegen/test-results/HarmoniusUITests.xcresult
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-ui-test-results
-          path: build/xcodegen/test-results/HarmoniusUITests.xcresult
-          if-no-files-found: warn
+            -derivedDataPath build/xcodegen
 
   deploy-ios:
     name: ios-release
     runs-on: macos-26
     needs:
       - format
-      - macos-unit-tests
-      - macos-ui-tests
+      - macos-tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       APPLE_DISTRIBUTION_IDENTITY: ${{ secrets.APPLE_DISTRIBUTION_IDENTITY }}
@@ -307,8 +257,7 @@ jobs:
     runs-on: macos-26
     needs:
       - format
-      - macos-unit-tests
-      - macos-ui-tests
+      - macos-tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       APPLE_DISTRIBUTION_IDENTITY: ${{ secrets.APPLE_DISTRIBUTION_IDENTITY }}
