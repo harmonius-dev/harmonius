@@ -1,6 +1,7 @@
 {
   "configurations": [
     {
+      "breakpointMode": "file",
       "cwd": "${workspaceFolder}",
       "name": "Debug macOS App",
       "preLaunchTask": "dev:debug:macos",
@@ -9,6 +10,7 @@
       "type": "lldb"
     },
     {
+      "breakpointMode": "file",
       "cwd": "${workspaceFolder}",
       "name": "Debug iOS Simulator App",
       "pid": "${command:pickProcess}",
@@ -18,19 +20,33 @@
     },
     {
       "args": [
-        "HarmoniusUnitTests"
+        "${workspaceFolder}/build/debug-swiftpm-tests.xctest"
       ],
+      "breakpointMode": "file",
       "cwd": "${workspaceFolder}",
       "name": "Debug SwiftPM Unit Tests",
       "preLaunchTask": "spm:build-tests",
-      "program": "${workspaceFolder}/build/debug-swiftpm-tests",
+      "program": "/Applications/Xcode.app/Contents/Developer/usr/bin/xctest",
       "request": "launch",
       "type": "lldb"
     },
     {
       "args": [
-        "HarmoniusAppiumTests"
+        "${workspaceFolder}/build/debug-swiftpm-tests.xctest"
       ],
+      "breakpointMode": "file",
+      "cwd": "${workspaceFolder}",
+      "name": "Debug SwiftPM Render Tests",
+      "preLaunchTask": "spm:build-tests",
+      "program": "/Applications/Xcode.app/Contents/Developer/usr/bin/xctest",
+      "request": "launch",
+      "type": "lldb"
+    },
+    {
+      "args": [
+        "${workspaceFolder}/build/debug-swiftpm-tests.xctest"
+      ],
+      "breakpointMode": "file",
       "cwd": "${workspaceFolder}",
       "env": {
         "APPIUM_SERVER_URL": "http://127.0.0.1:4723",
@@ -39,7 +55,7 @@
       },
       "name": "Debug Swift Appium Tests",
       "preLaunchTask": "debug:appium-tests-prep",
-      "program": "${workspaceFolder}/build/debug-swiftpm-tests",
+      "program": "/Applications/Xcode.app/Contents/Developer/usr/bin/xctest",
       "request": "launch",
       "type": "lldb"
     }

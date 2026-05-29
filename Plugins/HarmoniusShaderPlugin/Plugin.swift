@@ -9,7 +9,9 @@ struct HarmoniusShaderPlugin: BuildToolPlugin {
   ) throws -> [Command] {
     let tool = try context.tool(named: "HarmoniusShaderTool")
     let packageDirectory = context.package.directoryURL
-    let shaderDirectory = packageDirectory.appendingPathComponent("app/Shaders")
+    let shaderDirectory = packageDirectory.appendingPathComponent(
+      "Sources/HarmoniusShaders"
+    )
     let source = shaderDirectory.appendingPathComponent("Triangle.slang")
     let shaderTypes = shaderDirectory.appendingPathComponent("ShaderTypes.h")
     let swiftCompat = shaderDirectory.appendingPathComponent("SwiftCompat.h")

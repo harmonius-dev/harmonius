@@ -1,0 +1,4 @@
+module hlslpp {
+  umbrella header "hlslpp.h"
+  export *
+}

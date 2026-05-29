@@ -1,11 +1,29 @@
-#if os(macOS)
-  internal import HarmoniusShaderTypes
-  // HarmoniusShaderTypes is an internal C++ interop module (from Shaders/module.modulemap).
-  import HarmoniusShaders
-  import Metal
-  import MetalKit
-  import QuartzCore
+import HarmoniusShaderResources
+internal import HarmoniusShaders
+// HarmoniusShaders is an internal C++ interop module.
+import Metal
+import MetalKit
+import QuartzCore
 
+#if os(iOS) && targetEnvironment(simulator)
+  public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
+    public static func isSupported(on device: MTLDevice) -> Bool {
+      false
+    }
+
+    @MainActor
+    public init?(view: MTKView) {
+      NSLog("Metal 4 rendering is unavailable in the iOS simulator SDK.")
+      return nil
+    }
+
+    @MainActor
+    public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
+
+    @MainActor
+    public func draw(in view: MTKView) {}
+  }
+#else
   public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
     private let device: MTLDevice
     private let commandQueue: any MTL4CommandQueue
@@ -22,6 +40,10 @@
     private var frameNumber: UInt64 = 0
     private var viewportWidth: UInt32 = 0
     private var viewportHeight: UInt32 = 0
+
+    public static func isSupported(on device: MTLDevice) -> Bool {
+      device.supportsFamily(.metal4)
+    }
 
     @MainActor
     public init?(view: MTKView) {
@@ -170,7 +192,7 @@
       }
       viewportWidth = UInt32(size.width)
       viewportHeight = UInt32(size.height)
-      var viewportSize = HarmoniusUInt2(x: viewportWidth, y: viewportHeight)
+      var viewportSize = HarmoniusMakeUInt2(viewportWidth, viewportHeight)
       withUnsafeBytes(of: &viewportSize) { bytes in
         viewportSizeBuffer.contents().copyMemory(
           from: bytes.baseAddress!,

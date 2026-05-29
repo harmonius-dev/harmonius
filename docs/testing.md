@@ -117,8 +117,9 @@ image. It is a clean, borderless gamepad/controller silhouette split into three 
 thick white negative-space channels. The filled sections are desaturated sage green across the upper
 bridge, muted warm orange/clay in the left grip, and dark charcoal in the right grip.
 
-This completes the image-selection decision. The app icon source of truth is the saved Icon Composer
-package at [`AppIcon.icon`](../app/Resources/AppIcon.icon). The PDF bridge was removed.
+This completes the image-selection decision. The app icon source of truth is the saved Icon
+Composer package at [`AppIcon.icon`](../Sources/HarmoniusApp/Resources/AppIcon.icon). The PDF
+bridge was removed.
 
 Implementation notes:
 
@@ -143,7 +144,7 @@ Implementation notes:
 Icon Composer source:
 
 1. Use macOS Sequoia 15.3 or newer.
-2. Open `app/AssetSources/AppIcon.icon` in Apple Icon Composer.
+2. Open `Sources/HarmoniusApp/Resources/AppIcon.icon` in Apple Icon Composer.
 3. Save the package with File -> Save. Do not export app icon PNG sizes as source.
 4. Keep `AppIcon.icon` next to `Assets.xcassets`, not inside the asset catalog.
 5. Ensure the app target includes `AppIcon.icon` and the app icon name is `AppIcon`.

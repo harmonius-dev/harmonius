@@ -1,5 +1,5 @@
 import HarmoniusRendering
-internal import HarmoniusShaderTypes
+internal import HarmoniusShaders
 import Testing
 
 private enum TriangleGeometryFixtures {
@@ -9,29 +9,38 @@ private enum TriangleGeometryFixtures {
   static var blue: HarmoniusFloat4 { color(red: 0, green: 0, blue: 1, alpha: 1) }
 
   private static func color(
-    red: Float,
-    green: Float,
+    red: Float, green: Float,
     blue: Float,
     alpha: Float
   ) -> HarmoniusFloat4 {
-    HarmoniusFloat4(x: red, y: green, z: blue, w: alpha)
+    HarmoniusMakeFloat4(red, green, blue, alpha)
   }
 }
 
+private func component(_ value: HarmoniusFloat2, _ index: Int32) -> Float {
+  HarmoniusFloat2Component(value, index)
+}
+
+private func component(_ value: HarmoniusFloat4, _ index: Int32) -> Float {
+  HarmoniusFloat4Component(value, index)
+}
+
 private func colorsEqual(_ lhs: HarmoniusFloat4, _ rhs: HarmoniusFloat4) -> Bool {
-  lhs.x == rhs.x
-    && lhs.y == rhs.y
-    && lhs.z == rhs.z
-    && lhs.w == rhs.w
+  component(lhs, 0) == component(rhs, 0)
+    && component(lhs, 1) == component(rhs, 1)
+    && component(lhs, 2) == component(rhs, 2)
+    && component(lhs, 3) == component(rhs, 3)
 }
 
 private func length(_ value: HarmoniusFloat2) -> Float {
-  sqrtf(value.x * value.x + value.y * value.y)
+  let x = component(value, 0)
+  let y = component(value, 1)
+  return sqrtf(x * x + y * y)
 }
 
 private func distance(_ lhs: HarmoniusFloat2, _ rhs: HarmoniusFloat2) -> Float {
-  let x = lhs.x - rhs.x
-  let y = lhs.y - rhs.y
+  let x = component(lhs, 0) - component(rhs, 0)
+  let y = component(lhs, 1) - component(rhs, 1)
   return sqrtf(x * x + y * y)
 }
 

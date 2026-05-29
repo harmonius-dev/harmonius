@@ -1,0 +1,19 @@
+[
+  {
+    "adapter": "Swift",
+    "args": [
+      "$ZED_WORKTREE_ROOT/build/debug-swiftpm-tests.xctest"
+    ],
+    "build": {
+      "args": [
+        "-lc",
+        "./scripts/dev.sh build-tests"
+      ],
+      "command": "bash"
+    },
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "label": "Debug SwiftPM Unit Tests",
+    "program": "/Applications/Xcode.app/Contents/Developer/usr/bin/xctest",
+    "request": "launch"
+  }
+]

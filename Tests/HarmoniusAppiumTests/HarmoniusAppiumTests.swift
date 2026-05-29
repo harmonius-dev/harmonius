@@ -33,6 +33,8 @@ extension ElementLocator {
 
 final class HarmoniusAppiumTests: XCTestCase {
   func testHarmoniusLaunchesAndExposesMainContent() throws {
+    try requireAppiumEnvironment()
+
     let session = try makeSession()
     defer { try? session.delete() }
 
@@ -96,6 +98,21 @@ final class HarmoniusAppiumTests: XCTestCase {
     )
     session.implicitWaitTimeout = 5
     return session
+  }
+
+  private func requireAppiumEnvironment() throws {
+    let requiredNames = [
+      "APPIUM_SERVER_URL",
+      "HARMONIUS_APPIUM_APP",
+      "HARMONIUS_APPIUM_PLATFORM",
+    ]
+    let missingNames = requiredNames.filter {
+      ProcessInfo.processInfo.environment[$0]?.isEmpty ?? true
+    }
+
+    guard missingNames.isEmpty else {
+      throw XCTSkip("missing Appium environment: \(missingNames.joined(separator: ", "))")
+    }
   }
 }
 

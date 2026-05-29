@@ -304,13 +304,16 @@ swift_build() {
 
 link_swiftpm_test_executable() {
   local executable
+  local bundle
   executable="$(find "$repo_root/.build" \
     -path '*HarmoniusPackageTests.xctest/Contents/MacOS/HarmoniusPackageTests' \
     -type f \
     -print \
     -quit 2>/dev/null)"
   [[ -n "$executable" ]] || return
+  bundle="${executable%/Contents/MacOS/HarmoniusPackageTests}"
   ln -sfn "$executable" "$repo_root/build/debug-swiftpm-tests"
+  ln -sfn "$bundle" "$repo_root/build/debug-swiftpm-tests.xctest"
 }
 
 build_tests() {

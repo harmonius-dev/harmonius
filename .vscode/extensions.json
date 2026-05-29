@@ -3,5 +3,10 @@
     "swiftlang.swift-vscode",
     "vadimcn.vscode-lldb"
   ],
-  "unwantedRecommendations": []
+  "unwantedRecommendations": [
+    "cheshirekow.cmake-format",
+    "llvm-vs-code-extensions.vscode-clangd",
+    "ms-vscode.cmake-tools",
+    "ms-vscode.cpptools"
+  ]
 }

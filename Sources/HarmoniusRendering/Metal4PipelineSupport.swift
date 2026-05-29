@@ -1,6 +1,6 @@
-#if os(macOS)
-  import Metal
+import Metal
 
+#if !(os(iOS) && targetEnvironment(simulator))
   enum Metal4PipelineSupport {
     static func createRenderPipeline(
       device: MTLDevice,

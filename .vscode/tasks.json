@@ -38,6 +38,15 @@
     },
     {
       "dependsOn": [
+        "lsp:index"
+      ],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "label": "dev:index",
+      "problemMatcher": []
+    },
+    {
+      "dependsOn": [
         "spm:build:macos-debug",
         "bundle:macos-debug"
       ],
@@ -266,14 +275,21 @@
         "package:graph"
       ],
       "hide": true,
-      "label": "spm:build:macos-debug",
+      "label": "lsp:index",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": [],
       "type": "shell"
+    },
+    {
+      "dependsOn": [
+        "lsp:index"
+      ],
+      "dependsOrder": "sequence",
+      "hide": true,
+      "label": "spm:build:macos-debug",
+      "problemMatcher": []
     },
     {
       "args": [
@@ -282,16 +298,14 @@
       ],
       "command": "bash",
       "dependsOn": [
-        "spm:build:macos-debug"
+        "lsp:index"
       ],
       "hide": true,
       "label": "spm:build-tests",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": [],
       "type": "shell"
     },
     {
@@ -315,7 +329,7 @@
       ],
       "command": "bash",
       "dependsOn": [
-        "spm:build:macos-debug",
+        "lsp:index",
         "xcodegen:generate"
       ],
       "dependsOrder": "sequence",
@@ -324,9 +338,7 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": [],
       "type": "shell"
     },
     {
@@ -337,6 +349,7 @@
       "command": "bash",
       "dependsOn": [
         "deps:ios-simulator",
+        "lsp:index",
         "xcodegen:generate"
       ],
       "dependsOrder": "sequence",
@@ -345,9 +358,7 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": [],
       "type": "shell"
     },
     {

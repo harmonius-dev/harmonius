@@ -1,0 +1,23 @@
+{
+  "backgroundIndexing": true,
+  "backgroundPreparationMode": "enabled",
+  "defaultWorkspaceType": "swiftPM",
+  "fallbackBuildSystem": {
+    "cCompilerFlags": [
+      "-x",
+      "c++",
+      "-ISources/HarmoniusShaders",
+      "-Ibuild/macos/vcpkg_installed/arm64-osx/include",
+      "-Ibuild/macos/vcpkg_installed/arm64-osx/include/hlslpp"
+    ],
+    "cxxCompilerFlags": [
+      "-std=c++2b",
+      "-ISources/HarmoniusShaders",
+      "-Ibuild/macos/vcpkg_installed/arm64-osx/include",
+      "-Ibuild/macos/vcpkg_installed/arm64-osx/include/hlslpp"
+    ]
+  },
+  "swiftPM": {
+    "configuration": "debug"
+  }
+}

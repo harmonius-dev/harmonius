@@ -32,14 +32,14 @@ targets:
     type: application
     supportedDestinations: [macOS, iOS]
     sources:
-      - path: app/Resources/AppIcon.icon
+      - path: Sources/HarmoniusApp/Resources/AppIcon.icon
         buildPhase: resources
-      - path: app/Resources/Assets.xcassets
+      - path: Sources/HarmoniusApp/Resources/Assets.xcassets
         buildPhase: resources
-      - path: app/Resources/LaunchScreen.storyboard
+      - path: Sources/HarmoniusApp/Resources/LaunchScreen.storyboard
         buildPhase: resources
         destinationFilters: [iOS]
-      - path: app/HarmoniusApp/HarmoniusApp.swift
+      - path: Sources/HarmoniusApp/HarmoniusApp.swift
     dependencies:
       - package: HarmoniusPackage
         product: HarmoniusAppCore
@@ -53,7 +53,7 @@ targets:
       - sdk: MetalKit.framework
       - sdk: QuartzCore.framework
     info:
-      path: app/Info.plist
+      path: Sources/HarmoniusApp/Info.plist
       properties:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
@@ -70,7 +70,7 @@ targets:
       base:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CLANG_CXX_LANGUAGE_STANDARD: c++2b
-        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: app/HarmoniusApp/HarmoniusApp.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: Sources/HarmoniusApp/HarmoniusApp.entitlements
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_IDENTITY[sdk=macosx*]: "-"
         CURRENT_PROJECT_VERSION: 1

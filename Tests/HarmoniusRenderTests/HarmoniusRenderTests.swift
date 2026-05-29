@@ -2,8 +2,8 @@ import AppKit
 import CoreGraphics
 import Foundation
 import HarmoniusRendering
-internal import HarmoniusShaderTypes
-import HarmoniusShaders
+import HarmoniusShaderResources
+internal import HarmoniusShaders
 import Metal
 import SnapshotTesting
 import Testing
@@ -32,6 +32,7 @@ private struct SnapshotSize {
 
 private enum RenderSnapshotError: Error {
   case commandBufferFailed(String)
+  case missingFeature(String)
   case missingResource(String)
   case resourceCreationFailed(String)
 }
@@ -46,20 +47,34 @@ private func renderTriangleSnapshot() throws -> NSImage {
 }
 
 private func renderTriangleTexture(device: MTLDevice) throws -> MTLTexture {
-  guard let commandQueue = device.makeCommandQueue() else {
-    throw RenderSnapshotError.resourceCreationFailed("command queue")
+  guard device.supportsFamily(.metal4) else {
+    throw RenderSnapshotError.missingFeature("Metal 4")
   }
+  guard let commandQueue = device.makeMTL4CommandQueue(),
+    let commandBuffer = device.makeCommandBuffer(),
+    let commandAllocator = device.makeCommandAllocator(),
+    let completionEvent = device.makeSharedEvent()
+  else {
+    throw RenderSnapshotError.resourceCreationFailed("Metal 4 command resources")
+  }
+
   let library = try makeShaderLibrary(device: device)
   let pipelineState = try makePipelineState(device: device, library: library)
   let texture = try makeRenderTexture(device: device)
   let triangleBuffer = try makeTriangleBuffer(device: device)
   let viewportBuffer = try makeViewportBuffer(device: device)
+  let argumentTable = try makeArgumentTable(device: device)
   let passDescriptor = makeRenderPassDescriptor(texture: texture)
 
-  guard let commandBuffer = commandQueue.makeCommandBuffer() else {
-    throw RenderSnapshotError.resourceCreationFailed("command buffer")
-  }
-  guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: passDescriptor) else {
+  completionEvent.signaledValue = 0
+  commandAllocator.reset()
+  commandBuffer.beginCommandBuffer(allocator: commandAllocator)
+  guard
+    let encoder = commandBuffer.makeRenderCommandEncoder(
+      descriptor: passDescriptor,
+      options: MTL4RenderEncoderOptions()
+    )
+  else {
     throw RenderSnapshotError.resourceCreationFailed("render encoder")
   }
 
@@ -74,23 +89,27 @@ private func renderTriangleTexture(device: MTLDevice) throws -> MTLTexture {
       zfar: 1
     )
   )
-  encoder.setVertexBuffer(
-    triangleBuffer,
-    offset: 0,
+  argumentTable.setAddress(
+    triangleBuffer.gpuAddress,
     index: Int(InputBufferIndexForVertexData.rawValue)
   )
-  encoder.setVertexBuffer(
-    viewportBuffer,
-    offset: 0,
+  argumentTable.setAddress(
+    viewportBuffer.gpuAddress,
     index: Int(InputBufferIndexForViewportSize.rawValue)
   )
-  encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+  encoder.setArgumentTable(argumentTable, stages: .vertex)
+  encoder.drawPrimitives(
+    primitiveType: .triangle,
+    vertexStart: 0,
+    vertexCount: 3
+  )
   encoder.endEncoding()
+  commandBuffer.endCommandBuffer()
 
-  commandBuffer.commit()
-  commandBuffer.waitUntilCompleted()
-  if let error = commandBuffer.error {
-    throw RenderSnapshotError.commandBufferFailed(String(describing: error))
+  commandQueue.commit([commandBuffer])
+  commandQueue.signalEvent(completionEvent, value: 1)
+  if !completionEvent.wait(untilSignaledValue: 1, timeoutMS: 1_000) {
+    throw RenderSnapshotError.commandBufferFailed("timed out")
   }
   return texture
 }
@@ -106,12 +125,31 @@ private func makePipelineState(
   device: MTLDevice,
   library: MTLLibrary
 ) throws -> MTLRenderPipelineState {
-  let descriptor = MTLRenderPipelineDescriptor()
+  let compiler = try device.makeCompiler(descriptor: MTL4CompilerDescriptor())
+  let descriptor = MTL4RenderPipelineDescriptor()
   descriptor.label = "Harmonius render snapshot pipeline"
-  descriptor.vertexFunction = library.makeFunction(name: "vertexShader")
-  descriptor.fragmentFunction = library.makeFunction(name: "fragmentShader")
   descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
-  return try device.makeRenderPipelineState(descriptor: descriptor)
+
+  let vertexFunction = MTL4LibraryFunctionDescriptor()
+  vertexFunction.library = library
+  vertexFunction.name = "vertexShader"
+  descriptor.vertexFunctionDescriptor = vertexFunction
+
+  let fragmentFunction = MTL4LibraryFunctionDescriptor()
+  fragmentFunction.library = library
+  fragmentFunction.name = "fragmentShader"
+  descriptor.fragmentFunctionDescriptor = fragmentFunction
+
+  return try compiler.makeRenderPipelineState(
+    descriptor: descriptor,
+    compilerTaskOptions: nil
+  )
+}
+
+private func makeArgumentTable(device: MTLDevice) throws -> any MTL4ArgumentTable {
+  let descriptor = MTL4ArgumentTableDescriptor()
+  descriptor.maxBufferBindCount = 2
+  return try device.makeArgumentTable(descriptor: descriptor)
 }
 
 private func makeRenderTexture(device: MTLDevice) throws -> MTLTexture {
@@ -146,9 +184,9 @@ private func makeTriangleBuffer(device: MTLDevice) throws -> MTLBuffer {
 }
 
 private func makeViewportBuffer(device: MTLDevice) throws -> MTLBuffer {
-  var viewport = HarmoniusUInt2(
-    x: UInt32(renderSize.width),
-    y: UInt32(renderSize.height)
+  var viewport = HarmoniusMakeUInt2(
+    UInt32(renderSize.width),
+    UInt32(renderSize.height)
   )
   let length = MemoryLayout<HarmoniusUInt2>.stride
   let buffer = withUnsafeBytes(of: &viewport) { bytes in
@@ -164,8 +202,8 @@ private func makeViewportBuffer(device: MTLDevice) throws -> MTLBuffer {
   return buffer
 }
 
-private func makeRenderPassDescriptor(texture: MTLTexture) -> MTLRenderPassDescriptor {
-  let descriptor = MTLRenderPassDescriptor()
+private func makeRenderPassDescriptor(texture: MTLTexture) -> MTL4RenderPassDescriptor {
+  let descriptor = MTL4RenderPassDescriptor()
   let colorAttachment = descriptor.colorAttachments[0]
   colorAttachment?.texture = texture
   colorAttachment?.loadAction = .clear

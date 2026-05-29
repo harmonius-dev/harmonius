@@ -1,10 +1,24 @@
 {
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "clangd.enable": false,
+  "cmake.configureOnOpen": false,
+  "files.associations": {
+    "Sources/HarmoniusShaders/*.h": "cpp"
+  },
   "files.exclude": {
     "**/.build": true,
     "**/build": true
   },
-  "sourcekit-lsp.serverPath": "sourcekit-lsp",
   "sweetpad.build.xcodeProjectPath": "Harmonius.xcodeproj",
   "sweetpad.xcodegen.autogenerate": false,
-  "swift.path": "swift"
+  "swift.autoGenerateLaunchConfigurations": false,
+  "swift.sourcekit-lsp.backgroundIndexing": "on",
+  "swift.sourcekit-lsp.serverPath": "${workspaceFolder}/scripts/sourcekit-lsp.sh",
+  "swift.sourcekit-lsp.supported-languages": [
+    "swift",
+    "c",
+    "cpp",
+    "objective-c",
+    "objective-cpp"
+  ]
 }

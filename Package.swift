@@ -18,6 +18,10 @@ let package = Package(
       targets: ["HarmoniusRendering"]
     ),
     .library(
+      name: "HarmoniusShaderResources",
+      targets: ["HarmoniusShaderResources"]
+    ),
+    .library(
       name: "HarmoniusShaders",
       targets: ["HarmoniusShaders"]
     ),
@@ -44,14 +48,33 @@ let package = Package(
       pkgConfig: "meshoptimizer"
     ),
     .systemLibrary(
-      name: "HarmoniusShaderTypes",
-      path: "app/Shaders",
+      name: "hlslpp",
+      path: "Sources/hlslpp",
       pkgConfig: "hlslpp"
     ),
     .target(
       name: "HarmoniusShaders",
-      dependencies: [],
+      dependencies: [
+        "hlslpp"
+      ],
       path: "Sources/HarmoniusShaders",
+      exclude: [
+        "Triangle.slang"
+      ],
+      publicHeadersPath: ".",
+      cxxSettings: [
+        .headerSearchPath(
+          "../../build/macos/vcpkg_installed/arm64-osx/include"
+        ),
+        .headerSearchPath(
+          "../../build/macos/vcpkg_installed/arm64-osx/include/hlslpp"
+        ),
+      ]
+    ),
+    .target(
+      name: "HarmoniusShaderResources",
+      dependencies: [],
+      path: "Sources/HarmoniusShaderResources",
       plugins: [
         .plugin(name: "HarmoniusShaderPlugin")
       ]
@@ -61,10 +84,10 @@ let package = Package(
       dependencies: [
         "CCGLTF",
         "CMeshOptimizer",
-        "HarmoniusShaderTypes",
+        "HarmoniusShaderResources",
         "HarmoniusShaders",
       ],
-      path: "app/HarmoniusRendering",
+      path: "Sources/HarmoniusRendering",
       swiftSettings: [
         .interoperabilityMode(.Cxx)
       ],
@@ -80,11 +103,7 @@ let package = Package(
       dependencies: [
         "HarmoniusRendering"
       ],
-      path: "app/HarmoniusApp",
-      exclude: [
-        "HarmoniusApp.entitlements",
-        "HarmoniusApp.swift",
-      ],
+      path: "Sources/HarmoniusAppCore",
       swiftSettings: [
         .interoperabilityMode(.Cxx)
       ],
@@ -113,7 +132,8 @@ let package = Package(
     .testTarget(
       name: "HarmoniusUnitTests",
       dependencies: [
-        "HarmoniusRendering"
+        "HarmoniusRendering",
+        "HarmoniusShaders",
       ],
       path: "Tests/HarmoniusUnitTests",
       swiftSettings: [
@@ -124,6 +144,7 @@ let package = Package(
       name: "HarmoniusRenderTests",
       dependencies: [
         "HarmoniusRendering",
+        "HarmoniusShaderResources",
         "HarmoniusShaders",
         .product(
           name: "SnapshotTesting",

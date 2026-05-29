@@ -1,5 +1,5 @@
 import Darwin
-public import HarmoniusShaderTypes
+public import HarmoniusShaders
 
 public enum TriangleVertexLayout {
   public static let maxFramesInFlight = 3
@@ -32,9 +32,9 @@ public enum TriangleGeometry {
   }
 
   private static func point(radius: Float, angle: Float) -> HarmoniusFloat2 {
-    HarmoniusFloat2(
-      x: radius * cosf(angle),
-      y: radius * sinf(angle)
+    HarmoniusMakeFloat2(
+      radius * cosf(angle),
+      radius * sinf(angle)
     )
   }
 
@@ -44,11 +44,11 @@ public enum TriangleGeometry {
     blue: Float,
     alpha: Float
   ) -> HarmoniusFloat4 {
-    HarmoniusFloat4(
-      x: red,
-      y: green,
-      z: blue,
-      w: alpha
+    HarmoniusMakeFloat4(
+      red,
+      green,
+      blue,
+      alpha
     )
   }
 }
