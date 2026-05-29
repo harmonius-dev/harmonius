@@ -482,14 +482,6 @@ jobs:
             --api-issuer "$ASC_ISSUER_ID" \
             --show-progress \
             --wait
-          xcrun altool --build-status \
-            --apple-id "$ASC_APPLE_ID" \
-            --bundle-short-version-string "$MARKETING_VERSION" \
-            --bundle-version "$CURRENT_PROJECT_VERSION" \
-            --platform macos \
-            --api-key "$ASC_KEY_ID" \
-            --api-issuer "$ASC_ISSUER_ID" \
-            --wait
 
       - name: Upload artifact
         if: steps.macos_release_config.outputs.configured == 'true'
