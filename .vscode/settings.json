@@ -1,3 +1,5 @@
 {
-  "cmake.mergedCompileCommands": "${workspaceFolder}/compile_commands.json"
+  "cmake.mergedCompileCommands": "${workspaceFolder}/compile_commands.json",
+  "sweetpad.build.xcodeWorkspacePath": "Harmonius.xcodeproj/project.xcworkspace",
+  "sweetpad.xcodegen.autogenerate": true
 }
