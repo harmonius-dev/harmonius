@@ -1,31 +1,25 @@
-import AppKit
-import CoreGraphics
 import Foundation
 import HarmoniusRendering
 import HarmoniusShaderResources
 import Metal
-import SnapshotTesting
 import Testing
 import simd
 
-private let renderSize = SnapshotSize(width: 960, height: 540)
-private let snapshotSize = SnapshotSize(width: 480, height: 270)
+private let renderSize = RenderSize(width: 1920, height: 1080)
 
-@Test func testTriangleRendersSnapshot() throws {
-  let image = try renderTriangleSnapshot()
-  let record: SnapshotTestingConfiguration.Record =
-    ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1" ? .all : .missing
+@Test func triangleRendersIntoTexture() throws {
+  let texture = try renderTriangleTexture()
+  #expect(texture.width == renderSize.width)
+  #expect(texture.height == renderSize.height)
+  #expect(texture.pixelFormat == .bgra8Unorm)
 
-  withSnapshotTesting(record: record) {
-    assertSnapshot(
-      of: image,
-      as: .image(precision: 0.98),
-      named: "triangle"
-    )
-  }
+  let pixels = try readPixels(from: texture)
+  #expect(pixels.contains { $0.hasVisibleColor })
+  #expect(pixels[pixelIndex(x: 0, y: 0)].isOpaqueBlack)
+  #expect(pixels[pixelIndex(x: renderSize.width / 2, y: renderSize.height / 2)].hasVisibleColor)
 }
 
-private struct SnapshotSize {
+private struct RenderSize {
   let width: Int
   let height: Int
 }
@@ -37,13 +31,26 @@ private enum RenderSnapshotError: Error {
   case resourceCreationFailed(String)
 }
 
-private func renderTriangleSnapshot() throws -> NSImage {
+private struct Pixel {
+  let blue: UInt8
+  let green: UInt8
+  let red: UInt8
+  let alpha: UInt8
+
+  var hasVisibleColor: Bool {
+    red > 0 || green > 0 || blue > 0
+  }
+
+  var isOpaqueBlack: Bool {
+    red == 0 && green == 0 && blue == 0 && alpha == 255
+  }
+}
+
+private func renderTriangleTexture() throws -> MTLTexture {
   guard let device = MTLCreateSystemDefaultDevice() else {
     throw RenderSnapshotError.missingResource("Metal device")
   }
-  let texture = try renderTriangleTexture(device: device)
-  let image = try makeImage(from: texture)
-  return try resizedImage(image, to: snapshotSize)
+  return try renderTriangleTexture(device: device)
 }
 
 private func renderTriangleTexture(device: MTLDevice) throws -> MTLTexture {
@@ -127,7 +134,7 @@ private func makePipelineState(
 ) throws -> MTLRenderPipelineState {
   let compiler = try device.makeCompiler(descriptor: MTL4CompilerDescriptor())
   let descriptor = MTL4RenderPipelineDescriptor()
-  descriptor.label = "Harmonius render snapshot pipeline"
+  descriptor.label = "Harmonius render validation pipeline"
   descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
 
   let vertexFunction = MTL4LibraryFunctionDescriptor()
@@ -212,7 +219,7 @@ private func makeRenderPassDescriptor(texture: MTLTexture) -> MTL4RenderPassDesc
   return descriptor
 }
 
-private func makeImage(from texture: MTLTexture) throws -> CGImage {
+private func readPixels(from texture: MTLTexture) throws -> [Pixel] {
   let width = texture.width
   let height = texture.height
   let bytesPerPixel = 4
@@ -226,80 +233,17 @@ private func makeImage(from texture: MTLTexture) throws -> CGImage {
       mipmapLevel: 0
     )
   }
-  return try makeImage(width: width, height: height, bytes: pixels)
-}
 
-private func resizedImage(_ image: CGImage, to size: SnapshotSize) throws -> NSImage {
-  let bytesPerPixel = 4
-  let bytesPerRow = size.width * bytesPerPixel
-  var pixels = [UInt8](repeating: 0, count: bytesPerRow * size.height)
-  let contextCreated = pixels.withUnsafeMutableBytes { bytes in
-    guard
-      let context = makeBitmapContext(
-        width: size.width,
-        height: size.height,
-        bytesPerRow: bytesPerRow,
-        bytes: bytes.baseAddress!
-      )
-    else {
-      return false
-    }
-
-    context.interpolationQuality = .high
-    context.draw(image, in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
-    return true
-  }
-  if !contextCreated {
-    throw RenderSnapshotError.resourceCreationFailed("resize context")
-  }
-
-  let cgImage = try makeImage(width: size.width, height: size.height, bytes: pixels)
-  return NSImage(cgImage: cgImage, size: NSSize(width: size.width, height: size.height))
-}
-
-private func makeImage(width: Int, height: Int, bytes: [UInt8]) throws -> CGImage {
-  let bytesPerPixel = 4
-  let bytesPerRow = width * bytesPerPixel
-  let data = Data(bytes)
-  guard let provider = CGDataProvider(data: data as CFData) else {
-    throw RenderSnapshotError.resourceCreationFailed("image data provider")
-  }
-  guard
-    let image = CGImage(
-      width: width,
-      height: height,
-      bitsPerComponent: 8,
-      bitsPerPixel: bytesPerPixel * 8,
-      bytesPerRow: bytesPerRow,
-      space: CGColorSpaceCreateDeviceRGB(),
-      bitmapInfo: bitmapInfo,
-      provider: provider,
-      decode: nil,
-      shouldInterpolate: false,
-      intent: .defaultIntent
+  return stride(from: 0, to: pixels.count, by: bytesPerPixel).map { offset in
+    Pixel(
+      blue: pixels[offset],
+      green: pixels[offset + 1],
+      red: pixels[offset + 2],
+      alpha: pixels[offset + 3]
     )
-  else {
-    throw RenderSnapshotError.resourceCreationFailed("CGImage")
   }
-  return image
 }
 
-private func makeBitmapContext(
-  width: Int,
-  height: Int,
-  bytesPerRow: Int,
-  bytes: UnsafeMutableRawPointer
-) -> CGContext? {
-  CGContext(
-    data: bytes,
-    width: width,
-    height: height,
-    bitsPerComponent: 8,
-    bytesPerRow: bytesPerRow,
-    space: CGColorSpaceCreateDeviceRGB(),
-    bitmapInfo: bitmapInfo.rawValue
-  )
+private func pixelIndex(x: Int, y: Int) -> Int {
+  y * renderSize.width + x
 }
-
-private let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
-  .union(.byteOrder32Little)

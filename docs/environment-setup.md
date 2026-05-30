@@ -54,8 +54,8 @@ Install Appium and the required drivers with:
 ./scripts/dev.sh appium-bootstrap
 ```
 
-The workflow uses Appium `mac2` for macOS and `xcuitest` for iOS targets.
-All UI test bodies are Swift tests that use `swift-webdriver`.
+The workflow uses Appium for macOS and iOS targets. All UI test bodies are
+Swift Testing tests that use `swift-webdriver`.
 
 ## Notes
 

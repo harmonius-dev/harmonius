@@ -6,21 +6,182 @@ import simd
 
 #if os(iOS) && targetEnvironment(simulator)
   public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
+    private let commandQueue: MTLCommandQueue
+    private let pipelineState: MTLRenderPipelineState
+    private let triangleVertexBuffers: [MTLBuffer]
+    private let viewportSizeBuffer: MTLBuffer
+
+    private var frameNumber: UInt64 = 0
+    private var viewportWidth: UInt32 = 0
+    private var viewportHeight: UInt32 = 0
+
     public static func isSupported(on device: MTLDevice) -> Bool {
-      false
+      true
     }
 
     @MainActor
     public init?(view: MTKView) {
-      NSLog("Metal 4 rendering is unavailable in the iOS simulator SDK.")
-      return nil
+      guard let device = view.device,
+        let commandQueue = device.makeCommandQueue(),
+        let defaultLibrary = try? HarmoniusShaderResources.makeDefaultLibrary(
+          device: device
+        )
+      else {
+        return nil
+      }
+
+      self.commandQueue = commandQueue
+
+      do {
+        triangleVertexBuffers = try Self.makeTriangleBuffers(
+          device: device,
+          count: TriangleVertexLayout.maxFramesInFlight
+        )
+        viewportSizeBuffer = try Self.makeViewportSizeBuffer(device: device)
+        pipelineState = try Self.compileRenderPipeline(
+          device: device,
+          library: defaultLibrary,
+          pixelFormat: view.colorPixelFormat
+        )
+      } catch {
+        return nil
+      }
+
+      super.init()
+      updateViewportSize(view.drawableSize)
     }
 
     @MainActor
-    public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
+    public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+      updateViewportSize(size)
+    }
 
     @MainActor
-    public func draw(in view: MTKView) {}
+    public func draw(in view: MTKView) {
+      guard let drawable = view.currentDrawable,
+        let renderPassDescriptor = view.currentRenderPassDescriptor,
+        let commandBuffer = commandQueue.makeCommandBuffer()
+      else {
+        return
+      }
+      if let colorAttachment = renderPassDescriptor.colorAttachments[0] {
+        colorAttachment.loadAction = .clear
+        colorAttachment.clearColor = view.clearColor
+      }
+      guard
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(
+          descriptor: renderPassDescriptor
+        )
+      else {
+        return
+      }
+
+      frameNumber &+= 1
+      let frameIndex = Int(frameNumber % UInt64(TriangleVertexLayout.maxFramesInFlight))
+      let vertexBuffer = triangleVertexBuffers[frameIndex]
+      writeTriangleData(to: vertexBuffer)
+
+      renderEncoder.setRenderPipelineState(pipelineState)
+      setViewport(for: renderEncoder)
+      renderEncoder.setVertexBuffer(
+        vertexBuffer,
+        offset: 0,
+        index: ShaderBindings.vertexData
+      )
+      renderEncoder.setVertexBuffer(
+        viewportSizeBuffer,
+        offset: 0,
+        index: ShaderBindings.viewportSize
+      )
+      renderEncoder.drawPrimitives(
+        type: .triangle,
+        vertexStart: 0,
+        vertexCount: 3
+      )
+      renderEncoder.endEncoding()
+
+      commandBuffer.present(drawable)
+      commandBuffer.commit()
+    }
+
+    private func updateViewportSize(_ size: CGSize) {
+      guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else {
+        return
+      }
+      viewportWidth = UInt32(size.width)
+      viewportHeight = UInt32(size.height)
+      var viewportSize = SIMD2<UInt32>(viewportWidth, viewportHeight)
+      withUnsafeBytes(of: &viewportSize) { bytes in
+        viewportSizeBuffer.contents().copyMemory(
+          from: bytes.baseAddress!,
+          byteCount: bytes.count
+        )
+      }
+    }
+
+    private func setViewport(for encoder: MTLRenderCommandEncoder) {
+      let viewport = MTLViewport(
+        originX: 0,
+        originY: 0,
+        width: Double(viewportWidth),
+        height: Double(viewportHeight),
+        znear: 0,
+        zfar: 1
+      )
+      encoder.setViewport(viewport)
+    }
+
+    private func writeTriangleData(to buffer: MTLBuffer) {
+      var triangle = TriangleGeometry.frameData()
+      withUnsafeBytes(of: &triangle) { bytes in
+        buffer.contents().copyMemory(
+          from: bytes.baseAddress!,
+          byteCount: bytes.count
+        )
+      }
+    }
+
+    private static func makeTriangleBuffers(
+      device: MTLDevice,
+      count: Int
+    ) throws -> [MTLBuffer] {
+      try (0..<count).map { _ in
+        guard
+          let buffer = device.makeBuffer(
+            length: MemoryLayout<TriangleData>.stride,
+            options: .storageModeShared
+          )
+        else {
+          throw RendererError.resourceCreationFailed("triangle buffer")
+        }
+        return buffer
+      }
+    }
+
+    private static func makeViewportSizeBuffer(device: MTLDevice) throws -> MTLBuffer {
+      guard
+        let buffer = device.makeBuffer(
+          length: MemoryLayout<SIMD2<UInt32>>.stride,
+          options: .storageModeShared
+        )
+      else {
+        throw RendererError.resourceCreationFailed("viewport buffer")
+      }
+      return buffer
+    }
+
+    private static func compileRenderPipeline(
+      device: MTLDevice,
+      library: MTLLibrary,
+      pixelFormat: MTLPixelFormat
+    ) throws -> MTLRenderPipelineState {
+      let descriptor = MTLRenderPipelineDescriptor()
+      descriptor.label = "Harmonius iOS simulator triangle pipeline"
+      descriptor.colorAttachments[0].pixelFormat = pixelFormat
+      descriptor.vertexFunction = library.makeFunction(name: "vertexShader")
+      descriptor.fragmentFunction = library.makeFunction(name: "fragmentShader")
+      return try device.makeRenderPipelineState(descriptor: descriptor)
+    }
   }
 #else
   public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
@@ -275,7 +436,8 @@ import simd
     }
   }
 
-  private enum RendererError: Error {
-    case resourceCreationFailed(String)
-  }
 #endif
+
+private enum RendererError: Error {
+  case resourceCreationFailed(String)
+}

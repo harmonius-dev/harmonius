@@ -18,10 +18,12 @@ Commands:
   test-unit
   test-codegen
   test-render
-  test-render-record
   build-tests
   test-ui-macos
   test-ui-ios-simulator
+  test-ui-record
+  test-ui-record-macos
+  test-ui-record-ios-simulator
   debug-appium-tests-prep
   test
   run <macos|ios-simulator>
@@ -230,17 +232,6 @@ generate_pkgconfig_shims() {
   out_dir="$(pkgconfig_dir_for_platform "$platform")"
   mkdir -p "$out_dir"
 
-  write_pc_file "$out_dir/hlslpp.pc" "\
-prefix=$prefix
-includedir=\${prefix}/include
-hlslppincludedir=\${prefix}/include/hlslpp
-
-Name: hlslpp
-Description: HLSL-style C++ math headers from vcpkg
-Version: 3.8
-Cflags: -I\${includedir} -I\${hlslppincludedir}
-Libs:"
-
   write_pc_file "$out_dir/cgltf.pc" "\
 prefix=$prefix
 includedir=\${prefix}/include
@@ -280,7 +271,7 @@ Libs: -L\${libdir} -lslang"
 validate_pkgconfig_shims() {
   local platform="$1"
   local dependency
-  for dependency in hlslpp cgltf meshoptimizer shader-slang; do
+  for dependency in cgltf meshoptimizer shader-slang; do
     with_pkg_config_path "$platform" pkg-config --cflags --libs "$dependency" \
       >/dev/null
   done
@@ -472,13 +463,6 @@ test_render() {
     swift_test --filter HarmoniusRenderTests
 }
 
-test_render_record() {
-  bootstrap_platform "macos"
-  HARMONIUS_METALLIB_PATH="$(ensure_shader_artifact macos debug)" \
-    SNAPSHOT_RECORD=1 \
-    swift_test --filter HarmoniusRenderTests
-}
-
 wait_for_appium() {
   local url="$1"
   local attempts=60
@@ -529,26 +513,81 @@ with_appium_server() {
   APPIUM_SERVER_URL="$url" "$@"
 }
 
+ios_runtime_for_device() {
+  local device_name="$1"
+  xcrun simctl list devices --json \
+    | jq -r --arg name "$device_name" '
+      .devices
+      | to_entries[]
+      | select(any(.value[]; .name == $name and .state == "Booted"))
+      | .key
+    ' \
+    | head -n 1
+}
+
+macos_display_scale() {
+  system_profiler SPDisplaysDataType -json \
+    | jq -r '
+      [
+        .SPDisplaysDataType[].spdisplays_ndrvs[]?
+        | select(.spdisplays_main == "spdisplays_yes")
+      ][0]
+      | [._spdisplays_pixels, ._spdisplays_resolution]
+      | @tsv
+    ' \
+    | awk -F '\t' '
+      {
+        split($1, pixels, / x /)
+        split($2, resolution, / x | @ /)
+        printf "%d\n", pixels[1] / resolution[1]
+      }
+    '
+}
+
 test_appium_platform() {
   local platform="$1"
+  local appium_automation_name
   local app_path
+  local display_scale=""
+  local device_name=""
+  local ios_runtime=""
   case "$platform" in
     macos)
+      appium_automation_name="mac2"
       bundle_app macos debug
+      pkill -x HarmoniusApp >/dev/null 2>&1 || true
+      display_scale="$(macos_display_scale)"
       app_path="$(macos_app_path)"
       ;;
     ios-simulator)
+      appium_automation_name="XCUITest"
+      device_name="${HARMONIUS_APPIUM_DEVICE:-iPhone 17}"
       bundle_app ios-simulator debug
-      xcrun simctl boot "iPhone 17" >/dev/null 2>&1 || true
-      xcrun simctl bootstatus "iPhone 17" -b
+      xcrun simctl boot "$device_name" >/dev/null 2>&1 || true
+      xcrun simctl bootstatus "$device_name" -b
+      ios_runtime="${HARMONIUS_APPIUM_IOS_RUNTIME:-}"
+      [[ -n "$ios_runtime" ]] || ios_runtime="$(ios_runtime_for_device "$device_name")"
       app_path="$(ios_simulator_app_path)"
       ;;
     *) die "unsupported Appium platform $platform" ;;
   esac
 
-  HARMONIUS_APPIUM_APP="$app_path" \
-    HARMONIUS_APPIUM_PLATFORM="$platform" \
-    swift_test --filter HarmoniusAppiumTests
+  if [[ -n "$display_scale" ]]; then
+    HARMONIUS_APPIUM_APP="$app_path" \
+      HARMONIUS_APPIUM_AUTOMATION_NAME="$appium_automation_name" \
+      HARMONIUS_APPIUM_DEVICE="$device_name" \
+      HARMONIUS_APPIUM_DISPLAY_SCALE="$display_scale" \
+      HARMONIUS_APPIUM_IOS_RUNTIME="$ios_runtime" \
+      HARMONIUS_APPIUM_PLATFORM="$platform" \
+      swift_test --filter HarmoniusAppiumTests
+  else
+    HARMONIUS_APPIUM_APP="$app_path" \
+      HARMONIUS_APPIUM_AUTOMATION_NAME="$appium_automation_name" \
+      HARMONIUS_APPIUM_DEVICE="$device_name" \
+      HARMONIUS_APPIUM_IOS_RUNTIME="$ios_runtime" \
+      HARMONIUS_APPIUM_PLATFORM="$platform" \
+      swift_test --filter HarmoniusAppiumTests
+  fi
 }
 
 test_ui_macos() {
@@ -559,6 +598,19 @@ test_ui_macos() {
 test_ui_ios_simulator() {
   appium_bootstrap
   with_appium_server ios-simulator test_appium_platform ios-simulator
+}
+
+test_ui_record_macos() {
+  HARMONIUS_RECORD_UI_SNAPSHOTS=1 test_ui_macos
+}
+
+test_ui_record_ios_simulator() {
+  HARMONIUS_RECORD_UI_SNAPSHOTS=1 test_ui_ios_simulator
+}
+
+test_ui_record() {
+  test_ui_record_macos
+  test_ui_record_ios_simulator
 }
 
 debug_appium_tests_prep() {
@@ -653,6 +705,17 @@ lint_no_js() {
   [[ -z "$matches" ]] || die "JavaScript or TypeScript files found: $matches"
 }
 
+lint_no_xctest_tests() {
+  repo_cd
+  local pattern
+  local matches
+  pattern='import XCTest|XCTestCase|XCTAssert|XCTSkip|import XCUITest'
+  pattern+='|XCUIApplication|XCUIElement'
+  matches="$(find Tests -type f -name '*.swift' -print0 \
+    | xargs -0 grep -nE "$pattern" || true)"
+  [[ -z "$matches" ]] || die "XCTest/XCUITest usage found: $matches"
+}
+
 lint_line_length() {
   repo_cd
   {
@@ -701,6 +764,7 @@ lint_shader_sources() {
 
 lint_all() {
   lint_no_js
+  lint_no_xctest_tests
   lint_shader_sources
   lint_line_length
   lint_json_sort
@@ -709,6 +773,7 @@ lint_all() {
 
 full_check() {
   lint_no_js
+  lint_no_xctest_tests
   lint_shader_sources
   lint_line_length
   lint_json_sort
@@ -748,9 +813,11 @@ main() {
     test) test_all "$@" ;;
     test-codegen) test_codegen "$@" ;;
     test-render) test_render "$@" ;;
-    test-render-record) test_render_record "$@" ;;
     test-ui-ios-simulator) test_ui_ios_simulator "$@" ;;
     test-ui-macos) test_ui_macos "$@" ;;
+    test-ui-record) test_ui_record "$@" ;;
+    test-ui-record-ios-simulator) test_ui_record_ios_simulator "$@" ;;
+    test-ui-record-macos) test_ui_record_macos "$@" ;;
     test-unit) test_unit "$@" ;;
     xcodegen) run_xcodegen "$@" ;;
     *) die "unknown command $command" ;;

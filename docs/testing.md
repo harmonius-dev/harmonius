@@ -1,6 +1,6 @@
 # Testing
 
-Harmonius uses SwiftPM for unit, render, snapshot, and Appium UI tests.
+Harmonius uses SwiftPM and Swift Testing for unit, render, and Appium UI tests.
 XcodeGen verifies Apple app bundles and provides app artifacts for Appium.
 
 ## Test Targets
@@ -8,16 +8,16 @@ XcodeGen verifies Apple app bundles and provides app artifacts for Appium.
 | Target | Framework | Scope |
 | --- | --- | --- |
 | `HarmoniusUnitTests` | Swift Testing | Geometry and pure render data |
-| `HarmoniusRenderTests` | Swift Testing + SnapshotTesting | Metal snapshots |
-| `HarmoniusAppiumTests` | XCTest + Swift WebDriver | Appium smoke UI |
 | `SwiftEmitterTests` | Swift Testing | Slang reflection model to Swift output |
+| `HarmoniusRenderTests` | Swift Testing | Metal texture validation |
+| `HarmoniusAppiumTests` | Swift Testing + Swift WebDriver | UI snapshots |
 
 ## Prerequisites
 
 - macOS 26 + Xcode 26 for Apple app and Metal coverage.
 - `swift-format`, `jq`, `pkg-config`, XcodeGen, and Appium.
 - vcpkg submodule initialized by `scripts/dev.sh bootstrap <platform>`.
-- Appium `mac2` and `xcuitest` drivers from `scripts/dev.sh appium-bootstrap`.
+- Appium macOS and iOS drivers from `scripts/dev.sh appium-bootstrap`.
 
 ## Local Commands
 
@@ -25,15 +25,16 @@ XcodeGen verifies Apple app bundles and provides app artifacts for Appium.
 ./scripts/dev.sh test-unit
 ./scripts/dev.sh test-codegen
 ./scripts/dev.sh test-render
-./scripts/dev.sh test-render-record
 ./scripts/dev.sh test-ui-macos
 ./scripts/dev.sh test-ui-ios-simulator
+./scripts/dev.sh test-ui-record
 ./scripts/dev.sh test
 ```
 
 Use `./scripts/dev.sh full-check` before opening a pull request. The full check
-runs no-JS, line-length, JSON sorting, Swift formatting, package graph, build,
-unit tests, shader code-generation tests, render tests, and `git diff --check`.
+runs no-JS, no-XCTest, line-length, JSON sorting, Swift formatting, package
+graph, build, unit tests, shader code-generation tests, render tests, and
+`git diff --check`.
 
 ## Unit Tests
 
@@ -47,42 +48,46 @@ Current coverage:
 3. Vertex positions on the expected `240` radius circle.
 4. Equilateral triangle side lengths.
 
-## Render Snapshot Test
+## Render Texture Test
 
 [HarmoniusRenderTests.swift](../Tests/HarmoniusRenderTests/HarmoniusRenderTests.swift)
-uses Swift Testing and SnapshotTesting.
+uses Swift Testing only.
 
 1. Create a real `MTLDevice`.
 2. Load the SwiftPM-generated `default.metallib`.
 3. Render the triangle into a real offscreen `MTLTexture`.
-4. Convert that texture to an `NSImage`.
-5. Compare the PNG at snapshot precision `0.98`.
+4. Read texture pixels directly.
+5. Assert texture size, pixel format, nonblank output, and expected samples.
 
-Reference PNGs live under:
+Render tests must not create, record, or compare screenshots.
+
+## Appium UI Snapshots
+
+Appium UI tests are the only screenshot snapshot tests. Test code must stay in
+Swift Testing and use `swift-webdriver`; do not add JavaScript or TypeScript
+harnesses.
+
+Baselines live under:
 
 ```text
-Tests/HarmoniusRenderTests/__Snapshots__/HarmoniusRenderTests/
+Tests/HarmoniusAppiumTests/__Snapshots__/
 ```
 
-Snapshot dimensions stay explicit: render `960x540`, compare `480x270`.
-
-## Record Or Refresh Baselines
+Record or refresh baselines with:
 
 ```bash
-./scripts/dev.sh test-render-record
+./scripts/dev.sh test-ui-record-macos
+./scripts/dev.sh test-ui-record-ios-simulator
 ```
 
-Commit the updated PNG under the `__Snapshots__/` directory.
-
-## Appium UI Tests
-
-Appium replaces the Xcode UI test runner. Test code must stay in Swift and use
-`swift-webdriver`; do not add JavaScript or TypeScript harnesses.
-
-1. `test-ui-macos` builds the macOS bundle, starts Appium, and uses `mac2`.
-2. `test-ui-ios-simulator` builds the simulator bundle and uses `xcuitest`.
-3. Both flows assert a stable SwiftUI accessibility identifier.
-4. Both flows capture a screenshot and always delete the Appium session.
+1. macOS snapshots resize the app window to `960x540` points.
+2. macOS snapshot locations include only the host display DPI scale.
+3. iOS simulator snapshot locations include only the simulator device/runtime.
+4. iOS screenshots are captured at the native app size and must show the rendered
+   triangle.
+5. Screenshots are never scaled before recording or comparison.
+6. Both flows assert `snapshot-content` and `metal-view`, capture a screenshot,
+   compare it with the baseline, and always delete the Appium session.
 
 ## CI
 
@@ -91,7 +96,7 @@ pull requests, `main` pushes, and manual dispatch.
 
 1. `quality` runs package graph checks and `scripts/dev.sh full-check`.
 2. `apple-tests` builds the macOS bundle and runs SwiftPM tests.
-3. `apple-tests` runs Appium smoke tests for macOS and iOS simulator.
+3. `apple-tests` runs Appium UI snapshot tests for macOS and iOS simulator.
 4. Release jobs archive iOS and macOS apps with `scripts/dev.sh archive`.
 
 CI caches vcpkg installed trees across repeated runs. Release exports upload as

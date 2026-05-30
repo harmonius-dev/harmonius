@@ -32,17 +32,13 @@ let package = Package(
   ],
   dependencies: [
     .package(
-      url: "https://github.com/pointfreeco/swift-snapshot-testing.git",
-      exact: "1.19.2"
-    ),
-    .package(
       url: "https://github.com/swiftlang/swift-syntax.git",
       exact: "603.0.1"
     ),
     .package(
       url: "https://github.com/thebrowsercompany/swift-webdriver.git",
       revision: "eb79abde86888ef086ca56c0c7ccd09a03757c2d"
-    ),
+    )
   ],
   targets: [
     .systemLibrary(
@@ -54,11 +50,6 @@ let package = Package(
       name: "CMeshOptimizer",
       path: "Sources/CMeshOptimizer",
       pkgConfig: "meshoptimizer"
-    ),
-    .systemLibrary(
-      name: "hlslpp",
-      path: "Sources/hlslpp",
-      pkgConfig: "hlslpp"
     ),
     .systemLibrary(
       name: "CSlang",
@@ -128,9 +119,6 @@ let package = Package(
         "HarmoniusRendering"
       ],
       path: "Sources/HarmoniusAppCore",
-      swiftSettings: [
-        .interoperabilityMode(.Cxx)
-      ],
       linkerSettings: [
         .linkedFramework("AppKit", .when(platforms: [.macOS])),
         .linkedFramework("CoreGraphics"),
@@ -169,18 +157,8 @@ let package = Package(
       dependencies: [
         "HarmoniusRendering",
         "HarmoniusShaderResources",
-        .product(
-          name: "SnapshotTesting",
-          package: "swift-snapshot-testing"
-        ),
       ],
       path: "Tests/HarmoniusRenderTests",
-      exclude: [
-        "__Snapshots__"
-      ],
-      swiftSettings: [
-        .interoperabilityMode(.Cxx)
-      ],
       linkerSettings: [
         .linkedFramework("AppKit"),
         .linkedFramework("CoreGraphics"),
@@ -203,7 +181,14 @@ let package = Package(
           package: "swift-webdriver"
         )
       ],
-      path: "Tests/HarmoniusAppiumTests"
+      path: "Tests/HarmoniusAppiumTests",
+      exclude: [
+        "__Snapshots__"
+      ],
+      linkerSettings: [
+        .linkedFramework("CoreGraphics"),
+        .linkedFramework("ImageIO"),
+      ]
     ),
   ],
   cxxLanguageStandard: .cxx2b

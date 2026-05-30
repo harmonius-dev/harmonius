@@ -25,7 +25,8 @@ RasterizerData vertexShader(uint vertexID : SV_VertexID) {
   RasterizerData out;
   float2 pixelSpacePosition = vertexData[vertexID].position;
   float2 viewport = float2(viewportSize);
-  out.position.xy = pixelSpacePosition / (viewport * 0.5);
+  float shortSide = min(viewport.x, viewport.y);
+  out.position.xy = pixelSpacePosition / (shortSide * 0.5);
   out.position.z = 0.0;
   out.position.w = 1.0;
   out.color = vertexData[vertexID].color;

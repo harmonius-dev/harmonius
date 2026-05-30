@@ -35,70 +35,20 @@ final class MetalViewCoordinator: NSObject, MTKViewDelegate {
 @MainActor
 private func makeConfiguredMTKView(coordinator: MetalViewCoordinator) -> MTKView {
   let device = MTLCreateSystemDefaultDevice()
-  let isSnapshotMode = HarmoniusLaunchOptions.isSnapshotMode
-  let frame =
-    isSnapshotMode
-    ? CGRect(origin: .zero, size: currentSnapshotPointSize())
-    : .zero
-  let view = MTKView(frame: frame, device: device)
+  let view = MTKView(frame: .zero, device: device)
   view.colorPixelFormat = .bgra8Unorm
   view.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
   view.preferredFramesPerSecond = 60
-  view.enableSetNeedsDisplay = isSnapshotMode
-  view.isPaused = isSnapshotMode
-  if isSnapshotMode {
-    view.drawableSize = HarmoniusLaunchOptions.snapshotMetalPixelSize
-    view.framebufferOnly = false
-  }
   view.delegate = coordinator
   #if os(macOS)
-    if isSnapshotMode {
-      view.wantsLayer = true
-      view.layer?.contentsScale = HarmoniusLaunchOptions.snapshotScale
-    }
     view.setAccessibilityElement(true)
     view.setAccessibilityIdentifier("metal-view")
   #else
-    if isSnapshotMode {
-      view.contentScaleFactor = HarmoniusLaunchOptions.snapshotScale
-    }
     view.isAccessibilityElement = true
     view.accessibilityIdentifier = "metal-view"
   #endif
   coordinator.configure(view: view)
-  DispatchQueue.main.async {
-    requestSnapshotDraw(in: view)
-  }
   return view
-}
-
-private func currentSnapshotPointSize() -> CGSize {
-  #if os(macOS)
-    let pixelRect = CGRect(
-      origin: .zero,
-      size: HarmoniusLaunchOptions.snapshotCapturePixelSize
-    )
-    return NSScreen.main?.convertRectFromBacking(pixelRect).size
-      ?? HarmoniusLaunchOptions.snapshotCapturePixelSize
-  #elseif os(iOS)
-    return HarmoniusLaunchOptions.snapshotCapturePixelSize
-  #else
-    return HarmoniusLaunchOptions.snapshotCapturePixelSize
-  #endif
-}
-
-@MainActor
-func requestSnapshotDraw(in view: MTKView) {
-  guard HarmoniusLaunchOptions.isSnapshotMode else { return }
-  view.drawableSize = HarmoniusLaunchOptions.snapshotMetalPixelSize
-  #if os(macOS)
-    view.wantsLayer = true
-    view.layer?.contentsScale = HarmoniusLaunchOptions.snapshotScale
-    view.needsDisplay = true
-  #else
-    view.setNeedsDisplay()
-  #endif
-  view.draw()
 }
 
 // ---------------------------------------------------------------------------
@@ -114,7 +64,6 @@ func requestSnapshotDraw(in view: MTKView) {
     }
 
     func updateNSView(_ nsView: MTKView, context: Context) {
-      requestSnapshotDraw(in: nsView)
     }
   }
 #elseif os(iOS)
@@ -126,7 +75,6 @@ func requestSnapshotDraw(in view: MTKView) {
     }
 
     func updateUIView(_ uiView: MTKView, context: Context) {
-      requestSnapshotDraw(in: uiView)
     }
   }
 #endif

@@ -57,17 +57,17 @@ automation. Appium UI tests are Swift tests using `swift-webdriver`.
 
 - Public task: `dev:test`
 - Command: `./scripts/dev.sh test-ui-macos`
-- Preconditions: Appium is installed with the `mac2` and `xcuitest` drivers.
-- Expected output: Swift Appium tests create a session and capture a screenshot.
+- Preconditions: Appium is installed with the macOS and iOS drivers.
+- Expected output: Swift Testing Appium tests compare UI screenshot baselines.
 - Failure triage: run `./scripts/dev.sh appium-bootstrap` and inspect Appium logs.
 
-### snapshot-recording
+### ui-snapshot-recording
 
 - Public task: `dev:test`
-- Command: `./scripts/dev.sh test-render-record`
-- Preconditions: Metal is available and the shader plugin can build `default.metallib`.
-- Expected output: render snapshots refresh under `Tests/HarmoniusRenderTests/`.
-- Failure triage: compare render size `960x540` and snapshot size `480x270`.
+- Command: `./scripts/dev.sh test-ui-record`
+- Preconditions: Appium is installed and the app bundles can be built.
+- Expected output: UI snapshots refresh under `Tests/HarmoniusAppiumTests/`.
+- Failure triage: rerun `./scripts/dev.sh test-ui-macos` after recording.
 
 ### debugging
 

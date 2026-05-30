@@ -1,7 +1,6 @@
 {
   "dependencies": [
     "cgltf",
-    "hlslpp",
     "meshoptimizer",
     {
       "name": "shader-slang",
