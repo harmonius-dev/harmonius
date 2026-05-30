@@ -59,7 +59,7 @@ SwiftSyntax. It emits:
 
 - POD Swift structs for reflected Slang structs.
 - fixed array wrappers used by reflected array fields.
-- `ShaderBindings` resource constants.
+- `ShaderBindings` resource constants, binding metadata, and buffer table size.
 - `ShaderEntryPoints` and entry-point metadata.
 - `ShaderReflectionLayout` and `ShaderValidation` runtime checks.
 - the build-local `HarmoniusShaderResources.defaultMetallibPath`.
@@ -114,3 +114,8 @@ ShaderValidation.verifyAll()
 The helper checks Swift `MemoryLayout` size, alignment, and field offsets
 against the reflected Slang layout. Use it in focused runtime checks when adding
 new shader data structs or changing layout-sensitive fields.
+
+The renderer calls `ShaderValidation.verifyAll()` before creating shader data
+buffers. It also uses generated entry-point names, binding slots, and
+`ShaderBindings.maxBufferBindCount` so renderer constants stay derived from
+Slang reflection.

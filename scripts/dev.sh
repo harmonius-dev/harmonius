@@ -176,8 +176,9 @@ ensure_host_shader_tool() {
   local tool
   tool="$(host_shader_tool_path "$configuration")"
   if [[ ! -x "$tool" ]]; then
-    bootstrap_platform "$(host_platform)"
-    with_pkg_config_path "$(host_platform)" swift build \
+    bootstrap_platform "$(host_platform)" >&2
+    HARMONIUS_DISABLE_SHADER_PLUGIN=1 \
+      with_pkg_config_path "$(host_platform)" swift build \
       --product HarmoniusShaderTool \
       --configuration "$configuration" \
       >/dev/null
@@ -356,11 +357,15 @@ swift_test() {
 swift_build() {
   local platform="${1:-$(host_platform)}"
   local mode="${2:-debug}"
+  local build_args=()
   local configuration
   configuration="$(swift_configuration_for_mode "$mode")"
+  build_args+=(--configuration "$configuration")
+  if [[ "$platform" == "ios" || "$platform" == "ios-simulator" ]]; then
+    build_args+=(--target HarmoniusAppCore)
+  fi
   bootstrap_platform "$platform"
-  with_shader_tool_env "$platform" swift build \
-    --configuration "$configuration"
+  with_shader_tool_env "$platform" swift build "${build_args[@]}"
 }
 
 link_swiftpm_test_executable() {

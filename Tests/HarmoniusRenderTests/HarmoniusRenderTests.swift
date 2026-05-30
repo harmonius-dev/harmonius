@@ -8,6 +8,9 @@ import simd
 private let renderSize = RenderSize(width: 1920, height: 1080)
 
 @Test func triangleRendersIntoTexture() throws {
+  ShaderValidation.verifyAll()
+  #expect(ShaderBindings.maxBufferBindCount == 2)
+
   let texture = try renderTriangleTexture()
   #expect(texture.width == renderSize.width)
   #expect(texture.height == renderSize.height)
@@ -155,7 +158,7 @@ private func makePipelineState(
 
 private func makeArgumentTable(device: MTLDevice) throws -> any MTL4ArgumentTable {
   let descriptor = MTL4ArgumentTableDescriptor()
-  descriptor.maxBufferBindCount = 2
+  descriptor.maxBufferBindCount = ShaderBindings.maxBufferBindCount
   return try device.makeArgumentTable(descriptor: descriptor)
 }
 

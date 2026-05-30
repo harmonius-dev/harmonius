@@ -33,6 +33,7 @@ import simd
       self.commandQueue = commandQueue
 
       do {
+        ShaderValidation.verifyAll()
         triangleVertexBuffers = try Self.makeTriangleBuffers(
           device: device,
           count: TriangleVertexLayout.maxFramesInFlight
@@ -178,8 +179,8 @@ import simd
       let descriptor = MTLRenderPipelineDescriptor()
       descriptor.label = "Harmonius iOS simulator triangle pipeline"
       descriptor.colorAttachments[0].pixelFormat = pixelFormat
-      descriptor.vertexFunction = library.makeFunction(name: "vertexShader")
-      descriptor.fragmentFunction = library.makeFunction(name: "fragmentShader")
+      descriptor.vertexFunction = library.makeFunction(name: ShaderEntryPoints.vertexShader)
+      descriptor.fragmentFunction = library.makeFunction(name: ShaderEntryPoints.fragmentShader)
       return try device.makeRenderPipelineState(descriptor: descriptor)
     }
   }
@@ -228,6 +229,7 @@ import simd
       self.defaultLibrary = defaultLibrary
 
       do {
+        ShaderValidation.verifyAll()
         triangleVertexBuffers = try Self.makeTriangleBuffers(
           device: device,
           count: TriangleVertexLayout.maxFramesInFlight
@@ -402,7 +404,7 @@ import simd
 
     private static func makeArgumentTable(device: MTLDevice) throws -> any MTL4ArgumentTable {
       let descriptor = MTL4ArgumentTableDescriptor()
-      descriptor.maxBufferBindCount = 2
+      descriptor.maxBufferBindCount = ShaderBindings.maxBufferBindCount
       return try device.makeArgumentTable(descriptor: descriptor)
     }
 

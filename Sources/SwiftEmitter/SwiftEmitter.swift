@@ -190,16 +190,65 @@ public struct SwiftEmitter {
   }
 
   private func makeBindings(_ bindings: [ShaderBinding]) -> DeclSyntax {
-    let constants = bindings.sorted { lhs, rhs in
+    let sortedBindings = bindings.sorted { lhs, rhs in
       (lhs.space, lhs.index, lhs.name) < (rhs.space, rhs.index, rhs.name)
-    }.map { binding in
+    }
+    let constants = sortedBindings.map { binding in
       "public static let \(mapper.swiftIdentifier(binding.name)) = \(binding.index)"
     }.joined(separator: "\n")
+    let metadata = sortedBindings.map { binding in
+      """
+      ShaderBindingMetadata(
+        name: "\(escapedSwiftString(binding.name))",
+        category: "\(escapedSwiftString(binding.category))",
+        bindingType: "\(escapedSwiftString(binding.bindingType))",
+        index: \(binding.index),
+        space: \(binding.space),
+        count: \(binding.count)
+      )
+      """
+    }.joined(separator: ",\n")
+    let maxBufferBindCount =
+      sortedBindings
+      .filter(\.usesBufferBindingSlot)
+      .map { $0.index + max($0.count, 1) }
+      .max() ?? 0
 
     return decl(
       """
+      public struct ShaderBindingMetadata: Equatable, Sendable {
+        public var name: String
+        public var category: String
+        public var bindingType: String
+        public var index: Int
+        public var space: Int
+        public var count: Int
+
+        public init(
+          name: String,
+          category: String,
+          bindingType: String,
+          index: Int,
+          space: Int,
+          count: Int
+        ) {
+          self.name = name
+          self.category = category
+          self.bindingType = bindingType
+          self.index = index
+          self.space = space
+          self.count = count
+        }
+      }
+
       public enum ShaderBindings {
       \(constants)
+
+        public static let all: [ShaderBindingMetadata] = [
+      \(metadata)
+        ]
+
+        public static let maxBufferBindCount = \(maxBufferBindCount)
       }
       """
     )
@@ -394,5 +443,16 @@ public struct SwiftEmitter {
       .replacingOccurrences(of: "\n", with: "\\n")
       .replacingOccurrences(of: "\r", with: "\\r")
       .replacingOccurrences(of: "\t", with: "\\t")
+  }
+}
+
+extension ShaderBinding {
+  fileprivate var usesBufferBindingSlot: Bool {
+    switch bindingType {
+    case "constantBuffer", "parameterBlock", "rawBuffer", "typedBuffer":
+      return true
+    default:
+      return false
+    }
   }
 }

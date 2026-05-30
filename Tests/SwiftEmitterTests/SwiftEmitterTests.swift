@@ -133,6 +133,36 @@ import Testing
 
   #expect(source.contains("public static let albedo = 0"))
   #expect(source.contains("public static let linearSampler = 1"))
+  #expect(source.contains("public struct ShaderBindingMetadata"))
+  #expect(source.contains("public static let all: [ShaderBindingMetadata]"))
+  #expect(source.contains("bindingType: \"texture\""))
+  #expect(source.contains("public static let maxBufferBindCount = 0"))
+}
+
+@Test func emitsMaximumBufferBindingCount() throws {
+  let source = try SwiftEmitter().emit(
+    ShaderProgramModel(
+      moduleName: "Buffers",
+      bindings: [
+        ShaderBinding(
+          name: "vertexData",
+          type: .resource(name: "StructuredBuffer", element: .struct("VertexData")),
+          category: "shaderResource",
+          bindingType: "typedBuffer",
+          index: 0
+        ),
+        ShaderBinding(
+          name: "viewportSize",
+          type: .constantBuffer(element: .vector(element: .uint32, count: 2)),
+          category: "uniform",
+          bindingType: "constantBuffer",
+          index: 1
+        ),
+      ]
+    )
+  )
+
+  #expect(source.contains("public static let maxBufferBindCount = 2"))
 }
 
 @Test func emitsEntryPointMetadata() throws {

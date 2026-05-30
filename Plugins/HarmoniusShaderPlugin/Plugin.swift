@@ -7,6 +7,10 @@ struct HarmoniusShaderPlugin: BuildToolPlugin {
     context: PluginContext,
     target: Target
   ) throws -> [Command] {
+    if ProcessInfo.processInfo.environment["HARMONIUS_DISABLE_SHADER_PLUGIN"] == "1" {
+      return []
+    }
+
     let toolPath = ProcessInfo.processInfo.environment["HARMONIUS_SHADER_TOOL"] ?? ""
     guard !toolPath.isEmpty else {
       throw HarmoniusShaderPluginError.missingShaderTool
@@ -36,7 +40,8 @@ struct HarmoniusShaderPlugin: BuildToolPlugin {
           shaderDirectory.path,
         ],
         inputFiles: [
-          source
+          source,
+          tool,
         ],
         outputFiles: [
           output,
