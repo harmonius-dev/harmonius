@@ -574,6 +574,7 @@ test_all() {
   test_render
   if [[ "$(uname -s)" == "Darwin" ]]; then
     test_ui_macos
+    test_ui_ios_simulator
   fi
 }
 
