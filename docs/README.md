@@ -11,6 +11,8 @@ for understanding the engine's design, capabilities, and how to use it.
   [Testing](./testing.md) cover the Bash, SwiftPM, XcodeGen, and Appium flow.
 - **Using an LLM agent?** → [Agent Workflows](./agent-workflows.md) lists the
   public VS Code tasks and matching Bash commands.
+- **Working on shaders?** → [Shader Code Generation](./shader-codegen.md)
+  covers Slang reflection, SwiftSyntax emission, and build regeneration.
 - **Looking for a specific topic?** → Navigate the domain READMEs in
   [overview/](./overview/).
 
@@ -19,6 +21,7 @@ for understanding the engine's design, capabilities, and how to use it.
 ```text
 docs/
   README.md                — this file
+  shader-codegen.md        — Slang reflection to generated Swift bindings
   overview/
     README.md              — index of all 17 domains and 62 topics
     {domain}/

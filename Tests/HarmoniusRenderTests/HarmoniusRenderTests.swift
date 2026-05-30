@@ -3,10 +3,10 @@ import CoreGraphics
 import Foundation
 import HarmoniusRendering
 import HarmoniusShaderResources
-internal import HarmoniusShaders
 import Metal
 import SnapshotTesting
 import Testing
+import simd
 
 private let renderSize = SnapshotSize(width: 960, height: 540)
 private let snapshotSize = SnapshotSize(width: 480, height: 270)
@@ -91,11 +91,11 @@ private func renderTriangleTexture(device: MTLDevice) throws -> MTLTexture {
   )
   argumentTable.setAddress(
     triangleBuffer.gpuAddress,
-    index: Int(InputBufferIndexForVertexData.rawValue)
+    index: ShaderBindings.vertexData
   )
   argumentTable.setAddress(
     viewportBuffer.gpuAddress,
-    index: Int(InputBufferIndexForViewportSize.rawValue)
+    index: ShaderBindings.viewportSize
   )
   encoder.setArgumentTable(argumentTable, stages: .vertex)
   encoder.drawPrimitives(
@@ -132,12 +132,12 @@ private func makePipelineState(
 
   let vertexFunction = MTL4LibraryFunctionDescriptor()
   vertexFunction.library = library
-  vertexFunction.name = "vertexShader"
+  vertexFunction.name = ShaderEntryPoints.vertexShader
   descriptor.vertexFunctionDescriptor = vertexFunction
 
   let fragmentFunction = MTL4LibraryFunctionDescriptor()
   fragmentFunction.library = library
-  fragmentFunction.name = "fragmentShader"
+  fragmentFunction.name = ShaderEntryPoints.fragmentShader
   descriptor.fragmentFunctionDescriptor = fragmentFunction
 
   return try compiler.makeRenderPipelineState(
@@ -184,11 +184,11 @@ private func makeTriangleBuffer(device: MTLDevice) throws -> MTLBuffer {
 }
 
 private func makeViewportBuffer(device: MTLDevice) throws -> MTLBuffer {
-  var viewport = HarmoniusMakeUInt2(
+  var viewport = SIMD2<UInt32>(
     UInt32(renderSize.width),
     UInt32(renderSize.height)
   )
-  let length = MemoryLayout<HarmoniusUInt2>.stride
+  let length = MemoryLayout<SIMD2<UInt32>>.stride
   let buffer = withUnsafeBytes(of: &viewport) { bytes in
     device.makeBuffer(
       bytes: bytes.baseAddress!,

@@ -1,12 +1,19 @@
-#include "ShaderTypes.h"
+struct VertexData {
+  float2 position;
+  float4 color;
+};
+
+struct TriangleData {
+  VertexData vertex0;
+  VertexData vertex1;
+  VertexData vertex2;
+};
 
 struct RasterizerData {
   float4 position : SV_Position;
   float4 color    : COLOR0;
 };
 
-// Buffer indices come from ShaderTypes.h
-// (InputBufferIndexForVertexData = 0, InputBufferIndexForViewportSize = 1).
 // Slang for the Metal target lowers register(tN)/register(bN) into the
 // shared Metal buffer table, so StructuredBuffer at t0 and ConstantBuffer
 // at b1 land on buffer slots 0 and 1 respectively.

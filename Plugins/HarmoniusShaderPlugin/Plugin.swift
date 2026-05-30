@@ -13,18 +13,16 @@ struct HarmoniusShaderPlugin: BuildToolPlugin {
       "Sources/HarmoniusShaders"
     )
     let source = shaderDirectory.appendingPathComponent("Triangle.slang")
-    let shaderTypes = shaderDirectory.appendingPathComponent("ShaderTypes.h")
-    let swiftCompat = shaderDirectory.appendingPathComponent("SwiftCompat.h")
     let output = context.pluginWorkDirectoryURL.appendingPathComponent(
       "default.metallib"
     )
     let generatedSwift = context.pluginWorkDirectoryURL.appendingPathComponent(
-      "GeneratedShaderResources.swift"
+      "ShaderTypes.swift"
     )
 
     return [
       .buildCommand(
-        displayName: "Compile Triangle.slang to default.metallib",
+        displayName: "Compile and reflect Triangle.slang",
         executable: tool.url,
         arguments: [
           source.path,
@@ -34,9 +32,7 @@ struct HarmoniusShaderPlugin: BuildToolPlugin {
           shaderDirectory.path,
         ],
         inputFiles: [
-          source,
-          shaderTypes,
-          swiftCompat,
+          source
         ],
         outputFiles: [
           output,

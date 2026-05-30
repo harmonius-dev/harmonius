@@ -1,46 +1,33 @@
 import HarmoniusRendering
-internal import HarmoniusShaders
 import Testing
+import simd
 
 private enum TriangleGeometryFixtures {
   static let radius: Float = 240
-  static var red: HarmoniusFloat4 { color(red: 1, green: 0, blue: 0, alpha: 1) }
-  static var green: HarmoniusFloat4 { color(red: 0, green: 1, blue: 0, alpha: 1) }
-  static var blue: HarmoniusFloat4 { color(red: 0, green: 0, blue: 1, alpha: 1) }
+  static var red: SIMD4<Float> { color(red: 1, green: 0, blue: 0, alpha: 1) }
+  static var green: SIMD4<Float> { color(red: 0, green: 1, blue: 0, alpha: 1) }
+  static var blue: SIMD4<Float> { color(red: 0, green: 0, blue: 1, alpha: 1) }
 
   private static func color(
     red: Float, green: Float,
     blue: Float,
     alpha: Float
-  ) -> HarmoniusFloat4 {
-    HarmoniusMakeFloat4(red, green, blue, alpha)
+  ) -> SIMD4<Float> {
+    SIMD4<Float>(red, green, blue, alpha)
   }
 }
 
-private func component(_ value: HarmoniusFloat2, _ index: Int32) -> Float {
-  HarmoniusFloat2Component(value, index)
+private func colorsEqual(_ lhs: SIMD4<Float>, _ rhs: SIMD4<Float>) -> Bool {
+  lhs == rhs
 }
 
-private func component(_ value: HarmoniusFloat4, _ index: Int32) -> Float {
-  HarmoniusFloat4Component(value, index)
+private func length(_ value: SIMD2<Float>) -> Float {
+  sqrtf(value.x * value.x + value.y * value.y)
 }
 
-private func colorsEqual(_ lhs: HarmoniusFloat4, _ rhs: HarmoniusFloat4) -> Bool {
-  component(lhs, 0) == component(rhs, 0)
-    && component(lhs, 1) == component(rhs, 1)
-    && component(lhs, 2) == component(rhs, 2)
-    && component(lhs, 3) == component(rhs, 3)
-}
-
-private func length(_ value: HarmoniusFloat2) -> Float {
-  let x = component(value, 0)
-  let y = component(value, 1)
-  return sqrtf(x * x + y * y)
-}
-
-private func distance(_ lhs: HarmoniusFloat2, _ rhs: HarmoniusFloat2) -> Float {
-  let x = component(lhs, 0) - component(rhs, 0)
-  let y = component(lhs, 1) - component(rhs, 1)
+private func distance(_ lhs: SIMD2<Float>, _ rhs: SIMD2<Float>) -> Float {
+  let x = lhs.x - rhs.x
+  let y = lhs.y - rhs.y
   return sqrtf(x * x + y * y)
 }
 

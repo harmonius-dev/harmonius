@@ -1,3 +1,4 @@
+import HarmoniusShaderResources
 import Metal
 
 #if !(os(iOS) && targetEnvironment(simulator))
@@ -15,12 +16,12 @@ import Metal
 
       let vertexFunction = MTL4LibraryFunctionDescriptor()
       vertexFunction.library = library
-      vertexFunction.name = "vertexShader"
+      vertexFunction.name = ShaderEntryPoints.vertexShader
       descriptor.vertexFunctionDescriptor = vertexFunction
 
       let fragmentFunction = MTL4LibraryFunctionDescriptor()
       fragmentFunction.library = library
-      fragmentFunction.name = "fragmentShader"
+      fragmentFunction.name = ShaderEntryPoints.fragmentShader
       descriptor.fragmentFunctionDescriptor = fragmentFunction
 
       return try compiler.makeRenderPipelineState(

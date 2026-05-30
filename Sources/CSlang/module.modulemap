@@ -1,0 +1,5 @@
+module CSlang [system] {
+  header "slang.h"
+  link "slang"
+  export *
+}

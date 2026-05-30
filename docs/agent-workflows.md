@@ -38,8 +38,12 @@ automation. Appium UI tests are Swift tests using `swift-webdriver`.
 - Public task: `dev:compile`
 - Command: `./scripts/dev.sh compile-spm macos debug`
 - Preconditions: `shader-slang` is installed by vcpkg for the host triplet.
-- Expected output: `HarmoniusShaderPlugin` emits `default.metallib`.
-- Failure triage: run `slangc --version` or set `HARMONIUS_SLANGC`.
+- Expected output: `HarmoniusShaderPlugin` emits `default.metallib` and
+  generated `ShaderTypes.swift` from Slang reflection.
+- Failure triage: run `./scripts/dev.sh package-graph`, then inspect the Slang
+  bridge diagnostics from `HarmoniusShaderTool`.
+- Ownership rule: hand-authored shader code lives only in `.slang` files under
+  `Sources/HarmoniusShaders/`.
 
 ### xcode-bundle
 

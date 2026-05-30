@@ -1,9 +1,8 @@
 import HarmoniusShaderResources
-internal import HarmoniusShaders
-// HarmoniusShaders is an internal C++ interop module.
 import Metal
 import MetalKit
 import QuartzCore
+import simd
 
 #if os(iOS) && targetEnvironment(simulator)
   public final class Metal4TriangleRenderer: NSObject, MTKViewDelegate {
@@ -79,7 +78,7 @@ import QuartzCore
           count: TriangleVertexLayout.maxFramesInFlight
         )
         viewportSizeBuffer = device.makeBuffer(
-          length: MemoryLayout<HarmoniusUInt2>.stride,
+          length: MemoryLayout<SIMD2<UInt32>>.stride,
           options: .storageModeShared
         )!
         renderPipelineState = try Self.compileRenderPipeline(
@@ -163,11 +162,11 @@ import QuartzCore
 
       argumentTable.setAddress(
         vertexBuffer.gpuAddress,
-        index: Int(InputBufferIndexForVertexData.rawValue)
+        index: ShaderBindings.vertexData
       )
       argumentTable.setAddress(
         viewportSizeBuffer.gpuAddress,
-        index: Int(InputBufferIndexForViewportSize.rawValue)
+        index: ShaderBindings.viewportSize
       )
       renderEncoder.setArgumentTable(argumentTable, stages: .vertex)
 
@@ -192,7 +191,7 @@ import QuartzCore
       }
       viewportWidth = UInt32(size.width)
       viewportHeight = UInt32(size.height)
-      var viewportSize = HarmoniusMakeUInt2(viewportWidth, viewportHeight)
+      var viewportSize = SIMD2<UInt32>(viewportWidth, viewportHeight)
       withUnsafeBytes(of: &viewportSize) { bytes in
         viewportSizeBuffer.contents().copyMemory(
           from: bytes.baseAddress!,

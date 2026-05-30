@@ -2,19 +2,18 @@
 
 ## Decision
 
-Harmonius uses SourceKit-LSP as the default language server for Swift and
-SwiftPM-owned C++ interop.
+Harmonius uses SourceKit-LSP as the default language server for Swift and the
+SwiftPM package graph.
 
 SwiftPM is the editor build model. Do not add a root `compile_commands.json`,
 `.clangd`, or `buildServer.json` for the default path.
 
-The shader headers are shared by Swift, Slang, and CPU-side C++. The CPU-side
-types come from `hlsl++` through the SwiftPM `hlslpp` system-library target.
-Do not replace them with manual vector shims.
+Shader data types are generated as Swift from Slang reflection by
+`HarmoniusShaderPlugin`. Do not reintroduce shared Swift/C++ shader headers or
+manual vector shims for generated shader data.
 
-`HarmoniusShaders` is a small SwiftPM C++ target that owns the shader header
-directory for SourceKit-LSP. It gives direct header opens and
-go-to-definition a C++ target without changing app runtime products.
+The Slang C++ API is isolated to the host build tool through the `CSlang`
+system-library target and the `SlangReflectionBridge` target.
 
 ## Flow
 
@@ -32,7 +31,7 @@ go-to-definition a C++ target without changing app runtime products.
 
 3. Restart SourceKit-LSP in the editor.
 
-4. Validate Swift imports, shader headers, Slang shaders, and breakpoints.
+4. Validate Swift imports, Slang shader generation, and breakpoints.
 
 VS Code and Cursor can run the `dev:index` task. That task delegates to the
 hidden `lsp:index` task.
@@ -42,7 +41,7 @@ hidden `lsp:index` task.
 Editors do not always inherit the same shell environment as `scripts/dev.sh`.
 
 The `scripts/sourcekit-lsp.sh` wrapper exports the macOS arm64 pkg-config paths
-needed by `hlslpp`. It then execs SourceKit-LSP from the active
+needed by SwiftPM system-library targets. It then execs SourceKit-LSP from the active
 Xcode toolchain with `xcrun`.
 
 The wrapper also exposes SwiftPM's `PackagePlugin` API module from the active
@@ -63,13 +62,8 @@ SourceKit-LSP is configured through the current Swift extension settings:
 - `swift.sourcekit-lsp.backgroundIndexing`
 
 The Swift extension language list includes Swift, C, C++, Objective-C, and
-Objective-C++. Workspace file associations force
-`Sources/HarmoniusShaders/*.h` to C++ because `SwiftCompat.h` intentionally
-uses `hlsl++`.
-
-Direct header routing is backed by `HarmoniusShaders` plus the
-SourceKit-LSP fallback C++ flags for the generated vcpkg include directory.
-This avoids a root compilation database while keeping header navigation live.
+Objective-C++. Build-tool plugin and C++ bridge diagnostics should still be
+resolved through SwiftPM, not through a separate root compilation database.
 
 The workspace disables generated Swift launch configurations because Harmonius
 owns custom CodeLLDB launch flows in `.vscode/launch.json`.
@@ -115,15 +109,12 @@ xcrun --find lldb-dap
 
 After restarting SourceKit-LSP, verify these editor behaviors:
 
-- Swift files importing `HarmoniusShaders` have no false diagnostics.
-- `Sources/HarmoniusShaders/ShaderTypes.h` has no false diagnostics.
-- `Sources/HarmoniusShaders/SwiftCompat.h` has no false diagnostics.
+- Swift files importing `HarmoniusShaderResources` have no false diagnostics.
 - `Sources/HarmoniusShaders/Triangle.slang` has no false diagnostics.
-- Swift autocomplete sees `HarmoniusShaders` declarations.
-- Go-to-definition works from Swift into `ShaderTypes.h`.
-- Go-to-definition works from Swift into `SwiftCompat.h`.
-- Go-to-definition works from `ShaderTypes.h` into `SwiftCompat.h`.
-- Go-to-definition works from `SwiftCompat.h` into vcpkg `hlsl++` headers.
+- Swift autocomplete sees generated shader declarations after
+  `./scripts/dev.sh compile-spm macos debug`.
+- Go-to-definition works for checked-in Swift reflection and emitter sources.
+- `HarmoniusShaderTool` builds through SwiftPM with `CSlang` pkg-config flags.
 
 Debug validation should cover:
 
@@ -144,11 +135,9 @@ Validation on May 29, 2026 found these editor-specific notes:
 - Cursor reports `No Problems` for Swift and opened shader headers.
 - Cursor CodeLLDB stops at `TriangleGeometryTests.swift:38`.
 - Zed starts SourceKit-LSP with the expected vcpkg pkg-config path.
-- Zed reports no visible diagnostics for `SwiftCompat.h` or `Triangle.slang`.
+- Zed reports no visible diagnostics for Swift files or `Triangle.slang`.
 - Zed's Swift debug adapter stops at `TriangleGeometryTests.swift:38`.
-- SourceKit-LSP resolves `TriangleData` and `VertexData` to `ShaderTypes.h`.
-- SourceKit-LSP resolves `HarmoniusFloat2` to `SwiftCompat.h` and `hlsl++`.
-- SourceKit-LSP reports zero diagnostics for `SwiftCompat.h` as C or C++.
+- SourceKit-LSP resolves checked-in shader generation sources through SwiftPM.
 
 These notes do not justify a clangd fallback. The durable path is SourceKit-LSP
 through SwiftPM, with vcpkg dependencies exposed through `PKG_CONFIG_PATH`.

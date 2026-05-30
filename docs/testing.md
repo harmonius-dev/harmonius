@@ -10,6 +10,7 @@ XcodeGen verifies Apple app bundles and provides app artifacts for Appium.
 | `HarmoniusUnitTests` | Swift Testing | Geometry and pure render data |
 | `HarmoniusRenderTests` | Swift Testing + SnapshotTesting | Metal snapshots |
 | `HarmoniusAppiumTests` | XCTest + Swift WebDriver | Appium smoke UI |
+| `SwiftEmitterTests` | Swift Testing | Slang reflection model to Swift output |
 
 ## Prerequisites
 
@@ -22,6 +23,7 @@ XcodeGen verifies Apple app bundles and provides app artifacts for Appium.
 
 ```bash
 ./scripts/dev.sh test-unit
+./scripts/dev.sh test-codegen
 ./scripts/dev.sh test-render
 ./scripts/dev.sh test-render-record
 ./scripts/dev.sh test-ui-macos
@@ -31,7 +33,7 @@ XcodeGen verifies Apple app bundles and provides app artifacts for Appium.
 
 Use `./scripts/dev.sh full-check` before opening a pull request. The full check
 runs no-JS, line-length, JSON sorting, Swift formatting, package graph, build,
-unit tests, render tests, and `git diff --check`.
+unit tests, shader code-generation tests, render tests, and `git diff --check`.
 
 ## Unit Tests
 

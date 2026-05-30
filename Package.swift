@@ -22,14 +22,22 @@ let package = Package(
       targets: ["HarmoniusShaderResources"]
     ),
     .library(
-      name: "HarmoniusShaders",
-      targets: ["HarmoniusShaders"]
+      name: "SlangReflection",
+      targets: ["SlangReflection"]
+    ),
+    .library(
+      name: "SwiftEmitter",
+      targets: ["SwiftEmitter"]
     ),
   ],
   dependencies: [
     .package(
       url: "https://github.com/pointfreeco/swift-snapshot-testing.git",
       exact: "1.19.2"
+    ),
+    .package(
+      url: "https://github.com/swiftlang/swift-syntax.git",
+      exact: "603.0.1"
     ),
     .package(
       url: "https://github.com/thebrowsercompany/swift-webdriver.git",
@@ -52,24 +60,44 @@ let package = Package(
       path: "Sources/hlslpp",
       pkgConfig: "hlslpp"
     ),
+    .systemLibrary(
+      name: "CSlang",
+      path: "Sources/CSlang",
+      pkgConfig: "shader-slang"
+    ),
     .target(
-      name: "HarmoniusShaders",
+      name: "SlangReflectionBridge",
       dependencies: [
-        "hlslpp"
+        "CSlang"
       ],
-      path: "Sources/HarmoniusShaders",
-      exclude: [
-        "Triangle.slang"
+      path: "Sources/SlangReflectionBridge",
+      publicHeadersPath: "include"
+    ),
+    .target(
+      name: "SlangReflection",
+      dependencies: [
+        "SlangReflectionBridge"
       ],
-      publicHeadersPath: ".",
-      cxxSettings: [
-        .headerSearchPath(
-          "../../build/macos/vcpkg_installed/arm64-osx/include"
+      path: "Sources/SlangReflection"
+    ),
+    .target(
+      name: "SwiftEmitter",
+      dependencies: [
+        "SlangReflection",
+        .product(
+          name: "SwiftBasicFormat",
+          package: "swift-syntax"
         ),
-        .headerSearchPath(
-          "../../build/macos/vcpkg_installed/arm64-osx/include/hlslpp"
+        .product(
+          name: "SwiftSyntax",
+          package: "swift-syntax"
         ),
-      ]
+        .product(
+          name: "SwiftSyntaxBuilder",
+          package: "swift-syntax"
+        ),
+      ],
+      path: "Sources/SwiftEmitter"
     ),
     .target(
       name: "HarmoniusShaderResources",
@@ -85,12 +113,8 @@ let package = Package(
         "CCGLTF",
         "CMeshOptimizer",
         "HarmoniusShaderResources",
-        "HarmoniusShaders",
       ],
       path: "Sources/HarmoniusRendering",
-      swiftSettings: [
-        .interoperabilityMode(.Cxx)
-      ],
       linkerSettings: [
         .linkedFramework("CoreGraphics"),
         .linkedFramework("Metal"),
@@ -119,6 +143,10 @@ let package = Package(
     ),
     .executableTarget(
       name: "HarmoniusShaderTool",
+      dependencies: [
+        "SlangReflection",
+        "SwiftEmitter",
+      ],
       path: "Sources/HarmoniusShaderTool"
     ),
     .plugin(
@@ -132,20 +160,15 @@ let package = Package(
     .testTarget(
       name: "HarmoniusUnitTests",
       dependencies: [
-        "HarmoniusRendering",
-        "HarmoniusShaders",
+        "HarmoniusRendering"
       ],
-      path: "Tests/HarmoniusUnitTests",
-      swiftSettings: [
-        .interoperabilityMode(.Cxx)
-      ]
+      path: "Tests/HarmoniusUnitTests"
     ),
     .testTarget(
       name: "HarmoniusRenderTests",
       dependencies: [
         "HarmoniusRendering",
         "HarmoniusShaderResources",
-        "HarmoniusShaders",
         .product(
           name: "SnapshotTesting",
           package: "swift-snapshot-testing"
@@ -163,6 +186,14 @@ let package = Package(
         .linkedFramework("CoreGraphics"),
         .linkedFramework("Metal"),
       ]
+    ),
+    .testTarget(
+      name: "SwiftEmitterTests",
+      dependencies: [
+        "SlangReflection",
+        "SwiftEmitter",
+      ],
+      path: "Tests/SwiftEmitterTests"
     ),
     .testTarget(
       name: "HarmoniusAppiumTests",

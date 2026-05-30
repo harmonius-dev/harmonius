@@ -16,6 +16,7 @@ Commands:
   xcodegen
   bundle <macos|ios|ios-simulator> <debug|release>
   test-unit
+  test-codegen
   test-render
   test-render-record
   build-tests
@@ -90,7 +91,7 @@ swift_configuration_for_mode() {
 destination_for_platform() {
   case "$1" in
     ios) echo "generic/platform=iOS" ;;
-    ios-simulator) echo "platform=iOS Simulator,name=iPhone 17" ;;
+    ios-simulator) echo "platform=iOS Simulator,name=iPhone 17 Pro" ;;
     macos) echo "platform=macOS,arch=arm64" ;;
     *) die "no Xcode destination for platform $1" ;;
   esac
@@ -129,17 +130,37 @@ pkgconfig_dir_for_platform() {
 pkg_config_path_for_platform() {
   local platform="$1"
   local prefix
+  local path
   prefix="$(vcpkg_prefix_for_platform "$platform")"
-  printf '%s:%s:%s' \
+  path="$(printf '%s:%s:%s' \
     "$(pkgconfig_dir_for_platform "$platform")" \
     "$prefix/lib/pkgconfig" \
-    "$prefix/share/pkgconfig"
+    "$prefix/share/pkgconfig")"
+  if [[ "$platform" == "ios" || "$platform" == "ios-simulator" ]]; then
+    path="$path:$(pkg_config_path_for_platform macos)"
+  fi
+  printf '%s' "$path"
+}
+
+runtime_library_path_for_platform() {
+  local platform="$1"
+  local prefix
+  local path
+  prefix="$(vcpkg_prefix_for_platform "$platform")"
+  path="$(printf '%s:%s' "$prefix/lib" "$prefix/tools/shader-slang")"
+  if [[ "$platform" == "ios" || "$platform" == "ios-simulator" ]]; then
+    path="$path:$(runtime_library_path_for_platform macos)"
+  fi
+  printf '%s' "$path"
 }
 
 with_pkg_config_path() {
   local platform="$1"
   shift
-  PKG_CONFIG_PATH="$(pkg_config_path_for_platform "$platform")" "$@"
+  PKG_CONFIG_PATH="$(pkg_config_path_for_platform "$platform")" \
+    DYLD_LIBRARY_PATH="$(runtime_library_path_for_platform "$platform")" \
+    LD_LIBRARY_PATH="$(runtime_library_path_for_platform "$platform")" \
+    "$@"
 }
 
 ensure_submodules() {
@@ -170,6 +191,20 @@ install_vcpkg_triplet() {
     --overlay-triplets="$repo_root/vcpkg/triplets/community" \
     --triplet="$triplet" \
     --x-install-root="$install_root"
+  fix_slang_dylib_install_name "$platform"
+}
+
+fix_slang_dylib_install_name() {
+  local platform="$1"
+  local prefix
+  local dylib
+  [[ "$(uname -s)" == "Darwin" ]] || return
+  [[ "$platform" == "macos" ]] || return
+  prefix="$(vcpkg_prefix_for_platform "$platform")"
+  dylib="$prefix/lib/libslang-compiler.0.2026.7.1.dylib"
+  [[ -f "$dylib" ]] || return
+  install_name_tool -id "$prefix/lib/libslang.dylib" "$dylib" || true
+  codesign --force --sign - "$dylib" >/dev/null 2>&1 || true
 }
 
 ensure_vcpkg_for_platform() {
@@ -227,22 +262,25 @@ Version: 1.1.1
 Cflags: -I\${includedir}
 Libs: -L\${libdir} -lmeshoptimizer"
 
-  write_pc_file "$out_dir/shader-slang.pc" "\
+  if [[ "$platform" == "macos" || "$platform" == "linux" ]]; then
+    write_pc_file "$out_dir/shader-slang.pc" "\
 prefix=$prefix
+includedir=\${prefix}/include
 libdir=\${prefix}/lib
 toolbindir=\${prefix}/tools/shader-slang
 
 Name: shader-slang
 Description: Slang shader compiler from vcpkg
 Version: 2026.7.1
-Cflags:
+Cflags: -I\${includedir}
 Libs: -L\${libdir} -lslang"
+  fi
 }
 
 validate_pkgconfig_shims() {
   local platform="$1"
   local dependency
-  for dependency in hlslpp cgltf meshoptimizer; do
+  for dependency in hlslpp cgltf meshoptimizer shader-slang; do
     with_pkg_config_path "$platform" pkg-config --cflags --libs "$dependency" \
       >/dev/null
   done
@@ -423,6 +461,11 @@ test_unit() {
   swift_test --filter HarmoniusUnitTests
 }
 
+test_codegen() {
+  bootstrap_platform "macos"
+  swift_test --filter SwiftEmitterTests
+}
+
 test_render() {
   bootstrap_platform "macos"
   HARMONIUS_METALLIB_PATH="$(ensure_shader_artifact macos debug)" \
@@ -527,6 +570,7 @@ debug_appium_tests_prep() {
 
 test_all() {
   test_unit
+  test_codegen
   test_render
   if [[ "$(uname -s)" == "Darwin" ]]; then
     test_ui_macos
@@ -646,14 +690,24 @@ lint_json_sort() {
   [[ "$failed" -eq 0 ]]
 }
 
+lint_shader_sources() {
+  repo_cd
+  local matches
+  matches="$(find Sources/HarmoniusShaders \
+    -type f ! -name '*.slang' -print 2>/dev/null || true)"
+  [[ -z "$matches" ]] || die "non-Slang shader source files found: $matches"
+}
+
 full_check() {
   lint_no_js
+  lint_shader_sources
   lint_line_length
   lint_json_sort
   lint_swift
   package_graph
   swift_build macos debug
   test_unit
+  test_codegen
   test_render
   git diff --check
 }
@@ -682,6 +736,7 @@ main() {
     release-validate) release_validate "$@" ;;
     run) run_app "$@" ;;
     test) test_all "$@" ;;
+    test-codegen) test_codegen "$@" ;;
     test-render) test_render "$@" ;;
     test-render-record) test_render_record "$@" ;;
     test-ui-ios-simulator) test_ui_ios_simulator "$@" ;;
