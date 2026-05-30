@@ -36,7 +36,7 @@ See [docs/environment-setup.md](docs/environment-setup.md) for details.
 ```bash
 ./scripts/dev.sh bootstrap macos
 ./scripts/dev.sh package-graph
-./scripts/dev.sh compile-spm macos debug
+./scripts/dev.sh build macos debug
 ./scripts/dev.sh bundle macos debug
 ./scripts/dev.sh test
 ./scripts/dev.sh full-check

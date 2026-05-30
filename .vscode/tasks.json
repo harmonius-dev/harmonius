@@ -268,7 +268,7 @@
     {
       "args": [
         "-lc",
-        "./scripts/dev.sh compile-spm macos debug"
+        "./scripts/dev.sh build macos debug"
       ],
       "command": "bash",
       "dependsOn": [

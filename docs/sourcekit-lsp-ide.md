@@ -26,7 +26,7 @@ system-library target and the `SlangReflectionBridge` target.
 2. Warm the SwiftPM index used by SourceKit-LSP.
 
    ```bash
-   ./scripts/dev.sh compile-spm macos debug
+   ./scripts/dev.sh build macos debug
    ```
 
 3. Restart SourceKit-LSP in the editor.
@@ -49,7 +49,7 @@ toolchain. SourceKit-LSP does not index plugin targets as package source, so
 opened build-tool plugin files use fallback Swift flags for editor diagnostics.
 
 The wrapper does not bootstrap dependencies, generate shims, or build targets.
-Run `dev:index` or `./scripts/dev.sh compile-spm macos debug` for that work.
+Run `dev:index` or `./scripts/dev.sh build macos debug` for that work.
 
 ## VS Code And Cursor
 
@@ -102,7 +102,7 @@ xcrun --find sourcekit-lsp
 xcrun --find lldb-dap
 ./scripts/dev.sh bootstrap macos
 ./scripts/dev.sh package-graph
-./scripts/dev.sh compile-spm macos debug
+./scripts/dev.sh build macos debug
 ./scripts/dev.sh build-tests
 ./scripts/dev.sh full-check
 ```
@@ -112,7 +112,7 @@ After restarting SourceKit-LSP, verify these editor behaviors:
 - Swift files importing `HarmoniusShaderResources` have no false diagnostics.
 - `Sources/HarmoniusShaders/Triangle.slang` has no false diagnostics.
 - Swift autocomplete sees generated shader declarations after
-  `./scripts/dev.sh compile-spm macos debug`.
+  `./scripts/dev.sh build macos debug`.
 - Go-to-definition works for checked-in Swift reflection and emitter sources.
 - `HarmoniusShaderTool` builds through SwiftPM with `CSlang` pkg-config flags.
 

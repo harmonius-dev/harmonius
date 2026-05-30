@@ -28,7 +28,7 @@ automation. Appium UI tests are Swift tests using `swift-webdriver`.
 ### package-migration
 
 - Public task: `dev:compile`
-- Command: `./scripts/dev.sh compile-spm macos debug`
+- Command: `./scripts/dev.sh build macos debug`
 - Preconditions: `bootstrap` has completed for the host platform.
 - Expected output: SwiftPM resolves, builds Swift targets, and compiles plugins.
 - Failure triage: run `./scripts/dev.sh package-graph`, then inspect target names.
@@ -36,7 +36,7 @@ automation. Appium UI tests are Swift tests using `swift-webdriver`.
 ### shader-pipeline
 
 - Public task: `dev:compile`
-- Command: `./scripts/dev.sh compile-spm macos debug`
+- Command: `./scripts/dev.sh build macos debug`
 - Preconditions: `shader-slang` is installed by vcpkg for the host triplet.
 - Expected output: `HarmoniusShaderPlugin` emits `default.metallib` and
   generated `ShaderTypes.swift` from Slang reflection.

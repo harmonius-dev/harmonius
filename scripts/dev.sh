@@ -12,7 +12,7 @@ Commands:
   bootstrap [macos|ios|ios-simulator|linux]
   appium-bootstrap
   package-graph
-  compile-spm <macos|ios|ios-simulator|linux> <debug|release>
+  build <macos|ios|ios-simulator|linux> <debug|release>
   xcodegen
   bundle <macos|ios|ios-simulator> <debug|release>
   test-unit
@@ -331,8 +331,8 @@ swift_test() {
 }
 
 swift_build() {
-  local platform="$1"
-  local mode="$2"
+  local platform="${1:-$(host_platform)}"
+  local mode="${2:-debug}"
   local configuration
   configuration="$(swift_configuration_for_mode "$mode")"
   bootstrap_platform "$platform"
@@ -726,7 +726,7 @@ main() {
     bootstrap) bootstrap_platform "${1:-$(host_platform)}" ;;
     build-tests) build_tests "$@" ;;
     bundle) bundle_app "$@" ;;
-    compile-spm) swift_build "$@" ;;
+    build) swift_build "$@" ;;
     debug) debug_app "$@" ;;
     debug-appium-tests-prep) debug_appium_tests_prep "$@" ;;
     format) format_swift "$@" ;;

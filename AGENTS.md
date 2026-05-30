@@ -37,7 +37,7 @@ Bootstrap the host platform:
 Build the SwiftPM package:
 
 ```bash
-./scripts/dev.sh compile-spm macos debug
+./scripts/dev.sh build macos debug
 ```
 
 Build the macOS app bundle with XcodeGen and Xcode:

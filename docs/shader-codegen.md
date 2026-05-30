@@ -89,7 +89,7 @@ Any SwiftPM or Xcode build that includes `HarmoniusShaderResources` runs
 Use these commands locally:
 
 ```bash
-./scripts/dev.sh compile-spm macos debug
+./scripts/dev.sh build macos debug
 ./scripts/dev.sh test-unit
 ./scripts/dev.sh test-render
 ```
