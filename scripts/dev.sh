@@ -699,6 +699,14 @@ lint_shader_sources() {
   [[ -z "$matches" ]] || die "non-Slang shader source files found: $matches"
 }
 
+lint_all() {
+  lint_no_js
+  lint_shader_sources
+  lint_line_length
+  lint_json_sort
+  lint_swift
+}
+
 full_check() {
   lint_no_js
   lint_shader_sources
@@ -733,6 +741,7 @@ main() {
     format) format_swift "$@" ;;
     full-check) full_check "$@" ;;
     help|-h|--help) usage ;;
+    lint) lint_all "$@" ;;
     package-graph) package_graph "$@" ;;
     release-validate) release_validate "$@" ;;
     run) run_app "$@" ;;
