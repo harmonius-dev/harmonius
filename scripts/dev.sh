@@ -139,7 +139,7 @@ pkg_config_path_for_platform() {
     "$prefix/lib/pkgconfig" \
     "$prefix/share/pkgconfig")"
   if [[ "$platform" == "ios" || "$platform" == "ios-simulator" ]]; then
-    path="$path:$(pkg_config_path_for_platform macos)"
+    path="$path:$(pkg_config_path_for_platform "$(host_platform)")"
   fi
   printf '%s' "$path"
 }
@@ -151,7 +151,7 @@ runtime_library_path_for_platform() {
   prefix="$(vcpkg_prefix_for_platform "$platform")"
   path="$(printf '%s:%s' "$prefix/lib" "$prefix/tools/shader-slang")"
   if [[ "$platform" == "ios" || "$platform" == "ios-simulator" ]]; then
-    path="$path:$(runtime_library_path_for_platform macos)"
+    path="$path:$(runtime_library_path_for_platform "$(host_platform)")"
   fi
   printf '%s' "$path"
 }
@@ -159,10 +159,39 @@ runtime_library_path_for_platform() {
 with_pkg_config_path() {
   local platform="$1"
   shift
+  HARMONIUS_SHADER_TOOL="${HARMONIUS_SHADER_TOOL:-}" \
   PKG_CONFIG_PATH="$(pkg_config_path_for_platform "$platform")" \
     DYLD_LIBRARY_PATH="$(runtime_library_path_for_platform "$platform")" \
     LD_LIBRARY_PATH="$(runtime_library_path_for_platform "$platform")" \
     "$@"
+}
+
+host_shader_tool_path() {
+  local configuration="${1:-debug}"
+  echo "$repo_root/.build/$configuration/HarmoniusShaderTool"
+}
+
+ensure_host_shader_tool() {
+  local configuration="${1:-debug}"
+  local tool
+  tool="$(host_shader_tool_path "$configuration")"
+  if [[ ! -x "$tool" ]]; then
+    bootstrap_platform "$(host_platform)"
+    with_pkg_config_path "$(host_platform)" swift build \
+      --product HarmoniusShaderTool \
+      --configuration "$configuration" \
+      >/dev/null
+  fi
+  [[ -x "$tool" ]] || die "HarmoniusShaderTool was not built at $tool"
+  printf '%s\n' "$tool"
+}
+
+with_shader_tool_env() {
+  local platform="$1"
+  local tool
+  shift
+  tool="$(ensure_host_shader_tool debug)"
+  HARMONIUS_SHADER_TOOL="$tool" with_pkg_config_path "$platform" "$@"
 }
 
 ensure_submodules() {
@@ -201,7 +230,7 @@ fix_slang_dylib_install_name() {
   local prefix
   local dylib
   [[ "$(uname -s)" == "Darwin" ]] || return
-  [[ "$platform" == "macos" ]] || return
+  [[ "$platform" == "macos" ]] || return 0
   prefix="$(vcpkg_prefix_for_platform "$platform")"
   dylib="$prefix/lib/libslang-compiler.0.2026.7.1.dylib"
   [[ -f "$dylib" ]] || return
@@ -213,7 +242,7 @@ ensure_vcpkg_for_platform() {
   local platform="$1"
   install_vcpkg_triplet "$platform"
   if [[ "$platform" == "ios" || "$platform" == "ios-simulator" ]]; then
-    install_vcpkg_triplet "macos"
+    install_vcpkg_triplet "$(host_platform)"
   fi
 }
 
@@ -279,6 +308,9 @@ validate_pkgconfig_shims() {
 
 ensure_pkgconfig_for_platform() {
   local platform="$1"
+  if [[ "$platform" == "ios" || "$platform" == "ios-simulator" ]]; then
+    generate_pkgconfig_shims "$(host_platform)"
+  fi
   generate_pkgconfig_shims "$platform"
   validate_pkgconfig_shims "$platform"
 }
@@ -318,7 +350,7 @@ swift_package() {
 
 swift_test() {
   local platform="${HARMONIUS_SWIFTPM_PLATFORM:-macos}"
-  with_pkg_config_path "$platform" swift test "$@"
+  with_shader_tool_env "$platform" swift test "$@"
 }
 
 swift_build() {
@@ -327,7 +359,7 @@ swift_build() {
   local configuration
   configuration="$(swift_configuration_for_mode "$mode")"
   bootstrap_platform "$platform"
-  with_pkg_config_path "$platform" swift build \
+  with_shader_tool_env "$platform" swift build \
     --configuration "$configuration"
 }
 
@@ -347,7 +379,7 @@ link_swiftpm_test_executable() {
 
 build_tests() {
   bootstrap_platform "macos"
-  with_pkg_config_path "macos" swift build --build-tests
+  with_shader_tool_env "macos" swift build --build-tests
   mkdir -p "$repo_root/build"
   link_swiftpm_test_executable
 }
@@ -388,18 +420,28 @@ bundle_app() {
   local mode="$2"
   local configuration
   local destination
+  local shader_tool
+  local xcodebuild_settings=()
   configuration="$(configuration_for_mode "$mode")"
   destination="$(destination_for_platform "$platform")"
+  if [[ "$platform" == "ios-simulator" ]]; then
+    xcodebuild_settings+=(
+      "ONLY_ACTIVE_ARCH=YES"
+      "ARCHS=$(uname -m)"
+    )
+  fi
   bootstrap_platform "$platform"
+  shader_tool="$(ensure_host_shader_tool debug)"
   run_xcodegen
   repo_cd
-  PKG_CONFIG_PATH="$(pkg_config_path_for_platform "$platform")" xcodebuild build \
+  HARMONIUS_SHADER_TOOL="$shader_tool" with_pkg_config_path "$platform" xcodebuild build \
     -project Harmonius.xcodeproj \
     -scheme HarmoniusApp \
     -configuration "$configuration" \
     -destination "$destination" \
     -derivedDataPath build/xcodegen \
-    -clonedSourcePackagesDirPath build/spm
+    -clonedSourcePackagesDirPath build/spm \
+    "${xcodebuild_settings[@]}"
   if [[ "$platform" == "macos" && "$mode" == "debug" ]]; then
     mkdir -p "$repo_root/build"
     ln -sfn "$(macos_app_path)" "$repo_root/build/debug-macos-app"
@@ -632,11 +674,13 @@ test_all() {
 
 archive_app() {
   local platform="$1"
+  local shader_tool
   case "$platform" in
     ios)
       bootstrap_platform ios
+      shader_tool="$(ensure_host_shader_tool debug)"
       run_xcodegen
-      PKG_CONFIG_PATH="$(pkg_config_path_for_platform ios)" xcodebuild archive \
+      HARMONIUS_SHADER_TOOL="$shader_tool" with_pkg_config_path ios xcodebuild archive \
         -project Harmonius.xcodeproj \
         -scheme HarmoniusApp \
         -destination 'generic/platform=iOS' \
@@ -645,8 +689,9 @@ archive_app() {
       ;;
     macos)
       bootstrap_platform macos
+      shader_tool="$(ensure_host_shader_tool debug)"
       run_xcodegen
-      PKG_CONFIG_PATH="$(pkg_config_path_for_platform macos)" xcodebuild archive \
+      HARMONIUS_SHADER_TOOL="$shader_tool" with_pkg_config_path macos xcodebuild archive \
         -project Harmonius.xcodeproj \
         -scheme HarmoniusApp \
         -destination 'generic/platform=macOS' \

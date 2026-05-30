@@ -10,7 +10,7 @@ XcodeGen verifies Apple app bundles and provides app artifacts for Appium.
 | `HarmoniusUnitTests` | Swift Testing | Geometry and pure render data |
 | `SwiftEmitterTests` | Swift Testing | Slang reflection model to Swift output |
 | `HarmoniusRenderTests` | Swift Testing | Metal texture validation |
-| `HarmoniusAppiumTests` | Swift Testing + Swift WebDriver | UI snapshots |
+| `HarmoniusAppiumTests` | Swift Testing + Appium + SnapshotTesting | UI snapshots |
 
 ## Prerequisites
 
@@ -64,8 +64,8 @@ Render tests must not create, record, or compare screenshots.
 ## Appium UI Snapshots
 
 Appium UI tests are the only screenshot snapshot tests. Test code must stay in
-Swift Testing and use `swift-webdriver`; do not add JavaScript or TypeScript
-harnesses.
+Swift Testing, use `swift-webdriver` for automation, and use SnapshotTesting for
+PNG comparison. Do not add JavaScript or TypeScript harnesses.
 
 Baselines live under:
 
@@ -87,7 +87,7 @@ Record or refresh baselines with:
    triangle.
 5. Screenshots are never scaled before recording or comparison.
 6. Both flows assert `snapshot-content` and `metal-view`, capture a screenshot,
-   compare it with the baseline, and always delete the Appium session.
+   compare it with SnapshotTesting, and always delete the Appium session.
 
 ## CI
 

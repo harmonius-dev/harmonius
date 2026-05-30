@@ -32,13 +32,17 @@ let package = Package(
   ],
   dependencies: [
     .package(
+      url: "https://github.com/ajmcclary/swift-snapshot-testing.git",
+      revision: "67ce8c189de56737485d6ab46a95a4f6f53b98a2"
+    ),
+    .package(
       url: "https://github.com/swiftlang/swift-syntax.git",
       exact: "603.0.1"
     ),
     .package(
       url: "https://github.com/thebrowsercompany/swift-webdriver.git",
       revision: "eb79abde86888ef086ca56c0c7ccd09a03757c2d"
-    )
+    ),
   ],
   targets: [
     .systemLibrary(
@@ -140,9 +144,6 @@ let package = Package(
     .plugin(
       name: "HarmoniusShaderPlugin",
       capability: .buildTool(),
-      dependencies: [
-        "HarmoniusShaderTool"
-      ],
       path: "Plugins/HarmoniusShaderPlugin"
     ),
     .testTarget(
@@ -177,9 +178,13 @@ let package = Package(
       name: "HarmoniusAppiumTests",
       dependencies: [
         .product(
+          name: "SnapshotTesting",
+          package: "swift-snapshot-testing"
+        ),
+        .product(
           name: "WebDriver",
           package: "swift-webdriver"
-        )
+        ),
       ],
       path: "Tests/HarmoniusAppiumTests",
       exclude: [

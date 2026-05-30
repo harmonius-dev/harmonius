@@ -7,7 +7,11 @@ struct HarmoniusShaderPlugin: BuildToolPlugin {
     context: PluginContext,
     target: Target
   ) throws -> [Command] {
-    let tool = try context.tool(named: "HarmoniusShaderTool")
+    let toolPath = ProcessInfo.processInfo.environment["HARMONIUS_SHADER_TOOL"] ?? ""
+    guard !toolPath.isEmpty else {
+      throw HarmoniusShaderPluginError.missingShaderTool
+    }
+    let tool = URL(fileURLWithPath: toolPath)
     let packageDirectory = context.package.directoryURL
     let shaderDirectory = packageDirectory.appendingPathComponent(
       "Sources/HarmoniusShaders"
@@ -23,7 +27,7 @@ struct HarmoniusShaderPlugin: BuildToolPlugin {
     return [
       .buildCommand(
         displayName: "Compile and reflect Triangle.slang",
-        executable: tool.url,
+        executable: tool,
         arguments: [
           source.path,
           output.path,
@@ -40,5 +44,13 @@ struct HarmoniusShaderPlugin: BuildToolPlugin {
         ]
       )
     ]
+  }
+}
+
+enum HarmoniusShaderPluginError: Error, CustomStringConvertible {
+  case missingShaderTool
+
+  var description: String {
+    "HARMONIUS_SHADER_TOOL must point to the host HarmoniusShaderTool executable"
   }
 }

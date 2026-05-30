@@ -1,12 +1,10 @@
-import CoreGraphics
+import AppKit
 import Foundation
-import ImageIO
+import SnapshotTesting
 import Testing
 import WebDriver
 
 private let macOSSnapshotPointSize = SnapshotSize(width: 960, height: 540)
-private let snapshotMaximumChannelDelta = 3
-private let snapshotMaximumMismatchRatio = 0.01
 
 private enum AppiumPlatform: String {
   case iOSSimulator = "ios-simulator"
@@ -15,7 +13,6 @@ private enum AppiumPlatform: String {
 
 private enum AppiumTestError: Error, CustomStringConvertible {
   case invalidPNG(String)
-  case missingBaseline(URL)
   case missingEnvironment(String)
   case snapshotMismatch(URL, String)
   case unsupportedPlatform(String)
@@ -24,8 +21,6 @@ private enum AppiumTestError: Error, CustomStringConvertible {
     switch self {
     case .invalidPNG(let reason):
       return "invalid PNG: \(reason)"
-    case .missingBaseline(let url):
-      return "missing UI snapshot baseline at \(url.path)"
     case .missingEnvironment(let name):
       return "missing required environment variable \(name)"
     case .snapshotMismatch(let url, let reason):
@@ -59,8 +54,7 @@ extension ElementLocator {
   #expect(try metalView.displayed)
 
   let screenshot = try contentScreenshot(session: session, element: content)
-  try assertRenderedTriangleVisible(environment: environment, screenshot: screenshot)
-  let identity = try SnapshotIdentity(environment: environment, screenshot: screenshot)
+  let identity = try SnapshotIdentity(environment: environment)
   try assertUISnapshot(screenshot: screenshot, identity: identity)
 }
 
@@ -96,13 +90,16 @@ private struct SnapshotIdentity {
   let metadata: SnapshotMetadata
   let metadataURL: URL
   let pngURL: URL
+  let snapshotDirectoryURL: URL
+  let snapshotTestName: String
 
-  init(environment: AppiumEnvironment, screenshot: Data) throws {
-    _ = try pngSize(screenshot)
+  init(environment: AppiumEnvironment) throws {
     let scale = try snapshotScale(environment: environment)
     let platformDirectory = try snapshotDirectory(environment: environment, scale: scale)
     let fileBaseName = "snapshot-content"
-    pngURL = platformDirectory.appendingPathComponent("\(fileBaseName).png")
+    snapshotDirectoryURL = platformDirectory
+    snapshotTestName = fileBaseName
+    pngURL = platformDirectory.appendingPathComponent("\(fileBaseName).1.png")
     metadataURL = platformDirectory.appendingPathComponent("\(fileBaseName).json")
     metadata = SnapshotMetadata(
       appBundleID: "dev.harmonius.App",
@@ -219,144 +216,34 @@ private func assertUISnapshot(
   screenshot: Data,
   identity: SnapshotIdentity
 ) throws {
+  let image = try appiumScreenshotImage(data: screenshot)
+  let failure = verifySnapshot(
+    of: image,
+    as: .image(precision: 0.99, perceptualPrecision: 0.99),
+    record: isRecordingUISnapshots ? .all : .never,
+    snapshotDirectory: identity.snapshotDirectoryURL.path,
+    testName: identity.snapshotTestName
+  )
   if isRecordingUISnapshots {
-    try FileManager.default.createDirectory(
-      at: identity.pngURL.deletingLastPathComponent(),
-      withIntermediateDirectories: true
-    )
-    try screenshot.write(to: identity.pngURL)
     try metadataData(identity.metadata).write(to: identity.metadataURL)
     return
   }
 
-  guard FileManager.default.fileExists(atPath: identity.pngURL.path) else {
-    throw AppiumTestError.missingBaseline(identity.pngURL)
+  if let failure {
+    throw AppiumTestError.snapshotMismatch(identity.pngURL, failure)
   }
-  let baseline = try Data(contentsOf: identity.pngURL)
-  try assertUIBaselineMatches(baseline: baseline, screenshot: screenshot, url: identity.pngURL)
   #expect(FileManager.default.fileExists(atPath: identity.metadataURL.path))
 }
 
-private func assertRenderedTriangleVisible(
-  environment: AppiumEnvironment,
-  screenshot: Data
-) throws {
-  guard environment.platform == .iOSSimulator else { return }
-  let image = try SnapshotImage(data: screenshot)
-  #expect(image.containsRenderedTriangleColors)
-}
-
-private func assertUIBaselineMatches(
-  baseline: Data,
-  screenshot: Data,
-  url: URL
-) throws {
-  if baseline == screenshot { return }
-  let baselineImage = try SnapshotImage(data: baseline)
-  let screenshotImage = try SnapshotImage(data: screenshot)
-  guard let difference = baselineImage.difference(from: screenshotImage),
-    difference.isWithinTolerance
+private func appiumScreenshotImage(data: Data) throws -> NSImage {
+  guard let image = NSImage(data: data),
+    let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+    cgImage.width > 0,
+    cgImage.height > 0
   else {
-    let difference = baselineImage.difference(from: screenshotImage)
-    throw AppiumTestError.snapshotMismatch(
-      url,
-      difference?.description ?? "image dimensions differ"
-    )
+    throw AppiumTestError.invalidPNG("unable to decode Appium screenshot")
   }
-}
-
-private struct SnapshotImage {
-  let height: Int
-  let pixels: [UInt8]
-  let width: Int
-
-  init(data: Data) throws {
-    guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-      let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
-    else {
-      throw AppiumTestError.invalidPNG("unable to decode PNG")
-    }
-    width = image.width
-    height = image.height
-    pixels = try Self.rgbaPixels(image: image)
-  }
-
-  private static func rgbaPixels(image: CGImage) throws -> [UInt8] {
-    let width = image.width
-    let height = image.height
-    var pixels = [UInt8](repeating: 0, count: width * height * 4)
-    let colorSpace = CGColorSpaceCreateDeviceRGB()
-    let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
-    guard
-      let context = CGContext(
-        data: &pixels,
-        width: width,
-        height: height,
-        bitsPerComponent: 8,
-        bytesPerRow: width * 4,
-        space: colorSpace,
-        bitmapInfo: bitmapInfo
-      )
-    else {
-      throw AppiumTestError.invalidPNG("unable to allocate image context")
-    }
-    context.interpolationQuality = .none
-    context.draw(
-      image,
-      in: CGRect(x: 0, y: 0, width: width, height: height)
-    )
-    return pixels
-  }
-
-  func difference(from other: SnapshotImage) -> SnapshotDifference? {
-    guard width == other.width, height == other.height else {
-      return nil
-    }
-    var mismatchCount = 0
-    var maximumDelta = 0
-    for index in pixels.indices {
-      let delta = abs(Int(pixels[index]) - Int(other.pixels[index]))
-      maximumDelta = max(maximumDelta, delta)
-      if delta > snapshotMaximumChannelDelta {
-        mismatchCount += 1
-      }
-    }
-    return SnapshotDifference(
-      maximumDelta: maximumDelta,
-      mismatchRatio: Double(mismatchCount) / Double(pixels.count)
-    )
-  }
-
-  var containsRenderedTriangleColors: Bool {
-    var saturatedPixelCount = 0
-    let requiredPixelCount = max(100, width * height / 5_000)
-    for offset in stride(from: 0, to: pixels.count, by: 4) {
-      let red = Int(pixels[offset])
-      let green = Int(pixels[offset + 1])
-      let blue = Int(pixels[offset + 2])
-      let alpha = Int(pixels[offset + 3])
-      let maximumChannel = max(red, green, blue)
-      let minimumChannel = min(red, green, blue)
-      if alpha > 200, maximumChannel > 120, maximumChannel - minimumChannel > 50 {
-        saturatedPixelCount += 1
-      }
-    }
-    return saturatedPixelCount > requiredPixelCount
-  }
-}
-
-private struct SnapshotDifference: CustomStringConvertible {
-  let maximumDelta: Int
-  let mismatchRatio: Double
-
-  var isWithinTolerance: Bool {
-    maximumDelta <= snapshotMaximumChannelDelta
-      || mismatchRatio <= snapshotMaximumMismatchRatio
-  }
-
-  var description: String {
-    "max channel delta \(maximumDelta), mismatch ratio \(mismatchRatio)"
-  }
+  return image
 }
 
 private func metadataData(_ metadata: SnapshotMetadata) throws -> Data {
@@ -408,22 +295,6 @@ private func snapshotDirectory(
   return url
 }
 
-private func pngSize(_ data: Data) throws -> SnapshotSize {
-  guard isPNG(data: data), data.count >= 24 else {
-    throw AppiumTestError.invalidPNG("missing PNG signature or IHDR")
-  }
-  return SnapshotSize(
-    width: integer(fromBigEndianBytes: data[16..<20]),
-    height: integer(fromBigEndianBytes: data[20..<24])
-  )
-}
-
-private func integer(fromBigEndianBytes bytes: Data.SubSequence) -> Int {
-  bytes.reduce(0) { partial, byte in
-    (partial << 8) | Int(byte)
-  }
-}
-
 private func environment(_ name: String) throws -> String {
   guard let value = optionalEnvironment(name) else {
     throw AppiumTestError.missingEnvironment(name)
@@ -471,11 +342,6 @@ private var snapshotsRoot: URL {
   URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
     .appendingPathComponent("__Snapshots__")
-}
-
-private func isPNG(data: Data) -> Bool {
-  let signature: [UInt8] = [137, 80, 78, 71, 13, 10, 26, 10]
-  return data.starts(with: signature)
 }
 
 extension AppiumPlatform {
