@@ -15,6 +15,11 @@
       "-ISources/HarmoniusShaders",
       "-Ibuild/macos/vcpkg_installed/arm64-osx/include",
       "-Ibuild/macos/vcpkg_installed/arm64-osx/include/hlslpp"
+    ],
+    "swiftCompilerFlags": [
+      "-parse-as-library",
+      "-package-description-version",
+      "6.2"
     ]
   },
   "swiftPM": {

@@ -45,6 +45,10 @@ The `scripts/sourcekit-lsp.sh` wrapper exports the macOS arm64 pkg-config paths
 needed by `hlslpp`. It then execs SourceKit-LSP from the active
 Xcode toolchain with `xcrun`.
 
+The wrapper also exposes SwiftPM's `PackagePlugin` API module from the active
+toolchain. SourceKit-LSP does not index plugin targets as package source, so
+opened build-tool plugin files use fallback Swift flags for editor diagnostics.
+
 The wrapper does not bootstrap dependencies, generate shims, or build targets.
 Run `dev:index` or `./scripts/dev.sh compile-spm macos debug` for that work.
 
